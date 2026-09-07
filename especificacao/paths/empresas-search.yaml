@@ -1,12 +1,30 @@
 get:
   tags:
+  - Gerenciamento de Empresas
   - empresa-search-controller
+  summary: Buscar empresa pela sessão WhatsApp
+  description: Usado pelo painel admin e pelo perfil do cliente. Aceita x-admin-token ou x-cliente-token.
   operationId: executeSearch-empresa-get
   parameters:
-  - name: sessaoWhatsapp
-    in: query
+  - name: x-admin-token
+    in: header
+    description: Token administrativo do SaaS
+    required: false
     schema:
       type: string
+    example: sua-chave-admin
+  - name: x-cliente-token
+    in: header
+    description: Token do painel do cliente
+    required: false
+    schema:
+      type: string
+  - name: sessaoWhatsapp
+    in: query
+    required: true
+    schema:
+      type: string
+    example: sessao_recanto_01
   responses:
     "200":
       description: OK
@@ -14,5 +32,7 @@ get:
         application/hal+json:
           schema:
             $ref: "#/components/schemas/EntityModelEmpresa"
+    "401":
+      description: Token administrativo ou de cliente inválido
     "404":
       description: Not Found

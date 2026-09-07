@@ -31,6 +31,18 @@
       <input class="input-field font-mono" formControlName="sessaoWhatsapp" placeholder="sessao_recanto_01" />
     </label>
 
+    <label class="block">
+      <span class="mb-1 block text-sm font-medium">ID da agenda Google</span>
+      <input
+        class="input-field font-mono text-xs"
+        formControlName="googleCalendarId"
+        placeholder="...@group.calendar.google.com"
+      />
+      <span class="mt-1 block text-xs text-slate-500">
+        Cole o ID da agenda desta empresa. Compartilhe essa agenda com a conta de serviço do bot. Cada cliente tem o seu — não use um ID único no .env.
+      </span>
+    </label>
+
     @if (!modoEdicao()) {
       <label class="block">
         <span class="mb-1 block text-sm font-medium">Ramo de atuação</span>
@@ -81,3 +93,9 @@
     </button>
   </div>
 </form>
+
+@if (modoEdicao() && sessaoOriginal()) {
+  <div class="mt-6">
+    <app-conexao-whatsapp [sessao]="sessaoOriginal()" />
+  </div>
+}

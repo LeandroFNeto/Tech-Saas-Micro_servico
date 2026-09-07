@@ -2,6 +2,7 @@ package com.example.demo.model;
 
 
 import jakarta.persistence.*;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -49,9 +50,9 @@ public class Empresa {
     @Column(name = "locacao_por_hora")
     private Boolean locacaoPorHora = false;
 
-    @OneToMany(mappedBy = "empresa", cascade = CascadeType.ALL)
-    @OrderBy("ordemExibicao ASC") // O banco já traz ordenado!
-    private List<ModuloEmpresa> modulosAtivos;
+    @OneToMany(mappedBy = "empresa", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("ordemExibicao ASC")
+    private List<ModuloEmpresa> modulosAtivos = new ArrayList<>();
 
     public Boolean getUsaIA() {
         return usaIA;

@@ -1,9 +1,18 @@
 get:
   tags:
+  - Gerenciamento de Empresas
   - empresa-entity-controller
-  description: get-empresa
+  summary: Listar empresas cadastradas
+  description: Devolve a coleção HAL (_embedded.empresas) para o painel admin. Exige x-admin-token.
   operationId: getCollectionResource-empresa-get
   parameters:
+  - name: x-admin-token
+    in: header
+    description: Token administrativo do SaaS
+    required: false
+    schema:
+      type: string
+    example: sua-chave-admin
   - name: page
     in: query
     description: Zero-based page index (0..N)
@@ -41,6 +50,8 @@ get:
         text/uri-list:
           schema:
             type: string
+    "401":
+      description: Token administrativo inválido
 post:
   tags:
   - Gerenciamento de Empresas

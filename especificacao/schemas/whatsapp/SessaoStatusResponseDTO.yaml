@@ -1,0 +1,23 @@
+type: object
+description: Status da sessão WhatsApp no WPPConnect, exposto ao painel sem vazar token interno.
+properties:
+  sessao:
+    type: string
+    description: Identificador da sessão no WPPConnect
+    example: sessao_recanto_01
+  status:
+    type: string
+    description: Estado normalizado para o front-end
+    enum:
+      - CONNECTED
+      - QRCODE
+      - DISCONNECTED
+    example: QRCODE
+  qrcodeBase64:
+    type: string
+    nullable: true
+    description: Imagem do QR Code em Data URL ou Base64, presente apenas quando status é QRCODE
+    example: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...
+required:
+  - sessao
+  - status

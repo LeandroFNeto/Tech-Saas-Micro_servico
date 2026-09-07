@@ -9,6 +9,10 @@ properties:
     type: boolean
     description: Define se o local é alugado por hora (true) ou por diária (false)
     example: false
+  googleCalendarId:
+    type: string
+    description: ID da agenda Google desta empresa (não usar valor global no .env)
+    example: abc123@group.calendar.google.com
   modulosAtivos:
     type: array
     description: Lista de módulos liberados após pagamento

@@ -1,0 +1,46 @@
+get:
+  tags:
+  - Conexão WhatsApp
+  summary: Consultar status da sessão WhatsApp
+  description: O Java consulta o WPPConnect (GET /api/{sessao}/status-session) e devolve SessaoStatusResponseDTO. Não expõe o token interno do WPPConnect.
+  operationId: consultarStatusSessao
+  parameters:
+  - name: x-admin-token
+    in: header
+    description: Token administrativo do SaaS
+    required: false
+    schema:
+      type: string
+    example: sua-chave-admin
+  - name: x-cliente-token
+    in: header
+    description: Token do painel do cliente
+    required: false
+    schema:
+      type: string
+  - name: sessao
+    in: path
+    description: Identificador da sessão WhatsApp da empresa
+    required: true
+    schema:
+      type: string
+    example: sessao_recanto_01
+  responses:
+    "200":
+      description: Status atual da sessão
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/SessaoStatusResponseDTO"
+    "401":
+      description: Token administrativo ou de cliente inválido
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/SessaoStatusResponseDTO"
+    "404":
+      description: Empresa não encontrada para a sessão informada
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/SessaoStatusResponseDTO"

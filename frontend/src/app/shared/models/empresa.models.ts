@@ -4,6 +4,7 @@ export interface EmpresaCreateDTO {
   sessaoWhatsapp: string;
   ramoDeAtuacao?: string;
   precoBase?: number | null;
+  googleCalendarId?: string | null;
   modulosIniciais?: string[];
 }
 
@@ -21,6 +22,7 @@ export interface EmpresaUpdateDTO {
 export interface EmpresaUpdateAdminDTO {
   sessaoWhatsapp?: string;
   locacaoPorHora?: boolean;
+  googleCalendarId?: string | null;
   modulosAtivos?: string[];
 }
 
@@ -55,6 +57,7 @@ export interface EmpresaView {
   linkFotoPrincipal?: string;
   linkGaleria?: string;
   locacaoPorHora?: boolean;
+  googleCalendarId?: string;
   usaIA?: boolean;
   modulosAtivos: string[];
   atualizadoEm?: string;

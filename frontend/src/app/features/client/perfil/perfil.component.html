@@ -7,6 +7,8 @@
   <div class="space-y-4">
     <app-banner-avisos [avisos]="avisos" />
 
+    <app-conexao-whatsapp [sessao]="sessao" />
+
     @if (erro()) {
       <p class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ erro() }}</p>
     }

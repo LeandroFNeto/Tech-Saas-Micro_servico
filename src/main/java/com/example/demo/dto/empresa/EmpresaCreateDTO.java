@@ -21,6 +21,10 @@ public record EmpresaCreateDTO(
         @Schema(description = "Preço base de referência da locação", example = "500.00")
         Double precoBase,
 
+        @Schema(description = "ID da agenda Google desta empresa (não usar valor global no .env)",
+                example = "abc123@group.calendar.google.com")
+        String googleCalendarId,
+
         @Schema(description = "Módulos liberados na criação da empresa", example = "[\"IA_GEMINI\", \"GOOGLE_CALENDAR\"]")
         List<String> modulosIniciais
 ) {

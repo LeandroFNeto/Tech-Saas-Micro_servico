@@ -1,0 +1,78 @@
+openapi: 3.0.3
+info:
+  title: Smart Booking API
+  description: Contrato HTTP do SaaS multi-tenant (WhatsApp + agendamento). Fonte única de verdade modular em especificacao/.
+  version: 1.0.0
+paths:
+  /empresas:
+    $ref: ./especificacao/paths/empresas.yaml
+  /empresas/{id}:
+    $ref: ./especificacao/paths/empresas-id.yaml
+  /empresas/{sessao}/admin:
+    $ref: ./especificacao/paths/empresas-admin.yaml
+  /empresas/{sessao}/cliente:
+    $ref: ./especificacao/paths/empresas-cliente.yaml
+  /empresas/search/findBySessaoWhatsapp:
+    $ref: ./especificacao/paths/empresas-search.yaml
+  /profile:
+    $ref: ./especificacao/paths/profile.yaml
+  /profile/empresas:
+    $ref: ./especificacao/paths/profile-empresas.yaml
+  /webhook/whatsapp:
+    $ref: ./especificacao/paths/webhook-whatsapp.yaml
+  /whatsapp/status/{sessao}:
+    $ref: ./especificacao/paths/whatsapp-status.yaml
+  /whatsapp/iniciar/{sessao}:
+    $ref: ./especificacao/paths/whatsapp-iniciar.yaml
+components:
+  schemas:
+    EmpresaCreateDTO:
+      $ref: ./especificacao/schemas/empresa/EmpresaCreateDTO.yaml
+    EmpresaUpdateDTO:
+      $ref: ./especificacao/schemas/empresa/EmpresaUpdateDTO.yaml
+    EmpresaUpdateAdminDTO:
+      $ref: ./especificacao/schemas/empresa/EmpresaUpdateAdminDTO.yaml
+    EmpresaResponseDTO:
+      $ref: ./especificacao/schemas/empresa/EmpresaResponseDTO.yaml
+    SessaoStatusResponseDTO:
+      $ref: ./especificacao/schemas/whatsapp/SessaoStatusResponseDTO.yaml
+    WhatsappWebhookDTO:
+      $ref: ./especificacao/schemas/webhook/WhatsappWebhookDTO.yaml
+    DadosWebhook:
+      $ref: ./especificacao/schemas/webhook/DadosWebhook.yaml
+    MensagemAninhada:
+      $ref: ./especificacao/schemas/webhook/MensagemAninhada.yaml
+    ConteudoMensagem:
+      $ref: ./especificacao/schemas/webhook/ConteudoMensagem.yaml
+    IdentificadorMensagem:
+      $ref: ./especificacao/schemas/webhook/IdentificadorMensagem.yaml
+    ChaveMensagem:
+      $ref: ./especificacao/schemas/webhook/ChaveMensagem.yaml
+    DiaReserva:
+      $ref: ./especificacao/schemas/data-rest/entidades.yaml#/DiaReserva
+    Empresa:
+      $ref: ./especificacao/schemas/data-rest/entidades.yaml#/Empresa
+    EntityModelEmpresa:
+      $ref: ./especificacao/schemas/data-rest/entidades.yaml#/EntityModelEmpresa
+    HorarioReserva:
+      $ref: ./especificacao/schemas/data-rest/entidades.yaml#/HorarioReserva
+    ModuloEmpresa:
+      $ref: ./especificacao/schemas/data-rest/entidades.yaml#/ModuloEmpresa
+    PagedModelEntityModelEmpresa:
+      $ref: ./especificacao/schemas/data-rest/entidades.yaml#/PagedModelEntityModelEmpresa
+    EmpresaRequestBody:
+      $ref: ./especificacao/schemas/data-rest/entidades.yaml#/EmpresaRequestBody
+    AbstractJsonSchemaPropertyObject:
+      $ref: ./especificacao/schemas/data-rest/hal.yaml#/AbstractJsonSchemaPropertyObject
+    Item:
+      $ref: ./especificacao/schemas/data-rest/hal.yaml#/Item
+    JsonSchema:
+      $ref: ./especificacao/schemas/data-rest/hal.yaml#/JsonSchema
+    RepresentationModelObject:
+      $ref: ./especificacao/schemas/data-rest/hal.yaml#/RepresentationModelObject
+    PageMetadata:
+      $ref: ./especificacao/schemas/data-rest/hal.yaml#/PageMetadata
+    Link:
+      $ref: ./especificacao/schemas/data-rest/hal.yaml#/Link
+    Links:
+      $ref: ./especificacao/schemas/data-rest/hal.yaml#/Links

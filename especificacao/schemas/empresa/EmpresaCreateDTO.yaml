@@ -18,6 +18,10 @@ properties:
     format: double
     description: Preço base de referência da locação
     example: 500.0
+  googleCalendarId:
+    type: string
+    description: ID da agenda Google desta empresa (não usar valor global no .env)
+    example: abc123@group.calendar.google.com
   modulosIniciais:
     type: array
     description: Módulos liberados na criação da empresa

@@ -12,6 +12,10 @@ public record EmpresaUpdateAdminDTO(
         @Schema(description = "Define se o local é alugado por hora (true) ou por diária (false)", example = "false")
         Boolean locacaoPorHora,
 
+        @Schema(description = "ID da agenda Google desta empresa (não usar valor global no .env)",
+                example = "abc123@group.calendar.google.com")
+        String googleCalendarId,
+
         @Schema(description = "Lista de módulos liberados após pagamento", example = "[\"IA_GEMINI\", \"GOOGLE_CALENDAR\"]")
         List<String> modulosAtivos
 ) {

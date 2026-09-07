@@ -67,6 +67,7 @@ export class EmpresaService {
       linkFotoPrincipal: item['linkFotoPrincipal'] as string | undefined,
       linkGaleria: item['linkGaleria'] as string | undefined,
       locacaoPorHora: Boolean(item['locacaoPorHora']),
+      googleCalendarId: item['googleCalendarId'] as string | undefined,
       usaIA: Boolean(item['usaIA']),
       modulosAtivos: this.extrairCodigos(item['modulosAtivos']),
       atualizadoEm: item['atualizadoEm'] as string | undefined

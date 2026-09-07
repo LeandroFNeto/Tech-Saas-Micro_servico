@@ -2,7 +2,7 @@ put:
   tags:
   - Gerenciamento de Empresas
   summary: Atualizar infraestrutura pelo admin
-  description: "Aplica EmpresaUpdateAdminDTO: sessão, tipo de locação e módulos. Uso restrito ao administrador do SaaS."
+  description: "Aplica EmpresaUpdateAdminDTO: sessão, tipo de locação, ID da agenda Google e módulos. Uso restrito ao administrador do SaaS."
   operationId: atualizarPeloAdmin
   parameters:
   - name: x-admin-token

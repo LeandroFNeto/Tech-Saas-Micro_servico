@@ -2,8 +2,8 @@ export const environment = {
   production: false,
   apiUrl: '/api',
   /**
-   * Deve coincidir com ADMIN_API_KEY do backend (.env).
-   * O JWT do painel é simulado no front; este header é o que o Spring valida.
+   * Deve ser IGUAL a ADMIN_API_KEY no .env da raiz (lido pelo docker-compose).
+   * O interceptor manda esse valor no header x-admin-token; o Spring compara com admin.api.key.
    */
   adminApiKey: 'sua-chave-admin'
 };

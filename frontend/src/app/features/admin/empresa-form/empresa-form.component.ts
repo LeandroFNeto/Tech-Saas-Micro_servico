@@ -3,11 +3,12 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { mensagemHttp } from '../../../core/interceptors/auth.interceptor';
 import { EmpresaService } from '../../../core/services/empresa.service';
+import { ConexaoWhatsappComponent } from '../../../shared/components/conexao-whatsapp/conexao-whatsapp.component';
 import { EmpresaView, MODULOS_DISPONIVEIS } from '../../../shared/models/empresa.models';
 
 @Component({
   selector: 'app-empresa-form',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, ConexaoWhatsappComponent],
   templateUrl: './empresa-form.component.html'
 })
 export class EmpresaFormComponent implements OnInit {
@@ -29,6 +30,7 @@ export class EmpresaFormComponent implements OnInit {
     ramoDeAtuacao: ['locacao'],
     precoBase: this.fb.control<number | null>(null),
     locacaoPorHora: [false],
+    googleCalendarId: [''],
     modulos: this.fb.group(
       Object.fromEntries(MODULOS_DISPONIVEIS.map((modulo) => [modulo.codigo, this.fb.control(false)]))
     )
@@ -65,6 +67,7 @@ export class EmpresaFormComponent implements OnInit {
         .atualizarPeloAdmin(this.sessaoOriginal(), {
           sessaoWhatsapp: valor.sessaoWhatsapp ?? undefined,
           locacaoPorHora: valor.locacaoPorHora ?? false,
+          googleCalendarId: valor.googleCalendarId || null,
           modulosAtivos
         })
         .subscribe({
@@ -87,6 +90,7 @@ export class EmpresaFormComponent implements OnInit {
         sessaoWhatsapp: valor.sessaoWhatsapp ?? '',
         ramoDeAtuacao: valor.ramoDeAtuacao ?? undefined,
         precoBase: valor.precoBase,
+        googleCalendarId: valor.googleCalendarId || null,
         modulosIniciais: modulosAtivos
       })
       .subscribe({
@@ -106,7 +110,8 @@ export class EmpresaFormComponent implements OnInit {
       nome: empresa.nome,
       sessaoWhatsapp: empresa.sessaoWhatsapp,
       ramoDeAtuacao: empresa.ramoDeAtuacao ?? 'locacao',
-      locacaoPorHora: empresa.locacaoPorHora ?? false
+      locacaoPorHora: empresa.locacaoPorHora ?? false,
+      googleCalendarId: empresa.googleCalendarId ?? ''
     });
 
     const grupo = this.form.controls.modulos;
