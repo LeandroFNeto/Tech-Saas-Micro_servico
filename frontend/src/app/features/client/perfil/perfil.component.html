@@ -1,0 +1,58 @@
+<div class="mb-6">
+  <h2 class="text-2xl font-semibold text-slate-900">Meu perfil</h2>
+  <p class="text-sm text-slate-500">PUT /empresas/:sessao/cliente com EmpresaUpdateDTO. Não altera cobrança nem módulos.</p>
+</div>
+
+<div class="grid gap-6 xl:grid-cols-[1.4fr_0.8fr]">
+  <div class="space-y-4">
+    <app-banner-avisos [avisos]="avisos" />
+
+    @if (erro()) {
+      <p class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ erro() }}</p>
+    }
+    @if (sucesso()) {
+      <p class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{{ sucesso() }}</p>
+    }
+
+    <form class="card space-y-4 p-5" [formGroup]="form" (ngSubmit)="salvar()">
+      <label class="block">
+        <span class="mb-1 block text-sm font-medium">Nome</span>
+        <input class="input-field" formControlName="nome" />
+      </label>
+
+      <label class="block">
+        <span class="mb-1 block text-sm font-medium">Mensagem de saudação</span>
+        <textarea class="input-field min-h-24" formControlName="mensagemSaudacao"></textarea>
+      </label>
+
+      <label class="block">
+        <span class="mb-1 block text-sm font-medium">Tabela de preços</span>
+        <textarea class="input-field min-h-24" formControlName="tabelaDePrecos"></textarea>
+      </label>
+
+      <label class="block">
+        <span class="mb-1 block text-sm font-medium">Link do Google Maps</span>
+        <input class="input-field" formControlName="linkGoogleMaps" placeholder="https://maps.app.goo.gl/..." />
+      </label>
+
+      <label class="block">
+        <span class="mb-1 block text-sm font-medium">Foto principal</span>
+        <input class="input-field" formControlName="linkFotoPrincipal" />
+      </label>
+
+      <label class="block">
+        <span class="mb-1 block text-sm font-medium">Galeria / Instagram</span>
+        <input class="input-field" formControlName="linkGaleria" />
+      </label>
+
+      <button class="btn-primary" type="submit" [disabled]="salvando()">
+        {{ salvando() ? 'Salvando...' : 'Atualizar perfil' }}
+      </button>
+    </form>
+  </div>
+
+  <div>
+    <h3 class="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">Avisos e tutoriais</h3>
+    <app-banner-avisos [avisos]="avisos" [compacto]="true" />
+  </div>
+</div>

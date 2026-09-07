@@ -1,0 +1,61 @@
+<div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+  <div>
+    <h2 class="text-2xl font-semibold text-slate-900">Clientes cadastrados</h2>
+    <p class="text-sm text-slate-500">Lista HAL de GET /empresas, alinhada ao contrato OpenAPI.</p>
+  </div>
+  <a class="btn-primary" routerLink="/admin/empresas/nova">Cadastrar cliente</a>
+</div>
+
+@if (erro()) {
+  <div class="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+    {{ erro() }}
+    <button class="ml-2 font-semibold underline" type="button" (click)="carregar()">Tentar de novo</button>
+  </div>
+}
+
+<div class="card overflow-hidden">
+  <div class="overflow-x-auto">
+    <table class="min-w-full text-left text-sm">
+      <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+        <tr>
+          <th class="px-4 py-3">Empresa</th>
+          <th class="px-4 py-3">Sessão WhatsApp</th>
+          <th class="px-4 py-3">Status</th>
+          <th class="px-4 py-3">Módulos</th>
+          <th class="px-4 py-3">Atualizado</th>
+          <th class="px-4 py-3"></th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (carregando()) {
+          <tr>
+            <td class="px-4 py-8 text-slate-500" colspan="6">Carregando empresas...</td>
+          </tr>
+        } @else if (empresas().length === 0) {
+          <tr>
+            <td class="px-4 py-8 text-slate-500" colspan="6">Nenhum cliente cadastrado ainda.</td>
+          </tr>
+        } @else {
+          @for (empresa of empresas(); track empresa.sessaoWhatsapp || empresa.id) {
+            <tr class="border-t border-slate-100">
+              <td class="px-4 py-3 font-medium text-slate-900">{{ empresa.nome || '—' }}</td>
+              <td class="px-4 py-3 font-mono text-xs text-slate-600">{{ empresa.sessaoWhatsapp }}</td>
+              <td class="px-4 py-3">
+                <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">
+                  {{ empresa.statusSessao || (empresa.usaIA ? 'IA ativa' : 'Padrão') }}
+                </span>
+              </td>
+              <td class="px-4 py-3 text-slate-600">{{ empresa.modulosAtivos.length || '—' }}</td>
+              <td class="px-4 py-3 text-slate-500">{{ empresa.atualizadoEm | date: 'short' }}</td>
+              <td class="px-4 py-3 text-right">
+                <a class="font-semibold text-brand-700 hover:underline" [routerLink]="['/admin/empresas', empresa.sessaoWhatsapp]">
+                  Editar
+                </a>
+              </td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+</div>
