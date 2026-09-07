@@ -27,6 +27,12 @@ public record WhatsappWebhookDTO(
         @Schema(description = "Remetente alternativo, usado como fallback para JIDs @lid")
         String sender,
 
+        @Schema(description = "Evento do WPPConnect quando não é mensagem de chat (qrcode, status-find, onack)", example = "qrcode")
+        String event,
+
+        @Schema(description = "Base64 do QR Code enviado no webhook de conexão")
+        String qrcode,
+
         @Schema(description = "Identificador da mensagem (pode trazer fromMe em alguns provedores)")
         IdentificadorMensagem id,
 
@@ -84,6 +90,35 @@ public record WhatsappWebhookDTO(
             @Schema(description = "Texto da mensagem", example = "Olá, gostaria de reservar")
             String body
     ) {
+    }
+
+    public boolean ehEventoQrcode() {
+        if (qrcode != null && !qrcode.isBlank()) {
+            return true;
+        }
+        return "qrcode".equalsIgnoreCase(event) || "qrcode".equalsIgnoreCase(type);
+    }
+
+    public boolean ehEventoConexao() {
+        String evento = event != null ? event : type;
+        if (evento == null || evento.isBlank()) {
+            return false;
+        }
+        String valor = evento.trim().toLowerCase();
+        return valor.contains("status-find")
+                || valor.contains("statusfind")
+                || valor.contains("autoclose")
+                || valor.contains("browserclose")
+                || valor.equals("onack")
+                || valor.equals("onpresencechanged")
+                || valor.equals("onparticipantschanged")
+                || valor.equals("incomingcall")
+                || valor.equals("closesession")
+                || valor.equals("onreactionmessage")
+                || valor.equals("onrevokedmessage")
+                || valor.equals("onpollresponse")
+                || valor.equals("onupdatelabel")
+                || valor.equals("onselfmessage");
     }
 
     public boolean enviadaPorMim() {

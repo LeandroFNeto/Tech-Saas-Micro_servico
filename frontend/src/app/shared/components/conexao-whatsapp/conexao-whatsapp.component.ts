@@ -20,6 +20,7 @@ export class ConexaoWhatsappComponent implements OnChanges {
   readonly carregando = signal(false);
   readonly iniciando = signal(false);
   readonly erro = signal('');
+  private ignorarDesconectadoAte = 0;
 
   constructor() {
     this.sessao$
@@ -43,6 +44,7 @@ export class ConexaoWhatsappComponent implements OnChanges {
 
     this.iniciando.set(true);
     this.erro.set('');
+    this.ignorarDesconectadoAte = Date.now() + 45_000;
     this.api.iniciar(this.sessao).subscribe({
       next: (dto) => {
         this.aplicar(dto);
@@ -50,6 +52,7 @@ export class ConexaoWhatsappComponent implements OnChanges {
         this.sessao$.next(this.sessao);
       },
       error: (err) => {
+        this.ignorarDesconectadoAte = 0;
         this.erro.set(mensagemHttp(err));
         this.iniciando.set(false);
       }
@@ -72,7 +75,7 @@ export class ConexaoWhatsappComponent implements OnChanges {
     if (this.status() !== 'CONNECTED' && this.status() !== 'QRCODE') {
       this.carregando.set(true);
     }
-    return timer(0, 3000).pipe(
+    return timer(0, 1500).pipe(
       switchMap(() =>
         this.api.consultarStatus(sessao).pipe(
           catchError((err) => {
@@ -92,8 +95,24 @@ export class ConexaoWhatsappComponent implements OnChanges {
   }
 
   private aplicar(dto: SessaoStatusResponseDTO): void {
+    if (
+      dto.status === 'DISCONNECTED' &&
+      Date.now() < this.ignorarDesconectadoAte
+    ) {
+      this.status.set('QRCODE');
+      if (dto.qrcodeBase64) {
+        this.qrcode.set(dto.qrcodeBase64);
+      }
+      this.erro.set('');
+      return;
+    }
+
     this.status.set(dto.status);
-    this.qrcode.set(dto.qrcodeBase64);
+    if (dto.qrcodeBase64) {
+      this.qrcode.set(dto.qrcodeBase64);
+    } else if (dto.status !== 'QRCODE') {
+      this.qrcode.set(null);
+    }
     this.erro.set('');
   }
 }

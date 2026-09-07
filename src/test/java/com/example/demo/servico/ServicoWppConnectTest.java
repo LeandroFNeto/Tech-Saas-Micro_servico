@@ -13,6 +13,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.content;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
@@ -85,14 +86,29 @@ class ServicoWppConnectTest {
         simularToken("sessao_recanto_01");
         server.expect(requestTo("http://localhost:21465/api/sessao_recanto_01/start-session"))
                 .andExpect(method(HttpMethod.POST))
-                .andRespond(withSuccess("{\"status\":\"INITIALIZING\"}", MediaType.APPLICATION_JSON));
-        server.expect(requestTo("http://localhost:21465/api/sessao_recanto_01/status-session"))
-                .andExpect(method(HttpMethod.GET))
-                .andRespond(withSuccess("{\"status\":\"INITIALIZING\",\"qrcode\":null}", MediaType.APPLICATION_JSON));
+                .andExpect(content().json("{\"webhook\":\"http://bot-java:8080/webhook/whatsapp\",\"waitQrCode\":false}"))
+                .andRespond(withSuccess(
+                        "{\"status\":\"qrcode\",\"qrcode\":\"data:image/png;base64,abc\"}",
+                        MediaType.APPLICATION_JSON));
 
         SessaoStatusResponseDTO dto = servico.iniciarSessao("sessao_recanto_01");
 
         assertEquals("QRCODE", dto.status());
+        assertEquals("data:image/png;base64,abc", dto.qrcodeBase64());
+        server.verify();
+    }
+
+    @Test
+    void iniciaSessaoSemQrImediatoMantemAguardandoLeitura() {
+        simularToken("sessao_recanto_01");
+        server.expect(requestTo("http://localhost:21465/api/sessao_recanto_01/start-session"))
+                .andExpect(method(HttpMethod.POST))
+                .andRespond(withSuccess("{\"status\":\"INITIALIZING\"}", MediaType.APPLICATION_JSON));
+
+        SessaoStatusResponseDTO dto = servico.iniciarSessao("sessao_recanto_01");
+
+        assertEquals("QRCODE", dto.status());
+        assertNull(dto.qrcodeBase64());
         server.verify();
     }
 

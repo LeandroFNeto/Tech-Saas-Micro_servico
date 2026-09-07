@@ -1,0 +1,15 @@
+get:
+  tags:
+  - Avisos
+  summary: Listar avisos ativos
+  description: Devolve os avisos com ativo=true para o painel do cliente. Rota pública (sem x-admin-token).
+  operationId: listarAvisosAtivos
+  responses:
+    "200":
+      description: Lista de avisos ativos, do mais recente para o mais antigo
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/AvisoDTO"

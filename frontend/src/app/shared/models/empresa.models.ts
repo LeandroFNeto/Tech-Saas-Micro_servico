@@ -96,12 +96,3 @@ export const MODULOS_DISPONIVEIS: CatalogoModulo[] = [
     descricao: 'Menu dinâmico montado a partir de ModuloEmpresa'
   }
 ];
-
-export interface AvisoPainel {
-  id: string;
-  tipo: 'upgrade' | 'tutorial' | 'comunicado';
-  titulo: string;
-  texto: string;
-  cta?: string;
-  href?: string;
-}

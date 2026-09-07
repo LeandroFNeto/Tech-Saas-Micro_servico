@@ -6,7 +6,7 @@ import { AvisoService } from '../../../core/services/aviso.service';
 import { EmpresaService } from '../../../core/services/empresa.service';
 import { BannerAvisosComponent } from '../../../shared/components/banner-avisos/banner-avisos.component';
 import { ConexaoWhatsappComponent } from '../../../shared/components/conexao-whatsapp/conexao-whatsapp.component';
-import { AvisoPainel } from '../../../shared/models/empresa.models';
+import { AvisoDTO } from '../../../shared/models/aviso.models';
 
 @Component({
   selector: 'app-perfil',
@@ -19,7 +19,7 @@ export class PerfilComponent implements OnInit {
   private readonly empresasApi = inject(EmpresaService);
   private readonly avisosApi = inject(AvisoService);
 
-  readonly avisos: AvisoPainel[] = this.avisosApi.listar();
+  readonly avisos = signal<AvisoDTO[]>([]);
   readonly salvando = signal(false);
   readonly erro = signal('');
   readonly sucesso = signal('');
@@ -35,6 +35,11 @@ export class PerfilComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    this.avisosApi.listarAtivos().subscribe({
+      next: (lista) => this.avisos.set(lista),
+      error: (err) => this.erro.set(mensagemHttp(err))
+    });
+
     if (!this.sessao) {
       this.erro.set('Sessão WhatsApp não encontrada neste usuário.');
       return;

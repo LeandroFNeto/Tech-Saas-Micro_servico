@@ -1,8 +1,7 @@
-FROM node:22.21.1-alpine AS base
+FROM node:22.22.2-alpine AS base
 WORKDIR /usr/src/wpp-server
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
-
-
+ENV HUSKY=0
 
 # Install build dependencies and runtime libraries for sharp
 RUN apk update && \
@@ -18,33 +17,20 @@ RUN apk update && \
     python3 \
     && rm -rf /var/cache/apk/*
 
-# ... (seu código anterior do Dockerfile fica aqui em cima) ...
-
-# Copia o nosso script de limpeza para dentro do container
-COPY start.sh /usr/src/wpp-server/start.sh
-
-# Dá permissão para o Linux executar o arquivo
-RUN chmod +x /usr/src/wpp-server/start.sh
-
-# Define o script como o portão de entrada do container
-ENTRYPOINT ["/usr/src/wpp-server/start.sh"]
-
-# O comando final que liga o servidor (mantenha o que você já usava, geralmente é yarn start)
-CMD ["yarn", "start"]
-
 # To make sure yarn 4 uses node-modules linker
 COPY .yarnrc.yml ./
 
 # Copy only package.json to leverage Docker cache
 COPY package.json ./
 COPY yarn.lock ./
+COPY start.sh ./start.sh
 
-# Enable corepack and prepare yarn 4.12.0
+# Enable corepack and prepare yarn 4.14.1
 RUN corepack enable && \
-    corepack prepare yarn@4.12.0 --activate
+    corepack prepare yarn@4.14.1 --activate
 
-# Install dependencies with immutable lockfile
-RUN yarn install --immutable
+# A lib 2.3.3 entra via package.json; o lockfile do 2.10.0 ainda aponta 2.1.0.
+RUN yarn install
 
 FROM base AS build
 WORKDIR /usr/src/wpp-server
@@ -62,4 +48,6 @@ RUN apk add --no-cache \
     fftw
 
 EXPOSE 21465
-ENTRYPOINT ["node", "dist/server.js"]
+RUN chmod +x /usr/src/wpp-server/start.sh
+ENTRYPOINT ["/usr/src/wpp-server/start.sh"]
+CMD ["node", "dist/server.js"]

@@ -2,8 +2,8 @@ import { Injectable, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { CredenciaisLogin, PapelUsuario, SessaoUsuario } from '../../shared/models/auth.models';
 
-const CHAVE_JWT = 'techsaas.jwt';
-const CHAVE_SESSAO = 'techsaas.sessao';
+const CHAVE_JWT = 'gamb.jwt';
+const CHAVE_SESSAO = 'gamb.sessao';
 
 interface UsuarioDemo {
   email: string;
@@ -15,17 +15,17 @@ interface UsuarioDemo {
 
 const USUARIOS_DEMO: UsuarioDemo[] = [
   {
-    email: 'admin@techsaas.com',
+    email: 'admin@gamb.com',
     senha: 'admin123',
     nome: 'Administrador Master',
     papel: 'ADMIN'
   },
   {
-    email: 'cliente@techsaas.com',
+    email: 'cliente@gamb.com',
     senha: 'cliente123',
     nome: 'Recanto Vista Alegre',
     papel: 'CLIENTE',
-    sessaoWhatsapp: 'sessao_recanto_01'
+    sessaoWhatsapp: 'RecantoBot'
   }
 ];
 

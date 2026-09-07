@@ -1,7 +1,7 @@
 <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
   <div>
-    <h2 class="text-2xl font-semibold text-slate-900">Clientes cadastrados</h2>
-    <p class="text-sm text-slate-500">Lista HAL de GET /empresas, alinhada ao contrato OpenAPI.</p>
+    <h2 class="text-2xl font-semibold text-brand-900">Clientes cadastrados</h2>
+    <p class="text-sm text-brand-600">Empresas ativas no painel da gamb.</p>
   </div>
   <a class="btn-primary" routerLink="/admin/empresas/nova">Cadastrar cliente</a>
 </div>
@@ -16,7 +16,7 @@
 <div class="card overflow-hidden">
   <div class="overflow-x-auto">
     <table class="min-w-full text-left text-sm">
-      <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+      <thead class="bg-brand-50 text-xs uppercase tracking-wide text-brand-600">
         <tr>
           <th class="px-4 py-3">Empresa</th>
           <th class="px-4 py-3">Sessão WhatsApp</th>
@@ -29,26 +29,26 @@
       <tbody>
         @if (carregando()) {
           <tr>
-            <td class="px-4 py-8 text-slate-500" colspan="6">Carregando empresas...</td>
+            <td class="px-4 py-8 text-brand-600" colspan="6">Carregando empresas...</td>
           </tr>
         } @else if (empresas().length === 0) {
           <tr>
-            <td class="px-4 py-8 text-slate-500" colspan="6">Nenhum cliente cadastrado ainda.</td>
+            <td class="px-4 py-8 text-brand-600" colspan="6">Nenhum cliente cadastrado ainda.</td>
           </tr>
         } @else {
           @for (empresa of empresas(); track empresa.sessaoWhatsapp || empresa.id) {
-            <tr class="border-t border-slate-100">
-              <td class="px-4 py-3 font-medium text-slate-900">{{ empresa.nome || '—' }}</td>
-              <td class="px-4 py-3 font-mono text-xs text-slate-600">{{ empresa.sessaoWhatsapp }}</td>
+            <tr class="border-t border-brand-100">
+              <td class="px-4 py-3 font-medium text-brand-900">{{ empresa.nome || '—' }}</td>
+              <td class="px-4 py-3 font-mono text-xs text-brand-700">{{ empresa.sessaoWhatsapp }}</td>
               <td class="px-4 py-3">
-                <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">
+                <span class="rounded-full bg-brand-100 px-2.5 py-1 text-xs font-medium text-brand-800">
                   {{ empresa.statusSessao || (empresa.usaIA ? 'IA ativa' : 'Padrão') }}
                 </span>
               </td>
-              <td class="px-4 py-3 text-slate-600">{{ empresa.modulosAtivos.length || '—' }}</td>
-              <td class="px-4 py-3 text-slate-500">{{ empresa.atualizadoEm | date: 'short' }}</td>
+              <td class="px-4 py-3 text-brand-700">{{ empresa.modulosAtivos.length || '—' }}</td>
+              <td class="px-4 py-3 text-brand-600">{{ empresa.atualizadoEm | date: 'short' }}</td>
               <td class="px-4 py-3 text-right">
-                <a class="font-semibold text-brand-700 hover:underline" [routerLink]="['/admin/empresas', empresa.sessaoWhatsapp]">
+                <a class="font-semibold text-accent-600 hover:underline" [routerLink]="['/admin/empresas', empresa.sessaoWhatsapp]">
                   Editar
                 </a>
               </td>

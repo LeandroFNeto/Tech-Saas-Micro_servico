@@ -1,8 +1,9 @@
 #!/bin/sh
 
-echo "🧹 Limpando possíveis arquivos de lock do Chromium..."
-# Remove os arquivos que travam o WPPConnect se o container for reiniciado bruscamente
+echo "Limpando locks do Chromium..."
 rm -f /usr/src/wpp-server/tokens/*/Default/SingletonLock
+rm -f /usr/src/wpp-server/userDataDir/*/Default/SingletonLock
+rm -f /usr/src/wpp-server/userDataDir/*/SingletonLock
 
-echo "🚀 Iniciando o WPPConnect Server..."
-npm run start
+echo "Iniciando o WPPConnect Server..."
+exec "$@"

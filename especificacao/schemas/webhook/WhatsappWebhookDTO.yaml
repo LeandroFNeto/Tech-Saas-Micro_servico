@@ -28,6 +28,16 @@ properties:
   sender:
     type: string
     description: "Remetente alternativo, usado como fallback para JIDs @lid"
+  event:
+    type: string
+    description: Evento do WPPConnect quando não é mensagem de chat (qrcode, status-find, onack)
+    example: qrcode
+  qrcode:
+    type: string
+    description: Base64 do QR Code enviado no webhook de conexão
+  urlcode:
+    type: string
+    description: Conteúdo bruto do QR Code (urlcode) quando o WPPConnect envia o evento qrcode
   id:
     $ref: "#/components/schemas/IdentificadorMensagem"
     description: Identificador da mensagem (pode trazer fromMe em alguns provedores)

@@ -82,6 +82,47 @@ class ControllerWhatsappTest {
     }
 
     @Test
+    @DisplayName("Deve guardar QR Code do webhook sem tratar como mensagem de chat")
+    void deveGuardarQrcodeDoWebhook() throws Exception {
+        String payload = """
+            {
+                "session": "RecantoBot",
+                "event": "qrcode",
+                "qrcode": "abc123"
+            }
+        """;
+
+        mockMvc.perform(post("/webhook/whatsapp")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload))
+                .andExpect(status().isOk());
+
+        verify(servicoWppConnect).guardarQrcode("RecantoBot", "abc123");
+        verifyNoInteractions(moduloFactory);
+    }
+
+    @Test
+    @DisplayName("Deve ignorar evento de conexão do WPPConnect sem tratar como mensagem")
+    void deveIgnorarEventoDeConexao() throws Exception {
+        String payload = """
+            {
+                "session": "RecantoBot",
+                "event": "status-find",
+                "status": "autocloseCalled"
+            }
+        """;
+
+        mockMvc.perform(post("/webhook/whatsapp")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload))
+                .andExpect(status().isOk());
+
+        verifyNoInteractions(moduloFactory);
+        verifyNoInteractions(servicoWppConnect);
+        verifyNoInteractions(empresaRepository);
+    }
+
+    @Test
     @DisplayName("Deve normalizar número ignorando o 9º dígito extra")
     void deveNormalizarNumero() throws Exception {
         Empresa emp = new Empresa();
@@ -140,7 +181,7 @@ class ControllerWhatsappTest {
     }
 
     @Test
-    @DisplayName("GET /whatsapp/status/{sessao} devolve SessaoStatusResponseDTO com token admin")
+    @DisplayName("GET /whatsapp/{sessao}/status devolve SessaoStatusResponseDTO com token admin")
     void deveConsultarStatusComTokenAdmin() throws Exception {
         Empresa empresa = new Empresa();
         empresa.setSessaoWhatsapp("sessao_recanto_01");
@@ -148,7 +189,7 @@ class ControllerWhatsappTest {
         when(servicoWppConnect.consultarStatus("sessao_recanto_01"))
                 .thenReturn(new SessaoStatusResponseDTO("sessao_recanto_01", "QRCODE", "data:image/png;base64,abc"));
 
-        mockMvc.perform(get("/whatsapp/status/sessao_recanto_01")
+        mockMvc.perform(get("/whatsapp/sessao_recanto_01/status")
                         .header("x-admin-token", "sua-chave-admin"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.sessao").value("sessao_recanto_01"))
@@ -157,7 +198,7 @@ class ControllerWhatsappTest {
     }
 
     @Test
-    @DisplayName("POST /whatsapp/iniciar/{sessao} dispara start-session com token de cliente")
+    @DisplayName("POST /whatsapp/{sessao}/iniciar dispara start-session com token de cliente")
     void deveIniciarSessaoComTokenCliente() throws Exception {
         Empresa empresa = new Empresa();
         empresa.setSessaoWhatsapp("sessao_recanto_01");
@@ -165,7 +206,7 @@ class ControllerWhatsappTest {
         when(servicoWppConnect.iniciarSessao("sessao_recanto_01"))
                 .thenReturn(new SessaoStatusResponseDTO("sessao_recanto_01", "DISCONNECTED", null));
 
-        mockMvc.perform(post("/whatsapp/iniciar/sessao_recanto_01")
+        mockMvc.perform(post("/whatsapp/sessao_recanto_01/iniciar")
                         .header("x-cliente-token", "token-painel"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("DISCONNECTED"));
@@ -174,20 +215,29 @@ class ControllerWhatsappTest {
     }
 
     @Test
+    @DisplayName("GET /whatsapp/{sessao}/iniciar não é suportado (o painel deve usar POST)")
+    void deveRecusarGetEmIniciar() throws Exception {
+        mockMvc.perform(get("/whatsapp/sessao_recanto_01/iniciar")
+                        .header("x-cliente-token", "token-painel"))
+                .andExpect(status().isMethodNotAllowed());
+        verifyNoInteractions(servicoWppConnect);
+    }
+
+    @Test
     @DisplayName("Recusa acesso sem token do painel")
     void deveRecusarSemToken() throws Exception {
-        mockMvc.perform(get("/whatsapp/status/sessao_recanto_01"))
+        mockMvc.perform(get("/whatsapp/sessao_recanto_01/status"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.status").value("DISCONNECTED"));
         verifyNoInteractions(servicoWppConnect);
     }
 
     @Test
-    @DisplayName("GET /whatsapp/status/{sessao} devolve 404 quando a empresa não existe")
+    @DisplayName("GET /whatsapp/{sessao}/status devolve 404 quando a empresa não existe")
     void deveRetornar404QuandoEmpresaNaoExiste() throws Exception {
         when(empresaRepository.findBySessaoWhatsapp("inexistente")).thenReturn(null);
 
-        mockMvc.perform(get("/whatsapp/status/inexistente")
+        mockMvc.perform(get("/whatsapp/inexistente/status")
                         .header("x-cliente-token", "token-painel"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.sessao").value("inexistente"))

@@ -20,12 +20,20 @@ paths:
     $ref: ./especificacao/paths/profile-empresas.yaml
   /webhook/whatsapp:
     $ref: ./especificacao/paths/webhook-whatsapp.yaml
-  /whatsapp/status/{sessao}:
+  /whatsapp/{sessao}/status:
     $ref: ./especificacao/paths/whatsapp-status.yaml
-  /whatsapp/iniciar/{sessao}:
+  /whatsapp/{sessao}/iniciar:
     $ref: ./especificacao/paths/whatsapp-iniciar.yaml
+  /avisos:
+    $ref: ./especificacao/paths/avisos.yaml
+  /admin/avisos:
+    $ref: ./especificacao/paths/admin-avisos.yaml
+  /admin/avisos/{id}:
+    $ref: ./especificacao/paths/admin-avisos-id.yaml
 components:
   schemas:
+    AvisoDTO:
+      $ref: ./especificacao/schemas/aviso/AvisoDTO.yaml
     EmpresaCreateDTO:
       $ref: ./especificacao/schemas/empresa/EmpresaCreateDTO.yaml
     EmpresaUpdateDTO:

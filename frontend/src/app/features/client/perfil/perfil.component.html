@@ -1,11 +1,11 @@
 <div class="mb-6">
-  <h2 class="text-2xl font-semibold text-slate-900">Meu perfil</h2>
-  <p class="text-sm text-slate-500">PUT /empresas/:sessao/cliente com EmpresaUpdateDTO. Não altera cobrança nem módulos.</p>
+  <h2 class="text-2xl font-semibold text-brand-900">Meu perfil</h2>
+  <p class="text-sm text-brand-600">Atualize os dados do bot. Cobrança e módulos ficam com o administrador.</p>
 </div>
 
 <div class="grid gap-6 xl:grid-cols-[1.4fr_0.8fr]">
   <div class="space-y-4">
-    <app-banner-avisos [avisos]="avisos" />
+    <app-banner-avisos [avisos]="avisos()" />
 
     <app-conexao-whatsapp [sessao]="sessao" />
 
@@ -13,7 +13,7 @@
       <p class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ erro() }}</p>
     }
     @if (sucesso()) {
-      <p class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{{ sucesso() }}</p>
+      <p class="rounded-xl border border-accent-200 bg-accent-50 px-4 py-3 text-sm text-brand-800">{{ sucesso() }}</p>
     }
 
     <form class="card space-y-4 p-5" [formGroup]="form" (ngSubmit)="salvar()">
@@ -54,7 +54,7 @@
   </div>
 
   <div>
-    <h3 class="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">Avisos e tutoriais</h3>
-    <app-banner-avisos [avisos]="avisos" [compacto]="true" />
+    <h3 class="mb-3 text-sm font-semibold uppercase tracking-wide text-brand-600">Avisos e tutoriais</h3>
+    <app-banner-avisos [avisos]="avisos()" [compacto]="true" />
   </div>
 </div>

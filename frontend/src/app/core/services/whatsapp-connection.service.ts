@@ -11,10 +11,15 @@ export class WhatsappConnectionService {
   constructor(private readonly http: HttpClient) {}
 
   consultarStatus(sessao: string): Observable<SessaoStatusResponseDTO> {
-    return this.http.get<SessaoStatusResponseDTO>(`${this.base}/status/${encodeURIComponent(sessao)}`);
+    return this.http.get<SessaoStatusResponseDTO>(
+      `${this.base}/${encodeURIComponent(sessao)}/status`
+    );
   }
 
   iniciar(sessao: string): Observable<SessaoStatusResponseDTO> {
-    return this.http.post<SessaoStatusResponseDTO>(`${this.base}/iniciar/${encodeURIComponent(sessao)}`, {});
+    return this.http.post<SessaoStatusResponseDTO>(
+      `${this.base}/${encodeURIComponent(sessao)}/iniciar`,
+      {}
+    );
   }
 }

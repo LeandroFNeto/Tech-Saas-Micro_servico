@@ -1,32 +1,33 @@
+import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { AvisoPainel } from '../../shared/models/empresa.models';
+import { Observable } from 'rxjs';
+import { environment } from '../../../environments/environment';
+import { AvisoDTO } from '../../shared/models/aviso.models';
 
 @Injectable({ providedIn: 'root' })
 export class AvisoService {
-  listar(): AvisoPainel[] {
-    return [
-      {
-        id: 'upgrade',
-        tipo: 'upgrade',
-        titulo: 'Faça upgrade do plano',
-        texto: 'Libere IA Gemini e Agenda Google para o seu bot atender 24h sem fila.',
-        cta: 'Ver planos',
-        href: 'https://example.com/planos'
-      },
-      {
-        id: 'tutorial',
-        tipo: 'tutorial',
-        titulo: 'Como conectar o WhatsApp',
-        texto: 'Abra a sessão no WPPConnect, escaneie o QR Code e volte aqui para conferir o status.',
-        cta: 'Ver tutorial',
-        href: 'https://example.com/tutorial-whatsapp'
-      },
-      {
-        id: 'comunicado',
-        tipo: 'comunicado',
-        titulo: 'Comunicado',
-        texto: 'Manutenção programada no WPPConnect neste domingo, das 2h às 4h. O bot pode ficar offline nesse intervalo.'
-      }
-    ];
+  private readonly publico = `${environment.apiUrl}/avisos`;
+  private readonly admin = `${environment.apiUrl}/admin/avisos`;
+
+  constructor(private readonly http: HttpClient) {}
+
+  listarAtivos(): Observable<AvisoDTO[]> {
+    return this.http.get<AvisoDTO[]>(this.publico);
+  }
+
+  listarAdmin(): Observable<AvisoDTO[]> {
+    return this.http.get<AvisoDTO[]>(this.admin);
+  }
+
+  criar(dto: AvisoDTO): Observable<AvisoDTO> {
+    return this.http.post<AvisoDTO>(this.admin, dto);
+  }
+
+  atualizar(id: number, dto: AvisoDTO): Observable<AvisoDTO> {
+    return this.http.put<AvisoDTO>(`${this.admin}/${id}`, dto);
+  }
+
+  excluir(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.admin}/${id}`);
   }
 }

@@ -1,28 +1,29 @@
-<div class="flex min-h-screen items-center justify-center bg-slate-900 px-4 py-10">
-  <div class="absolute inset-0 bg-[radial-gradient(circle_at_top,_#059669_0%,_transparent_45%)] opacity-40"></div>
+<div class="flex min-h-screen items-center justify-center bg-brand-900 px-4 py-10">
+  <div class="absolute inset-0 bg-[radial-gradient(circle_at_top,_#FF8C42_0%,_transparent_42%)] opacity-30"></div>
 
   <div class="relative grid w-full max-w-5xl overflow-hidden rounded-3xl bg-white shadow-2xl lg:grid-cols-2">
-    <section class="hidden bg-slate-900 p-10 text-white lg:flex lg:flex-col lg:justify-between">
+    <section class="hidden bg-brand-900 p-10 text-white lg:flex lg:flex-col lg:justify-between">
       <div>
-        <p class="text-sm uppercase tracking-[0.25em] text-emerald-300">SaaS Multi-tenant</p>
+        <img src="logo-gamb.jpg" alt="Logo gamb" class="h-16 w-16 rounded-2xl object-cover ring-1 ring-accent-400/60" />
+        <p class="mt-6 font-display text-sm font-semibold uppercase tracking-[0.28em] text-accent-400">gamb</p>
         <h1 class="mt-4 text-4xl font-semibold leading-tight">Bot de WhatsApp + Agendamento</h1>
-        <p class="mt-4 text-slate-300">
+        <p class="mt-4 text-brand-200">
           Painel do administrador para gerir empresas e módulos, e área do cliente para atualizar o perfil do bot.
         </p>
       </div>
-      <ul class="space-y-2 text-sm text-slate-300">
-        <li>Admin: admin&#64;techsaas.com / admin123</li>
-        <li>Cliente: cliente&#64;techsaas.com / cliente123</li>
+      <ul class="space-y-2 text-sm text-brand-200">
+        <li>Admin: admin&#64;gamb.com / admin123</li>
+        <li>Cliente: cliente&#64;gamb.com / cliente123 (empresa RecantoBot)</li>
       </ul>
     </section>
 
     <section class="p-8 sm:p-10">
-      <h2 class="text-2xl font-semibold text-slate-900">Entrar</h2>
-      <p class="mt-1 text-sm text-slate-500">Use o e-mail da sua conta para acessar o painel.</p>
+      <h2 class="text-2xl font-semibold text-brand-900">Entrar</h2>
+      <p class="mt-1 text-sm text-brand-600">Use o e-mail da sua conta para acessar o painel.</p>
 
       <form class="mt-8 space-y-4" [formGroup]="form" (ngSubmit)="entrar()">
         <label class="block">
-          <span class="mb-1 block text-sm font-medium text-slate-700">E-mail</span>
+          <span class="mb-1 block text-sm font-medium text-brand-800">E-mail</span>
           <input class="input-field" type="email" formControlName="email" autocomplete="username" placeholder="voce&#64;empresa.com" />
           @if (form.controls.email.touched && form.controls.email.invalid) {
             <span class="mt-1 block text-xs text-red-600">Informe um e-mail válido.</span>
@@ -30,7 +31,7 @@
         </label>
 
         <label class="block">
-          <span class="mb-1 block text-sm font-medium text-slate-700">Senha</span>
+          <span class="mb-1 block text-sm font-medium text-brand-800">Senha</span>
           <input class="input-field" type="password" formControlName="senha" autocomplete="current-password" placeholder="••••••••" />
           @if (form.controls.senha.touched && form.controls.senha.invalid) {
             <span class="mt-1 block text-xs text-red-600">A senha precisa ter ao menos 6 caracteres.</span>

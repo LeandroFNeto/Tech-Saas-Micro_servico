@@ -1,36 +1,46 @@
 <div class="min-h-screen lg:grid lg:grid-cols-[260px_1fr]">
-  <aside class="border-b border-slate-200 bg-slate-900 text-white lg:border-b-0 lg:border-r lg:border-slate-800">
+  <aside class="border-b border-brand-800 bg-brand-900 text-white lg:border-b-0 lg:border-r">
     <div class="flex items-center justify-between px-5 py-4 lg:block">
-      <div>
-        <p class="text-xs uppercase tracking-[0.2em] text-emerald-300">Tech SaaS</p>
-        <h1 class="mt-1 text-lg font-semibold">{{ admin ? 'Painel Master' : 'Painel do Cliente' }}</h1>
+      <div class="flex items-center gap-3">
+        <img src="logo-gamb.jpg" alt="Logo gamb" class="h-12 w-12 rounded-xl object-cover ring-1 ring-accent-400/50" />
+        <div>
+          <p class="font-display text-lg font-semibold uppercase tracking-[0.18em] text-accent-400">gamb</p>
+          <h1 class="mt-0.5 text-sm font-medium text-brand-100">{{ admin ? 'Painel Master' : 'Painel do Cliente' }}</h1>
+        </div>
       </div>
-      <p class="hidden text-sm text-slate-300 lg:mt-6 lg:block">{{ nomeUsuario }}</p>
+      <p class="hidden text-sm text-brand-200 lg:mt-6 lg:block">{{ nomeUsuario }}</p>
     </div>
 
     <nav class="flex gap-2 overflow-x-auto px-4 pb-4 lg:flex-col lg:px-3">
       @if (admin) {
         <a
           routerLink="/admin"
-          routerLinkActive="bg-emerald-500/20 text-white"
+          routerLinkActive="bg-accent-500/20 text-accent-300"
           [routerLinkActiveOptions]="{ exact: true }"
-          class="whitespace-nowrap rounded-xl px-3 py-2 text-sm text-slate-200 hover:bg-white/10"
+          class="whitespace-nowrap rounded-xl px-3 py-2 text-sm text-brand-100 hover:bg-white/10"
         >
           Empresas
         </a>
         <a
           routerLink="/admin/empresas/nova"
-          routerLinkActive="bg-emerald-500/20 text-white"
-          class="whitespace-nowrap rounded-xl px-3 py-2 text-sm text-slate-200 hover:bg-white/10"
+          routerLinkActive="bg-accent-500/20 text-accent-300"
+          class="whitespace-nowrap rounded-xl px-3 py-2 text-sm text-brand-100 hover:bg-white/10"
         >
           Novo cliente
+        </a>
+        <a
+          routerLink="/admin/avisos"
+          routerLinkActive="bg-accent-500/20 text-accent-300"
+          class="whitespace-nowrap rounded-xl px-3 py-2 text-sm text-brand-100 hover:bg-white/10"
+        >
+          Avisos
         </a>
       } @else {
         <a
           routerLink="/cliente"
-          routerLinkActive="bg-emerald-500/20 text-white"
+          routerLinkActive="bg-accent-500/20 text-accent-300"
           [routerLinkActiveOptions]="{ exact: true }"
-          class="whitespace-nowrap rounded-xl px-3 py-2 text-sm text-slate-200 hover:bg-white/10"
+          class="whitespace-nowrap rounded-xl px-3 py-2 text-sm text-brand-100 hover:bg-white/10"
         >
           Meu perfil
         </a>
@@ -39,8 +49,8 @@
   </aside>
 
   <div class="flex min-h-screen flex-col">
-    <header class="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3 sm:px-6">
-      <p class="text-sm text-slate-500">{{ emailUsuario }}</p>
+    <header class="flex items-center justify-between border-b border-brand-200 bg-white px-4 py-3 sm:px-6">
+      <p class="text-sm text-brand-600">{{ emailUsuario }}</p>
       <button type="button" class="btn-secondary" (click)="sair()">Sair</button>
     </header>
     <main class="flex-1 p-4 sm:p-6">

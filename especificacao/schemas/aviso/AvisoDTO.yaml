@@ -1,0 +1,39 @@
+type: object
+description: Contrato de aviso do painel (manutenção, tutorial, preço ou comunicado). Não expõe a entidade JPA.
+required:
+- tipo
+- titulo
+- conteudo
+properties:
+  id:
+    type: integer
+    format: int64
+    description: Identificador único do aviso. Omitido na criação; o servidor gera o valor.
+    example: 1
+  tipo:
+    type: string
+    description: Categoria do aviso, usada pelo painel do cliente para escolher o layout
+    enum:
+    - MANUTENCAO
+    - TUTORIAL
+    - PRECO
+    - COMUNICADO
+    example: TUTORIAL
+  titulo:
+    type: string
+    description: Título exibido no banner ou no card
+    example: Como conectar o WhatsApp
+  conteudo:
+    type: string
+    description: Corpo do aviso em texto ou HTML sanitizado no frontend
+    example: Abra a sessão, escaneie o QR Code e volte aqui para conferir o status.
+  link:
+    type: string
+    nullable: true
+    description: URL opcional (tutorial no YouTube, tabela de preços, etc.)
+    example: https://www.youtube.com/watch?v=exemplo
+  ativo:
+    type: boolean
+    description: Se false, o aviso some do GET público e permanece visível só no admin
+    default: true
+    example: true

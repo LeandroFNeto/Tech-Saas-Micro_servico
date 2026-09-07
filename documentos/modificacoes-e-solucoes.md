@@ -42,5 +42,34 @@ Rotas protegidas: `/login` público; `/admin/**` exige JWT simulado com papel `A
 2. `cd frontend && npm start`
 3. Abrir http://localhost:4200
 
-**Admin:** `admin@techsaas.com` / `admin123`  
-**Cliente:** `cliente@techsaas.com` / `cliente123`
+**Admin:** `admin@gamb.com` / `admin123`  
+**Cliente:** `cliente@gamb.com` / `cliente123` (sessão WhatsApp `RecantoBot`)
+
+## QR Code do WhatsApp (`Auto Close Called`)
+
+O painel já chama `POST /whatsapp/{sessao}/iniciar`. O QR sumia na inicialização por outro motivo: o WPPConnect reutilizava token e pasta `dados-wpp/userDataDir/RecantoBot` de uma sessão antiga, falhava em `Checking is logged...` e disparava `Auto Close Called` **antes de gerar o QR**.
+
+| Problema | Solução aplicada |
+|---|---|
+| Sessão Chromium/token corrompida → browser fecha sem QR | Se `create()` cair em Auto Close/timeout, o WPPConnect apaga token + `userDataDir` da sessão e tenta de novo uma vez. |
+| `waitQrCode: true` prendia o Java até o auto-close | `POST /start-session` agora usa `waitQrCode: false`. O QR chega no webhook/`status-session`; o painel mostra “aguardando leitura”. |
+| Flags `--disable-cache` / `--disk-cache-size=0` quebram o WhatsApp Web | `createOptions.browserArgs` ficou só com o necessário para Docker (`no-sandbox`, `disable-dev-shm-usage`, `disable-gpu`). |
+| `start.sh` não rodava (ENTRYPOINT era `node dist/server.js`) | O container volta a limpar `SingletonLock` do Chromium na subida. |
+| Webhook `status-find` / `onack` ia para o bot como mensagem (`JID: null`) | `WhatsappWebhookDTO.ehEventoConexao()` ignora esses eventos. |
+| Polling via `status` via CLOSED no meio da abertura do Chromium | O painel ignora `DISCONNECTED` por 45s depois do clique em Conectar. |
+
+Depois desta mudança: `Ctrl+C` no Docker e `docker-compose up --build`. No painel do cliente RecantoBot, clique de novo em **Conectar WhatsApp** e espere o QR (pode levar alguns segundos na primeira tentativa, se a sessão antiga for apagada).
+
+## WPPConnect 2.10.0 (pasta local, um clone só)
+
+A limpeza da sessão antiga não bastou: o WhatsApp Web da lib `1.37.9` (server `2.8.11`) está velho demais e o Chromium fecha sem QR. A pasta `wppconnect-server/` no **mesmo repositório** foi atualizada para o server **2.10.0**, com a lib **@wppconnect-team/wppconnect 2.3.3** (versão do WhatsApp Web de setembro/2026).
+
+Não é submodule e não precisa de segundo `git clone`. No servidor: um clone deste repo + `docker-compose up --build`.
+
+Customizações que ficaram em cima da 2.10.0 (arquivos nossos, não do GitHub):
+
+- `src/config.ts` — `SECRET_KEY` do ambiente, `autoClose: 0`, Chromium só com flags de Docker
+- `src/util/createSessionUtil.ts` — devolve QR se a sessão já existe; se Auto Close, limpa e tenta de novo
+- `start.sh` + `Dockerfile` — limpa `SingletonLock` e sobe `node dist/server.js`
+
+Reconstruir: `Ctrl+C` e `docker-compose up --build`. Depois **Conectar WhatsApp** no painel.

@@ -15,6 +15,8 @@
  */
 import { create, SocketState, StatusFind } from '@wppconnect-team/wppconnect';
 import { Request } from 'express';
+import fs from 'fs';
+import path from 'path';
 
 import { download } from '../controller/sessionController';
 import { WhatsAppServer } from '../types/WhatsAppServer';
@@ -41,7 +43,20 @@ export default class CreateSessionUtil {
   ) {
     try {
       let client = this.getClient(session) as any;
-      if (client.status != null && client.status !== 'CLOSED') return;
+      if (client.status != null && client.status !== 'CLOSED') {
+        if (res && !res._headerSent) {
+          if (client.qrcode) {
+            this.exportQR(req, client.qrcode, client.urlcode || '', client, res);
+          } else {
+            res.status(200).json({
+              status: client.status,
+              qrcode: null,
+              session,
+            });
+          }
+        }
+        return;
+      }
       client.status = 'INITIALIZING';
       client.config = req.body;
 
@@ -76,6 +91,7 @@ export default class CreateSessionUtil {
           req.serverOptions.createOptions,
           {
             session: session,
+            autoClose: 0,
             phoneNumber: client.config.phone ?? null,
             deviceName:
               client.config.phone == undefined // bug when using phone code this shouldn't be passed (https://github.com/wppconnect-team/wppconnect-server/issues/1687#issuecomment-2099357874)
@@ -153,11 +169,59 @@ export default class CreateSessionUtil {
       }
     } catch (e) {
       req.logger.error(e);
-      if (e instanceof Error && e.name == 'TimeoutError') {
-        const client = this.getClient(session) as any;
-        client.status = 'CLOSED';
+      const mensagem = e instanceof Error ? e.message : String(e);
+      const sessaoPresa =
+        mensagem.includes('Auto Close') ||
+        (e instanceof Error && e.name === 'TimeoutError');
+
+      if (sessaoPresa && !req._sessionResetRetry) {
+        req._sessionResetRetry = true;
+        req.logger.warn(
+          `[${session}] Sessão antiga travou o QR Code. Limpando token/perfil e tentando de novo.`
+        );
+        await this.aguardar(1500);
+        await this.limparArquivosSessao(req, session);
+        clientsArray[session] = undefined;
+        await this.createSessionUtil(req, clientsArray, session, res);
+        return;
+      }
+
+      const client = this.getClient(session) as any;
+      client.status = 'CLOSED';
+      if (res && !res._headerSent) {
+        res.status(200).json({
+          status: 'CLOSED',
+          qrcode: null,
+          session,
+        });
       }
     }
+  }
+
+  private async limparArquivosSessao(req: any, session: string) {
+    const userDataDir =
+      (req.serverOptions.customUserDataDir || './userDataDir/') + session;
+    const tokenFile = path.resolve(process.cwd(), 'tokens', `${session}.data.json`);
+
+    await this.removerCaminho(req, userDataDir);
+    await this.removerCaminho(req, tokenFile);
+  }
+
+  private async removerCaminho(req: any, alvo: string) {
+    try {
+      await fs.promises.rm(alvo, {
+        recursive: true,
+        force: true,
+        maxRetries: 5,
+        retryDelay: 500,
+      });
+    } catch (error) {
+      req.logger.warn(`Não foi possível remover ${alvo}: ${error}`);
+    }
+  }
+
+  private aguardar(ms: number) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   async opendata(req: Request, session: string, res?: any) {

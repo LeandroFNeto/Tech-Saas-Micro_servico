@@ -1,34 +1,105 @@
-@if (!compacto && avisos[0]; as destaque) {
-  <section class="overflow-hidden rounded-2xl bg-gradient-to-r {{ estilo(destaque.tipo) }} p-5 text-white shadow-md">
-    <p class="text-xs font-semibold uppercase tracking-wider text-white/80">Área de propaganda</p>
-    <h2 class="mt-1 text-xl font-semibold">{{ destaque.titulo }}</h2>
-    <p class="mt-2 max-w-2xl text-sm text-white/90">{{ destaque.texto }}</p>
-    @if (destaque.cta && destaque.href) {
-      <a
-        class="mt-4 inline-flex rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-900"
-        [href]="destaque.href"
-        target="_blank"
-        rel="noreferrer"
-      >
-        {{ destaque.cta }}
-      </a>
+@if (!compacto && manutencoes().length > 0) {
+  <div class="space-y-3">
+    @for (aviso of manutencoes(); track aviso.id ?? aviso.titulo) {
+      <section class="rounded-2xl border border-red-300 bg-red-600 px-5 py-3 text-white shadow-md">
+        <p class="text-xs font-semibold uppercase tracking-wider text-red-100">Manutenção</p>
+        <h2 class="mt-0.5 text-lg font-semibold">{{ aviso.titulo }}</h2>
+        <div class="mt-1 text-sm text-red-50" [innerHTML]="aviso.conteudo"></div>
+        @if (aviso.link) {
+          <a
+            class="mt-2 inline-block text-sm font-semibold text-white underline"
+            [href]="aviso.link"
+            target="_blank"
+            rel="noreferrer"
+          >
+            {{ cta(aviso.tipo) }}
+          </a>
+        }
+      </section>
     }
-  </section>
+  </div>
 }
 
-<aside class="space-y-3" [class.mt-4]="!compacto">
-  @for (aviso of compacto ? avisos : avisos.slice(1); track aviso.id) {
-    <article class="card p-4">
-      <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">
-        {{ aviso.tipo === 'upgrade' ? 'Upgrade' : aviso.tipo === 'tutorial' ? 'Tutorial' : 'Aviso' }}
-      </p>
-      <h3 class="mt-1 font-semibold text-slate-900">{{ aviso.titulo }}</h3>
-      <p class="mt-1 text-sm text-slate-600">{{ aviso.texto }}</p>
-      @if (aviso.cta && aviso.href) {
-        <a class="mt-3 inline-block text-sm font-semibold text-brand-700 hover:underline" [href]="aviso.href" target="_blank" rel="noreferrer">
-          {{ aviso.cta }} →
-        </a>
+@if (compacto) {
+  <aside class="space-y-3">
+    @for (aviso of avisos; track aviso.id ?? aviso.titulo) {
+      <article class="card border p-4 {{ cardTipo(aviso.tipo) }}">
+        <p class="text-xs font-semibold uppercase tracking-wider {{ textoTipo(aviso.tipo) }}">
+          {{ rotulo(aviso.tipo) }}
+        </p>
+        <h3 class="mt-1 font-semibold text-brand-900">{{ aviso.titulo }}</h3>
+        <div class="mt-1 text-sm text-brand-700" [innerHTML]="aviso.conteudo"></div>
+        @if (aviso.link) {
+          <a
+            class="mt-3 inline-block text-sm font-semibold {{ textoTipo(aviso.tipo) }} hover:underline"
+            [href]="aviso.link"
+            target="_blank"
+            rel="noreferrer"
+          >
+            {{ cta(aviso.tipo) }} →
+          </a>
+        }
+      </article>
+    } @empty {
+      <p class="text-sm text-brand-600">Nenhum aviso ativo no momento.</p>
+    }
+  </aside>
+} @else {
+  <aside class="space-y-3" [class.mt-4]="manutencoes().length > 0">
+    @for (aviso of demais(); track aviso.id ?? aviso.titulo) {
+      @if (aviso.tipo === 'TUTORIAL') {
+        <article class="card border border-brand-200 p-4">
+          <p class="text-xs font-semibold uppercase tracking-wider text-brand-600">Tutorial</p>
+          <h3 class="mt-1 font-semibold text-brand-900">{{ aviso.titulo }}</h3>
+          <div class="mt-1 text-sm text-brand-700" [innerHTML]="aviso.conteudo"></div>
+          @if (aviso.link) {
+            <a
+              class="mt-3 inline-flex rounded-xl bg-brand-700 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-800"
+              [href]="aviso.link"
+              target="_blank"
+              rel="noreferrer"
+            >
+              {{ cta(aviso.tipo) }}
+            </a>
+          }
+        </article>
+      } @else if (aviso.tipo === 'PRECO') {
+        <article class="overflow-hidden rounded-2xl bg-gradient-to-r from-brand-800 to-brand-600 p-5 text-white shadow-md">
+          <p class="text-xs font-semibold uppercase tracking-wider text-accent-300">Preços</p>
+          <h2 class="mt-1 text-xl font-semibold">{{ aviso.titulo }}</h2>
+          <div class="mt-2 max-w-2xl text-sm text-white/90" [innerHTML]="aviso.conteudo"></div>
+          @if (aviso.link) {
+            <a
+              class="mt-4 inline-flex rounded-xl bg-accent-400 px-4 py-2 text-sm font-semibold text-brand-900"
+              [href]="aviso.link"
+              target="_blank"
+              rel="noreferrer"
+            >
+              {{ cta(aviso.tipo) }}
+            </a>
+          }
+        </article>
+      } @else {
+        <article class="card p-4">
+          <p class="text-xs font-semibold uppercase tracking-wider text-accent-600">Comunicado</p>
+          <h3 class="mt-1 font-semibold text-brand-900">{{ aviso.titulo }}</h3>
+          <div class="mt-1 text-sm text-brand-700" [innerHTML]="aviso.conteudo"></div>
+          @if (aviso.link) {
+            <a
+              class="mt-3 inline-block text-sm font-semibold text-accent-600 hover:underline"
+              [href]="aviso.link"
+              target="_blank"
+              rel="noreferrer"
+            >
+              {{ cta(aviso.tipo) }} →
+            </a>
+          }
+        </article>
       }
-    </article>
-  }
-</aside>
+    } @empty {
+      @if (manutencoes().length === 0) {
+        <p class="text-sm text-brand-600">Nenhum aviso ativo no momento.</p>
+      }
+    }
+  </aside>
+}

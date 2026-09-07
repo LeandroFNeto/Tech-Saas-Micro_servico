@@ -54,6 +54,16 @@ public class ControllerWhatsapp {
         String textoRecebido = payload.resolverTexto();
 
         try {
+            if (payload.ehEventoQrcode()) {
+                servicoWppConnect.guardarQrcode(sessao, payload.qrcode());
+                observador.logFiltro(sessao, null, "QR Code recebido do WPPConnect");
+                return ResponseEntity.ok().build();
+            }
+
+            if (payload.ehEventoConexao()) {
+                return ResponseEntity.ok().build();
+            }
+
             if (payload.enviadaPorMim()) {
                 observador.logFiltro(sessao, rawFrom, "Dono do celular digitou (Anti-X9)");
                 return ResponseEntity.ok().build();
@@ -86,7 +96,7 @@ public class ControllerWhatsapp {
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping("/whatsapp/status/{sessao}")
+    @GetMapping({"/whatsapp/{sessao}/status", "/whatsapp/status/{sessao}"})
     @Tag(name = "Conexão WhatsApp", description = "BFF do painel para status e QR Code da sessão no WPPConnect")
     @Operation(summary = "Consultar status da sessão WhatsApp",
             description = "O Java consulta o WPPConnect (GET /api/{sessao}/status-session) e devolve SessaoStatusResponseDTO.")
@@ -113,7 +123,7 @@ public class ControllerWhatsapp {
         return ResponseEntity.ok(servicoWppConnect.consultarStatus(sessao));
     }
 
-    @PostMapping("/whatsapp/iniciar/{sessao}")
+    @PostMapping({"/whatsapp/{sessao}/iniciar", "/whatsapp/iniciar/{sessao}"})
     @Tag(name = "Conexão WhatsApp")
     @Operation(summary = "Iniciar sessão WhatsApp e gerar QR Code",
             description = "Dispara POST /api/{sessao}/start-session no WPPConnect e devolve o SessaoStatusResponseDTO atualizado.")

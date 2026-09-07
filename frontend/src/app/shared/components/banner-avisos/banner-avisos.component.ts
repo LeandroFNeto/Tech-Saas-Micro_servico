@@ -1,21 +1,59 @@
 import { Component, Input } from '@angular/core';
-import { AvisoPainel } from '../../models/empresa.models';
+import { AvisoDTO, TipoAviso, rotuloTipoAviso } from '../../models/aviso.models';
 
 @Component({
   selector: 'app-banner-avisos',
   templateUrl: './banner-avisos.component.html'
 })
 export class BannerAvisosComponent {
-  @Input({ required: true }) avisos: AvisoPainel[] = [];
+  @Input({ required: true }) avisos: AvisoDTO[] = [];
   @Input() compacto = false;
 
-  estilo(tipo: AvisoPainel['tipo']): string {
-    if (tipo === 'upgrade') {
-      return 'from-emerald-600 to-teal-700';
+  rotulo(tipo: TipoAviso): string {
+    return rotuloTipoAviso(tipo);
+  }
+
+  cta(tipo: TipoAviso): string {
+    if (tipo === 'TUTORIAL') {
+      return 'Ver tutorial';
     }
-    if (tipo === 'tutorial') {
-      return 'from-sky-600 to-indigo-700';
+    if (tipo === 'PRECO') {
+      return 'Ver preços';
     }
-    return 'from-amber-500 to-orange-600';
+    return 'Saiba mais';
+  }
+
+  manutencoes(): AvisoDTO[] {
+    return this.avisos.filter((aviso) => aviso.tipo === 'MANUTENCAO');
+  }
+
+  demais(): AvisoDTO[] {
+    return this.avisos.filter((aviso) => aviso.tipo !== 'MANUTENCAO');
+  }
+
+  cardTipo(tipo: TipoAviso): string {
+    if (tipo === 'TUTORIAL') {
+      return 'border-brand-200 bg-brand-50';
+    }
+    if (tipo === 'PRECO') {
+      return 'border-accent-200 bg-accent-50';
+    }
+    if (tipo === 'MANUTENCAO') {
+      return 'border-red-200 bg-red-50';
+    }
+    return 'border-accent-100 bg-white';
+  }
+
+  textoTipo(tipo: TipoAviso): string {
+    if (tipo === 'TUTORIAL') {
+      return 'text-brand-700';
+    }
+    if (tipo === 'PRECO') {
+      return 'text-accent-700';
+    }
+    if (tipo === 'MANUTENCAO') {
+      return 'text-red-700';
+    }
+    return 'text-accent-600';
   }
 }

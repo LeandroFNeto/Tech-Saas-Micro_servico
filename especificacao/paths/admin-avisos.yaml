@@ -1,0 +1,56 @@
+get:
+  tags:
+  - Avisos
+  summary: Listar todos os avisos (admin)
+  description: Devolve avisos ativos e inativos para a gestão no painel master. Exige x-admin-token.
+  operationId: listarAvisosAdmin
+  parameters:
+  - name: x-admin-token
+    in: header
+    description: Token administrativo do SaaS
+    required: false
+    schema:
+      type: string
+    example: sua-chave-admin
+  responses:
+    "200":
+      description: Lista completa de avisos
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/AvisoDTO"
+    "401":
+      description: Token administrativo inválido
+post:
+  tags:
+  - Avisos
+  summary: Criar aviso
+  description: Cadastra um aviso a partir de AvisoDTO. Exige x-admin-token.
+  operationId: criarAviso
+  parameters:
+  - name: x-admin-token
+    in: header
+    description: Token administrativo do SaaS
+    required: false
+    schema:
+      type: string
+    example: sua-chave-admin
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: "#/components/schemas/AvisoDTO"
+  responses:
+    "201":
+      description: Aviso criado
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/AvisoDTO"
+    "400":
+      description: Dados inválidos
+    "401":
+      description: Token administrativo inválido

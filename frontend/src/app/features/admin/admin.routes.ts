@@ -20,6 +20,11 @@ export const ADMIN_ROUTES: Routes = [
         path: 'empresas/:sessao',
         loadComponent: () =>
           import('./empresa-form/empresa-form.component').then((m) => m.EmpresaFormComponent)
+      },
+      {
+        path: 'avisos',
+        loadComponent: () =>
+          import('./gestao-avisos/gestao-avisos.component').then((m) => m.GestaoAvisosComponent)
       }
     ]
   }

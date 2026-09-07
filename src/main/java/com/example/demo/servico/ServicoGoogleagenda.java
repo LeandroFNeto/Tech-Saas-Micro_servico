@@ -3,31 +3,36 @@ package com.example.demo.servico;
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
-import org.springframework.stereotype.Service;
-import com.google.api.services.calendar.CalendarScopes;
 import com.google.api.services.calendar.Calendar;
-import jakarta.annotation.PostConstruct; // Importante (Pode ser javax.annotation se for Spring Boot antigo)
+import com.google.api.services.calendar.CalendarScopes;
+import jakarta.annotation.PostConstruct;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
 
 @Service
 public class ServicoGoogleagenda {
 
-    // Guardamos o serviço pronto aqui na memória!
+    private static final Logger log = LoggerFactory.getLogger(ServicoGoogleagenda.class);
+    private static final String ARQUIVO_CREDENCIAL = "/crendecial.json";
+
     private Calendar servicoGoogleEmMemoria;
 
-    // Essa anotação faz o método rodar sozinho assim que o projeto Spring levanta
     @PostConstruct
     public void inicializarAgenda() {
-        try {
-            System.out.println("⏳ Inicializando conexão com Google Agenda...");
-            InputStream in = ServicoGoogleagenda.class.getResourceAsStream("/crendecial.json");
-
-            if(in == null){
-                throw new RuntimeException("Arquivo crendecial.json não encontrado na pasta resources.");
+        try (InputStream in = ServicoGoogleagenda.class.getResourceAsStream(ARQUIVO_CREDENCIAL)) {
+            if (in == null) {
+                log.warn("Arquivo {} não encontrado em resources. Google Agenda permanece desligado; a API sobe normalmente.",
+                        ARQUIVO_CREDENCIAL);
+                return;
             }
 
+            log.info("Inicializando conexão com Google Agenda...");
             GoogleCredential credential = GoogleCredential.fromStream(in)
                     .createScoped(Collections.singleton(CalendarScopes.CALENDAR));
 
@@ -38,17 +43,19 @@ public class ServicoGoogleagenda {
                     .setApplicationName("Bot Reservas Area de Lazer")
                     .build();
 
-            System.out.println("✅ Google Agenda inicializado e salvo em memória com sucesso!");
-
+            log.info("Google Agenda inicializado e salvo em memória.");
+        } catch (FileNotFoundException e) {
+            log.warn("Arquivo {} não encontrado. Google Agenda permanece desligado. {}", ARQUIVO_CREDENCIAL, e.getMessage());
+        } catch (IOException | RuntimeException e) {
+            log.warn("Não foi possível inicializar o Google Agenda. A API sobe normalmente. Motivo: {}", e.getMessage());
         } catch (Exception e) {
-            System.err.println("❌ Erro Crítico ao conectar com Google Agenda: " + e.getMessage());
+            log.warn("Falha inesperada ao conectar com Google Agenda. A API sobe normalmente. Motivo: {}", e.getMessage());
         }
     }
 
-    // Agora, os outros serviços chamam este método e a resposta é imediata!
     public Calendar conectarAgenda() {
         if (this.servicoGoogleEmMemoria == null) {
-            throw new RuntimeException("O serviço do Google Agenda não está inicializado.");
+            throw new IllegalStateException("Google Agenda não está inicializado (credencial ausente ou inválida).");
         }
         return this.servicoGoogleEmMemoria;
     }

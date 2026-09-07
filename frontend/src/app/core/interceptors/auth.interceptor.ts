@@ -41,7 +41,11 @@ export function mensagemHttp(erro: unknown): string {
   }
 
   if (erro.status === 404) {
-    return 'Empresa não encontrada para a sessão informada.';
+    return erro.error?.message ?? 'Recurso não encontrado.';
+  }
+
+  if (erro.status === 405) {
+    return 'A API rejeitou o método HTTP. Conectar WhatsApp usa POST em /whatsapp/{sessao}/iniciar.';
   }
 
   if (erro.status === 400) {

@@ -1,10 +1,10 @@
 <div class="mb-6 flex items-center justify-between">
   <div>
-    <h2 class="text-2xl font-semibold text-slate-900">
+    <h2 class="text-2xl font-semibold text-brand-900">
       {{ modoEdicao() ? 'Editar cliente' : 'Cadastrar cliente' }}
     </h2>
-    <p class="text-sm text-slate-500">
-      {{ modoEdicao() ? 'PUT /empresas/:sessao/admin com EmpresaUpdateAdminDTO.' : 'POST /empresas com EmpresaCreateDTO.' }}
+    <p class="text-sm text-brand-600">
+      {{ modoEdicao() ? 'Atualize os dados e os módulos deste cliente.' : 'Cadastre uma nova empresa no painel.' }}
     </p>
   </div>
   <a class="btn-secondary" routerLink="/admin">Voltar</a>
@@ -14,12 +14,12 @@
   <p class="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ erro() }}</p>
 }
 @if (sucesso()) {
-  <p class="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{{ sucesso() }}</p>
+  <p class="mb-4 rounded-xl border border-accent-200 bg-accent-50 px-4 py-3 text-sm text-brand-800">{{ sucesso() }}</p>
 }
 
 <form class="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]" [formGroup]="form" (ngSubmit)="salvar()">
   <section class="card space-y-4 p-5">
-    <h3 class="font-semibold text-slate-900">Dados da empresa</h3>
+    <h3 class="font-semibold text-brand-900">Dados da empresa</h3>
 
     <label class="block">
       <span class="mb-1 block text-sm font-medium">Nome fantasia</span>
@@ -38,7 +38,7 @@
         formControlName="googleCalendarId"
         placeholder="...@group.calendar.google.com"
       />
-      <span class="mt-1 block text-xs text-slate-500">
+      <span class="mt-1 block text-xs text-brand-600">
         Cole o ID da agenda desta empresa. Compartilhe essa agenda com a conta de serviço do bot. Cada cliente tem o seu — não use um ID único no .env.
       </span>
     </label>
@@ -60,28 +60,28 @@
     }
 
     @if (modoEdicao()) {
-      <label class="flex items-center gap-3 rounded-xl border border-slate-200 px-4 py-3">
-        <input class="h-4 w-4 accent-brand-600" type="checkbox" formControlName="locacaoPorHora" />
+      <label class="flex items-center gap-3 rounded-xl border border-brand-200 px-4 py-3">
+        <input class="h-4 w-4 accent-accent-500" type="checkbox" formControlName="locacaoPorHora" />
         <span>
           <span class="block text-sm font-medium">Locação por hora</span>
-          <span class="text-xs text-slate-500">Desligado = cobrança por diária</span>
+          <span class="text-xs text-brand-600">Desligado = cobrança por diária</span>
         </span>
       </label>
     }
   </section>
 
   <section class="card p-5">
-    <h3 class="font-semibold text-slate-900">Gestão de módulos</h3>
-    <p class="mt-1 text-sm text-slate-500">Liga/desliga as funcionalidades de ModuloEmpresa.</p>
+    <h3 class="font-semibold text-brand-900">Gestão de módulos</h3>
+    <p class="mt-1 text-sm text-brand-600">Ligue ou desligue as funcionalidades do bot desta empresa.</p>
 
     <div class="mt-4 space-y-3" formGroupName="modulos">
       @for (modulo of modulos; track modulo.codigo) {
-        <label class="flex cursor-pointer items-start justify-between gap-4 rounded-xl border border-slate-200 p-3">
+        <label class="flex cursor-pointer items-start justify-between gap-4 rounded-xl border border-brand-200 p-3">
           <span>
             <span class="block text-sm font-medium">{{ modulo.label }}</span>
-            <span class="text-xs text-slate-500">{{ modulo.descricao }}</span>
+            <span class="text-xs text-brand-600">{{ modulo.descricao }}</span>
           </span>
-          <input class="mt-1 h-5 w-9 accent-brand-600" type="checkbox" [formControlName]="modulo.codigo" />
+          <input class="mt-1 h-5 w-9 accent-accent-500" type="checkbox" [formControlName]="modulo.codigo" />
         </label>
       }
     </div>

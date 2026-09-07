@@ -1,0 +1,115 @@
+<div class="mb-6">
+  <h2 class="text-2xl font-semibold text-brand-900">Gestão de avisos</h2>
+  <p class="text-sm text-brand-600">
+    Crie e edite os avisos que aparecem no painel do cliente.
+  </p>
+</div>
+
+@if (erro()) {
+  <p class="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ erro() }}</p>
+}
+@if (sucesso()) {
+  <p class="mb-4 rounded-xl border border-accent-200 bg-accent-50 px-4 py-3 text-sm text-brand-800">{{ sucesso() }}</p>
+}
+
+<div class="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+  <div class="card overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="min-w-full text-left text-sm">
+        <thead class="bg-brand-50 text-xs uppercase tracking-wide text-brand-600">
+          <tr>
+            <th class="px-4 py-3">Título</th>
+            <th class="px-4 py-3">Tipo</th>
+            <th class="px-4 py-3">Status</th>
+            <th class="px-4 py-3"></th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (carregando()) {
+            <tr>
+              <td class="px-4 py-8 text-brand-600" colspan="4">Carregando avisos...</td>
+            </tr>
+          } @else if (avisos().length === 0) {
+            <tr>
+              <td class="px-4 py-8 text-brand-600" colspan="4">Nenhum aviso cadastrado ainda.</td>
+            </tr>
+          } @else {
+            @for (aviso of avisos(); track aviso.id) {
+              <tr class="border-t border-brand-100">
+                <td class="px-4 py-3 font-medium text-brand-900">{{ aviso.titulo }}</td>
+                <td class="px-4 py-3 text-brand-700">{{ rotulo(aviso.tipo) }}</td>
+                <td class="px-4 py-3">
+                  <span
+                    class="rounded-full px-2.5 py-1 text-xs font-medium"
+                    [class]="aviso.ativo ? 'bg-accent-100 text-accent-700' : 'bg-brand-100 text-brand-600'"
+                  >
+                    {{ aviso.ativo ? 'Ativo' : 'Inativo' }}
+                  </span>
+                </td>
+                <td class="px-4 py-3 text-right space-x-3">
+                  <button class="font-semibold text-accent-600 hover:underline" type="button" (click)="editar(aviso)">
+                    Editar
+                  </button>
+                  <button class="font-semibold text-red-700 hover:underline" type="button" (click)="excluir(aviso)">
+                    Excluir
+                  </button>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <form class="card space-y-4 p-5" [formGroup]="form" (ngSubmit)="salvar()">
+    <h3 class="font-semibold text-brand-900">
+      {{ editandoId() == null ? 'Novo aviso' : 'Editar aviso' }}
+    </h3>
+
+    <label class="block">
+      <span class="mb-1 block text-sm font-medium">Título</span>
+      <input class="input-field" formControlName="titulo" placeholder="Manutenção programada" />
+    </label>
+
+    <label class="block">
+      <span class="mb-1 block text-sm font-medium">Tipo</span>
+      <select class="input-field" formControlName="tipo">
+        @for (tipo of tipos; track tipo.codigo) {
+          <option [value]="tipo.codigo">{{ tipo.label }}</option>
+        }
+      </select>
+    </label>
+
+    <label class="block">
+      <span class="mb-1 block text-sm font-medium">Conteúdo</span>
+      <textarea
+        class="input-field min-h-28"
+        formControlName="conteudo"
+        placeholder="Texto ou HTML simples exibido no painel do cliente"
+      ></textarea>
+    </label>
+
+    <label class="block">
+      <span class="mb-1 block text-sm font-medium">Link (opcional)</span>
+      <input class="input-field" formControlName="link" placeholder="https://www.youtube.com/watch?v=..." />
+    </label>
+
+    <label class="flex items-center justify-between gap-4 rounded-xl border border-brand-200 px-4 py-3">
+      <span>
+        <span class="block text-sm font-medium">Ativo</span>
+        <span class="text-xs text-brand-600">Desligado = some do painel do cliente</span>
+      </span>
+      <input class="h-5 w-9 accent-accent-500" type="checkbox" formControlName="ativo" />
+    </label>
+
+    <div class="flex flex-wrap gap-2">
+      <button class="btn-primary" type="submit" [disabled]="salvando()">
+        {{ salvando() ? 'Salvando...' : editandoId() == null ? 'Criar aviso' : 'Salvar alterações' }}
+      </button>
+      @if (editandoId() != null) {
+        <button class="btn-secondary" type="button" (click)="cancelarEdicao()">Cancelar</button>
+      }
+    </div>
+  </form>
+</div>

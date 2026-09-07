@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -30,6 +31,7 @@ public class ServicoWppConnect {
 
     private final RestTemplate restTemplate;
     private final Map<String, String> tokensPorSessao = new ConcurrentHashMap<>();
+    private final Map<String, String> qrcodesPorSessao = new ConcurrentHashMap<>();
 
     public ServicoWppConnect(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
@@ -66,13 +68,22 @@ public class ServicoWppConnect {
         tokensPorSessao.remove(sessao);
     }
 
+    public void guardarQrcode(String sessao, String qrcode) {
+        String normalizado = normalizarQrcode(qrcode);
+        if (sessao == null || sessao.isBlank() || normalizado == null) {
+            return;
+        }
+        qrcodesPorSessao.put(sessao, normalizado);
+        System.out.println("✅ QR Code em cache para a sessão: " + sessao);
+    }
+
     public SessaoStatusResponseDTO consultarStatus(String sessao) {
         try {
-            return consultarStatusNoWpp(sessao);
+            return completarComQr(sessao, consultarStatusNoWpp(sessao));
         } catch (HttpClientErrorException.Unauthorized e) {
             invalidarToken(sessao);
             try {
-                return consultarStatusNoWpp(sessao);
+                return completarComQr(sessao, consultarStatusNoWpp(sessao));
             } catch (Exception retry) {
                 return desconectado(sessao, retry);
             }
@@ -83,17 +94,11 @@ public class ServicoWppConnect {
 
     public SessaoStatusResponseDTO iniciarSessao(String sessao) {
         try {
-            Map<String, Object> body = new HashMap<>();
-            body.put("webhook", webhookUrl);
-            body.put("waitQrCode", false);
-            chamarWpp(sessao, "/start-session", HttpMethod.POST, body, String.class);
+            return dispararStartSession(sessao);
         } catch (HttpClientErrorException.Unauthorized e) {
             invalidarToken(sessao);
             try {
-                Map<String, Object> body = new HashMap<>();
-                body.put("webhook", webhookUrl);
-                body.put("waitQrCode", false);
-                chamarWpp(sessao, "/start-session", HttpMethod.POST, body, String.class);
+                return dispararStartSession(sessao);
             } catch (Exception retry) {
                 System.out.println("⚠️ Falha ao iniciar sessão WPPConnect (" + sessao + "): " + retry.getMessage());
             }
@@ -103,6 +108,21 @@ public class ServicoWppConnect {
         return consultarStatus(sessao);
     }
 
+    @SuppressWarnings("unchecked")
+    private SessaoStatusResponseDTO dispararStartSession(String sessao) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("webhook", webhookUrl);
+        // false: o Chromium abre em segundo plano. true faz o Java esperar o QR
+        // e, se a sessão antiga auto-fechar, a requisição fica presa até o timeout.
+        body.put("waitQrCode", false);
+        Map<String, Object> corpo = chamarWpp(sessao, "/start-session", HttpMethod.POST, body, Map.class);
+        SessaoStatusResponseDTO dto = paraDto(sessao, corpo);
+        if ("CONNECTED".equals(dto.status()) || dto.qrcodeBase64() != null) {
+            return dto;
+        }
+        return new SessaoStatusResponseDTO(sessao, "QRCODE", qrcodesPorSessao.get(sessao));
+    }
+
     SessaoStatusResponseDTO paraDto(String sessao, Map<String, Object> corpo) {
         if (corpo == null) {
             return new SessaoStatusResponseDTO(sessao, "DISCONNECTED", null);
@@ -110,8 +130,9 @@ public class ServicoWppConnect {
 
         String bruto = String.valueOf(corpo.getOrDefault("status", ""));
         String qrcode = extrairQrcode(corpo);
+        guardarQrcode(sessao, qrcode);
         String status = normalizarStatus(bruto, qrcode);
-        return new SessaoStatusResponseDTO(sessao, status, "QRCODE".equals(status) ? qrcode : null);
+        return new SessaoStatusResponseDTO(sessao, status, "QRCODE".equals(status) ? primeiroQr(sessao, qrcode) : null);
     }
 
     String normalizarStatus(String bruto, String qrcode) {
@@ -136,10 +157,70 @@ public class ServicoWppConnect {
 
     private String extrairQrcode(Map<String, Object> corpo) {
         Object qrcode = corpo.get("qrcode");
-        if (!(qrcode instanceof String texto) || texto.isBlank() || "null".equalsIgnoreCase(texto)) {
+        if (qrcode instanceof String texto) {
+            return normalizarQrcode(texto);
+        }
+        return null;
+    }
+
+    private SessaoStatusResponseDTO completarComQr(String sessao, SessaoStatusResponseDTO dto) {
+        if ("CONNECTED".equals(dto.status())) {
+            qrcodesPorSessao.remove(sessao);
+            return dto;
+        }
+        if (dto.qrcodeBase64() != null && !dto.qrcodeBase64().isBlank()) {
+            guardarQrcode(sessao, dto.qrcodeBase64());
+            return dto;
+        }
+        String cache = qrcodesPorSessao.get(sessao);
+        if (cache != null) {
+            return new SessaoStatusResponseDTO(sessao, "QRCODE", cache);
+        }
+        String png = buscarQrcodePng(sessao);
+        if (png != null) {
+            guardarQrcode(sessao, png);
+            return new SessaoStatusResponseDTO(sessao, "QRCODE", png);
+        }
+        return dto;
+    }
+
+    private String primeiroQr(String sessao, String qrcode) {
+        if (qrcode != null) {
+            return qrcode;
+        }
+        return qrcodesPorSessao.get(sessao);
+    }
+
+    private String normalizarQrcode(String qrcode) {
+        if (qrcode == null || qrcode.isBlank() || "null".equalsIgnoreCase(qrcode)) {
             return null;
         }
-        return texto;
+        return qrcode.startsWith("data:") ? qrcode : "data:image/png;base64," + qrcode;
+    }
+
+    private String buscarQrcodePng(String sessao) {
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setBearerAuth(obterToken(sessao));
+            headers.setAccept(java.util.List.of(MediaType.IMAGE_PNG, MediaType.ALL));
+            ResponseEntity<byte[]> resposta = restTemplate.exchange(
+                    urlBase + "/api/" + sessao + "/qrcode-session",
+                    HttpMethod.GET,
+                    new HttpEntity<>(headers),
+                    byte[].class
+            );
+            MediaType tipo = resposta.getHeaders().getContentType();
+            if (tipo != null && MediaType.APPLICATION_JSON.isCompatibleWith(tipo)) {
+                return null;
+            }
+            byte[] corpo = resposta.getBody();
+            if (corpo == null || corpo.length < 32) {
+                return null;
+            }
+            return "data:image/png;base64," + Base64.getEncoder().encodeToString(corpo);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     private <T> T chamarWpp(String sessao, String caminho, HttpMethod metodo, Object body, Class<T> tipo) {

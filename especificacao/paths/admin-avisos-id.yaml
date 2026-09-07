@@ -1,0 +1,66 @@
+put:
+  tags:
+  - Avisos
+  summary: Atualizar aviso
+  description: Substitui título, tipo, conteúdo, link e flag ativo. Exige x-admin-token.
+  operationId: atualizarAviso
+  parameters:
+  - name: x-admin-token
+    in: header
+    description: Token administrativo do SaaS
+    required: false
+    schema:
+      type: string
+    example: sua-chave-admin
+  - name: id
+    in: path
+    required: true
+    schema:
+      type: integer
+      format: int64
+    example: 1
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: "#/components/schemas/AvisoDTO"
+  responses:
+    "200":
+      description: Aviso atualizado
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/AvisoDTO"
+    "401":
+      description: Token administrativo inválido
+    "404":
+      description: Aviso não encontrado
+delete:
+  tags:
+  - Avisos
+  summary: Excluir aviso
+  description: Remove o aviso do banco. Exige x-admin-token.
+  operationId: excluirAviso
+  parameters:
+  - name: x-admin-token
+    in: header
+    description: Token administrativo do SaaS
+    required: false
+    schema:
+      type: string
+    example: sua-chave-admin
+  - name: id
+    in: path
+    required: true
+    schema:
+      type: integer
+      format: int64
+    example: 1
+  responses:
+    "204":
+      description: Aviso excluído
+    "401":
+      description: Token administrativo inválido
+    "404":
+      description: Aviso não encontrado
