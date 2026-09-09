@@ -1,0 +1,26 @@
+type: object
+description: >
+  Contato remetente do WPPConnect. O webhook envia este objeto (Contact) ou, em alguns eventos, só o JID em string.
+properties:
+  id:
+    description: JID do remetente. Pode chegar como string ou como objeto Wid
+    oneOf:
+      - type: string
+        example: 5511999999999@c.us
+      - type: object
+        properties:
+          server:
+            type: string
+            example: c.us
+          user:
+            type: string
+            example: "5511999999999"
+          _serialized:
+            type: string
+            example: 5511999999999@c.us
+  name:
+    type: string
+    description: Nome salvo na agenda
+  pushname:
+    type: string
+    description: Nome de exibição no WhatsApp

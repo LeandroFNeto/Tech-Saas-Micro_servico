@@ -148,6 +148,190 @@ class ControllerWhatsappTest {
     }
 
     @Test
+    @DisplayName("Deve aceitar webhook onmessage do WPPConnect com id string, sender objeto e content string")
+    void deveAceitarPayloadRealDoWppconnectOnmessage() throws Exception {
+        String payload = """
+            {
+                "event": "onmessage",
+                "session": "RecantoBot",
+                "id": "false_120363421596195995@g.us_3AE7951B92607B7B73F8_185336529469528@lid",
+                "from": "120363421596195995@g.us",
+                "type": "chat",
+                "fromMe": false,
+                "body": "oi",
+                "content": "oi",
+                "sender": {
+                    "id": {
+                        "server": "lid",
+                        "user": "185336529469528",
+                        "_serialized": "185336529469528@lid"
+                    }
+                }
+            }
+            """;
+
+        mockMvc.perform(post("/webhook/whatsapp")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload))
+                .andExpect(status().isOk());
+
+        verify(observador).logFiltro(eq("RecantoBot"), anyString(), contains("ignorada"));
+        verifyNoInteractions(moduloFactory);
+    }
+
+    @Test
+    @DisplayName("Deve aceitar onpresencechanged com id @lid em string e onack com id objeto")
+    void deveAceitarPresencaComIdStringEAckComIdObjeto() throws Exception {
+        String presenca = """
+            {
+                "event": "onpresencechanged",
+                "session": "RecantoBot",
+                "id": "185336529469528@lid"
+            }
+            """;
+        String ack = """
+            {
+                "event": "onack",
+                "session": "RecantoBot",
+                "id": {
+                    "fromMe": true,
+                    "remote": "5511999999999@c.us",
+                    "id": "3EB0XXXX",
+                    "_serialized": "true_5511999999999@c.us_3EB0XXXX"
+                },
+                "ack": 3
+            }
+            """;
+
+        mockMvc.perform(post("/webhook/whatsapp")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(presenca))
+                .andExpect(status().isOk());
+        mockMvc.perform(post("/webhook/whatsapp")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(ack))
+                .andExpect(status().isOk());
+
+        verifyNoInteractions(moduloFactory);
+        verifyNoInteractions(empresaRepository);
+    }
+
+    @Test
+    @DisplayName("Deve processar chat 1:1 no formato real do WPPConnect (id string, sender objeto, content string)")
+    void deveProcessarChatNoFormatoRealDoWppconnect() throws Exception {
+        Empresa empresa = new Empresa();
+        empresa.setSessaoWhatsapp("teste-sessao");
+        empresa.setRamoDeAtuacao("LOCACAO");
+        empresa.setUsaIA(true);
+        empresa.setNome("Recanto Teste");
+
+        when(empresaRepository.findBySessaoWhatsapp("teste-sessao")).thenReturn(empresa);
+        when(gerenciadorSessao.obterEstadoAtual(anyString())).thenReturn("INICIO");
+        when(moduloFactory.obterEstrategia("LOCACAO")).thenReturn(locacaoStrategy);
+        when(servicoMenu.descobrirAcao(any(), anyString())).thenReturn("OPCAO_INVALIDA");
+        when(servicoIA.gerarRespostaHumanizada(anyString())).thenReturn("Olá! Como posso ajudar?");
+
+        String payload = """
+            {
+                "event": "onmessage",
+                "session": "teste-sessao",
+                "id": "false_5511988887777@c.us_3AE7951B92607B7B73F8",
+                "from": "5511988887777@c.us",
+                "body": "Oi",
+                "content": "Oi",
+                "type": "chat",
+                "fromMe": false,
+                "sender": {
+                    "id": {
+                        "server": "c.us",
+                        "user": "5511988887777",
+                        "_serialized": "5511988887777@c.us"
+                    },
+                    "pushname": "Maria"
+                }
+            }
+            """;
+
+        mockMvc.perform(post("/webhook/whatsapp")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload))
+                .andExpect(status().isOk());
+
+        verify(servicoIA, times(1)).gerarRespostaHumanizada(contains("Oi"));
+    }
+
+    @Test
+    @DisplayName("Deve processar chat privado com JID @lid (WhatsApp LID) em vez de descartar")
+    void deveProcessarChatPrivadoComJidLid() throws Exception {
+        Empresa empresa = new Empresa();
+        empresa.setSessaoWhatsapp("RecantoBot");
+        empresa.setRamoDeAtuacao("LOCACAO");
+        empresa.setUsaIA(true);
+        empresa.setNome("Recanto Teste");
+
+        when(empresaRepository.findBySessaoWhatsapp("RecantoBot")).thenReturn(empresa);
+        when(gerenciadorSessao.obterEstadoAtual(anyString())).thenReturn("INICIO");
+        when(moduloFactory.obterEstrategia("LOCACAO")).thenReturn(locacaoStrategy);
+        when(servicoMenu.descobrirAcao(any(), anyString())).thenReturn("OPCAO_INVALIDA");
+        when(servicoIA.gerarRespostaHumanizada(anyString())).thenReturn("Olá! Como posso ajudar?");
+
+        String payload = """
+            {
+                "event": "onmessage",
+                "session": "RecantoBot",
+                "id": "false_276974622781686@lid_3AE7951B92607B7B73F8",
+                "from": "276974622781686@lid",
+                "body": "Oi, quero reservar",
+                "content": "Oi, quero reservar",
+                "type": "chat",
+                "fromMe": false,
+                "isGroupMsg": false
+            }
+            """;
+
+        mockMvc.perform(post("/webhook/whatsapp")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload))
+                .andExpect(status().isOk());
+
+        verify(moduloFactory).obterEstrategia("LOCACAO");
+        verify(servicoIA, times(1)).gerarRespostaHumanizada(contains("Oi, quero reservar"));
+        verify(observador).logSucesso(eq("RecantoBot"), eq("276974622781686@lid"), contains("Oi, quero reservar"));
+    }
+
+    @Test
+    @DisplayName("Deve processar chat @c.us mesmo quando type vier nulo, se houver texto")
+    void deveProcessarChatQuandoTypeVierNulo() throws Exception {
+        Empresa empresa = new Empresa();
+        empresa.setSessaoWhatsapp("teste-sessao");
+        empresa.setRamoDeAtuacao("LOCACAO");
+        empresa.setUsaIA(true);
+        empresa.setNome("Recanto Teste");
+
+        when(empresaRepository.findBySessaoWhatsapp("teste-sessao")).thenReturn(empresa);
+        when(gerenciadorSessao.obterEstadoAtual(anyString())).thenReturn("INICIO");
+        when(moduloFactory.obterEstrategia("LOCACAO")).thenReturn(locacaoStrategy);
+        when(servicoMenu.descobrirAcao(any(), anyString())).thenReturn("OPCAO_INVALIDA");
+        when(servicoIA.gerarRespostaHumanizada(anyString())).thenReturn("Olá! Como posso ajudar?");
+
+        String payload = """
+            {
+                "session": "teste-sessao",
+                "from": "5511988887777@c.us",
+                "body": "Quero alugar",
+                "fromMe": false
+            }
+            """;
+
+        mockMvc.perform(post("/webhook/whatsapp")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload))
+                .andExpect(status().isOk());
+
+        verify(servicoIA, times(1)).gerarRespostaHumanizada(contains("Quero alugar"));
+    }
+
+    @Test
     @DisplayName("Deve processar mensagem do cliente e acionar a IA")
     void deveProcessarMensagemEAcionarIA() throws Exception {
         Empresa empresa = new Empresa();

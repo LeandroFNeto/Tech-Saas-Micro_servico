@@ -1,5 +1,9 @@
 type: object
-description: Payload tipado recebido do WPPConnect via webhook. Aceita o formato plano (from/body) e o aninhado (data.key / data.message).
+description: >
+  Payload tipado recebido do WPPConnect via webhook. Aceita o formato plano (from/body),
+  o aninhado (data.key / data.message) e os tipos mistos do Node (id/sender/content
+  ora string, ora objeto).
+additionalProperties: true
 properties:
   session:
     type: string
@@ -12,6 +16,10 @@ properties:
   fromMe:
     type: boolean
     description: Indica se a mensagem foi enviada pelo próprio número conectado (dono do bot)
+    example: false
+  isGroupMsg:
+    type: boolean
+    description: Indica se a mensagem veio de um grupo (WPPConnect). Ausente ou false em chats privados, inclusive os que usam JID @lid.
     example: false
   from:
     type: string
@@ -26,8 +34,13 @@ properties:
     description: JID do remetente quando informado no topo do payload
     example: 5511999999999@c.us
   sender:
-    type: string
-    description: "Remetente alternativo, usado como fallback para JIDs @lid"
+    description: >
+      Remetente. String com JID ou objeto Contact do WPPConnect
+      (`sender.id` pode ser string ou Wid com `_serialized`).
+    oneOf:
+      - type: string
+        example: 5511999999999@c.us
+      - $ref: "#/components/schemas/RemetenteWebhook"
   event:
     type: string
     description: Evento do WPPConnect quando não é mensagem de chat (qrcode, status-find, onack)
@@ -39,11 +52,18 @@ properties:
     type: string
     description: Conteúdo bruto do QR Code (urlcode) quando o WPPConnect envia o evento qrcode
   id:
-    $ref: "#/components/schemas/IdentificadorMensagem"
-    description: Identificador da mensagem (pode trazer fromMe em alguns provedores)
+    description: >
+      Identificador da mensagem. String serializada nos eventos onmessage/onpresencechanged
+      (ex. false_jid_hash ou 40308586844379@lid) ou objeto Baileys no evento onack.
+    oneOf:
+      - type: string
+        example: false_5511999999999@c.us_3AE7951B92607B7B73F8
+      - $ref: "#/components/schemas/IdentificadorMensagem"
   data:
     $ref: "#/components/schemas/DadosWebhook"
-    description: Envelope aninhado usado por alguns formatos do WPPConnect/Baileys
   content:
-    $ref: "#/components/schemas/ConteudoMensagem"
-    description: "Conteúdo tipado da mensagem, quando enviado em objeto"
+    description: Texto da mensagem como string (WPPConnect) ou objeto com body
+    oneOf:
+      - type: string
+        example: "Olá, gostaria de reservar"
+      - $ref: "#/components/schemas/ConteudoMensagem"

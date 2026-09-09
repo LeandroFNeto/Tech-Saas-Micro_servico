@@ -11,9 +11,19 @@ Funcionalidade: Roteamento Factory e Strategy
     Quando a FactoryModulo busca o ramo "LOCACAO"
     Então a Strategy retornada deve ser LocacaoStrategy
 
-  Cenário: ramo ausente no mapa da Factory é rejeitado
+  Cenário: ramo locacao em minúsculas é resolvido para LocacaoStrategy
     Dado as Strategies carregadas no contexto Spring
     Quando a FactoryModulo busca o ramo "locacao"
+    Então a Strategy retornada deve ser LocacaoStrategy
+
+  Cenário: ramo Locação com acento é resolvido para LocacaoStrategy
+    Dado as Strategies carregadas no contexto Spring
+    Quando a FactoryModulo busca o ramo "Locação"
+    Então a Strategy retornada deve ser LocacaoStrategy
+
+  Cenário: ramo ausente no mapa da Factory é rejeitado
+    Dado as Strategies carregadas no contexto Spring
+    Quando a FactoryModulo busca o ramo "CLINICA"
     Então deve ocorrer erro de ramo não suportado
 
   Cenário: webhook de locação dispara LocacaoStrategy via Factory

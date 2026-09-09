@@ -47,9 +47,9 @@ public class ControllerWhatsapp {
     @ApiResponse(responseCode = "200", description = "Evento aceito. Mensagens filtradas também retornam 200 para o WPPConnect não reenviar.",
             content = @Content(schema = @Schema(hidden = true)))
     public ResponseEntity<Void> receberMensagem(@RequestBody WhatsappWebhookDTO payload) {
+        System.out.println(payload.resumoRaioX());
 
         String sessao = payload.session();
-        String tipoMensagem = payload.type();
         String rawFrom = payload.resolverRemoteJid();
         String textoRecebido = payload.resolverTexto();
 
@@ -69,8 +69,7 @@ public class ControllerWhatsapp {
                 return ResponseEntity.ok().build();
             }
 
-            if (rawFrom == null || rawFrom.contains("@g.us") || rawFrom.contains("status") ||
-                    rawFrom.contains("@lid") || !"chat".equals(tipoMensagem)) {
+            if (payload.deveDescartarComoRuido()) {
                 observador.logFiltro(sessao, rawFrom, "Mensagem ignorada (Grupo, Status ou Tipo Inválido)");
                 return ResponseEntity.ok().build();
             }

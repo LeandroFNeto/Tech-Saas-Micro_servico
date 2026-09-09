@@ -54,6 +54,8 @@ components:
       $ref: ./especificacao/schemas/webhook/ConteudoMensagem.yaml
     IdentificadorMensagem:
       $ref: ./especificacao/schemas/webhook/IdentificadorMensagem.yaml
+    RemetenteWebhook:
+      $ref: ./especificacao/schemas/webhook/RemetenteWebhook.yaml
     ChaveMensagem:
       $ref: ./especificacao/schemas/webhook/ChaveMensagem.yaml
     DiaReserva:

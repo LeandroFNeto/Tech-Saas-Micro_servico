@@ -1,7 +1,13 @@
 type: object
-description: Conteúdo da mensagem em objeto
+description: >
+  Conteúdo da mensagem em objeto. O WPPConnect também envia `content` como string
+  (mesmo texto de body); o Java aceita os dois formatos.
 properties:
   body:
     type: string
     description: Texto da mensagem
+    example: "Olá, gostaria de reservar"
+  conversation:
+    type: string
+    description: Texto alternativo no formato aninhado Baileys
     example: "Olá, gostaria de reservar"
