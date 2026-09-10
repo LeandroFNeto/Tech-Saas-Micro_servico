@@ -28,13 +28,11 @@ public class ServicoMensagem {
 
     public void enviarMensagemWPP(Empresa empresa, String numeroDestino, String texto) {
         String sessao = empresa.getSessaoWhatsapp();
-        String numeroLimpo = WhatsappUtil.extrairApenasNumeros(numeroDestino);
 
         try {
             Map<String, Object> body = new HashMap<>();
-            body.put("phone", numeroLimpo);
+            preencherDestino(body, numeroDestino);
             body.put("message", texto);
-            body.put("isGroup", false);
             postWpp(sessao, "/send-message", body);
             observador.logSucesso(sessao, numeroDestino, "[RESPOSTA ENVIADA]: " + texto);
         } catch (Exception e) {
@@ -50,13 +48,11 @@ public class ServicoMensagem {
             return;
         }
         String sessao = empresa.getSessaoWhatsapp();
-        String numeroLimpo = WhatsappUtil.extrairApenasNumeros(numeroDestino);
         String url = urlImagem.trim();
 
         try {
             Map<String, Object> body = new HashMap<>();
-            body.put("phone", numeroLimpo);
-            body.put("isGroup", false);
+            preencherDestino(body, numeroDestino);
             body.put("path", url);
             body.put("filename", nomeArquivo(url));
             if (caption != null && !caption.isBlank()) {
@@ -95,6 +91,12 @@ public class ServicoMensagem {
         if (aoTerminar != null) {
             aoTerminar.run();
         }
+    }
+
+    static void preencherDestino(Map<String, Object> body, String numeroDestino) {
+        body.put("phone", WhatsappUtil.extrairApenasNumeros(numeroDestino));
+        body.put("isGroup", false);
+        body.put("isLid", WhatsappUtil.isLid(numeroDestino));
     }
 
     private void postWpp(String sessao, String caminho, Map<String, Object> body) {

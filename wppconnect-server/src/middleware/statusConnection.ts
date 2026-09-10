@@ -38,6 +38,8 @@ export default async function statusConnection(
       for (const contact of localArr) {
         if (req.body.isGroup || req.body.isNewsletter) {
           localArr[index] = contact;
+        } else if (String(contact).endsWith('@lid')) {
+          console.log(contact);
         } else if (numbers.indexOf(contact) < 0) {
           console.log(contact);
           const profile: any = await req.client
@@ -50,16 +52,17 @@ export default async function statusConnection(
               status: 'Connected',
               message: `O número ${num} não existe.`,
             });
-          } else {
-            if ((numbers as any).indexOf(profile.id._serialized) < 0) {
-              (numbers as any).push(profile.id._serialized);
-            }
-            (localArr as any)[index] = profile.id._serialized;
+            return;
           }
+          if ((numbers as any).indexOf(profile.id._serialized) < 0) {
+            (numbers as any).push(profile.id._serialized);
+          }
+          (localArr as any)[index] = profile.id._serialized;
         }
         index++;
       }
       req.body.phone = localArr;
+      next();
     } else {
       res.status(404).json({
         response: null,
@@ -67,13 +70,14 @@ export default async function statusConnection(
         message: 'A sessão do WhatsApp não está ativa.',
       });
     }
-    next();
   } catch (error) {
     req.logger.error(error);
-    res.status(404).json({
-      response: null,
-      status: 'Disconnected',
-      message: 'A sessão do WhatsApp não está ativa.',
-    });
+    if (!res.headersSent) {
+      res.status(404).json({
+        response: null,
+        status: 'Disconnected',
+        message: 'A sessão do WhatsApp não está ativa.',
+      });
+    }
   }
 }

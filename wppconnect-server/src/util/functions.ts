@@ -52,26 +52,30 @@ export function contactToArray(
   const localArr: any = [];
   if (Array.isArray(number)) {
     for (let contact of number) {
+      const original = String(contact ?? '');
+      const usarLid = isLid || original.includes('@lid');
       isGroup || isNewsletter
-        ? (contact = contact.split('@')[0])
-        : (contact = contact.split('@')[0]?.replace(/[^\w ]/g, ''));
+        ? (contact = original.split('@')[0])
+        : (contact = original.split('@')[0]?.replace(/[^\w ]/g, ''));
       if (contact !== '')
         if (isGroup) (localArr as any).push(`${contact}@g.us`);
         else if (isNewsletter) (localArr as any).push(`${contact}@newsletter`);
-        else if (isLid || contact.length > 14)
+        else if (usarLid || contact.length >= 14)
           (localArr as any).push(`${contact}@lid`);
         else (localArr as any).push(`${contact}@c.us`);
     }
   } else {
     const arrContacts = number.split(/\s*[,;]\s*/g);
     for (let contact of arrContacts) {
+      const original = String(contact ?? '');
+      const usarLid = isLid || original.includes('@lid');
       isGroup || isNewsletter
-        ? (contact = contact.split('@')[0])
-        : (contact = contact.split('@')[0]?.replace(/[^\w ]/g, ''));
+        ? (contact = original.split('@')[0])
+        : (contact = original.split('@')[0]?.replace(/[^\w ]/g, ''));
       if (contact !== '')
         if (isGroup) (localArr as any).push(`${contact}@g.us`);
         else if (isNewsletter) (localArr as any).push(`${contact}@newsletter`);
-        else if (isLid || contact.length > 14)
+        else if (usarLid || contact.length >= 14)
           (localArr as any).push(`${contact}@lid`);
         else (localArr as any).push(`${contact}@c.us`);
     }
