@@ -1,15 +1,12 @@
 package com.example.demo.model;
 
-public class EstadoUsuario {
-
-    private String fase;
-    private long ultimaInteracao;
-
-    public EstadoUsuario(String fase, long ultimaInteracao) {
-        this.fase = fase;
-        this.ultimaInteracao = ultimaInteracao;
-    }
-
-    public String getFase() { return fase; }
-    public long getUltimaInteracao() { return ultimaInteracao; }
+public enum EstadoUsuario {
+    INICIO,
+    MENU_PRINCIPAL,
+    ESPERANDO_DATA,
+    ESPERANDO_RESPOSTA_GALERIA,
+    RESERVA_ESPERANDO_DATA,
+    RESERVA_ESPERANDO_HORARIO,
+    RESERVA_ESPERANDO_NOME,
+    RESERVA_CONFIRMACAO
 }

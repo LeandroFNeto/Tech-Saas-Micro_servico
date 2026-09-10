@@ -1,0 +1,25 @@
+post:
+  tags:
+    - Autenticação
+  summary: Autenticar usuário e emitir JWT
+  description: Valida e-mail e senha (BCrypt) e devolve LoginResponseDTO. Rota pública.
+  operationId: login
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: "#/components/schemas/LoginRequestDTO"
+  responses:
+    "200":
+      description: Autenticação bem-sucedida
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/LoginResponseDTO"
+    "401":
+      description: E-mail ou senha inválidos
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/LoginResponseDTO"

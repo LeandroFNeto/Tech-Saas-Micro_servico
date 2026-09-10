@@ -22,6 +22,38 @@ properties:
     type: string
     description: Link configurado para o Google Maps
     example: https://maps.app.goo.gl/exemplo
+  linkFotoPrincipal:
+    type: string
+    description: URL pública da foto principal (Hero Image) hospedada no Cloudinary
+    example: "https://res.cloudinary.com/demo/image/upload/v1/hero_image.jpg"
+  urlsGaleria:
+    type: array
+    description: Lista de URLs públicas das fotos complementares hospedadas no Cloudinary
+    maxItems: 5
+    items:
+      type: string
+    example:
+      - "https://res.cloudinary.com/demo/image/upload/v1/foto1.jpg"
+      - "https://res.cloudinary.com/demo/image/upload/v1/foto2.jpg"
+  permiteReservaAutomatica:
+    type: boolean
+    description: Quando true, o bot exibe a opção de reserva automática no WhatsApp
+    default: false
+    example: false
+  locacaoPorHora:
+    type: boolean
+    description: Define se o local é alugado por hora (true) ou por diária (false)
+    default: false
+    example: false
+  regrasLocacao:
+    type: string
+    description: Regras do local e política de cancelamento lidas pelo bot
+    example: "Cancelar com 5 dias de antecedência"
+  modulosMenu:
+    type: array
+    description: Opções do menu do WhatsApp configuradas pelo cliente
+    items:
+      $ref: ./ModuloMenuDTO.yaml
   atualizadoEm:
     type: string
     format: date-time

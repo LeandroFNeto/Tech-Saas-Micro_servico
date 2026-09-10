@@ -11,7 +11,7 @@ properties:
     example: Olá! Como posso ajudar?
   tabelaDePrecos:
     type: string
-    description: Tabela de preços em texto para o bot ler
+    description: Mensagem de preços que o bot envia no WhatsApp quando o cliente pede a tabela
     example: "Diária padrão: R$ 500,00"
   linkGoogleMaps:
     type: string
@@ -19,9 +19,33 @@ properties:
     example: https://maps.app.goo.gl/exemplo
   linkFotoPrincipal:
     type: string
-    description: URL da foto principal exibida no painel
-    example: https://meusite.com/foto.jpg
-  linkGaleria:
+    description: URL pública da foto principal (Hero Image) hospedada no Cloudinary
+    example: "https://res.cloudinary.com/demo/image/upload/v1/hero_image.jpg"
+  urlsGaleria:
+    type: array
+    description: Lista de URLs públicas das fotos complementares hospedadas no Cloudinary
+    maxItems: 5
+    items:
+      type: string
+    example:
+      - "https://res.cloudinary.com/demo/image/upload/v1/foto1.jpg"
+      - "https://res.cloudinary.com/demo/image/upload/v1/foto2.jpg"
+  permiteReservaAutomatica:
+    type: boolean
+    description: Ativa ou desativa a reserva automática pelo bot no WhatsApp
+    default: false
+    example: false
+  locacaoPorHora:
+    type: boolean
+    description: Define se o local é alugado por hora (true) ou por diária (false)
+    default: false
+    example: false
+  regrasLocacao:
     type: string
-    description: "Link da galeria, Instagram ou portfólio"
-    example: https://instagram.com/recanto
+    description: Regras do local e política de cancelamento lidas pelo bot
+    example: "Cancelar com 5 dias de antecedência"
+  modulosMenu:
+    type: array
+    description: Opções do menu do WhatsApp (Fotos, Localização, Preços, Regras, Reserva). O cliente liga, desliga e edita o texto_menu.
+    items:
+      $ref: ./ModuloMenuDTO.yaml

@@ -5,6 +5,11 @@ export interface EmpresaCreateDTO {
   ramoDeAtuacao?: string;
   precoBase?: number | null;
   googleCalendarId?: string | null;
+  email?: string;
+  senha: string;
+  permiteReservaAutomatica?: boolean;
+  linkFotoPrincipal?: string;
+  urlsGaleria?: string[];
   modulosIniciais?: string[];
 }
 
@@ -15,7 +20,11 @@ export interface EmpresaUpdateDTO {
   tabelaDePrecos?: string;
   linkGoogleMaps?: string;
   linkFotoPrincipal?: string;
-  linkGaleria?: string;
+  urlsGaleria?: string[];
+  permiteReservaAutomatica?: boolean;
+  locacaoPorHora?: boolean;
+  regrasLocacao?: string;
+  modulosMenu?: ModuloMenuDTO[];
 }
 
 /** Espelha EmpresaUpdateAdminDTO — painel master. */
@@ -23,6 +32,8 @@ export interface EmpresaUpdateAdminDTO {
   sessaoWhatsapp?: string;
   locacaoPorHora?: boolean;
   googleCalendarId?: string | null;
+  linkFotoPrincipal?: string;
+  urlsGaleria?: string[];
   modulosAtivos?: string[];
 }
 
@@ -33,7 +44,20 @@ export interface EmpresaResponseDTO {
   sessaoWhatsapp: string;
   statusSessao: string;
   linkGoogleMaps: string;
+  linkFotoPrincipal?: string;
+  urlsGaleria?: string[];
+  permiteReservaAutomatica?: boolean;
+  locacaoPorHora?: boolean;
+  regrasLocacao?: string;
+  modulosMenu?: ModuloMenuDTO[];
   atualizadoEm: string;
+}
+
+export interface ModuloMenuDTO {
+  codigoAcao: string;
+  textoMenu?: string;
+  ordemExibicao?: number;
+  ativo?: boolean;
 }
 
 export interface ModuloEmpresa {
@@ -55,11 +79,14 @@ export interface EmpresaView {
   tabelaDePrecos?: string;
   linkGoogleMaps?: string;
   linkFotoPrincipal?: string;
-  linkGaleria?: string;
+  urlsGaleria?: string[];
   locacaoPorHora?: boolean;
   googleCalendarId?: string;
   usaIA?: boolean;
+  permiteReservaAutomatica?: boolean;
+  regrasLocacao?: string;
   modulosAtivos: string[];
+  modulosMenu: ModuloMenuDTO[];
   atualizadoEm?: string;
 }
 
@@ -68,6 +95,48 @@ export interface CatalogoModulo {
   label: string;
   descricao: string;
 }
+
+export interface CatalogoMenuBot {
+  codigo: string;
+  label: string;
+  descricao: string;
+  textoPadrao: string;
+}
+
+export const MAX_URLS_GALERIA = 5;
+
+export const MODULOS_MENU_BOT: CatalogoMenuBot[] = [
+  {
+    codigo: 'VER_FOTOS',
+    label: 'Fotos',
+    descricao: 'Envia fotos do espaço pelo WhatsApp',
+    textoPadrao: 'Ver fotos do espaço'
+  },
+  {
+    codigo: 'VER_LOCALIZACAO',
+    label: 'Localização',
+    descricao: 'Envia o link do Google Maps no menu do bot',
+    textoPadrao: 'Ver localização'
+  },
+  {
+    codigo: 'MENU_CARDAPIO',
+    label: 'Preços',
+    descricao: 'Envia a mensagem de preços cadastrada pelo WhatsApp',
+    textoPadrao: 'Ver preços'
+  },
+  {
+    codigo: 'VER_REGRAS',
+    label: 'Regras',
+    descricao: 'Mostra as regras do local e o cancelamento',
+    textoPadrao: 'Ver regras e cancelamento'
+  },
+  {
+    codigo: 'SOLICITAR_RESERVA',
+    label: 'Reserva',
+    descricao: 'Opção de solicitar reserva no WhatsApp',
+    textoPadrao: 'Solicitar uma reserva'
+  }
+];
 
 export const MODULOS_DISPONIVEIS: CatalogoModulo[] = [
   {
@@ -92,7 +161,7 @@ export const MODULOS_DISPONIVEIS: CatalogoModulo[] = [
   },
   {
     codigo: 'MENU_CARDAPIO',
-    label: 'Menu / Cardápio',
-    descricao: 'Menu dinâmico montado a partir de ModuloEmpresa'
+    label: 'Preços',
+    descricao: 'Envia a tabela de preços cadastrada pelo WhatsApp'
   }
 ];

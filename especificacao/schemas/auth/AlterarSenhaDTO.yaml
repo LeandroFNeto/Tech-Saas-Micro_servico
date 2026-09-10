@@ -1,0 +1,17 @@
+type: object
+description: Troca de senha do usuário autenticado (PUT /auth/alterar-senha).
+properties:
+  senhaAtual:
+    type: string
+    format: password
+    description: Senha atual em texto puro
+    example: SenhaMaster123
+  novaSenha:
+    type: string
+    format: password
+    minLength: 6
+    description: Nova senha; o servidor persiste o hash BCrypt
+    example: NovaSenha456
+required:
+  - senhaAtual
+  - novaSenha

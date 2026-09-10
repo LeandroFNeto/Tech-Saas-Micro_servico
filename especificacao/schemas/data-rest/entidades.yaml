@@ -30,6 +30,8 @@ Empresa:
       type: string
     tabelaDePrecos:
       type: string
+    regrasLocacao:
+      type: string
     diasDeReserva:
       type: array
       items:
@@ -38,12 +40,18 @@ Empresa:
       type: string
     linkFotoPrincipal:
       type: string
-    linkGaleria:
-      type: string
+    urlsGaleria:
+      type: array
+      maxItems: 5
+      items:
+        type: string
     googleCalendarId:
       type: string
     locacaoPorHora:
       type: boolean
+    permiteReservaAutomatica:
+      type: boolean
+      default: false
     modulosAtivos:
       type: array
       items:
@@ -63,6 +71,8 @@ EntityModelEmpresa:
       type: string
     tabelaDePrecos:
       type: string
+    regrasLocacao:
+      type: string
     diasDeReserva:
       type: array
       items:
@@ -71,12 +81,18 @@ EntityModelEmpresa:
       type: string
     linkFotoPrincipal:
       type: string
-    linkGaleria:
-      type: string
+    urlsGaleria:
+      type: array
+      maxItems: 5
+      items:
+        type: string
     googleCalendarId:
       type: string
     locacaoPorHora:
       type: boolean
+    permiteReservaAutomatica:
+      type: boolean
+      default: false
     modulosAtivos:
       type: array
       items:
@@ -146,6 +162,8 @@ EmpresaRequestBody:
       type: string
     tabelaDePrecos:
       type: string
+    regrasLocacao:
+      type: string
     diasDeReserva:
       type: array
       items:
@@ -154,12 +172,18 @@ EmpresaRequestBody:
       type: string
     linkFotoPrincipal:
       type: string
-    linkGaleria:
-      type: string
+    urlsGaleria:
+      type: array
+      maxItems: 5
+      items:
+        type: string
     googleCalendarId:
       type: string
     locacaoPorHora:
       type: boolean
+    permiteReservaAutomatica:
+      type: boolean
+      default: false
     modulosAtivos:
       type: array
       items:

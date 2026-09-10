@@ -1,6 +1,6 @@
 <div class="mb-6">
   <h2 class="text-2xl font-semibold text-brand-900">Meu perfil</h2>
-  <p class="text-sm text-brand-600">Atualize os dados do bot. Cobrança e módulos ficam com o administrador.</p>
+  <p class="text-sm text-brand-600">Atualize os dados do estabelecimento e o menu do bot no WhatsApp.</p>
 </div>
 
 <div class="grid gap-6 xl:grid-cols-[1.4fr_0.8fr]">
@@ -16,41 +16,215 @@
       <p class="rounded-xl border border-accent-200 bg-accent-50 px-4 py-3 text-sm text-brand-800">{{ sucesso() }}</p>
     }
 
-    <form class="card space-y-4 p-5" [formGroup]="form" (ngSubmit)="salvar()">
-      <label class="block">
-        <span class="mb-1 block text-sm font-medium">Nome</span>
-        <input class="input-field" formControlName="nome" />
-      </label>
+    <div class="card space-y-4 p-5">
+      <div class="flex flex-wrap gap-2 border-b border-brand-200 pb-3">
+        <button
+          type="button"
+          class="rounded-lg px-3 py-2 text-sm font-medium"
+          [class.bg-brand-100]="aba() === 'dados'"
+          [class.text-brand-900]="aba() === 'dados'"
+          [class.text-brand-600]="aba() !== 'dados'"
+          (click)="aba.set('dados')"
+        >
+          Dados do perfil
+        </button>
+        <button
+          type="button"
+          class="rounded-lg px-3 py-2 text-sm font-medium"
+          [class.bg-brand-100]="aba() === 'robo'"
+          [class.text-brand-900]="aba() === 'robo'"
+          [class.text-brand-600]="aba() !== 'robo'"
+          (click)="aba.set('robo')"
+        >
+          Configurações do Robô
+        </button>
+        <button
+          type="button"
+          class="rounded-lg px-3 py-2 text-sm font-medium"
+          [class.bg-brand-100]="aba() === 'configuracao'"
+          [class.text-brand-900]="aba() === 'configuracao'"
+          [class.text-brand-600]="aba() !== 'configuracao'"
+          (click)="aba.set('configuracao')"
+        >
+          Configuração
+        </button>
+      </div>
 
-      <label class="block">
-        <span class="mb-1 block text-sm font-medium">Mensagem de saudação</span>
-        <textarea class="input-field min-h-24" formControlName="mensagemSaudacao"></textarea>
-      </label>
+      @if (aba() !== 'configuracao') {
+        <form class="space-y-4" [formGroup]="form" (ngSubmit)="salvar()">
+          @if (aba() === 'dados') {
+            <label class="block">
+              <span class="mb-1 block text-sm font-medium">Nome</span>
+              <input class="input-field" formControlName="nome" />
+            </label>
 
-      <label class="block">
-        <span class="mb-1 block text-sm font-medium">Tabela de preços</span>
-        <textarea class="input-field min-h-24" formControlName="tabelaDePrecos"></textarea>
-      </label>
+            <label class="block">
+              <span class="mb-1 block text-sm font-medium">Mensagem de saudação</span>
+              <textarea class="input-field min-h-24" formControlName="mensagemSaudacao"></textarea>
+            </label>
 
-      <label class="block">
-        <span class="mb-1 block text-sm font-medium">Link do Google Maps</span>
-        <input class="input-field" formControlName="linkGoogleMaps" placeholder="https://maps.app.goo.gl/..." />
-      </label>
+            <label class="block">
+              <span class="mb-1 block text-sm font-medium">Link do Google Maps</span>
+              <input class="input-field" formControlName="linkGoogleMaps" placeholder="https://maps.app.goo.gl/..." />
+            </label>
 
-      <label class="block">
-        <span class="mb-1 block text-sm font-medium">Foto principal</span>
-        <input class="input-field" formControlName="linkFotoPrincipal" />
-      </label>
+            <label class="block">
+              <span class="mb-1 block text-sm font-medium">Foto principal (Cloudinary)</span>
+              <input
+                class="input-field"
+                formControlName="linkFotoPrincipal"
+                placeholder="https://res.cloudinary.com/.../hero_image.jpg"
+              />
+              <span class="mt-1 block text-xs text-brand-600">Cole a URL pública da hero image. O upload pelo widget virá em seguida.</span>
+            </label>
 
-      <label class="block">
-        <span class="mb-1 block text-sm font-medium">Galeria / Instagram</span>
-        <input class="input-field" formControlName="linkGaleria" />
-      </label>
+            <div>
+              <div class="mb-2 flex items-center justify-between gap-3">
+                <span class="text-sm font-medium">Galeria de fotos (até {{ maxUrlsGaleria }} URLs)</span>
+                <button
+                  class="btn-secondary px-3 py-1 text-xs"
+                  type="button"
+                  [disabled]="urlsGaleria.length >= maxUrlsGaleria"
+                  (click)="adicionarUrlGaleria()"
+                >
+                  Adicionar URL
+                </button>
+              </div>
+              <p class="mb-3 text-xs text-brand-600">Cole os links públicos do Cloudinary. O bot envia essas fotos no WhatsApp se o cliente pedir mais imagens.</p>
+              <div class="space-y-2" formArrayName="urlsGaleria">
+                @for (url of urlsGaleria.controls; track $index) {
+                  <div class="flex gap-2">
+                    <input class="input-field" [formControlName]="$index" placeholder="https://res.cloudinary.com/.../foto.jpg" />
+                    <button class="btn-secondary px-3" type="button" (click)="removerUrlGaleria($index)">Remover</button>
+                  </div>
+                }
+              </div>
+            </div>
+          }
 
-      <button class="btn-primary" type="submit" [disabled]="salvando()">
-        {{ salvando() ? 'Salvando...' : 'Atualizar perfil' }}
-      </button>
-    </form>
+          @if (aba() === 'robo') {
+            <h3 class="text-lg font-semibold text-brand-900">Configurações do Robô</h3>
+            <p class="text-sm text-brand-600">Defina como o bot atende no WhatsApp: tipo de locação, preços, regras e opções do menu.</p>
+
+            <label class="flex cursor-pointer items-start justify-between gap-4 rounded-xl border border-brand-200 p-4">
+              <span>
+                <span class="block text-sm font-medium">Aluguel por Hora</span>
+                <span class="text-xs text-brand-600">
+                  Ligado = cobrança por hora. Desligado = diária.
+                </span>
+              </span>
+              <input class="mt-1 h-5 w-9 accent-accent-500" type="checkbox" formControlName="locacaoPorHora" />
+            </label>
+
+            <label class="flex cursor-pointer items-start justify-between gap-4 rounded-xl border border-brand-200 p-4">
+              <span>
+                <span class="block text-sm font-medium">Reserva Automática pelo Bot</span>
+                <span class="text-xs text-brand-600">
+                  Ligada = o WhatsApp mostra a opção de solicitar reserva. Desligada = avisa que um atendente vai responder.
+                </span>
+              </span>
+              <input
+                class="mt-1 h-5 w-9 accent-accent-500"
+                type="checkbox"
+                formControlName="permiteReservaAutomatica"
+              />
+            </label>
+
+            <label class="block">
+              <span class="mb-1 block text-sm font-medium">Regras do Local e Cancelamento</span>
+              <textarea
+                class="input-field min-h-32"
+                formControlName="regrasLocacao"
+                placeholder="Cancelar com 5 dias de antecedência"
+              ></textarea>
+            </label>
+
+            <label class="block">
+              <span class="mb-1 block text-sm font-medium">Mensagem de preços</span>
+              <textarea
+                class="input-field min-h-32"
+                formControlName="tabelaDePrecos"
+                placeholder="Diária padrão: R$ 500,00&#10;Final de semana: R$ 700,00"
+              ></textarea>
+              <span class="mt-1 block text-xs text-brand-600">
+                Texto que o bot envia no WhatsApp quando o cliente escolhe a opção de preços.
+              </span>
+            </label>
+
+            <div>
+              <h4 class="mb-1 text-sm font-semibold text-brand-900">Opções do menu do WhatsApp</h4>
+              <p class="mb-3 text-xs text-brand-600">
+                Ative cada opção e edite o texto que o cliente vê no bot (Fotos, Localização, Preços, Regras, Reserva).
+              </p>
+
+              <div class="space-y-3" formArrayName="modulosMenu">
+                @for (modulo of modulosMenu.controls; track modulo.controls.codigoAcao.value; let i = $index) {
+                  <div class="rounded-xl border border-brand-200 p-4" [formGroupName]="i">
+                    <div class="mb-3 flex items-start justify-between gap-4">
+                      <span>
+                        <span class="block text-sm font-medium">{{ rotuloModulo(modulo.controls.codigoAcao.value) }}</span>
+                        <span class="text-xs text-brand-600">{{ descricaoModulo(modulo.controls.codigoAcao.value) }}</span>
+                      </span>
+                      <label class="flex cursor-pointer items-center gap-2 text-sm">
+                        <input class="h-5 w-9 accent-accent-500" type="checkbox" formControlName="ativo" />
+                        <span class="text-brand-700">Ativo</span>
+                      </label>
+                    </div>
+                    <label class="block">
+                      <span class="mb-1 block text-xs font-medium text-brand-600">Texto do menu no WhatsApp</span>
+                      <input class="input-field" formControlName="textoMenu" />
+                    </label>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          <button class="btn-primary" type="submit" [disabled]="salvando()">
+            {{ salvando() ? 'Salvando...' : 'Atualizar perfil' }}
+          </button>
+        </form>
+      }
+
+      @if (aba() === 'configuracao') {
+        <form class="space-y-4" [formGroup]="formSenha" (ngSubmit)="alterarSenha()">
+          <div>
+            <h3 class="text-lg font-semibold text-brand-900">Alterar senha</h3>
+            <p class="mt-1 text-sm text-brand-600">Troque a senha temporária por uma senha sua.</p>
+          </div>
+
+          <label class="block">
+            <span class="mb-1 block text-sm font-medium">E-mail de acesso</span>
+            <input class="input-field bg-brand-50" type="email" [value]="emailAcesso" readonly />
+          </label>
+
+          <label class="block">
+            <span class="mb-1 block text-sm font-medium">Senha atual</span>
+            <input class="input-field" type="password" formControlName="senhaAtual" autocomplete="current-password" />
+          </label>
+
+          <label class="block">
+            <span class="mb-1 block text-sm font-medium">Nova senha</span>
+            <input class="input-field" type="password" formControlName="novaSenha" autocomplete="new-password" />
+            @if (formSenha.controls.novaSenha.touched && formSenha.controls.novaSenha.invalid) {
+              <span class="mt-1 block text-xs text-red-600">A nova senha precisa ter ao menos 6 caracteres.</span>
+            }
+          </label>
+
+          <label class="block">
+            <span class="mb-1 block text-sm font-medium">Confirmar nova senha</span>
+            <input class="input-field" type="password" formControlName="confirmarSenha" autocomplete="new-password" />
+            @if (senhasNaoConferem) {
+              <span class="mt-1 block text-xs text-red-600">As senhas não conferem.</span>
+            }
+          </label>
+
+          <button class="btn-primary" type="submit" [disabled]="formSenha.invalid || salvandoSenha()">
+            {{ salvandoSenha() ? 'Salvando...' : 'Salvar nova senha' }}
+          </button>
+        </form>
+      }
+    </div>
   </div>
 
   <div>

@@ -8,7 +8,8 @@ import {
   EmpresaUpdateAdminDTO,
   EmpresaUpdateDTO,
   EmpresaView,
-  ModuloEmpresa
+  ModuloEmpresa,
+  ModuloMenuDTO
 } from '../../shared/models/empresa.models';
 
 interface HalCollection {
@@ -65,11 +66,16 @@ export class EmpresaService {
       tabelaDePrecos: item['tabelaDePrecos'] as string | undefined,
       linkGoogleMaps: item['linkGoogleMaps'] as string | undefined,
       linkFotoPrincipal: item['linkFotoPrincipal'] as string | undefined,
-      linkGaleria: item['linkGaleria'] as string | undefined,
+      urlsGaleria: Array.isArray(item['urlsGaleria'])
+        ? (item['urlsGaleria'] as unknown[]).filter((url): url is string => typeof url === 'string')
+        : [],
+      usaIA: Boolean(item['usaIA']),
+      permiteReservaAutomatica: Boolean(item['permiteReservaAutomatica']),
+      regrasLocacao: item['regrasLocacao'] as string | undefined,
       locacaoPorHora: Boolean(item['locacaoPorHora']),
       googleCalendarId: item['googleCalendarId'] as string | undefined,
-      usaIA: Boolean(item['usaIA']),
       modulosAtivos: this.extrairCodigos(item['modulosAtivos']),
+      modulosMenu: this.extrairModulos(item['modulosAtivos'] ?? item['modulosMenu']),
       atualizadoEm: item['atualizadoEm'] as string | undefined
     };
   }
@@ -88,5 +94,29 @@ export class EmpresaService {
         return entidade.codigoAcao;
       })
       .filter((codigo): codigo is string => !!codigo);
+  }
+
+  private extrairModulos(modulos: unknown): ModuloMenuDTO[] {
+    if (!Array.isArray(modulos)) {
+      return [];
+    }
+
+    return modulos
+      .map((modulo) => {
+        if (typeof modulo === 'string') {
+          return { codigoAcao: modulo, ativo: true };
+        }
+        const entidade = modulo as ModuloEmpresa;
+        if (!entidade.codigoAcao) {
+          return null;
+        }
+        return {
+          codigoAcao: entidade.codigoAcao,
+          textoMenu: entidade.textoMenu,
+          ordemExibicao: entidade.ordemExibicao,
+          ativo: entidade.ativo
+        };
+      })
+      .filter((modulo): modulo is ModuloMenuDTO => modulo != null);
   }
 }

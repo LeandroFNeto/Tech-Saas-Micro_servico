@@ -57,6 +57,26 @@
         <span class="mb-1 block text-sm font-medium">Preço base</span>
         <input class="input-field" type="number" formControlName="precoBase" min="0" step="0.01" />
       </label>
+
+      <label class="block">
+        <span class="mb-1 block text-sm font-medium">E-mail de acesso</span>
+        <input
+          class="input-field bg-brand-50"
+          type="email"
+          formControlName="email"
+          readonly
+          autocomplete="off"
+          placeholder="sessao@gamb.com.br"
+        />
+        <span class="mt-1 block text-xs text-brand-600">
+          O e-mail de acesso é gerado automaticamente baseado no nome da sessão do WhatsApp
+        </span>
+      </label>
+
+      <label class="block">
+        <span class="mb-1 block text-sm font-medium">Senha inicial</span>
+        <input class="input-field" type="password" formControlName="senha" autocomplete="new-password" placeholder="mínimo 6 caracteres" />
+      </label>
     }
 
     @if (modoEdicao()) {
@@ -68,6 +88,73 @@
         </span>
       </label>
     }
+
+    <div class="space-y-2">
+      <span class="block text-sm font-medium">Foto principal (Cloudinary)</span>
+      <button class="btn-primary w-full sm:w-auto" type="button" (click)="abrirWidgetCloudinary('principal')">
+        Fazer Upload da Foto Principal
+      </button>
+      <input
+        class="input-field"
+        formControlName="linkFotoPrincipal"
+        placeholder="https://res.cloudinary.com/.../hero_image.jpg"
+      />
+      @if (form.controls.linkFotoPrincipal.value) {
+        <div class="flex items-center gap-3 rounded-xl border border-brand-200 bg-brand-50 p-3">
+          <img
+            class="h-16 w-16 rounded-lg object-cover"
+            [src]="form.controls.linkFotoPrincipal.value"
+            alt="Prévia da foto principal"
+          />
+          <a
+            class="truncate text-xs text-brand-700 underline"
+            [href]="form.controls.linkFotoPrincipal.value"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {{ form.controls.linkFotoPrincipal.value }}
+          </a>
+        </div>
+      }
+    </div>
+
+    <div>
+      <div class="mb-2 flex flex-wrap items-center justify-between gap-3">
+        <span class="text-sm font-medium">Galeria de fotos (até {{ maxUrlsGaleria }} URLs)</span>
+        <div class="flex flex-wrap gap-2">
+          <button
+            class="btn-primary px-3 py-1 text-xs"
+            type="button"
+            [disabled]="galeriaCheia"
+            (click)="abrirWidgetCloudinary('galeria')"
+          >
+            Adicionar Fotos à Galeria
+          </button>
+          <button
+            class="btn-secondary px-3 py-1 text-xs"
+            type="button"
+            [disabled]="urlsGaleria.length >= maxUrlsGaleria"
+            (click)="adicionarUrlGaleria()"
+          >
+            Adicionar URL
+          </button>
+        </div>
+      </div>
+      <p class="mb-3 text-xs text-brand-600">
+        Envie imagens pelo widget ou cole links públicos do Cloudinary. O bot usa essas fotos no WhatsApp.
+      </p>
+      <div class="space-y-2" formArrayName="urlsGaleria">
+        @for (url of urlsGaleria.controls; track $index) {
+          <div class="flex items-center gap-2">
+            @if (url.value) {
+              <img class="h-12 w-12 shrink-0 rounded-lg object-cover" [src]="url.value" alt="Prévia da galeria" />
+            }
+            <input class="input-field" [formControlName]="$index" placeholder="https://res.cloudinary.com/.../foto.jpg" />
+            <button class="btn-secondary px-3" type="button" (click)="removerUrlGaleria($index)">Remover</button>
+          </div>
+        }
+      </div>
+    </div>
   </section>
 
   <section class="card p-5">

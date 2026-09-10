@@ -235,9 +235,26 @@ export async function startSession(req: Request, res: Response): Promise<any> {
    */
   const session = req.session;
   const { waitQrCode = false } = req.body;
+  const status = req.client?.status;
 
-  await getSessionState(req, res);
-  await SessionUtil.opendata(req, session, waitQrCode ? res : null);
+  if (status && status !== 'CLOSED') {
+    await getSessionState(req, res);
+    return;
+  }
+
+  if (waitQrCode) {
+    await SessionUtil.opendata(req, session, res);
+    return;
+  }
+
+  if (!res.headersSent) {
+    res.status(200).json({
+      status: 'INITIALIZING',
+      qrcode: null,
+      session,
+    });
+  }
+  SessionUtil.opendata(req, session, null).catch((error) => req.logger.error(error));
 }
 
 export async function closeSession(req: Request, res: Response): Promise<any> {

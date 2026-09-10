@@ -1,0 +1,21 @@
+put:
+  tags:
+    - Autenticação
+  summary: Alterar senha do usuário autenticado
+  description: Exige JWT no header Authorization Bearer. Aplica AlterarSenhaDTO e persiste o hash BCrypt.
+  operationId: alterarSenha
+  security:
+    - bearerAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: "#/components/schemas/AlterarSenhaDTO"
+  responses:
+    "204":
+      description: Senha atualizada
+    "401":
+      description: JWT ausente, inválido ou senha atual incorreta
+    "400":
+      description: Nova senha inválida

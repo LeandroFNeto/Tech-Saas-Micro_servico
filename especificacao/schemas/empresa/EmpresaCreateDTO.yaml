@@ -22,6 +22,38 @@ properties:
     type: string
     description: ID da agenda Google desta empresa (não usar valor global no .env)
     example: abc123@group.calendar.google.com
+  permiteReservaAutomatica:
+    type: boolean
+    description: Quando true, o bot já nasce com a reserva automática habilitada no WhatsApp
+    default: false
+    example: false
+  linkFotoPrincipal:
+    type: string
+    description: URL pública da foto principal (Hero Image) hospedada no Cloudinary
+    example: "https://res.cloudinary.com/demo/image/upload/v1/hero_image.jpg"
+  urlsGaleria:
+    type: array
+    description: Lista de URLs públicas das fotos complementares hospedadas no Cloudinary
+    maxItems: 5
+    items:
+      type: string
+    example:
+      - "https://res.cloudinary.com/demo/image/upload/v1/foto1.jpg"
+      - "https://res.cloudinary.com/demo/image/upload/v1/foto2.jpg"
+  email:
+    type: string
+    format: email
+    description: >
+      E-mail de acesso do cliente. O servidor ignora o valor enviado e força
+      sessaoWhatsapp (minúsculas, sem espaços) + "@gamb.com.br".
+    example: sessao_recanto_01@gamb.com.br
+  senha:
+    type: string
+    format: password
+    writeOnly: true
+    minLength: 6
+    description: Senha inicial do cliente; o servidor persiste apenas o hash BCrypt
+    example: SenhaCliente123
   modulosIniciais:
     type: array
     description: Módulos liberados na criação da empresa
@@ -33,3 +65,4 @@ properties:
 required:
 - nome
 - sessaoWhatsapp
+- senha

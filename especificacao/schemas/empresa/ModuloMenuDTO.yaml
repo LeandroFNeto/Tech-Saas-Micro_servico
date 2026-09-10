@@ -1,0 +1,23 @@
+type: object
+description: Item do menu do WhatsApp configurável pelo cliente. Não é a entidade JPA ModuloEmpresa.
+properties:
+  codigoAcao:
+    type: string
+    description: Código da ação do bot (Fotos, Localização, Preços, Regras, Reserva)
+    example: VER_FOTOS
+  textoMenu:
+    type: string
+    description: Texto que aparece no menu do WhatsApp
+    example: Ver fotos do espaço
+  ativo:
+    type: boolean
+    description: Se a opção aparece no menu do bot
+    default: true
+    example: true
+  ordemExibicao:
+    type: integer
+    format: int32
+    description: Ordem da opção no menu
+    example: 1
+required:
+- codigoAcao

@@ -94,6 +94,10 @@ public class ServicoWppConnect {
 
     public SessaoStatusResponseDTO iniciarSessao(String sessao) {
         try {
+            SessaoStatusResponseDTO atual = consultarStatus(sessao);
+            if ("CONNECTED".equals(atual.status())) {
+                return atual;
+            }
             return dispararStartSession(sessao);
         } catch (HttpClientErrorException.Unauthorized e) {
             invalidarToken(sessao);

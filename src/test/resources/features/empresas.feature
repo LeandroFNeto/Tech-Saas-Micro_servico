@@ -13,6 +13,8 @@ Funcionalidade: Contratos de empresa do SaaS
       | sessaoWhatsapp  | sessao_recanto_01    |
       | ramoDeAtuacao   | LOCACAO              |
       | precoBase       | 500.0                |
+      | email           | cliente@recanto.com  |
+      | senha           | SenhaCliente123      |
     Então o status HTTP deve ser 201
     E o corpo deve seguir o schema EmpresaResponseDTO
     E o campo "sessaoWhatsapp" deve ser "sessao_recanto_01"
@@ -23,6 +25,8 @@ Funcionalidade: Contratos de empresa do SaaS
       | nome           | Recanto Vista Alegre |
       | sessaoWhatsapp | sessao_recanto_02    |
       | ramoDeAtuacao  | LOCACAO              |
+      | email          | outro@recanto.com    |
+      | senha          | SenhaCliente123      |
     Então o status HTTP deve ser 401
 
   Cenário: POST /empresas rejeita sessão WhatsApp já ocupada
@@ -32,14 +36,17 @@ Funcionalidade: Contratos de empresa do SaaS
       | nome           | Outro Recanto  |
       | sessaoWhatsapp | sessao_ocupada |
       | ramoDeAtuacao  | LOCACAO        |
+      | email          | ocupado@recanto.com |
+      | senha          | SenhaCliente123     |
     Então o status HTTP deve ser 400
 
   Cenário: PUT /empresas/{sessao}/cliente atualiza só o perfil com EmpresaUpdateDTO
     Dado uma empresa persistida com sessão "sessao_cliente" e ramo "LOCACAO"
     Quando eu envio PUT /empresas/sessao_cliente/cliente com o EmpresaUpdateDTO:
-      | nome              | Recanto Vista Alegre Atualizado |
-      | mensagemSaudacao  | Olá! Como posso ajudar?         |
-      | linkGoogleMaps    | https://maps.app.goo.gl/exemplo |
+      | nome                       | Recanto Vista Alegre Atualizado |
+      | mensagemSaudacao           | Olá! Como posso ajudar?         |
+      | linkGoogleMaps             | https://maps.app.goo.gl/exemplo |
+      | permiteReservaAutomatica   | true                            |
     Então o status HTTP deve ser 200
     E o corpo deve seguir o schema EmpresaResponseDTO
     E o campo "nome" deve ser "Recanto Vista Alegre Atualizado"

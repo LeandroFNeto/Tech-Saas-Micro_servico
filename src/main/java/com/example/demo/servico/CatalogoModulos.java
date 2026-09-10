@@ -20,9 +20,15 @@ public final class CatalogoModulos {
         TEXTOS.put("IA_GEMINI", "Falar com atendente virtual");
         TEXTOS.put("GOOGLE_CALENDAR", "Consultar agenda");
         TEXTOS.put("VER_FOTOS", "Ver fotos do espaço");
+        TEXTOS.put("VER_LOCALIZACAO", "Ver localização");
+        TEXTOS.put("VER_REGRAS", "Ver regras e cancelamento");
+        TEXTOS.put("SOLICITAR_RESERVA", "Solicitar uma reserva");
         TEXTOS.put("PESQUISAR_DATA", "Pesquisar data disponível");
-        TEXTOS.put("MENU_CARDAPIO", "Ver cardápio");
+        TEXTOS.put("MENU_CARDAPIO", "Ver preços");
     }
+
+    public static final List<String> CODIGOS_MENU_BOT = List.of(
+            "VER_FOTOS", "VER_LOCALIZACAO", "MENU_CARDAPIO", "VER_REGRAS", "SOLICITAR_RESERVA");
 
     private CatalogoModulos() {
     }
@@ -53,5 +59,52 @@ public final class CatalogoModulos {
         }
 
         empresa.setUsaIA(codigos.stream().anyMatch(c -> "IA_GEMINI".equals(c)));
+    }
+
+    public static boolean isCodigoMenuBot(String codigo) {
+        return codigo != null && CODIGOS_MENU_BOT.contains(codigo.trim());
+    }
+
+    public static String textoPadrao(String codigo) {
+        if (codigo == null) {
+            return "";
+        }
+        return TEXTOS.getOrDefault(codigo.trim(), codigo.trim());
+    }
+
+    /**
+     * Atualiza texto e ativo de um item do menu do bot sem apagar módulos de infraestrutura.
+     */
+    public static void upsertItemMenu(Empresa empresa, String codigoAcao, String textoMenu, Boolean ativo) {
+        if (!isCodigoMenuBot(codigoAcao)) {
+            return;
+        }
+        String chave = codigoAcao.trim();
+        if (empresa.getModulosAtivos() == null) {
+            empresa.setModulosAtivos(new ArrayList<>());
+        }
+
+        ModuloEmpresa existente = empresa.getModulosAtivos().stream()
+                .filter(modulo -> chave.equals(modulo.getCodigoAcao()))
+                .findFirst()
+                .orElse(null);
+
+        if (existente == null) {
+            ModuloEmpresa modulo = new ModuloEmpresa();
+            modulo.setEmpresa(empresa);
+            modulo.setCodigoAcao(chave);
+            modulo.setTextoMenu(textoMenu == null || textoMenu.isBlank() ? textoPadrao(chave) : textoMenu.trim());
+            modulo.setOrdemExibicao(CODIGOS_MENU_BOT.indexOf(chave) + 1);
+            modulo.setAtivo(ativo == null || ativo);
+            empresa.getModulosAtivos().add(modulo);
+            return;
+        }
+
+        if (textoMenu != null) {
+            existente.setTextoMenu(textoMenu.isBlank() ? textoPadrao(chave) : textoMenu.trim());
+        }
+        if (ativo != null) {
+            existente.setAtivo(ativo);
+        }
     }
 }

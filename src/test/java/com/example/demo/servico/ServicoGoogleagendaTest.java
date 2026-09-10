@@ -4,15 +4,15 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class ServicoGoogleagendaTest {
 
     @Test
-    @DisplayName("Sem crendecial.json a inicialização só avisa e não derruba o contexto")
-    void inicializarSemCredencialNaoLanca() {
+    @DisplayName("Com credencial.json a agenda inicializa e fica disponível em memória")
+    void inicializarComCredencialConectaAgenda() {
         ServicoGoogleagenda servico = new ServicoGoogleagenda();
         assertDoesNotThrow(servico::inicializarAgenda);
-        assertThrows(IllegalStateException.class, servico::conectarAgenda);
+        assertNotNull(servico.conectarAgenda());
     }
 }

@@ -19,11 +19,13 @@ services:
   wppconnect:
     build: ./wppconnect-server
     container_name: wppconnect_server
+    restart: always
     ports:
       - "21465:21465"
     environment:
       - PORT=21465
       - SECRET_KEY=${WPP_SECRET_KEY}
+      - WPPCONNECT_WEBHOOK_URL=http://bot-java:8080/webhook/whatsapp
     networks:
       - bot-network
     volumes:
@@ -53,6 +55,10 @@ services:
       - ADMIN_API_KEY=${ADMIN_API_KEY}
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       - API_AUTH_TOKEN=${API_AUTH_TOKEN}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - ADMIN_DEFAULT_EMAIL=${ADMIN_DEFAULT_EMAIL:-usuario@gamb.com}
+      - ADMIN_DEFAULT_PASSWORD=${ADMIN_DEFAULT_PASSWORD:-SenhaMaster123}
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-*}
     networks:
       - bot-network
 

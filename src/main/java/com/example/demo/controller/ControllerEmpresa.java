@@ -6,10 +6,12 @@ import com.example.demo.dto.empresa.EmpresaPainelDTO;
 import com.example.demo.dto.empresa.EmpresaResponseDTO;
 import com.example.demo.dto.empresa.EmpresaUpdateAdminDTO;
 import com.example.demo.dto.empresa.EmpresaUpdateDTO;
+import com.example.demo.dto.empresa.ModuloMenuDTO;
 import com.example.demo.model.Empresa;
 import com.example.demo.model.ModuloEmpresa;
 import com.example.demo.repository.EmpresaRepository;
 import com.example.demo.servico.CatalogoModulos;
+import com.example.demo.servico.ServicoAuth;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -22,6 +24,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -34,13 +39,30 @@ import java.util.List;
 public class ControllerEmpresa {
 
     @Autowired private EmpresaRepository empresaRepository;
+    @Autowired private ServicoAuth servicoAuth;
     @Value("${admin.api.key}") private String adminApiKey;
 
+    private boolean possuiPapel(String papel) {
+        Authentication autenticacao = SecurityContextHolder.getContext().getAuthentication();
+        if (autenticacao == null || !autenticacao.isAuthenticated()) {
+            return false;
+        }
+        return autenticacao.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch(papel::equals);
+    }
+
     private boolean isAcessoNegado(String token) {
+        if (possuiPapel("ROLE_ADMIN")) {
+            return false;
+        }
         return token == null || !token.equals(adminApiKey);
     }
 
     private boolean isClienteSemToken(String token) {
+        if (possuiPapel("ROLE_CLIENTE") || possuiPapel("ROLE_ADMIN")) {
+            return false;
+        }
         return token == null || token.isBlank();
     }
 
@@ -111,6 +133,9 @@ public class ControllerEmpresa {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Sessão já ocupada");
         }
 
+        String emailAcesso = ServicoAuth.emailAcessoDaSessao(dto.sessaoWhatsapp());
+        servicoAuth.garantirEmailDisponivel(emailAcesso);
+
         Empresa empresa = new Empresa();
         empresa.setNome(dto.nome());
         empresa.setSessaoWhatsapp(dto.sessaoWhatsapp());
@@ -121,9 +146,19 @@ public class ControllerEmpresa {
         if (dto.precoBase() != null) {
             empresa.setTabelaDePrecos(dto.precoBase().toString());
         }
+        if (dto.permiteReservaAutomatica() != null) {
+            empresa.setPermiteReservaAutomatica(dto.permiteReservaAutomatica());
+        }
+        if (dto.linkFotoPrincipal() != null) {
+            empresa.setLinkFotoPrincipal(dto.linkFotoPrincipal());
+        }
+        if (dto.urlsGaleria() != null) {
+            empresa.setUrlsGaleria(dto.urlsGaleria());
+        }
         CatalogoModulos.aplicar(empresa, dto.modulosIniciais());
 
         Empresa salva = empresaRepository.save(empresa);
+        servicoAuth.criarUsuarioCliente(salva, emailAcesso, dto.senha());
         return ResponseEntity.status(HttpStatus.CREATED).body(paraResposta(salva));
     }
 
@@ -141,7 +176,7 @@ public class ControllerEmpresa {
             @PathVariable String sessao,
             @Valid @RequestBody EmpresaUpdateDTO dto) {
 
-        Empresa empresa = empresaRepository.findBySessaoWhatsapp(sessao);
+        Empresa empresa = empresaRepository.buscarPorSessaoComModulos(sessao);
         if (empresa == null) {
             return ResponseEntity.notFound().build();
         }
@@ -151,7 +186,21 @@ public class ControllerEmpresa {
         if (dto.tabelaDePrecos() != null) empresa.setTabelaDePrecos(dto.tabelaDePrecos());
         if (dto.linkGoogleMaps() != null) empresa.setLinkGoogleMaps(dto.linkGoogleMaps());
         if (dto.linkFotoPrincipal() != null) empresa.setLinkFotoPrincipal(dto.linkFotoPrincipal());
-        if (dto.linkGaleria() != null) empresa.setLinkGaleria(dto.linkGaleria());
+        if (dto.urlsGaleria() != null) empresa.setUrlsGaleria(dto.urlsGaleria());
+        if (dto.permiteReservaAutomatica() != null) {
+            empresa.setPermiteReservaAutomatica(dto.permiteReservaAutomatica());
+        }
+        if (dto.locacaoPorHora() != null) {
+            empresa.setLocacaoPorHora(dto.locacaoPorHora());
+        }
+        if (dto.regrasLocacao() != null) {
+            empresa.setRegrasLocacao(dto.regrasLocacao());
+        }
+        if (dto.modulosMenu() != null) {
+            for (var item : dto.modulosMenu()) {
+                CatalogoModulos.upsertItemMenu(empresa, item.codigoAcao(), item.textoMenu(), item.ativo());
+            }
+        }
 
         return ResponseEntity.ok(paraResposta(empresaRepository.save(empresa)));
     }
@@ -183,18 +232,38 @@ public class ControllerEmpresa {
         if (dto.sessaoWhatsapp() != null) empresa.setSessaoWhatsapp(dto.sessaoWhatsapp());
         if (dto.locacaoPorHora() != null) empresa.setLocacaoPorHora(dto.locacaoPorHora());
         if (dto.googleCalendarId() != null) empresa.setGoogleCalendarId(dto.googleCalendarId().isBlank() ? null : dto.googleCalendarId().trim());
+        if (dto.linkFotoPrincipal() != null) empresa.setLinkFotoPrincipal(dto.linkFotoPrincipal());
+        if (dto.urlsGaleria() != null) empresa.setUrlsGaleria(dto.urlsGaleria());
         CatalogoModulos.aplicar(empresa, dto.modulosAtivos());
 
         return ResponseEntity.ok(paraResposta(empresaRepository.save(empresa)));
     }
 
     private EmpresaResponseDTO paraResposta(Empresa empresa) {
+        List<ModuloMenuDTO> menu = (empresa.getModulosAtivos() == null
+                ? List.<ModuloEmpresa>of()
+                : empresa.getModulosAtivos())
+                .stream()
+                .filter(modulo -> CatalogoModulos.isCodigoMenuBot(modulo.getCodigoAcao()))
+                .map(modulo -> new ModuloMenuDTO(
+                        modulo.getCodigoAcao(),
+                        modulo.getTextoMenu(),
+                        modulo.getAtivo(),
+                        modulo.getOrdemExibicao()))
+                .toList();
+
         return new EmpresaResponseDTO(
                 empresa.getId(),
                 empresa.getNome(),
                 empresa.getSessaoWhatsapp(),
                 "DISCONNECTED",
                 empresa.getLinkGoogleMaps(),
+                empresa.getLinkFotoPrincipal(),
+                List.copyOf(empresa.getUrlsGaleria()),
+                Boolean.TRUE.equals(empresa.getPermiteReservaAutomatica()),
+                Boolean.TRUE.equals(empresa.getLocacaoPorHora()),
+                empresa.getRegrasLocacao(),
+                menu,
                 LocalDateTime.now()
         );
     }
@@ -220,11 +289,13 @@ public class ControllerEmpresa {
                 empresa.getMensagemSaudacao(),
                 empresa.getRamoDeAtuacao(),
                 empresa.getTabelaDePrecos(),
+                empresa.getRegrasLocacao(),
                 empresa.getLinkGoogleMaps(),
                 empresa.getLinkFotoPrincipal(),
-                empresa.getLinkGaleria(),
+                List.copyOf(empresa.getUrlsGaleria()),
                 empresa.getGoogleCalendarId(),
                 empresa.getLocacaoPorHora(),
+                Boolean.TRUE.equals(empresa.getPermiteReservaAutomatica()),
                 modulos,
                 LocalDateTime.now()
         );

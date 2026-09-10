@@ -8,7 +8,23 @@ export interface SessaoUsuario {
   exp: number;
 }
 
-export interface CredenciaisLogin {
+export interface LoginRequest {
   email: string;
   senha: string;
 }
+
+export interface LoginResponse {
+  token: string;
+  email: string;
+  role: PapelUsuario;
+  nome?: string;
+  sessaoWhatsapp?: string;
+}
+
+export interface AlterarSenhaRequest {
+  senhaAtual: string;
+  novaSenha: string;
+}
+
+/** @deprecated Use LoginRequest. Mantido para compatibilidade. */
+export type CredenciaisLogin = LoginRequest;

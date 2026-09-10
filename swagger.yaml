@@ -4,6 +4,10 @@ info:
   description: Contrato HTTP do SaaS multi-tenant (WhatsApp + agendamento). Fonte única de verdade modular em especificacao/.
   version: 1.0.0
 paths:
+  /auth/login:
+    $ref: ./especificacao/paths/auth-login.yaml
+  /auth/alterar-senha:
+    $ref: ./especificacao/paths/auth-alterar-senha.yaml
   /empresas:
     $ref: ./especificacao/paths/empresas.yaml
   /empresas/{id}:
@@ -31,7 +35,18 @@ paths:
   /admin/avisos/{id}:
     $ref: ./especificacao/paths/admin-avisos-id.yaml
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   schemas:
+    LoginRequestDTO:
+      $ref: ./especificacao/schemas/auth/LoginRequestDTO.yaml
+    LoginResponseDTO:
+      $ref: ./especificacao/schemas/auth/LoginResponseDTO.yaml
+    AlterarSenhaDTO:
+      $ref: ./especificacao/schemas/auth/AlterarSenhaDTO.yaml
     AvisoDTO:
       $ref: ./especificacao/schemas/aviso/AvisoDTO.yaml
     EmpresaCreateDTO:
@@ -42,6 +57,8 @@ components:
       $ref: ./especificacao/schemas/empresa/EmpresaUpdateAdminDTO.yaml
     EmpresaResponseDTO:
       $ref: ./especificacao/schemas/empresa/EmpresaResponseDTO.yaml
+    ModuloMenuDTO:
+      $ref: ./especificacao/schemas/empresa/ModuloMenuDTO.yaml
     SessaoStatusResponseDTO:
       $ref: ./especificacao/schemas/whatsapp/SessaoStatusResponseDTO.yaml
     WhatsappWebhookDTO:

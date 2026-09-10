@@ -84,6 +84,12 @@ class ServicoWppConnectTest {
     @Test
     void disparaStartSessionNoWppConnect() {
         simularToken("sessao_recanto_01");
+        server.expect(requestTo("http://localhost:21465/api/sessao_recanto_01/status-session"))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess("{\"status\":\"CLOSED\"}", MediaType.APPLICATION_JSON));
+        server.expect(requestTo("http://localhost:21465/api/sessao_recanto_01/qrcode-session"))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess("{\"status\":null}", MediaType.APPLICATION_JSON));
         server.expect(requestTo("http://localhost:21465/api/sessao_recanto_01/start-session"))
                 .andExpect(method(HttpMethod.POST))
                 .andExpect(content().json("{\"webhook\":\"http://bot-java:8080/webhook/whatsapp\",\"waitQrCode\":false}"))
@@ -101,6 +107,12 @@ class ServicoWppConnectTest {
     @Test
     void iniciaSessaoSemQrImediatoMantemAguardandoLeitura() {
         simularToken("sessao_recanto_01");
+        server.expect(requestTo("http://localhost:21465/api/sessao_recanto_01/status-session"))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess("{\"status\":\"CLOSED\"}", MediaType.APPLICATION_JSON));
+        server.expect(requestTo("http://localhost:21465/api/sessao_recanto_01/qrcode-session"))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess("{\"status\":null}", MediaType.APPLICATION_JSON));
         server.expect(requestTo("http://localhost:21465/api/sessao_recanto_01/start-session"))
                 .andExpect(method(HttpMethod.POST))
                 .andRespond(withSuccess("{\"status\":\"INITIALIZING\"}", MediaType.APPLICATION_JSON));
@@ -108,6 +120,20 @@ class ServicoWppConnectTest {
         SessaoStatusResponseDTO dto = servico.iniciarSessao("sessao_recanto_01");
 
         assertEquals("QRCODE", dto.status());
+        assertNull(dto.qrcodeBase64());
+        server.verify();
+    }
+
+    @Test
+    void devolveConexaoExistenteSemReiniciarSessao() {
+        simularToken("sessao_recanto_01");
+        server.expect(requestTo("http://localhost:21465/api/sessao_recanto_01/status-session"))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess("{\"status\":\"CONNECTED\"}", MediaType.APPLICATION_JSON));
+
+        SessaoStatusResponseDTO dto = servico.iniciarSessao("sessao_recanto_01");
+
+        assertEquals("CONNECTED", dto.status());
         assertNull(dto.qrcodeBase64());
         server.verify();
     }

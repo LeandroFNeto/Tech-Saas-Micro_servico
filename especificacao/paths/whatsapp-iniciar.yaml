@@ -2,7 +2,7 @@ post:
   tags:
   - Conexão WhatsApp
   summary: Iniciar sessão WhatsApp e gerar QR Code
-  description: Dispara POST /api/{sessao}/start-session no WPPConnect e devolve o SessaoStatusResponseDTO atualizado.
+  description: Se a sessão já estiver conectada no WPPConnect, devolve essa conexão. Caso contrário dispara POST /api/{sessao}/start-session, reabre o token salvo após queda do servidor e devolve o SessaoStatusResponseDTO.
   operationId: iniciarSessaoWhatsapp
   parameters:
   - name: x-admin-token

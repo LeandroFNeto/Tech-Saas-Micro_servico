@@ -1,10 +1,14 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Component, DestroyRef, NgZone, OnInit, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormArray, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { environment } from '../../../../environments/environment';
 import { mensagemHttp } from '../../../core/interceptors/auth.interceptor';
 import { EmpresaService } from '../../../core/services/empresa.service';
 import { ConexaoWhatsappComponent } from '../../../shared/components/conexao-whatsapp/conexao-whatsapp.component';
-import { EmpresaView, MODULOS_DISPONIVEIS } from '../../../shared/models/empresa.models';
+import { EmpresaView, MAX_URLS_GALERIA, MODULOS_DISPONIVEIS } from '../../../shared/models/empresa.models';
+
+declare var cloudinary: any;
 
 @Component({
   selector: 'app-empresa-form',
@@ -16,8 +20,11 @@ export class EmpresaFormComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly empresasApi = inject(EmpresaService);
+  private readonly zone = inject(NgZone);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly modulos = MODULOS_DISPONIVEIS;
+  readonly maxUrlsGaleria = MAX_URLS_GALERIA;
   readonly modoEdicao = signal(false);
   readonly sessaoOriginal = signal('');
   readonly salvando = signal(false);
@@ -31,14 +38,34 @@ export class EmpresaFormComponent implements OnInit {
     precoBase: this.fb.control<number | null>(null),
     locacaoPorHora: [false],
     googleCalendarId: [''],
+    email: [''],
+    senha: [''],
+    linkFotoPrincipal: [''],
+    urlsGaleria: this.fb.nonNullable.array([this.fb.nonNullable.control('')]),
     modulos: this.fb.group(
       Object.fromEntries(MODULOS_DISPONIVEIS.map((modulo) => [modulo.codigo, this.fb.control(false)]))
     )
   });
 
+  get urlsGaleria(): FormArray {
+    return this.form.controls.urlsGaleria;
+  }
+
+  get galeriaCheia(): boolean {
+    return (
+      this.urlsGaleria.length >= this.maxUrlsGaleria &&
+      this.urlsGaleria.controls.every((controle) => String(controle.value ?? '').trim().length > 0)
+    );
+  }
+
   ngOnInit(): void {
     const sessao = this.route.snapshot.paramMap.get('sessao');
     if (!sessao || sessao === 'nova') {
+      this.form.controls.email.setValidators([Validators.required, Validators.email]);
+      this.form.controls.senha.setValidators([Validators.required, Validators.minLength(6)]);
+      this.form.controls.email.updateValueAndValidity();
+      this.form.controls.senha.updateValueAndValidity();
+      this.observarSessaoParaEmail();
       return;
     }
 
@@ -61,6 +88,7 @@ export class EmpresaFormComponent implements OnInit {
     this.salvando.set(true);
     const valor = this.form.getRawValue();
     const modulosAtivos = this.modulosSelecionados();
+    const urlsGaleria = this.urlsValidas(valor.urlsGaleria);
 
     if (this.modoEdicao()) {
       this.empresasApi
@@ -68,6 +96,8 @@ export class EmpresaFormComponent implements OnInit {
           sessaoWhatsapp: valor.sessaoWhatsapp ?? undefined,
           locacaoPorHora: valor.locacaoPorHora ?? false,
           googleCalendarId: valor.googleCalendarId || null,
+          linkFotoPrincipal: valor.linkFotoPrincipal || undefined,
+          urlsGaleria,
           modulosAtivos
         })
         .subscribe({
@@ -91,6 +121,10 @@ export class EmpresaFormComponent implements OnInit {
         ramoDeAtuacao: valor.ramoDeAtuacao ?? undefined,
         precoBase: valor.precoBase,
         googleCalendarId: valor.googleCalendarId || null,
+        email: valor.email ?? '',
+        senha: valor.senha ?? '',
+        linkFotoPrincipal: valor.linkFotoPrincipal || undefined,
+        urlsGaleria,
         modulosIniciais: modulosAtivos
       })
       .subscribe({
@@ -111,13 +145,104 @@ export class EmpresaFormComponent implements OnInit {
       sessaoWhatsapp: empresa.sessaoWhatsapp,
       ramoDeAtuacao: empresa.ramoDeAtuacao ?? 'locacao',
       locacaoPorHora: empresa.locacaoPorHora ?? false,
-      googleCalendarId: empresa.googleCalendarId ?? ''
+      googleCalendarId: empresa.googleCalendarId ?? '',
+      linkFotoPrincipal: empresa.linkFotoPrincipal ?? ''
     });
+    this.preencherGaleria(empresa.urlsGaleria);
 
     const grupo = this.form.controls.modulos;
     for (const modulo of this.modulos) {
       grupo.get(modulo.codigo)?.setValue(empresa.modulosAtivos.includes(modulo.codigo));
     }
+  }
+
+  private observarSessaoParaEmail(): void {
+    this.atualizarEmailPelaSessao(this.form.controls.sessaoWhatsapp.value);
+    this.form.controls.sessaoWhatsapp.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((sessao) => this.atualizarEmailPelaSessao(sessao));
+  }
+
+  private atualizarEmailPelaSessao(sessao: string | null): void {
+    const formatada = (sessao ?? '').toLowerCase().replace(/\s+/g, '');
+    this.form.controls.email.setValue(formatada ? `${formatada}@gamb.com.br` : '', { emitEvent: false });
+  }
+
+  abrirWidgetCloudinary(tipo: 'principal' | 'galeria'): void {
+    if (typeof cloudinary === 'undefined') {
+      this.erro.set('O widget do Cloudinary não carregou. Recarregue a página.');
+      return;
+    }
+
+    const principal = tipo === 'principal';
+    const widget = cloudinary.createUploadWidget(
+      {
+        cloudName: environment.cloudinary.cloudName,
+        uploadPreset: environment.cloudinary.uploadPreset,
+        resourceType: 'image',
+        clientAllowedFormats: ['jpg', 'jpeg', 'png', 'webp', 'gif'],
+        multiple: !principal,
+        maxFiles: principal ? 1 : this.maxUrlsGaleria
+      },
+      (_error: unknown, result: { event?: string; info?: { secure_url?: string } }) => {
+        if (result?.event !== 'success' || !result.info?.secure_url) {
+          return;
+        }
+
+        const url = result.info.secure_url;
+        this.zone.run(() => {
+          if (principal) {
+            this.form.patchValue({ linkFotoPrincipal: url });
+            return;
+          }
+          this.adicionarUrlNaGaleria(url);
+        });
+      }
+    );
+
+    widget.open();
+  }
+
+  adicionarUrlGaleria(): void {
+    if (this.urlsGaleria.length >= this.maxUrlsGaleria) {
+      return;
+    }
+    this.urlsGaleria.push(this.fb.nonNullable.control(''));
+  }
+
+  removerUrlGaleria(indice: number): void {
+    this.urlsGaleria.removeAt(indice);
+    if (this.urlsGaleria.length === 0) {
+      this.adicionarUrlGaleria();
+    }
+  }
+
+  private adicionarUrlNaGaleria(url: string): void {
+    const indiceVazio = this.urlsGaleria.controls.findIndex((controle) => !String(controle.value ?? '').trim());
+    if (indiceVazio >= 0) {
+      this.urlsGaleria.at(indiceVazio).setValue(url);
+      return;
+    }
+    if (this.urlsGaleria.length >= this.maxUrlsGaleria) {
+      return;
+    }
+    this.urlsGaleria.push(this.fb.nonNullable.control(url));
+  }
+
+  private preencherGaleria(urls: string[] | undefined): void {
+    this.urlsGaleria.clear();
+    const validas = this.urlsValidas(urls ?? []);
+    if (validas.length === 0) {
+      this.adicionarUrlGaleria();
+      return;
+    }
+    for (const url of validas) {
+      this.urlsGaleria.push(this.fb.nonNullable.control(url));
+    }
+  }
+
+  private urlsValidas(urls: string[]): string[] {
+    return urls.map((url) => url.trim()).filter((url) => url.length > 0).slice(0, this.maxUrlsGaleria);
   }
 
   private modulosSelecionados(): string[] {

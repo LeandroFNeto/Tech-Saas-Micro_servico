@@ -103,10 +103,10 @@ class EmpresaTest {
     }
 
     @Test
-    void getLinkGaleria() {
+    void getUrlsGaleria() {
     }
 
     @Test
-    void setLinkGaleria() {
+    void setUrlsGaleria() {
     }
 }

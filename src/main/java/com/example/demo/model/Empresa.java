@@ -29,6 +29,9 @@ public class Empresa {
     @Column(columnDefinition = "TEXT")
     private String tabelaDePrecos;
 
+    @Column(name = "regras_locacao", columnDefinition = "TEXT")
+    private String regrasLocacao;
+
     // A Empresa tem uma lista de dias de reserva
     @OneToMany(mappedBy = "empresa", cascade = CascadeType.ALL)
     private List<DiaReserva> diasDeReserva;
@@ -39,8 +42,11 @@ public class Empresa {
     @Column(columnDefinition = "TEXT")
     private String linkFotoPrincipal;
 
-    @Column(columnDefinition = "TEXT")
-    private String linkGaleria;
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "empresa_urls_galeria", joinColumns = @JoinColumn(name = "empresa_id"))
+    @Column(name = "url", columnDefinition = "TEXT")
+    @OrderColumn(name = "ordem")
+    private List<String> urlsGaleria = new ArrayList<>();
 
     @Column(name = "google_calendar_id")
     private String googleCalendarId;
@@ -50,9 +56,15 @@ public class Empresa {
     @Column(name = "locacao_por_hora")
     private Boolean locacaoPorHora = false;
 
+    @Column(name = "permite_reserva_automatica")
+    private Boolean permiteReservaAutomatica = false;
+
     @OneToMany(mappedBy = "empresa", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("ordemExibicao ASC")
     private List<ModuloEmpresa> modulosAtivos = new ArrayList<>();
+
+    @OneToMany(mappedBy = "empresa")
+    private List<Usuario> usuarios = new ArrayList<>();
 
     public Boolean getUsaIA() {
         return usaIA;
@@ -60,6 +72,10 @@ public class Empresa {
 
     public void setUsaIA(Boolean usaIA) {
         this.usaIA = usaIA;
+    }
+
+    public boolean isLocacaoPorHora() {
+        return Boolean.TRUE.equals(locacaoPorHora);
     }
 
     public Boolean getLocacaoPorHora() {
@@ -70,12 +86,28 @@ public class Empresa {
         this.locacaoPorHora = locacaoPorHora;
     }
 
+    public Boolean getPermiteReservaAutomatica() {
+        return permiteReservaAutomatica;
+    }
+
+    public void setPermiteReservaAutomatica(Boolean permiteReservaAutomatica) {
+        this.permiteReservaAutomatica = permiteReservaAutomatica;
+    }
+
     public List<ModuloEmpresa> getModulosAtivos() {
         return modulosAtivos;
     }
 
     public void setModulosAtivos(List<ModuloEmpresa> modulosAtivos) {
         this.modulosAtivos = modulosAtivos;
+    }
+
+    public List<Usuario> getUsuarios() {
+        return usuarios;
+    }
+
+    public void setUsuarios(List<Usuario> usuarios) {
+        this.usuarios = usuarios;
     }
 
     // Não se esqueça de adicionar os Getters e Setters no final do ficheiro!
@@ -139,6 +171,14 @@ public class Empresa {
         this.tabelaDePrecos = tabelaDePrecos;
     }
 
+    public String getRegrasLocacao() {
+        return regrasLocacao;
+    }
+
+    public void setRegrasLocacao(String regrasLocacao) {
+        this.regrasLocacao = regrasLocacao;
+    }
+
     public void setDiasDeReserva(List<DiaReserva> diasDeReserva) {
         this.diasDeReserva = diasDeReserva;
     }
@@ -159,11 +199,26 @@ public class Empresa {
         this.linkFotoPrincipal = linkFotoPrincipal;
     }
 
-    public String getLinkGaleria() {
-        return linkGaleria;
+    public List<String> getUrlsGaleria() {
+        if (urlsGaleria == null) {
+            urlsGaleria = new ArrayList<>();
+        }
+        return urlsGaleria;
     }
 
-    public void setLinkGaleria(String linkGaleria) {
-        this.linkGaleria = linkGaleria;
+    public void setUrlsGaleria(List<String> urlsGaleria) {
+        if (this.urlsGaleria == null) {
+            this.urlsGaleria = new ArrayList<>();
+        } else {
+            this.urlsGaleria.clear();
+        }
+        if (urlsGaleria == null) {
+            return;
+        }
+        urlsGaleria.stream()
+                .filter(url -> url != null && !url.isBlank())
+                .map(String::trim)
+                .limit(5)
+                .forEach(this.urlsGaleria::add);
     }
 }

@@ -1,39 +1,27 @@
+import { HttpClient } from '@angular/common/http';
 import { Injectable, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { CredenciaisLogin, PapelUsuario, SessaoUsuario } from '../../shared/models/auth.models';
+import { Observable, map, tap } from 'rxjs';
+import { environment } from '../../../environments/environment';
+import {
+  AlterarSenhaRequest,
+  LoginRequest,
+  LoginResponse,
+  PapelUsuario,
+  SessaoUsuario
+} from '../../shared/models/auth.models';
 
 const CHAVE_JWT = 'gamb.jwt';
 const CHAVE_SESSAO = 'gamb.sessao';
-
-interface UsuarioDemo {
-  email: string;
-  senha: string;
-  nome: string;
-  papel: PapelUsuario;
-  sessaoWhatsapp?: string;
-}
-
-const USUARIOS_DEMO: UsuarioDemo[] = [
-  {
-    email: 'admin@gamb.com',
-    senha: 'admin123',
-    nome: 'Administrador Master',
-    papel: 'ADMIN'
-  },
-  {
-    email: 'cliente@gamb.com',
-    senha: 'cliente123',
-    nome: 'Recanto Vista Alegre',
-    papel: 'CLIENTE',
-    sessaoWhatsapp: 'RecantoBot'
-  }
-];
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   readonly sessao = signal<SessaoUsuario | null>(this.lerSessao());
 
-  constructor(private readonly router: Router) {}
+  constructor(
+    private readonly router: Router,
+    private readonly http: HttpClient
+  ) {}
 
   token(): string | null {
     return localStorage.getItem(CHAVE_JWT);
@@ -52,30 +40,16 @@ export class AuthService {
     return this.sessao()?.papel === 'ADMIN' ? '/admin' : '/cliente';
   }
 
-  login(credenciais: CredenciaisLogin): void {
-    const email = credenciais.email.trim().toLowerCase();
-    const encontrado = USUARIOS_DEMO.find((u) => u.email === email);
+  login(credenciais: LoginRequest): Observable<LoginResponse> {
+    return this.http.post<LoginResponse>(`${environment.apiUrl}/auth/login`, credenciais).pipe(
+      tap((resposta) => this.persistir(resposta))
+    );
+  }
 
-    if (!encontrado) {
-      throw new Error('Usuário não encontrado');
-    }
-
-    if (encontrado.senha !== credenciais.senha) {
-      throw new Error('Senha incorreta');
-    }
-
-    const payload: SessaoUsuario = {
-      sub: encontrado.email,
-      nome: encontrado.nome,
-      papel: encontrado.papel,
-      sessaoWhatsapp: encontrado.sessaoWhatsapp,
-      exp: Date.now() + 8 * 60 * 60 * 1000
-    };
-
-    const jwt = this.montarJwt(payload);
-    localStorage.setItem(CHAVE_JWT, jwt);
-    localStorage.setItem(CHAVE_SESSAO, JSON.stringify(payload));
-    this.sessao.set(payload);
+  alterarSenha(dto: AlterarSenhaRequest): Observable<void> {
+    return this.http.put(`${environment.apiUrl}/auth/alterar-senha`, dto, { responseType: 'text' }).pipe(
+      map(() => undefined)
+    );
   }
 
   logout(): void {
@@ -85,10 +59,31 @@ export class AuthService {
     void this.router.navigateByUrl('/login');
   }
 
-  private montarJwt(payload: SessaoUsuario): string {
-    const header = btoa(JSON.stringify({ alg: 'none', typ: 'JWT' }));
-    const body = btoa(JSON.stringify(payload));
-    return `${header}.${body}.assinatura-simulada`;
+  private persistir(resposta: LoginResponse): void {
+    localStorage.setItem(CHAVE_JWT, resposta.token);
+    const claims = this.decodificarJwt(resposta.token);
+    const payload: SessaoUsuario = {
+      sub: resposta.email,
+      nome: resposta.nome ?? String(claims?.['nome'] ?? resposta.email),
+      papel: resposta.role,
+      sessaoWhatsapp: resposta.sessaoWhatsapp ?? (claims?.['sessaoWhatsapp'] as string | undefined),
+      exp: typeof claims?.['exp'] === 'number' ? claims['exp'] * 1000 : Date.now() + 8 * 60 * 60 * 1000
+    };
+    localStorage.setItem(CHAVE_SESSAO, JSON.stringify(payload));
+    this.sessao.set(payload);
+  }
+
+  private decodificarJwt(token: string): Record<string, unknown> | null {
+    try {
+      const parte = token.split('.')[1];
+      if (!parte) {
+        return null;
+      }
+      const json = atob(parte.replace(/-/g, '+').replace(/_/g, '/'));
+      return JSON.parse(json) as Record<string, unknown>;
+    } catch {
+      return null;
+    }
   }
 
   private lerSessao(): SessaoUsuario | null {

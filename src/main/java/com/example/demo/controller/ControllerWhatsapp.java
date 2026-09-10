@@ -3,6 +3,7 @@ package com.example.demo.controller;
 import com.example.demo.dto.WhatsappWebhookDTO;
 import com.example.demo.dto.whatsapp.SessaoStatusResponseDTO;
 import com.example.demo.model.Empresa;
+import com.example.demo.model.EstadoUsuario;
 import com.example.demo.repository.EmpresaRepository;
 import com.example.demo.servico.GerenciadorSessao;
 import com.example.demo.servico.ServicoWppConnect;
@@ -21,6 +22,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -75,17 +79,20 @@ public class ControllerWhatsapp {
             }
 
             String chaveEstado = WhatsappUtil.normalizarParaChaveEstado(rawFrom);
-            Empresa empresa = empresaRepository.findBySessaoWhatsapp(sessao);
+            Empresa empresa = empresaRepository.buscarPorSessaoComModulos(sessao);
 
             if (empresa == null) {
                 observador.logFiltro(sessao, rawFrom, "Empresa não encontrada para esta sessão");
                 return ResponseEntity.ok().build();
             }
 
-            String estadoAtual = gerenciadorSessao.obterEstadoAtual(chaveEstado);
+            EstadoUsuario estadoAtual = gerenciadorSessao.getEstado(chaveEstado);
+            if (estadoAtual == null) {
+                estadoAtual = EstadoUsuario.INICIO;
+            }
 
             ModuloAtendimentoStrategy estrategia = moduloFactory.obterEstrategia(empresa.getRamoDeAtuacao());
-            estrategia.processarMensagem(empresa, rawFrom, textoRecebido, estadoAtual);
+            estrategia.processarMensagem(empresa, rawFrom, textoRecebido, estadoAtual.name());
 
             observador.logSucesso(sessao, rawFrom, textoRecebido);
 
@@ -125,7 +132,7 @@ public class ControllerWhatsapp {
     @PostMapping({"/whatsapp/{sessao}/iniciar", "/whatsapp/iniciar/{sessao}"})
     @Tag(name = "Conexão WhatsApp")
     @Operation(summary = "Iniciar sessão WhatsApp e gerar QR Code",
-            description = "Dispara POST /api/{sessao}/start-session no WPPConnect e devolve o SessaoStatusResponseDTO atualizado.")
+            description = "Se a sessão já estiver conectada, devolve essa conexão. Caso contrário dispara POST /api/{sessao}/start-session no WPPConnect e reabre o token salvo após uma queda.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Sessão iniciada (QR Code pode aparecer em seguida)",
                     content = @Content(schema = @Schema(implementation = SessaoStatusResponseDTO.class))),
@@ -151,8 +158,10 @@ public class ControllerWhatsapp {
 
     private ResponseEntity<SessaoStatusResponseDTO> recusarSeNecessario(
             String adminToken, String clienteToken, String sessao) {
-        boolean adminOk = adminToken != null && adminToken.equals(adminApiKey);
-        boolean clienteOk = clienteToken != null && !clienteToken.isBlank();
+        boolean adminOk = possuiPapel("ROLE_ADMIN")
+                || (adminToken != null && adminToken.equals(adminApiKey));
+        boolean clienteOk = possuiPapel("ROLE_CLIENTE")
+                || (clienteToken != null && !clienteToken.isBlank());
         if (!adminOk && !clienteOk) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(new SessaoStatusResponseDTO(sessao, "DISCONNECTED", null));
@@ -162,5 +171,15 @@ public class ControllerWhatsapp {
                     .body(new SessaoStatusResponseDTO(sessao, "DISCONNECTED", null));
         }
         return null;
+    }
+
+    private boolean possuiPapel(String papel) {
+        Authentication autenticacao = SecurityContextHolder.getContext().getAuthentication();
+        if (autenticacao == null || !autenticacao.isAuthenticated()) {
+            return false;
+        }
+        return autenticacao.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch(papel::equals);
     }
 }

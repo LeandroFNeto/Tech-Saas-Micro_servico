@@ -25,6 +25,12 @@ import { autoDownload, callWebHook, startHelper } from './functions';
 import { clientsArray, eventEmitter } from './sessionUtil';
 import Factory from './tokenStore/factory';
 
+const sessoesEmInicio = new Set<string>();
+
+function respostaJaEnviada(res?: any) {
+  return Boolean(res && (res.headersSent || res._headerSent));
+}
+
 export default class CreateSessionUtil {
   startChatWootClient(client: any) {
     if (client.config.chatWoot && !client._chatWootClient)
@@ -41,24 +47,22 @@ export default class CreateSessionUtil {
     session: string,
     res?: any
   ) {
+    let assumiuInicio = false;
     try {
       let client = this.getClient(session) as any;
       if (client.status != null && client.status !== 'CLOSED') {
-        if (res && !res._headerSent) {
-          if (client.qrcode) {
-            this.exportQR(req, client.qrcode, client.urlcode || '', client, res);
-          } else {
-            res.status(200).json({
-              status: client.status,
-              qrcode: null,
-              session,
-            });
-          }
-        }
+        this.responderSessaoExistente(req, client, res);
         return;
       }
+      if (sessoesEmInicio.has(session)) {
+        this.responderSessaoExistente(req, client, res);
+        return;
+      }
+      sessoesEmInicio.add(session);
+      assumiuInicio = true;
       client.status = 'INITIALIZING';
-      client.config = req.body;
+      client.config =
+        req.body && typeof req.body === 'object' ? req.body : {};
 
       const tokenStore = new Factory();
       const myTokenStore = tokenStore.createTokenStory(client);
@@ -66,6 +70,10 @@ export default class CreateSessionUtil {
 
       // we need this to update phone in config every time session starts, so we can ask for code for it again.
       myTokenStore.setToken(session, tokenData ?? {});
+
+      if (!client.config.webhook && req.serverOptions.webhook.url) {
+        client.config.webhook = req.serverOptions.webhook.url;
+      }
 
       this.startChatWootClient(client);
 
@@ -177,10 +185,11 @@ export default class CreateSessionUtil {
       if (sessaoPresa && !req._sessionResetRetry) {
         req._sessionResetRetry = true;
         req.logger.warn(
-          `[${session}] Sessão antiga travou o QR Code. Limpando token/perfil e tentando de novo.`
+          `[${session}] Falha ao reabrir a sessão existente. Tentando de novo sem apagar o token.`
         );
         await this.aguardar(1500);
-        await this.limparArquivosSessao(req, session);
+        sessoesEmInicio.delete(session);
+        assumiuInicio = false;
         clientsArray[session] = undefined;
         await this.createSessionUtil(req, clientsArray, session, res);
         return;
@@ -188,14 +197,33 @@ export default class CreateSessionUtil {
 
       const client = this.getClient(session) as any;
       client.status = 'CLOSED';
-      if (res && !res._headerSent) {
+      if (!respostaJaEnviada(res)) {
         res.status(200).json({
           status: 'CLOSED',
           qrcode: null,
           session,
         });
       }
+    } finally {
+      if (assumiuInicio) {
+        sessoesEmInicio.delete(session);
+      }
     }
+  }
+
+  private responderSessaoExistente(req: any, client: any, res?: any) {
+    if (respostaJaEnviada(res)) {
+      return;
+    }
+    if (client.qrcode) {
+      this.exportQR(req, client.qrcode, client.urlcode || '', client, res);
+      return;
+    }
+    res.status(200).json({
+      status: client.status || 'INITIALIZING',
+      qrcode: null,
+      session: client.session,
+    });
   }
 
   private async limparArquivosSessao(req: any, session: string) {

@@ -13,6 +13,19 @@ properties:
     type: string
     description: ID da agenda Google desta empresa (não usar valor global no .env)
     example: abc123@group.calendar.google.com
+  linkFotoPrincipal:
+    type: string
+    description: URL pública da foto principal (Hero Image) hospedada no Cloudinary
+    example: "https://res.cloudinary.com/demo/image/upload/v1/hero_image.jpg"
+  urlsGaleria:
+    type: array
+    description: Lista de URLs públicas das fotos complementares hospedadas no Cloudinary
+    maxItems: 5
+    items:
+      type: string
+    example:
+      - "https://res.cloudinary.com/demo/image/upload/v1/foto1.jpg"
+      - "https://res.cloudinary.com/demo/image/upload/v1/foto2.jpg"
   modulosAtivos:
     type: array
     description: Lista de módulos liberados após pagamento

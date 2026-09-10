@@ -2,6 +2,7 @@ package com.example.demo.controller;
 
 import com.example.demo.dto.whatsapp.SessaoStatusResponseDTO;
 import com.example.demo.model.Empresa;
+import com.example.demo.model.EstadoUsuario;
 import com.example.demo.repository.EmpresaRepository;
 import com.example.demo.servico.GerenciadorSessao;
 import com.example.demo.servico.ServicoGoogleagenda;
@@ -16,6 +17,7 @@ import com.example.demo.strategy.LocacaoStrategy;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
@@ -26,7 +28,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -36,6 +37,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(ControllerWhatsapp.class)
+@AutoConfigureMockMvc(addFilters = false)
 @Import(LocacaoStrategy.class)
 class ControllerWhatsappTest {
 
@@ -127,7 +129,7 @@ class ControllerWhatsappTest {
     void deveNormalizarNumero() throws Exception {
         Empresa emp = new Empresa();
         emp.setSessaoWhatsapp("teste-sessao");
-        when(empresaRepository.findBySessaoWhatsapp("teste-sessao")).thenReturn(emp);
+        when(empresaRepository.buscarPorSessaoComModulos("teste-sessao")).thenReturn(emp);
 
         String payload = """
             {
@@ -144,7 +146,7 @@ class ControllerWhatsappTest {
                         .content(payload))
                 .andExpect(status().isOk());
 
-        verify(gerenciadorSessao).obterEstadoAtual("551188887777");
+        verify(gerenciadorSessao).getEstado("551188887777");
     }
 
     @Test
@@ -225,11 +227,10 @@ class ControllerWhatsappTest {
         empresa.setUsaIA(true);
         empresa.setNome("Recanto Teste");
 
-        when(empresaRepository.findBySessaoWhatsapp("teste-sessao")).thenReturn(empresa);
-        when(gerenciadorSessao.obterEstadoAtual(anyString())).thenReturn("INICIO");
+        when(empresaRepository.buscarPorSessaoComModulos("teste-sessao")).thenReturn(empresa);
+        when(gerenciadorSessao.getEstado(anyString())).thenReturn(EstadoUsuario.INICIO);
         when(moduloFactory.obterEstrategia("LOCACAO")).thenReturn(locacaoStrategy);
-        when(servicoMenu.descobrirAcao(any(), anyString())).thenReturn("OPCAO_INVALIDA");
-        when(servicoIA.gerarRespostaHumanizada(anyString())).thenReturn("Olá! Como posso ajudar?");
+        when(servicoMenu.montarMenuPrincipal(any())).thenReturn("Olá! Digite 1, 2 ou 3.");
 
         String payload = """
             {
@@ -257,7 +258,8 @@ class ControllerWhatsappTest {
                         .content(payload))
                 .andExpect(status().isOk());
 
-        verify(servicoIA, times(1)).gerarRespostaHumanizada(contains("Oi"));
+        verify(servicoMensagem).enviarMensagemWPP(any(), anyString(), contains("Digite 1, 2 ou 3"));
+        verify(gerenciadorSessao).setEstado(anyString(), eq(EstadoUsuario.MENU_PRINCIPAL));
     }
 
     @Test
@@ -269,11 +271,10 @@ class ControllerWhatsappTest {
         empresa.setUsaIA(true);
         empresa.setNome("Recanto Teste");
 
-        when(empresaRepository.findBySessaoWhatsapp("RecantoBot")).thenReturn(empresa);
-        when(gerenciadorSessao.obterEstadoAtual(anyString())).thenReturn("INICIO");
+        when(empresaRepository.buscarPorSessaoComModulos("RecantoBot")).thenReturn(empresa);
+        when(gerenciadorSessao.getEstado(anyString())).thenReturn(EstadoUsuario.INICIO);
         when(moduloFactory.obterEstrategia("LOCACAO")).thenReturn(locacaoStrategy);
-        when(servicoMenu.descobrirAcao(any(), anyString())).thenReturn("OPCAO_INVALIDA");
-        when(servicoIA.gerarRespostaHumanizada(anyString())).thenReturn("Olá! Como posso ajudar?");
+        when(servicoMenu.montarMenuPrincipal(any())).thenReturn("Olá! Digite 1, 2 ou 3.");
 
         String payload = """
             {
@@ -295,7 +296,8 @@ class ControllerWhatsappTest {
                 .andExpect(status().isOk());
 
         verify(moduloFactory).obterEstrategia("LOCACAO");
-        verify(servicoIA, times(1)).gerarRespostaHumanizada(contains("Oi, quero reservar"));
+        verify(servicoMensagem).enviarMensagemWPP(any(), eq("276974622781686@lid"), contains("Digite 1, 2 ou 3"));
+        verify(gerenciadorSessao).setEstado(anyString(), eq(EstadoUsuario.MENU_PRINCIPAL));
         verify(observador).logSucesso(eq("RecantoBot"), eq("276974622781686@lid"), contains("Oi, quero reservar"));
     }
 
@@ -308,11 +310,10 @@ class ControllerWhatsappTest {
         empresa.setUsaIA(true);
         empresa.setNome("Recanto Teste");
 
-        when(empresaRepository.findBySessaoWhatsapp("teste-sessao")).thenReturn(empresa);
-        when(gerenciadorSessao.obterEstadoAtual(anyString())).thenReturn("INICIO");
+        when(empresaRepository.buscarPorSessaoComModulos("teste-sessao")).thenReturn(empresa);
+        when(gerenciadorSessao.getEstado(anyString())).thenReturn(EstadoUsuario.INICIO);
         when(moduloFactory.obterEstrategia("LOCACAO")).thenReturn(locacaoStrategy);
-        when(servicoMenu.descobrirAcao(any(), anyString())).thenReturn("OPCAO_INVALIDA");
-        when(servicoIA.gerarRespostaHumanizada(anyString())).thenReturn("Olá! Como posso ajudar?");
+        when(servicoMenu.montarMenuPrincipal(any())).thenReturn("Olá! Digite 1, 2 ou 3.");
 
         String payload = """
             {
@@ -328,23 +329,23 @@ class ControllerWhatsappTest {
                         .content(payload))
                 .andExpect(status().isOk());
 
-        verify(servicoIA, times(1)).gerarRespostaHumanizada(contains("Quero alugar"));
+        verify(servicoMensagem).enviarMensagemWPP(any(), anyString(), contains("Digite 1, 2 ou 3"));
+        verify(gerenciadorSessao).setEstado(anyString(), eq(EstadoUsuario.MENU_PRINCIPAL));
     }
 
     @Test
-    @DisplayName("Deve processar mensagem do cliente e acionar a IA")
-    void deveProcessarMensagemEAcionarIA() throws Exception {
+    @DisplayName("Deve processar a primeira mensagem enviando o menu e avançando o estado")
+    void deveProcessarMensagemEEnviarMenuInicial() throws Exception {
         Empresa empresa = new Empresa();
         empresa.setSessaoWhatsapp("teste-sessao");
         empresa.setRamoDeAtuacao("LOCACAO");
         empresa.setUsaIA(true);
         empresa.setNome("Recanto Teste");
 
-        when(empresaRepository.findBySessaoWhatsapp("teste-sessao")).thenReturn(empresa);
-        when(gerenciadorSessao.obterEstadoAtual(anyString())).thenReturn("INICIO");
+        when(empresaRepository.buscarPorSessaoComModulos("teste-sessao")).thenReturn(empresa);
+        when(gerenciadorSessao.getEstado(anyString())).thenReturn(EstadoUsuario.INICIO);
         when(moduloFactory.obterEstrategia("LOCACAO")).thenReturn(locacaoStrategy);
-        when(servicoMenu.descobrirAcao(any(), anyString())).thenReturn("OPCAO_INVALIDA");
-        when(servicoIA.gerarRespostaHumanizada(anyString())).thenReturn("Olá! Como posso ajudar?");
+        when(servicoMenu.montarMenuPrincipal(any())).thenReturn("Olá! Digite 1, 2 ou 3.");
 
         String payload = """
             {
@@ -361,7 +362,8 @@ class ControllerWhatsappTest {
                         .content(payload))
                 .andExpect(status().isOk());
 
-        verify(servicoIA, times(1)).gerarRespostaHumanizada(contains("Oi"));
+        verify(servicoMensagem).enviarMensagemWPP(any(), anyString(), contains("Digite 1, 2 ou 3"));
+        verify(gerenciadorSessao).setEstado(anyString(), eq(EstadoUsuario.MENU_PRINCIPAL));
     }
 
     @Test

@@ -13,11 +13,13 @@ public record EmpresaPainelDTO(
         String mensagemSaudacao,
         String ramoDeAtuacao,
         String tabelaDePrecos,
+        String regrasLocacao,
         String linkGoogleMaps,
         String linkFotoPrincipal,
-        String linkGaleria,
+        List<String> urlsGaleria,
         String googleCalendarId,
         Boolean locacaoPorHora,
+        Boolean permiteReservaAutomatica,
         List<ModuloPainelDTO> modulosAtivos,
         LocalDateTime atualizadoEm
 ) {

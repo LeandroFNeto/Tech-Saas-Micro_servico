@@ -1,0 +1,31 @@
+type: object
+description: Resposta do login com JWT. Não inclui a senha nem a entidade JPA.
+properties:
+  token:
+    type: string
+    description: JWT assinado para Authorization Bearer
+    example: eyJhbGciOiJIUzI1NiJ9...
+  email:
+    type: string
+    format: email
+    description: E-mail autenticado
+    example: usuario@gamb.com
+  role:
+    type: string
+    enum:
+      - ADMIN
+      - CLIENTE
+    description: Papel do usuário no SaaS
+    example: ADMIN
+  nome:
+    type: string
+    description: Nome exibido no painel (empresa do cliente ou Administrador)
+    example: Administrador
+  sessaoWhatsapp:
+    type: string
+    description: Sessão WPPConnect da empresa quando o papel é CLIENTE
+    example: sessao_recanto_01
+required:
+  - token
+  - email
+  - role
