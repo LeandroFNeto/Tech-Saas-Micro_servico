@@ -10,6 +10,7 @@ export interface EmpresaCreateDTO {
   permiteReservaAutomatica?: boolean;
   linkFotoPrincipal?: string;
   urlsGaleria?: string[];
+  linkGaleria?: string;
   modulosIniciais?: string[];
 }
 
@@ -21,6 +22,7 @@ export interface EmpresaUpdateDTO {
   linkGoogleMaps?: string;
   linkFotoPrincipal?: string;
   urlsGaleria?: string[];
+  linkGaleria?: string;
   permiteReservaAutomatica?: boolean;
   locacaoPorHora?: boolean;
   regrasLocacao?: string;
@@ -34,6 +36,7 @@ export interface EmpresaUpdateAdminDTO {
   googleCalendarId?: string | null;
   linkFotoPrincipal?: string;
   urlsGaleria?: string[];
+  linkGaleria?: string;
   modulosAtivos?: string[];
 }
 
@@ -46,6 +49,7 @@ export interface EmpresaResponseDTO {
   linkGoogleMaps: string;
   linkFotoPrincipal?: string;
   urlsGaleria?: string[];
+  linkGaleria?: string;
   permiteReservaAutomatica?: boolean;
   locacaoPorHora?: boolean;
   regrasLocacao?: string;
@@ -80,6 +84,7 @@ export interface EmpresaView {
   linkGoogleMaps?: string;
   linkFotoPrincipal?: string;
   urlsGaleria?: string[];
+  linkGaleria?: string;
   locacaoPorHora?: boolean;
   googleCalendarId?: string;
   usaIA?: boolean;

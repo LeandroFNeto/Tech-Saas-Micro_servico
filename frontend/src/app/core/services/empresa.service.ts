@@ -69,6 +69,7 @@ export class EmpresaService {
       urlsGaleria: Array.isArray(item['urlsGaleria'])
         ? (item['urlsGaleria'] as unknown[]).filter((url): url is string => typeof url === 'string')
         : [],
+      linkGaleria: item['linkGaleria'] as string | undefined,
       usaIA: Boolean(item['usaIA']),
       permiteReservaAutomatica: Boolean(item['permiteReservaAutomatica']),
       regrasLocacao: item['regrasLocacao'] as string | undefined,

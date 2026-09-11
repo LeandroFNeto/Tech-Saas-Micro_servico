@@ -31,6 +31,7 @@ export class PerfilComponent implements OnInit {
   readonly erro = signal('');
   readonly sucesso = signal('');
   readonly aba = signal<AbaPerfil>('dados');
+  readonly imagemSelecionada = signal('');
   readonly sessao = this.auth.sessao()?.sessaoWhatsapp ?? '';
   readonly emailAcesso = this.auth.sessao()?.sub ?? '';
 
@@ -41,6 +42,7 @@ export class PerfilComponent implements OnInit {
     linkGoogleMaps: [''],
     linkFotoPrincipal: [''],
     urlsGaleria: this.fb.nonNullable.array([this.fb.nonNullable.control('')]),
+    linkGaleria: [''],
     permiteReservaAutomatica: [false],
     locacaoPorHora: [false],
     regrasLocacao: [''],
@@ -107,7 +109,8 @@ export class PerfilComponent implements OnInit {
     this.empresasApi
       .atualizarPeloCliente(this.sessao, {
         ...bruto,
-        urlsGaleria: this.urlsValidas(bruto.urlsGaleria)
+        urlsGaleria: this.urlsValidas(bruto.urlsGaleria),
+        linkGaleria: bruto.linkGaleria.trim()
       })
       .subscribe({
       next: () => {
@@ -150,6 +153,13 @@ export class PerfilComponent implements OnInit {
       });
   }
 
+  selecionarImagem(url: string | null | undefined): void {
+    const valor = (url ?? '').trim();
+    if (valor) {
+      this.imagemSelecionada.set(valor);
+    }
+  }
+
   adicionarUrlGaleria(): void {
     if (this.urlsGaleria.length >= this.maxUrlsGaleria) {
       return;
@@ -179,11 +189,13 @@ export class PerfilComponent implements OnInit {
       tabelaDePrecos: empresa.tabelaDePrecos ?? '',
       linkGoogleMaps: empresa.linkGoogleMaps ?? '',
       linkFotoPrincipal: empresa.linkFotoPrincipal ?? '',
+      linkGaleria: empresa.linkGaleria ?? '',
       permiteReservaAutomatica: empresa.permiteReservaAutomatica ?? false,
       locacaoPorHora: empresa.locacaoPorHora ?? false,
       regrasLocacao: empresa.regrasLocacao ?? ''
     });
     this.preencherGaleria(empresa.urlsGaleria);
+    this.imagemSelecionada.set(empresa.linkFotoPrincipal ?? empresa.urlsGaleria?.[0] ?? '');
 
     for (const grupo of this.modulosMenu.controls) {
       const codigo = grupo.controls.codigoAcao.value;

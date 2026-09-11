@@ -101,11 +101,19 @@
       />
       @if (form.controls.linkFotoPrincipal.value) {
         <div class="flex items-center gap-3 rounded-xl border border-brand-200 bg-brand-50 p-3">
-          <img
-            class="h-16 w-16 rounded-lg object-cover"
-            [src]="form.controls.linkFotoPrincipal.value"
-            alt="Prévia da foto principal"
-          />
+          <button
+            class="shrink-0 rounded-lg ring-offset-2"
+            type="button"
+            [class.ring-2]="imagemSelecionada() === form.controls.linkFotoPrincipal.value"
+            [class.ring-accent-500]="imagemSelecionada() === form.controls.linkFotoPrincipal.value"
+            (click)="selecionarImagem(form.controls.linkFotoPrincipal.value)"
+          >
+            <img
+              class="h-16 w-16 rounded-lg object-cover"
+              [src]="form.controls.linkFotoPrincipal.value"
+              alt="Prévia da foto principal"
+            />
+          </button>
           <a
             class="truncate text-xs text-brand-700 underline"
             [href]="form.controls.linkFotoPrincipal.value"
@@ -147,14 +155,40 @@
         @for (url of urlsGaleria.controls; track $index) {
           <div class="flex items-center gap-2">
             @if (url.value) {
-              <img class="h-12 w-12 shrink-0 rounded-lg object-cover" [src]="url.value" alt="Prévia da galeria" />
+              <button
+                class="shrink-0 rounded-lg ring-offset-2"
+                type="button"
+                [class.ring-2]="imagemSelecionada() === url.value"
+                [class.ring-accent-500]="imagemSelecionada() === url.value"
+                (click)="selecionarImagem(url.value)"
+              >
+                <img class="h-12 w-12 rounded-lg object-cover" [src]="url.value" alt="Prévia da galeria" />
+              </button>
             }
             <input class="input-field" [formControlName]="$index" placeholder="https://res.cloudinary.com/.../foto.jpg" />
             <button class="btn-secondary px-3" type="button" (click)="removerUrlGaleria($index)">Remover</button>
           </div>
         }
       </div>
+      @if (imagemSelecionada()) {
+        <div class="mt-3 overflow-hidden rounded-xl border border-brand-200 bg-brand-50">
+          <p class="px-3 pt-3 text-xs font-medium text-brand-700">Imagem selecionada</p>
+          <img class="mx-auto max-h-72 w-full object-contain p-3" [src]="imagemSelecionada()" alt="Imagem selecionada para visualização" />
+        </div>
+      }
     </div>
+
+    <label class="block">
+      <span class="mb-1 block text-sm font-medium">Link da galeria no Google Drive (opcional)</span>
+      <input
+        class="input-field"
+        formControlName="linkGaleria"
+        placeholder="https://drive.google.com/drive/folders/..."
+      />
+      <span class="mt-1 block text-xs text-brand-600">
+        O bot envia este link no WhatsApp junto com a foto principal, para o cliente ver fotos e vídeos em alta qualidade.
+      </span>
+    </label>
   </section>
 
   <section class="card p-5">
