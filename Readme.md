@@ -1,8 +1,6 @@
 <p align="center">
-  <img src="frontend/public/logo-gamb.jpg" alt="Logo gamb" width="160" />
+  <img src="docs/readme-hero.png" alt="gamb" />
 </p>
-
-<h1 align="center">gamb</h1>
 
 <p align="center">
   SaaS de reservas pelo WhatsApp + Google Agenda<br/>
