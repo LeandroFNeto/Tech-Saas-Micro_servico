@@ -7,7 +7,7 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
-LARGURA, ALTURA = 1280, 440
+LARGURA, ALTURA = 1280, 540
 BRAND_900 = (26, 11, 46)
 BRAND_500 = (124, 58, 173)
 ACCENT = (247, 147, 30)
@@ -61,15 +61,42 @@ def logo_arredondado(tamanho: int) -> Image.Image:
     return anel
 
 
-def fonte(tamanho: int) -> ImageFont.ImageFont:
-    for caminho in (
-        "C:/Windows/Fonts/georgia.ttf",
-        "C:/Windows/Fonts/times.ttf",
-        "C:/Windows/Fonts/arial.ttf",
-    ):
+def fonte(tamanho: int, *candidatos: str) -> ImageFont.ImageFont:
+    for caminho in candidatos:
         if Path(caminho).exists():
             return ImageFont.truetype(caminho, tamanho)
     return ImageFont.load_default()
+
+
+def fonte_titulo(tamanho: int) -> ImageFont.ImageFont:
+    return fonte(
+        tamanho,
+        "C:/Windows/Fonts/georgia.ttf",
+        "C:/Windows/Fonts/times.ttf",
+        "C:/Windows/Fonts/arial.ttf",
+    )
+
+
+def fonte_texto(tamanho: int) -> ImageFont.ImageFont:
+    return fonte(
+        tamanho,
+        "C:/Windows/Fonts/segoeui.ttf",
+        "C:/Windows/Fonts/arial.ttf",
+        "C:/Windows/Fonts/calibri.ttf",
+    )
+
+
+def texto_centralizado(
+    draw: ImageDraw.ImageDraw,
+    mensagem: str,
+    y: int,
+    font: ImageFont.ImageFont,
+    cor: tuple[int, int, int, int],
+) -> int:
+    caixa = draw.textbbox((0, 0), mensagem, font=font)
+    x = (LARGURA - (caixa[2] - caixa[0])) // 2
+    draw.text((x, y), mensagem, font=font, fill=cor)
+    return y + (caixa[3] - caixa[1])
 
 
 def main() -> None:
@@ -80,11 +107,21 @@ def main() -> None:
     img.alpha_composite(logo, (lx, ly))
 
     draw = ImageDraw.Draw(img)
-    titulo = "gamb"
-    font_titulo = fonte(52)
-    caixa = draw.textbbox((0, 0), titulo, font=font_titulo)
-    tx = (LARGURA - (caixa[2] - caixa[0])) // 2
-    draw.text((tx, ly + logo.height + 22), titulo, font=font_titulo, fill=(255, 255, 255, 245))
+    y = texto_centralizado(draw, "gamb", ly + logo.height + 18, fonte_titulo(52), (255, 255, 255, 245))
+    y = texto_centralizado(
+        draw,
+        "SaaS de reservas pelo WhatsApp + Google Agenda",
+        y + 18,
+        fonte_texto(26),
+        (235, 224, 245, 240),
+    )
+    texto_centralizado(
+        draw,
+        "MVP rodando: https://gamb.site   ·   API: https://api.gamb.site",
+        y + 12,
+        fonte_texto(22),
+        (255, 140, 66, 245),
+    )
 
     # --- INÍCIO DA ALTERAÇÃO ---
     # Cria uma máscara para arredondar o banner inteiro

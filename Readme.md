@@ -1,12 +1,7 @@
 <p align="center">
-  <img src="docs/readme-hero.png" alt="gamb" />
-</p>
-
-<p align="center">
-  SaaS de reservas pelo WhatsApp + Google Agenda<br/>
-  <strong>MVP rodando:</strong> <a href="https://gamb.site">https://gamb.site</a>
-  ·
-  API: <a href="https://api.gamb.site">https://api.gamb.site</a>
+  <a href="https://gamb.site">
+    <img src="docs/readme-hero.png" alt="gamb — MVP em https://gamb.site" />
+  </a>
 </p>
 
 ---
