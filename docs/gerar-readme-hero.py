@@ -86,7 +86,19 @@ def main() -> None:
     tx = (LARGURA - (caixa[2] - caixa[0])) // 2
     draw.text((tx, ly + logo.height + 22), titulo, font=font_titulo, fill=(255, 255, 255, 245))
 
-    img.convert("RGB").save(SAIDA, "PNG", optimize=True)
+    # --- INÍCIO DA ALTERAÇÃO ---
+    # Cria uma máscara para arredondar o banner inteiro
+    raio_borda = 40 # Ajuste o valor para deixar mais ou menos redondo
+    mascara_banner = Image.new("L", (LARGURA, ALTURA), 0)
+    ImageDraw.Draw(mascara_banner).rounded_rectangle((0, 0, LARGURA, ALTURA), radius=raio_borda, fill=255)
+
+    # Aplica a máscara na imagem principal
+    img.putalpha(mascara_banner)
+
+    # Remove o .convert("RGB") para manter a transparência (RGBA) no PNG final
+    img.save(SAIDA, "PNG", optimize=True)
+    # --- FIM DA ALTERAÇÃO ---
+
     print(f"Gerado: {SAIDA}")
 
 
