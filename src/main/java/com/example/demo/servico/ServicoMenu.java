@@ -16,6 +16,7 @@ public class ServicoMenu {
         StringBuilder menu = new StringBuilder();
         String saudacao = empresa.getMensagemSaudacao();
         menu.append(saudacao == null || saudacao.isBlank() ? "Olá!" : saudacao).append("\n\n");
+        menu.append("👉 *Como posso te ajudar hoje?*\n(_Digite apenas o número da opção desejada_):\n");
 
         int numeroOpcao = 1;
         for (ModuloEmpresa modulo : listarAtivosOrdenados(empresa)) {
@@ -23,7 +24,8 @@ public class ServicoMenu {
             numeroOpcao++;
         }
 
-        menu.append("\n👉 Digite o número da opção desejada.");
+        menu.append("\n💡 *Dica:* Para pesquisar disponibilidade, escolha a opção correspondente e digite a data no formato *DD/MM/AAAA* (Ex: 25/12/2026).");
+        menu.append("\n🔄 *Lembrete:* Digite *0* a qualquer momento da conversa para voltar a este menu inicial.");
         return menu.toString();
     }
 

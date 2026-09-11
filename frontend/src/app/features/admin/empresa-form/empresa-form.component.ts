@@ -30,6 +30,7 @@ export class EmpresaFormComponent implements OnInit {
   readonly salvando = signal(false);
   readonly erro = signal('');
   readonly sucesso = signal('');
+  readonly imagemSelecionada = signal('');
 
   readonly form = this.fb.group({
     nome: ['', Validators.required],
@@ -42,6 +43,7 @@ export class EmpresaFormComponent implements OnInit {
     senha: [''],
     linkFotoPrincipal: [''],
     urlsGaleria: this.fb.nonNullable.array([this.fb.nonNullable.control('')]),
+    linkGaleria: [''],
     modulos: this.fb.group(
       Object.fromEntries(MODULOS_DISPONIVEIS.map((modulo) => [modulo.codigo, this.fb.control(false)]))
     )
@@ -98,6 +100,7 @@ export class EmpresaFormComponent implements OnInit {
           googleCalendarId: valor.googleCalendarId || null,
           linkFotoPrincipal: valor.linkFotoPrincipal || undefined,
           urlsGaleria,
+          linkGaleria: (valor.linkGaleria ?? '').trim(),
           modulosAtivos
         })
         .subscribe({
@@ -125,6 +128,7 @@ export class EmpresaFormComponent implements OnInit {
         senha: valor.senha ?? '',
         linkFotoPrincipal: valor.linkFotoPrincipal || undefined,
         urlsGaleria,
+        linkGaleria: (valor.linkGaleria ?? '').trim() || undefined,
         modulosIniciais: modulosAtivos
       })
       .subscribe({
@@ -146,9 +150,11 @@ export class EmpresaFormComponent implements OnInit {
       ramoDeAtuacao: empresa.ramoDeAtuacao ?? 'locacao',
       locacaoPorHora: empresa.locacaoPorHora ?? false,
       googleCalendarId: empresa.googleCalendarId ?? '',
-      linkFotoPrincipal: empresa.linkFotoPrincipal ?? ''
+      linkFotoPrincipal: empresa.linkFotoPrincipal ?? '',
+      linkGaleria: empresa.linkGaleria ?? ''
     });
     this.preencherGaleria(empresa.urlsGaleria);
+    this.imagemSelecionada.set(empresa.linkFotoPrincipal ?? empresa.urlsGaleria?.[0] ?? '');
 
     const grupo = this.form.controls.modulos;
     for (const modulo of this.modulos) {
@@ -193,6 +199,7 @@ export class EmpresaFormComponent implements OnInit {
         this.zone.run(() => {
           if (principal) {
             this.form.patchValue({ linkFotoPrincipal: url });
+            this.imagemSelecionada.set(url);
             return;
           }
           this.adicionarUrlNaGaleria(url);
@@ -201,6 +208,13 @@ export class EmpresaFormComponent implements OnInit {
     );
 
     widget.open();
+  }
+
+  selecionarImagem(url: string | null | undefined): void {
+    const valor = (url ?? '').trim();
+    if (valor) {
+      this.imagemSelecionada.set(valor);
+    }
   }
 
   adicionarUrlGaleria(): void {
@@ -221,12 +235,14 @@ export class EmpresaFormComponent implements OnInit {
     const indiceVazio = this.urlsGaleria.controls.findIndex((controle) => !String(controle.value ?? '').trim());
     if (indiceVazio >= 0) {
       this.urlsGaleria.at(indiceVazio).setValue(url);
+      this.imagemSelecionada.set(url);
       return;
     }
     if (this.urlsGaleria.length >= this.maxUrlsGaleria) {
       return;
     }
     this.urlsGaleria.push(this.fb.nonNullable.control(url));
+    this.imagemSelecionada.set(url);
   }
 
   private preencherGaleria(urls: string[] | undefined): void {

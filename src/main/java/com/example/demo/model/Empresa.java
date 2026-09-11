@@ -42,6 +42,9 @@ public class Empresa {
     @Column(columnDefinition = "TEXT")
     private String linkFotoPrincipal;
 
+    @Column(name = "link_galeria", columnDefinition = "TEXT")
+    private String linkGaleria;
+
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "empresa_urls_galeria", joinColumns = @JoinColumn(name = "empresa_id"))
     @Column(name = "url", columnDefinition = "TEXT")
@@ -197,6 +200,14 @@ public class Empresa {
 
     public void setLinkFotoPrincipal(String linkFotoPrincipal) {
         this.linkFotoPrincipal = linkFotoPrincipal;
+    }
+
+    public String getLinkGaleria() {
+        return linkGaleria;
+    }
+
+    public void setLinkGaleria(String linkGaleria) {
+        this.linkGaleria = linkGaleria;
     }
 
     public List<String> getUrlsGaleria() {

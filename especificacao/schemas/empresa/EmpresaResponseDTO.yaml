@@ -35,6 +35,10 @@ properties:
     example:
       - "https://res.cloudinary.com/demo/image/upload/v1/foto1.jpg"
       - "https://res.cloudinary.com/demo/image/upload/v1/foto2.jpg"
+  linkGaleria:
+    type: string
+    description: Link opcional da galeria completa no Google Drive (fotos e vídeos em alta qualidade)
+    example: "https://drive.google.com/drive/folders/exemplo"
   permiteReservaAutomatica:
     type: boolean
     description: Quando true, o bot exibe a opção de reserva automática no WhatsApp

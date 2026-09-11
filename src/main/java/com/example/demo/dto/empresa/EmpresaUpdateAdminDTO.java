@@ -26,6 +26,10 @@ public record EmpresaUpdateAdminDTO(
         @Size(max = 5)
         List<String> urlsGaleria,
 
+        @Schema(description = "Link opcional da galeria completa no Google Drive (fotos e vídeos em alta qualidade)",
+                example = "https://drive.google.com/drive/folders/exemplo")
+        String linkGaleria,
+
         @Schema(description = "Lista de módulos liberados após pagamento", example = "[\"IA_GEMINI\", \"GOOGLE_CALENDAR\"]")
         List<String> modulosAtivos
 ) {

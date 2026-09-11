@@ -29,6 +29,10 @@ public record EmpresaUpdateDTO(
         @Size(max = 5)
         List<String> urlsGaleria,
 
+        @Schema(description = "Link opcional da galeria completa no Google Drive (fotos e vídeos em alta qualidade)",
+                example = "https://drive.google.com/drive/folders/exemplo")
+        String linkGaleria,
+
         @Schema(description = "Ativa ou desativa a reserva automática pelo bot no WhatsApp", example = "false")
         Boolean permiteReservaAutomatica,
 

@@ -17,6 +17,7 @@ public record EmpresaPainelDTO(
         String linkGoogleMaps,
         String linkFotoPrincipal,
         List<String> urlsGaleria,
+        String linkGaleria,
         String googleCalendarId,
         Boolean locacaoPorHora,
         Boolean permiteReservaAutomatica,

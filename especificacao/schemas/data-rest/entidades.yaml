@@ -45,6 +45,8 @@ Empresa:
       maxItems: 5
       items:
         type: string
+    linkGaleria:
+      type: string
     googleCalendarId:
       type: string
     locacaoPorHora:
@@ -86,6 +88,8 @@ EntityModelEmpresa:
       maxItems: 5
       items:
         type: string
+    linkGaleria:
+      type: string
     googleCalendarId:
       type: string
     locacaoPorHora:
@@ -177,6 +181,8 @@ EmpresaRequestBody:
       maxItems: 5
       items:
         type: string
+    linkGaleria:
+      type: string
     googleCalendarId:
       type: string
     locacaoPorHora:

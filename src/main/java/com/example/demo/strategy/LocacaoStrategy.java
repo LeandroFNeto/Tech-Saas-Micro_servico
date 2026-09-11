@@ -110,11 +110,21 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
             servicoMensagem.enviarMensagemWPP(
                     empresa, numeroCliente, "Ainda não cadastramos a foto principal deste espaço.");
         }
-        servicoMensagem.enviarMensagemWPP(
-                empresa,
-                numeroCliente,
-                "Essa é a foto principal do nosso espaço! 📸 Deseja ver mais fotos do ambiente? (Responda SIM ou NÃO)");
+        servicoMensagem.enviarMensagemWPP(empresa, numeroCliente, textoConviteGaleria(empresa));
         gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.ESPERANDO_RESPOSTA_GALERIA);
+    }
+
+    private String textoConviteGaleria(Empresa empresa) {
+        String link = empresa.getLinkGaleria();
+        StringBuilder texto = new StringBuilder("📸 Essa é a foto principal do nosso espaço!\n\n");
+        if (link != null && !link.isBlank()) {
+            texto.append("📂 *Quer ver a galeria completa com fotos e vídeos em alta qualidade?*\n")
+                    .append("Acesse nosso Drive: ")
+                    .append(link.trim())
+                    .append("\n\n");
+        }
+        texto.append("👇 Deseja receber mais algumas fotos rápidas por aqui mesmo? (Responda *SIM* ou *NÃO*)");
+        return texto.toString();
     }
 
     private void tratarRespostaGaleria(Empresa empresa, String numeroCliente, String texto) {

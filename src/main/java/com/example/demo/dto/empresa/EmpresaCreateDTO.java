@@ -39,6 +39,10 @@ public record EmpresaCreateDTO(
         @Size(max = 5)
         List<String> urlsGaleria,
 
+        @Schema(description = "Link opcional da galeria completa no Google Drive (fotos e vídeos em alta qualidade)",
+                example = "https://drive.google.com/drive/folders/exemplo")
+        String linkGaleria,
+
         @Schema(description = "E-mail de acesso do cliente. O servidor ignora o valor enviado e força sessaoWhatsapp (minúsculas, sem espaços) + @gamb.com.br.",
                 example = "sessao_recanto_01@gamb.com.br")
         String email,
