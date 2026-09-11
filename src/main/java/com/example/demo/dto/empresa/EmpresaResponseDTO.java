@@ -29,6 +29,10 @@ public record EmpresaResponseDTO(
         @Schema(description = "Lista de URLs públicas das fotos complementares hospedadas no Cloudinary")
         List<String> urlsGaleria,
 
+        @Schema(description = "Link opcional da galeria completa no Google Drive (fotos e vídeos em alta qualidade)",
+                example = "https://drive.google.com/drive/folders/exemplo")
+        String linkGaleria,
+
         @Schema(description = "Quando true, o bot exibe a opção de reserva automática no WhatsApp", example = "false")
         Boolean permiteReservaAutomatica,
 

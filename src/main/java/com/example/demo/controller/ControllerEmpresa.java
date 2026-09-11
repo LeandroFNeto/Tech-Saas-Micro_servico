@@ -155,6 +155,9 @@ public class ControllerEmpresa {
         if (dto.urlsGaleria() != null) {
             empresa.setUrlsGaleria(dto.urlsGaleria());
         }
+        if (dto.linkGaleria() != null) {
+            empresa.setLinkGaleria(dto.linkGaleria().isBlank() ? null : dto.linkGaleria().trim());
+        }
         CatalogoModulos.aplicar(empresa, dto.modulosIniciais());
 
         Empresa salva = empresaRepository.save(empresa);
@@ -187,6 +190,9 @@ public class ControllerEmpresa {
         if (dto.linkGoogleMaps() != null) empresa.setLinkGoogleMaps(dto.linkGoogleMaps());
         if (dto.linkFotoPrincipal() != null) empresa.setLinkFotoPrincipal(dto.linkFotoPrincipal());
         if (dto.urlsGaleria() != null) empresa.setUrlsGaleria(dto.urlsGaleria());
+        if (dto.linkGaleria() != null) {
+            empresa.setLinkGaleria(dto.linkGaleria().isBlank() ? null : dto.linkGaleria().trim());
+        }
         if (dto.permiteReservaAutomatica() != null) {
             empresa.setPermiteReservaAutomatica(dto.permiteReservaAutomatica());
         }
@@ -234,6 +240,9 @@ public class ControllerEmpresa {
         if (dto.googleCalendarId() != null) empresa.setGoogleCalendarId(dto.googleCalendarId().isBlank() ? null : dto.googleCalendarId().trim());
         if (dto.linkFotoPrincipal() != null) empresa.setLinkFotoPrincipal(dto.linkFotoPrincipal());
         if (dto.urlsGaleria() != null) empresa.setUrlsGaleria(dto.urlsGaleria());
+        if (dto.linkGaleria() != null) {
+            empresa.setLinkGaleria(dto.linkGaleria().isBlank() ? null : dto.linkGaleria().trim());
+        }
         CatalogoModulos.aplicar(empresa, dto.modulosAtivos());
 
         return ResponseEntity.ok(paraResposta(empresaRepository.save(empresa)));
@@ -260,6 +269,7 @@ public class ControllerEmpresa {
                 empresa.getLinkGoogleMaps(),
                 empresa.getLinkFotoPrincipal(),
                 List.copyOf(empresa.getUrlsGaleria()),
+                empresa.getLinkGaleria(),
                 Boolean.TRUE.equals(empresa.getPermiteReservaAutomatica()),
                 Boolean.TRUE.equals(empresa.getLocacaoPorHora()),
                 empresa.getRegrasLocacao(),
@@ -293,6 +303,7 @@ public class ControllerEmpresa {
                 empresa.getLinkGoogleMaps(),
                 empresa.getLinkFotoPrincipal(),
                 List.copyOf(empresa.getUrlsGaleria()),
+                empresa.getLinkGaleria(),
                 empresa.getGoogleCalendarId(),
                 empresa.getLocacaoPorHora(),
                 Boolean.TRUE.equals(empresa.getPermiteReservaAutomatica()),

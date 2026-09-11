@@ -20,6 +20,9 @@ import { unlinkAsync } from '../util/functions';
 
 function returnError(req: Request, res: Response, error: any) {
   req.logger.error(error);
+  if (res.headersSent) {
+    return;
+  }
   res.status(500).json({
     status: 'Error',
     message: 'Erro ao enviar a mensagem.',

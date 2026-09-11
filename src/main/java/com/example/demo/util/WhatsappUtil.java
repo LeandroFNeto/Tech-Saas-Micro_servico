@@ -31,10 +31,10 @@ public class WhatsappUtil {
     }
 
     /**
-     * Verifica se o JID é um identificador de privacidade (LID).
-     * Útil para logar avisos específicos, pois @lid costuma dar erro ao tentar responder.
+     * JID de privacidade do WhatsApp ({@code 123@lid}). Enviar como {@code @c.us} gera
+     * "No LID for user" no WPPConnect.
      */
     public static boolean isLid(String jid) {
-        return jid != null && jid.contains("@lid");
+        return jid != null && jid.toLowerCase().contains("@lid");
     }
 }

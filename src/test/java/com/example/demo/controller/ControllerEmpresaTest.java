@@ -196,7 +196,7 @@ class ControllerEmpresaTest {
     }
 
     @Test
-    @DisplayName("PUT /empresas/{sessao}/cliente persiste urlsGaleria e foto principal")
+    @DisplayName("PUT /empresas/{sessao}/cliente persiste urlsGaleria, foto principal e linkGaleria")
     void deveAtualizarGaleriaPeloCliente() throws Exception {
         Empresa empresa = new Empresa();
         empresa.setId(1L);
@@ -214,7 +214,8 @@ class ControllerEmpresaTest {
                               "urlsGaleria": [
                                 "https://res.cloudinary.com/demo/image/upload/v1/foto1.jpg",
                                 "https://res.cloudinary.com/demo/image/upload/v1/foto2.jpg"
-                              ]
+                              ],
+                              "linkGaleria": "https://drive.google.com/drive/folders/exemplo"
                             }
                             """))
                 .andExpect(status().isOk())
@@ -222,11 +223,14 @@ class ControllerEmpresaTest {
                         .value("https://res.cloudinary.com/demo/image/upload/v1/hero_image.jpg"))
                 .andExpect(jsonPath("$.urlsGaleria[0]")
                         .value("https://res.cloudinary.com/demo/image/upload/v1/foto1.jpg"))
-                .andExpect(jsonPath("$.urlsGaleria.length()").value(2));
+                .andExpect(jsonPath("$.urlsGaleria.length()").value(2))
+                .andExpect(jsonPath("$.linkGaleria")
+                        .value("https://drive.google.com/drive/folders/exemplo"));
 
         assertEquals(
                 "https://res.cloudinary.com/demo/image/upload/v1/hero_image.jpg",
                 empresa.getLinkFotoPrincipal());
         assertEquals(2, empresa.getUrlsGaleria().size());
+        assertEquals("https://drive.google.com/drive/folders/exemplo", empresa.getLinkGaleria());
     }
 }
