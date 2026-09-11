@@ -51,13 +51,12 @@ class LocacaoStrategyTest {
 
         locacaoStrategy.processarMensagem(empresa, REMETENTE, "oi", "INICIO");
 
-        verify(servicoMensagem).enviarMensagemWPP(eq(empresa), eq(REMETENTE), contains("Como posso te ajudar hoje"));
         verify(servicoMensagem).enviarMensagemWPP(eq(empresa), eq(REMETENTE), contains("1️⃣ - Ver fotos do espaço"));
         verify(servicoMensagem).enviarMensagemWPP(eq(empresa), eq(REMETENTE), contains("2️⃣ - Ver localização"));
         verify(servicoMensagem).enviarMensagemWPP(eq(empresa), eq(REMETENTE), contains("3️⃣ - Pesquisar data disponível"));
         verify(servicoMensagem).enviarMensagemWPP(eq(empresa), eq(REMETENTE), contains("4️⃣ - Solicitar uma reserva"));
-        verify(servicoMensagem).enviarMensagemWPP(eq(empresa), eq(REMETENTE), contains("DD/MM/AAAA"));
-        verify(servicoMensagem).enviarMensagemWPP(eq(empresa), eq(REMETENTE), contains("Digite *0*"));
+        verify(servicoMensagem).enviarMensagemWPP(eq(empresa), eq(REMETENTE), contains("Digite o número da opção desejada"));
+        verify(servicoMensagem, never()).enviarMensagemWPP(eq(empresa), eq(REMETENTE), contains("DD/MM/AAAA"));
         verify(servicoMensagem, never()).enviarMensagemWPP(eq(empresa), eq(REMETENTE), contains("Falar com atendente virtual"));
         assertThat(gerenciadorSessao.getEstado(REMETENTE)).isEqualTo(EstadoUsuario.MENU_PRINCIPAL);
     }
@@ -81,6 +80,7 @@ class LocacaoStrategyTest {
                 eq(empresa), eq(REMETENTE), contains("https://drive.google.com/drive/folders/exemplo"));
         verify(servicoMensagem).enviarMensagemWPP(
                 eq(empresa), eq(REMETENTE), contains("Deseja receber mais algumas fotos rápidas"));
+        verify(servicoMensagem).enviarMensagemWPP(eq(empresa), eq(REMETENTE), contains("Digite *0*"));
         assertThat(gerenciadorSessao.getEstado(REMETENTE)).isEqualTo(EstadoUsuario.ESPERANDO_RESPOSTA_GALERIA);
     }
 
@@ -100,7 +100,7 @@ class LocacaoStrategyTest {
 
         verify(servicoMensagem).enviarGaleriaComIntervalo(eq(empresa), eq(REMETENTE), any(), any());
         verify(servicoMensagem).enviarMensagemWPP(
-                eq(empresa), eq(REMETENTE), contains("Digite apenas o número da opção desejada"));
+                eq(empresa), eq(REMETENTE), contains("Digite o número da opção desejada"));
         assertThat(gerenciadorSessao.getEstado(REMETENTE)).isEqualTo(EstadoUsuario.MENU_PRINCIPAL);
     }
 
@@ -114,7 +114,7 @@ class LocacaoStrategyTest {
 
         verify(servicoMensagem, never()).enviarGaleriaComIntervalo(any(), any(), any(), any());
         verify(servicoMensagem).enviarMensagemWPP(
-                eq(empresa), eq(REMETENTE), contains("Digite apenas o número da opção desejada"));
+                eq(empresa), eq(REMETENTE), contains("Digite o número da opção desejada"));
         assertThat(gerenciadorSessao.getEstado(REMETENTE)).isEqualTo(EstadoUsuario.MENU_PRINCIPAL);
     }
 
@@ -219,7 +219,9 @@ class LocacaoStrategyTest {
         locacaoStrategy.processarMensagem(empresa, REMETENTE, "3", "MENU_PRINCIPAL");
 
         verify(servicoMensagem).enviarMensagemWPP(
-                eq(empresa), eq(REMETENTE), eq("Por favor, me diga qual data você deseja verificar."));
+                eq(empresa), eq(REMETENTE), contains("qual data você deseja verificar"));
+        verify(servicoMensagem).enviarMensagemWPP(eq(empresa), eq(REMETENTE), contains("DD/MM/AAAA"));
+        verify(servicoMensagem).enviarMensagemWPP(eq(empresa), eq(REMETENTE), contains("Digite *0*"));
         assertThat(gerenciadorSessao.getEstado(REMETENTE)).isEqualTo(EstadoUsuario.ESPERANDO_DATA);
     }
 
@@ -232,7 +234,7 @@ class LocacaoStrategyTest {
 
         locacaoStrategy.processarMensagem(empresa, REMETENTE, "voltar", "RESERVA_ESPERANDO_DATA");
 
-        verify(servicoMensagem).enviarMensagemWPP(eq(empresa), eq(REMETENTE), contains("Digite apenas o número da opção desejada"));
+        verify(servicoMensagem).enviarMensagemWPP(eq(empresa), eq(REMETENTE), contains("Digite o número da opção desejada"));
         assertThat(gerenciadorSessao.getEstado(REMETENTE)).isEqualTo(EstadoUsuario.MENU_PRINCIPAL);
         assertThat(gerenciadorSessao.getReserva(REMETENTE)).isNull();
 
@@ -254,6 +256,7 @@ class LocacaoStrategyTest {
         locacaoStrategy.processarMensagem(empresa, REMETENTE, "9", "MENU_PRINCIPAL");
 
         verify(servicoMensagem).enviarMensagemWPP(eq(empresa), eq(REMETENTE), contains("Opção inválida"));
+        verify(servicoMensagem, never()).enviarMensagemWPP(eq(empresa), eq(REMETENTE), contains("Digite *0*"));
         assertThat(gerenciadorSessao.getEstado(REMETENTE)).isEqualTo(EstadoUsuario.MENU_PRINCIPAL);
     }
 
@@ -271,7 +274,8 @@ class LocacaoStrategyTest {
         InOrder ordem = inOrder(servicoMensagem);
         ordem.verify(servicoMensagem).enviarMensagemWPP(eq(empresa), eq(REMETENTE), contains("Pesquisar data disponível"));
         ordem.verify(servicoMensagem).enviarMensagemWPP(
-                eq(empresa), eq(REMETENTE), eq("Por favor, me diga qual data você deseja verificar."));
+                eq(empresa), eq(REMETENTE), contains("qual data você deseja verificar"));
+        ordem.verify(servicoMensagem).enviarMensagemWPP(eq(empresa), eq(REMETENTE), contains("Digite *0*"));
         ordem.verify(servicoMensagem).enviarMensagemWPP(
                 eq(empresa), eq(REMETENTE), eq("✅ Esta data está livre para locação!"));
         assertThat(gerenciadorSessao.getEstado(REMETENTE)).isEqualTo(EstadoUsuario.INICIO);
