@@ -41,9 +41,22 @@
               <td class="px-4 py-3 font-medium text-brand-900">{{ empresa.nome || '—' }}</td>
               <td class="px-4 py-3 font-mono text-xs text-brand-700">{{ empresa.sessaoWhatsapp }}</td>
               <td class="px-4 py-3">
-                <span class="rounded-full bg-brand-100 px-2.5 py-1 text-xs font-medium text-brand-800">
-                  {{ empresa.statusSessao || (empresa.usaIA ? 'IA ativa' : 'Padrão') }}
-                </span>
+                @if (statusDe(empresa.sessaoWhatsapp) === 'CONNECTED') {
+                  <span class="inline-flex items-center gap-2 rounded-full bg-accent-50 px-2.5 py-1 text-xs font-semibold text-accent-700">
+                    <span class="h-2 w-2 rounded-full bg-accent-500"></span>
+                    WhatsApp Online
+                  </span>
+                } @else if (statusDe(empresa.sessaoWhatsapp) === 'DISCONNECTED') {
+                  <span class="inline-flex items-center rounded-full bg-brand-100 px-2.5 py-1 text-xs font-semibold text-brand-700">
+                    Desconectado
+                  </span>
+                } @else if (statusDe(empresa.sessaoWhatsapp) === 'QRCODE') {
+                  <span class="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800">
+                    Aguardando leitura
+                  </span>
+                } @else {
+                  <span class="text-xs text-brand-500">Consultando...</span>
+                }
               </td>
               <td class="px-4 py-3 text-brand-700">{{ empresa.modulosAtivos.length || '—' }}</td>
               <td class="px-4 py-3 text-brand-600">{{ empresa.atualizadoEm | date: 'short' }}</td>

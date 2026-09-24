@@ -54,6 +54,10 @@ export class EmpresaService {
     return this.http.put<EmpresaResponseDTO>(`${this.base}/${sessao}/cliente`, dto);
   }
 
+  resetarSenha(sessao: string, novaSenha: string): Observable<void> {
+    return this.http.put<void>(`${this.base}/${sessao}/reset-senha`, { novaSenha });
+  }
+
   paraView(bruto: unknown): EmpresaView {
     const item = (bruto ?? {}) as Record<string, unknown>;
     return {

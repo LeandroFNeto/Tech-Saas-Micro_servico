@@ -216,6 +216,36 @@
 </form>
 
 @if (modoEdicao() && sessaoOriginal()) {
+  <section class="card mt-6 min-w-0 space-y-4 p-4 md:p-5">
+    <div>
+      <h3 class="font-semibold text-brand-900">Resetar senha de acesso</h3>
+      <p class="mt-1 text-sm text-brand-600">Define uma nova senha para o cliente. A senha atual não é necessária.</p>
+    </div>
+
+    <form class="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-end" [formGroup]="formResetSenha" (ngSubmit)="resetarSenha()">
+      <label class="block min-w-0 flex-1">
+        <span class="mb-1 block text-sm font-medium">Nova senha</span>
+        <input
+          class="input-field w-full min-w-0"
+          type="password"
+          formControlName="novaSenha"
+          autocomplete="new-password"
+          placeholder="mínimo 6 caracteres"
+        />
+      </label>
+      <button class="btn-primary w-full shrink-0 sm:w-auto" type="submit" [disabled]="salvandoSenha()">
+        {{ salvandoSenha() ? 'Salvando...' : 'Resetar senha' }}
+      </button>
+    </form>
+
+    @if (formResetSenha.controls.novaSenha.touched && formResetSenha.controls.novaSenha.invalid) {
+      <p class="text-xs text-red-600">A nova senha precisa ter ao menos 6 caracteres.</p>
+    }
+    @if (sucessoSenha()) {
+      <p class="rounded-xl border border-accent-200 bg-accent-50 px-4 py-3 text-sm text-brand-800">{{ sucessoSenha() }}</p>
+    }
+  </section>
+
   <div class="mt-6">
     <app-conexao-whatsapp [sessao]="sessaoOriginal()" />
   </div>

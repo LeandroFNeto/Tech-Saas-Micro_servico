@@ -28,9 +28,15 @@ export class EmpresaFormComponent implements OnInit {
   readonly modoEdicao = signal(false);
   readonly sessaoOriginal = signal('');
   readonly salvando = signal(false);
+  readonly salvandoSenha = signal(false);
   readonly erro = signal('');
   readonly sucesso = signal('');
+  readonly sucessoSenha = signal('');
   readonly imagemSelecionada = signal('');
+
+  readonly formResetSenha = this.fb.nonNullable.group({
+    novaSenha: ['', [Validators.required, Validators.minLength(6)]]
+  });
 
   readonly form = this.fb.group({
     nome: ['', Validators.required],
@@ -141,6 +147,28 @@ export class EmpresaFormComponent implements OnInit {
           this.salvando.set(false);
         }
       });
+  }
+
+  resetarSenha(): void {
+    this.erro.set('');
+    this.sucessoSenha.set('');
+    if (this.formResetSenha.invalid) {
+      this.formResetSenha.markAllAsTouched();
+      return;
+    }
+
+    this.salvandoSenha.set(true);
+    this.empresasApi.resetarSenha(this.sessaoOriginal(), this.formResetSenha.controls.novaSenha.value).subscribe({
+      next: () => {
+        this.salvandoSenha.set(false);
+        this.formResetSenha.reset();
+        this.sucessoSenha.set('Senha atualizada com sucesso. Informe o cliente.');
+      },
+      error: (err) => {
+        this.erro.set(mensagemHttp(err));
+        this.salvandoSenha.set(false);
+      }
+    });
   }
 
   private preencher(empresa: EmpresaView): void {
