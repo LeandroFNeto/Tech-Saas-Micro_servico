@@ -73,6 +73,15 @@ public class ServicoAuth {
     }
 
     @Transactional
+    public void resetarSenhaDoCliente(String sessaoWhatsapp, String novaSenha) {
+        Usuario usuario = usuarioRepository.findByEmpresa_SessaoWhatsapp(sessaoWhatsapp)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuário do cliente não encontrado"));
+
+        usuario.setSenha(passwordEncoder.encode(novaSenha));
+        usuarioRepository.save(usuario);
+    }
+
+    @Transactional
     public void criarUsuarioCliente(Empresa empresa, String email, String senha) {
         String emailAcesso = emailAcessoDaSessao(empresa.getSessaoWhatsapp());
         if (usuarioRepository.existsByEmailIgnoreCase(emailAcesso)) {

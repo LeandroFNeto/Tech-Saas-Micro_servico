@@ -1,0 +1,11 @@
+type: object
+description: Nova senha definida pelo administrador, sem conferir a senha atual do cliente.
+properties:
+  novaSenha:
+    type: string
+    format: password
+    minLength: 6
+    description: Senha em texto puro; o servidor persiste apenas o hash BCrypt
+    example: NovaSenha456
+required:
+  - novaSenha

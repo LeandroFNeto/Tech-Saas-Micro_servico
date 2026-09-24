@@ -10,11 +10,13 @@ public record EmpresaUpdateDTO(
         @Schema(description = "Nome fantasia", example = "Recanto Vista Alegre")
         String nome,
 
-        @Schema(description = "Mensagem que o bot envia ao iniciar a conversa", example = "Olá! Como posso ajudar?")
+        @Size(max = 1000, message = "A mensagem não pode exceder 1000 caracteres para evitar bloqueios por spam")
+        @Schema(description = "Mensagem que o bot envia ao iniciar a conversa", example = "Olá! Como posso ajudar?", maxLength = 1000)
         String mensagemSaudacao,
 
+        @Size(max = 1000, message = "A mensagem não pode exceder 1000 caracteres para evitar bloqueios por spam")
         @Schema(description = "Mensagem de preços que o bot envia no WhatsApp quando o cliente pede a tabela",
-                example = "Diária padrão: R$ 500,00")
+                example = "Diária padrão: R$ 500,00", maxLength = 1000)
         String tabelaDePrecos,
 
         @Schema(description = "Link do Google Maps do estabelecimento", example = "https://maps.app.goo.gl/exemplo")
@@ -39,8 +41,9 @@ public record EmpresaUpdateDTO(
         @Schema(description = "Define se o local é alugado por hora (true) ou por diária (false)", example = "false")
         Boolean locacaoPorHora,
 
+        @Size(max = 1000, message = "A mensagem não pode exceder 1000 caracteres para evitar bloqueios por spam")
         @Schema(description = "Regras do local e política de cancelamento lidas pelo bot",
-                example = "Cancelar com 5 dias de antecedência")
+                example = "Cancelar com 5 dias de antecedência", maxLength = 1000)
         String regrasLocacao,
 
         @Schema(description = "Opções do menu do WhatsApp (Fotos, Localização, Preços, Regras, Reserva)")

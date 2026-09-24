@@ -7,11 +7,13 @@ properties:
     example: Recanto Vista Alegre
   mensagemSaudacao:
     type: string
-    description: Mensagem que o bot envia ao iniciar a conversa
+    maxLength: 1000
+    description: Mensagem que o bot envia ao iniciar a conversa. Máximo de 1000 caracteres para evitar bloqueios por spam.
     example: Olá! Como posso ajudar?
   tabelaDePrecos:
     type: string
-    description: Mensagem de preços que o bot envia no WhatsApp quando o cliente pede a tabela
+    maxLength: 1000
+    description: Mensagem de preços que o bot envia no WhatsApp quando o cliente pede a tabela. Máximo de 1000 caracteres.
     example: "Diária padrão: R$ 500,00"
   linkGoogleMaps:
     type: string
@@ -46,7 +48,8 @@ properties:
     example: false
   regrasLocacao:
     type: string
-    description: Regras do local e política de cancelamento lidas pelo bot
+    maxLength: 1000
+    description: Regras do local e política de cancelamento lidas pelo bot. Máximo de 1000 caracteres.
     example: "Cancelar com 5 dias de antecedência"
   modulosMenu:
     type: array

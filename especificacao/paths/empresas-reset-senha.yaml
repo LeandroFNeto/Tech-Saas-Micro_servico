@@ -1,0 +1,36 @@
+put:
+  tags:
+  - Gerenciamento de Empresas
+  summary: Resetar senha de acesso do cliente
+  description: O administrador sobrescreve a senha do usuário da empresa. Não exige a senha atual. Exige x-admin-token.
+  operationId: resetarSenhaAdmin
+  parameters:
+  - name: x-admin-token
+    in: header
+    description: Token administrativo do SaaS
+    required: false
+    schema:
+      type: string
+    example: sua-chave-admin
+  - name: sessao
+    in: path
+    description: Identificador da sessão WhatsApp da empresa
+    required: true
+    schema:
+      type: string
+    example: sessao_recanto_01
+  requestBody:
+    content:
+      application/json:
+        schema:
+          $ref: "#/components/schemas/ResetSenhaAdminDTO"
+    required: true
+  responses:
+    "204":
+      description: Senha atualizada
+    "400":
+      description: Nova senha inválida
+    "401":
+      description: Token administrativo inválido
+    "404":
+      description: Empresa ou usuário do cliente não encontrado

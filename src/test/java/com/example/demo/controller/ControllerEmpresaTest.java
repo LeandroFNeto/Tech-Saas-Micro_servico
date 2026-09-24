@@ -18,6 +18,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -232,5 +233,36 @@ class ControllerEmpresaTest {
                 empresa.getLinkFotoPrincipal());
         assertEquals(2, empresa.getUrlsGaleria().size());
         assertEquals("https://drive.google.com/drive/folders/exemplo", empresa.getLinkGaleria());
+    }
+
+    @Test
+    @DisplayName("PUT /empresas/{sessao}/reset-senha sobrescreve a senha sem exigir a atual")
+    void deveResetarSenhaPeloAdmin() throws Exception {
+        Empresa empresa = new Empresa();
+        empresa.setSessaoWhatsapp("sessao_recanto_01");
+        when(empresaRepository.findBySessaoWhatsapp("sessao_recanto_01")).thenReturn(empresa);
+
+        mockMvc.perform(put("/empresas/sessao_recanto_01/reset-senha")
+                        .header("x-admin-token", "sua-chave-admin")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            { "novaSenha": "NovaSenha456" }
+                            """))
+                .andExpect(status().isNoContent());
+
+        verify(servicoAuth).resetarSenhaDoCliente("sessao_recanto_01", "NovaSenha456");
+    }
+
+    @Test
+    @DisplayName("PUT /empresas/{sessao}/reset-senha sem token administrativo retorna 401")
+    void deveRecusarResetDeSenhaSemToken() throws Exception {
+        mockMvc.perform(put("/empresas/sessao_recanto_01/reset-senha")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            { "novaSenha": "NovaSenha456" }
+                            """))
+                .andExpect(status().isUnauthorized());
+
+        verify(servicoAuth, never()).resetarSenhaDoCliente(any(), any());
     }
 }

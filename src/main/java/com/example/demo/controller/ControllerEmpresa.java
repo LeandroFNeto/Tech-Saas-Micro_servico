@@ -7,6 +7,7 @@ import com.example.demo.dto.empresa.EmpresaResponseDTO;
 import com.example.demo.dto.empresa.EmpresaUpdateAdminDTO;
 import com.example.demo.dto.empresa.EmpresaUpdateDTO;
 import com.example.demo.dto.empresa.ModuloMenuDTO;
+import com.example.demo.dto.empresa.ResetSenhaAdminDTO;
 import com.example.demo.model.Empresa;
 import com.example.demo.model.ModuloEmpresa;
 import com.example.demo.repository.EmpresaRepository;
@@ -246,6 +247,34 @@ public class ControllerEmpresa {
         CatalogoModulos.aplicar(empresa, dto.modulosAtivos());
 
         return ResponseEntity.ok(paraResposta(empresaRepository.save(empresa)));
+    }
+
+    @PutMapping("/{sessao}/reset-senha")
+    @Operation(summary = "Resetar senha de acesso do cliente",
+            description = "O administrador sobrescreve a senha do usuário da empresa. Não exige a senha atual. Exige x-admin-token.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Senha atualizada"),
+            @ApiResponse(responseCode = "400", description = "Nova senha inválida"),
+            @ApiResponse(responseCode = "401", description = "Token administrativo inválido"),
+            @ApiResponse(responseCode = "404", description = "Empresa ou usuário do cliente não encontrado")
+    })
+    public ResponseEntity<Void> resetarSenha(
+            @Parameter(description = "Token administrativo do SaaS", example = "sua-chave-admin")
+            @RequestHeader(value = "x-admin-token", required = false) String token,
+            @Parameter(description = "Identificador da sessão WhatsApp da empresa", example = "sessao_recanto_01")
+            @PathVariable String sessao,
+            @Valid @RequestBody ResetSenhaAdminDTO dto) {
+
+        if (isAcessoNegado(token)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Acesso negado");
+        }
+
+        if (empresaRepository.findBySessaoWhatsapp(sessao) == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        servicoAuth.resetarSenhaDoCliente(sessao, dto.novaSenha());
+        return ResponseEntity.noContent().build();
     }
 
     private EmpresaResponseDTO paraResposta(Empresa empresa) {
