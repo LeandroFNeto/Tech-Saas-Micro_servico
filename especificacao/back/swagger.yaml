@@ -1,0 +1,115 @@
+openapi: 3.0.3
+info:
+  title: Smart Booking API
+  description: Contrato HTTP do SaaS multi-tenant (WhatsApp + agendamento). Fonte única de verdade modular em especificacao/back/.
+  version: 1.0.0
+paths:
+  /auth/login:
+    $ref: ./paths/auth-login.yaml
+  /auth/alterar-senha:
+    $ref: ./paths/auth-alterar-senha.yaml
+  /empresas:
+    $ref: ./paths/empresas.yaml
+  /empresas/{id}:
+    $ref: ./paths/empresas-id.yaml
+  /empresas/{sessao}/admin:
+    $ref: ./paths/empresas-admin.yaml
+  /empresas/{sessao}/reset-senha:
+    $ref: ./paths/empresas-reset-senha.yaml
+  /empresas/{sessao}/cliente:
+    $ref: ./paths/empresas-cliente.yaml
+  /empresas/search/findBySessaoWhatsapp:
+    $ref: ./paths/empresas-search.yaml
+  /profile:
+    $ref: ./paths/profile.yaml
+  /profile/empresas:
+    $ref: ./paths/profile-empresas.yaml
+  /webhook/whatsapp:
+    $ref: ./paths/webhook-whatsapp.yaml
+  /whatsapp/{sessao}/status:
+    $ref: ./paths/whatsapp-status.yaml
+  /whatsapp/{sessao}/iniciar:
+    $ref: ./paths/whatsapp-iniciar.yaml
+  /avisos:
+    $ref: ./paths/avisos.yaml
+  /admin/avisos:
+    $ref: ./paths/admin-avisos.yaml
+  /admin/avisos/{id}:
+    $ref: ./paths/admin-avisos-id.yaml
+  /api/ia-query:
+    $ref: ./paths/ia-query.yaml
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    IaQueryRequest:
+      $ref: ./schemas/ia/IaQueryRequest.yaml
+    IaQueryResponse:
+      $ref: ./schemas/ia/IaQueryResponse.yaml
+    LoginRequestDTO:
+      $ref: ./schemas/auth/LoginRequestDTO.yaml
+    LoginResponseDTO:
+      $ref: ./schemas/auth/LoginResponseDTO.yaml
+    AlterarSenhaDTO:
+      $ref: ./schemas/auth/AlterarSenhaDTO.yaml
+    AvisoDTO:
+      $ref: ./schemas/aviso/AvisoDTO.yaml
+    EmpresaCreateDTO:
+      $ref: ./schemas/empresa/EmpresaCreateDTO.yaml
+    EmpresaUpdateDTO:
+      $ref: ./schemas/empresa/EmpresaUpdateDTO.yaml
+    EmpresaUpdateAdminDTO:
+      $ref: ./schemas/empresa/EmpresaUpdateAdminDTO.yaml
+    ResetSenhaAdminDTO:
+      $ref: ./schemas/empresa/ResetSenhaAdminDTO.yaml
+    EmpresaResponseDTO:
+      $ref: ./schemas/empresa/EmpresaResponseDTO.yaml
+    ModuloMenuDTO:
+      $ref: ./schemas/empresa/ModuloMenuDTO.yaml
+    SessaoStatusResponseDTO:
+      $ref: ./schemas/whatsapp/SessaoStatusResponseDTO.yaml
+    WhatsappWebhookDTO:
+      $ref: ./schemas/webhook/WhatsappWebhookDTO.yaml
+    DadosWebhook:
+      $ref: ./schemas/webhook/DadosWebhook.yaml
+    MensagemAninhada:
+      $ref: ./schemas/webhook/MensagemAninhada.yaml
+    ConteudoMensagem:
+      $ref: ./schemas/webhook/ConteudoMensagem.yaml
+    IdentificadorMensagem:
+      $ref: ./schemas/webhook/IdentificadorMensagem.yaml
+    RemetenteWebhook:
+      $ref: ./schemas/webhook/RemetenteWebhook.yaml
+    ChaveMensagem:
+      $ref: ./schemas/webhook/ChaveMensagem.yaml
+    DiaReserva:
+      $ref: ./schemas/data-rest/entidades.yaml#/DiaReserva
+    Empresa:
+      $ref: ./schemas/data-rest/entidades.yaml#/Empresa
+    EntityModelEmpresa:
+      $ref: ./schemas/data-rest/entidades.yaml#/EntityModelEmpresa
+    HorarioReserva:
+      $ref: ./schemas/data-rest/entidades.yaml#/HorarioReserva
+    ModuloEmpresa:
+      $ref: ./schemas/data-rest/entidades.yaml#/ModuloEmpresa
+    PagedModelEntityModelEmpresa:
+      $ref: ./schemas/data-rest/entidades.yaml#/PagedModelEntityModelEmpresa
+    EmpresaRequestBody:
+      $ref: ./schemas/data-rest/entidades.yaml#/EmpresaRequestBody
+    AbstractJsonSchemaPropertyObject:
+      $ref: ./schemas/data-rest/hal.yaml#/AbstractJsonSchemaPropertyObject
+    Item:
+      $ref: ./schemas/data-rest/hal.yaml#/Item
+    JsonSchema:
+      $ref: ./schemas/data-rest/hal.yaml#/JsonSchema
+    RepresentationModelObject:
+      $ref: ./schemas/data-rest/hal.yaml#/RepresentationModelObject
+    PageMetadata:
+      $ref: ./schemas/data-rest/hal.yaml#/PageMetadata
+    Link:
+      $ref: ./schemas/data-rest/hal.yaml#/Link
+    Links:
+      $ref: ./schemas/data-rest/hal.yaml#/Links

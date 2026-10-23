@@ -5,11 +5,7 @@
 @layer base {
   html,
   body {
-    @apply h-full bg-brand-50 text-brand-900 antialiased;
-  }
-
-  body {
-    font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+    @apply h-full bg-brand-50 font-sans text-brand-900 antialiased;
   }
 }
 

@@ -1,0 +1,8 @@
+{
+  "v0Dashboard": {
+    "titulo": "Laboratório v0",
+    "descricao": "Cole aqui o HTML do v0.dev. Troque className por class. As classes Tailwind desta pasta entram no build. O quadro e os textos vêm dos tokens de design; o miolo é o componente colado.",
+    "exemploTitulo": "Área de colagem",
+    "exemploTexto": "Substitua este bloco pelo markup gerado no v0. Mantenha a section em volta."
+  }
+}

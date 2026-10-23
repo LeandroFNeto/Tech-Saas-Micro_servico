@@ -1,100 +1,77 @@
-<div class="mb-6">
-  <h2 class="text-2xl font-semibold text-brand-900">Meu perfil</h2>
-  <p class="text-sm text-brand-600">Atualize os dados do estabelecimento e o menu do bot no WhatsApp.</p>
+<div [class]="design.pagina.cabecalho">
+  <h2 [class]="design.pagina.titulo">{{ conteudo.cabecalho.titulo }}</h2>
+  <p [class]="design.pagina.descricao">{{ conteudo.cabecalho.descricao }}</p>
 </div>
 
-<div class="grid gap-6 xl:grid-cols-[1.4fr_0.8fr]">
-  <div class="space-y-4">
+<div [class]="design.pagina.grade">
+  <div [class]="design.pagina.coluna">
     <app-banner-avisos [avisos]="avisos()" />
 
     <app-conexao-whatsapp [sessao]="sessao" />
 
     @if (erro()) {
-      <p class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ erro() }}</p>
+      <p [class]="design.alerta.erro">{{ erro() }}</p>
     }
     @if (sucesso()) {
-      <p class="rounded-xl border border-accent-200 bg-accent-50 px-4 py-3 text-sm text-brand-800">{{ sucesso() }}</p>
+      <p [class]="design.alerta.sucesso">{{ sucesso() }}</p>
     }
 
-    <div class="card space-y-4 p-5">
-      <div class="flex flex-wrap gap-2 border-b border-brand-200 pb-3">
-        <button
-          type="button"
-          class="rounded-lg px-3 py-2 text-sm font-medium"
-          [class.bg-brand-100]="aba() === 'dados'"
-          [class.text-brand-900]="aba() === 'dados'"
-          [class.text-brand-600]="aba() !== 'dados'"
-          (click)="aba.set('dados')"
-        >
-          Dados do perfil
+    <div [class]="design.cartao">
+      <div [class]="design.abas.barra">
+        <button type="button" [class]="classesAba(aba() === 'dados')" (click)="aba.set('dados')">
+          {{ conteudo.abas.dados }}
         </button>
-        <button
-          type="button"
-          class="rounded-lg px-3 py-2 text-sm font-medium"
-          [class.bg-brand-100]="aba() === 'robo'"
-          [class.text-brand-900]="aba() === 'robo'"
-          [class.text-brand-600]="aba() !== 'robo'"
-          (click)="aba.set('robo')"
-        >
-          Configurações do Robô
+        <button type="button" [class]="classesAba(aba() === 'robo')" (click)="aba.set('robo')">
+          {{ conteudo.abas.robo }}
         </button>
-        <button
-          type="button"
-          class="rounded-lg px-3 py-2 text-sm font-medium"
-          [class.bg-brand-100]="aba() === 'configuracao'"
-          [class.text-brand-900]="aba() === 'configuracao'"
-          [class.text-brand-600]="aba() !== 'configuracao'"
-          (click)="aba.set('configuracao')"
-        >
-          Configuração
+        <button type="button" [class]="classesAba(aba() === 'configuracao')" (click)="aba.set('configuracao')">
+          {{ conteudo.abas.configuracao }}
         </button>
       </div>
 
       @if (aba() !== 'configuracao') {
-        <form class="space-y-4" [formGroup]="form" (ngSubmit)="salvar()">
+        <form [class]="design.formulario" [formGroup]="form" (ngSubmit)="salvar()">
           @if (aba() === 'dados') {
-            <label class="block">
-              <span class="mb-1 block text-sm font-medium">Nome</span>
-              <input class="input-field" formControlName="nome" />
+            <label [class]="tema.componentes.campo">
+              <span [class]="tema.componentes.rotulo">{{ conteudo.dados.nome.rotulo }}</span>
+              <input [class]="tema.componentes.entrada" formControlName="nome" />
             </label>
 
-            <label class="block">
-              <span class="mb-1 block text-sm font-medium">Mensagem de saudação</span>
-              <textarea class="input-field min-h-24" formControlName="mensagemSaudacao"></textarea>
+            <label [class]="tema.componentes.campo">
+              <span [class]="tema.componentes.rotulo">{{ conteudo.dados.mensagemSaudacao.rotulo }}</span>
+              <textarea [class]="design.campos.mensagemSaudacao" formControlName="mensagemSaudacao"></textarea>
             </label>
 
-            <label class="block">
-              <span class="mb-1 block text-sm font-medium">Link do Google Maps</span>
-              <input class="input-field" formControlName="linkGoogleMaps" placeholder="https://maps.app.goo.gl/..." />
+            <label [class]="tema.componentes.campo">
+              <span [class]="tema.componentes.rotulo">{{ conteudo.dados.linkGoogleMaps.rotulo }}</span>
+              <input [class]="tema.componentes.entrada" formControlName="linkGoogleMaps" [placeholder]="conteudo.dados.linkGoogleMaps.placeholder" />
             </label>
 
-            <label class="block">
-              <span class="mb-1 block text-sm font-medium">Foto principal (Cloudinary)</span>
+            <label [class]="tema.componentes.campo">
+              <span [class]="tema.componentes.rotulo">{{ conteudo.dados.fotoPrincipal.rotulo }}</span>
               <input
-                class="input-field"
+                [class]="tema.componentes.entrada"
                 formControlName="linkFotoPrincipal"
-                placeholder="https://res.cloudinary.com/.../hero_image.jpg"
+                [placeholder]="conteudo.dados.fotoPrincipal.placeholder"
               />
-              <span class="mt-1 block text-xs text-brand-600">
-                Cole a URL pública da hero image. Clique na mini imagem para visualizar maior.
+              <span [class]="tema.componentes.dica">
+                {{ conteudo.dados.fotoPrincipal.dica }}
               </span>
               @if (form.controls.linkFotoPrincipal.value) {
-                <div class="mt-2 flex items-center gap-3 rounded-xl border border-brand-200 bg-brand-50 p-3">
+                <div [class]="design.foto.moldura">
                   <button
-                    class="shrink-0 rounded-lg ring-offset-2"
                     type="button"
-                    [class.ring-2]="imagemSelecionada() === form.controls.linkFotoPrincipal.value"
-                    [class.ring-accent-500]="imagemSelecionada() === form.controls.linkFotoPrincipal.value"
+                    [class]="classesSelecao(design.foto.botao, imagemSelecionada() === form.controls.linkFotoPrincipal.value)"
                     (click)="selecionarImagem(form.controls.linkFotoPrincipal.value)"
                   >
                     <img
-                      class="h-16 w-16 rounded-lg object-cover"
+                      [class]="design.foto.imagem"
                       [src]="form.controls.linkFotoPrincipal.value"
-                      alt="Prévia da foto principal"
+                      [alt]="conteudo.dados.fotoPrincipal.alt"
                     />
                   </button>
                   <a
-                    class="truncate text-xs text-brand-700 underline"
+                    [class]="design.foto.link"
                     [href]="form.controls.linkFotoPrincipal.value"
                     target="_blank"
                     rel="noopener noreferrer"
@@ -106,135 +83,129 @@
             </label>
 
             <div>
-              <div class="mb-2 flex items-center justify-between gap-3">
-                <span class="text-sm font-medium">Galeria de fotos (até {{ maxUrlsGaleria }} URLs)</span>
+              <div [class]="design.galeria.cabecalho">
+                <span [class]="design.galeria.rotulo">{{ conteudo.dados.galeria.rotuloInicio }} {{ maxUrlsGaleria }} {{ conteudo.dados.galeria.rotuloFim }}</span>
                 <button
-                  class="btn-secondary px-3 py-1 text-xs"
+                  [class]="design.galeria.botaoAdicionar"
                   type="button"
                   [disabled]="urlsGaleria.length >= maxUrlsGaleria"
                   (click)="adicionarUrlGaleria()"
                 >
-                  Adicionar URL
+                  {{ conteudo.dados.galeria.adicionar }}
                 </button>
               </div>
-              <p class="mb-3 text-xs text-brand-600">
-                Cole os links públicos do Cloudinary. Clique na mini imagem para visualizar. O bot envia essas fotos no WhatsApp se o cliente pedir mais imagens.
+              <p [class]="design.galeria.dica">
+                {{ conteudo.dados.galeria.dica }}
               </p>
-              <div class="space-y-2" formArrayName="urlsGaleria">
+              <div [class]="design.galeria.lista" formArrayName="urlsGaleria">
                 @for (url of urlsGaleria.controls; track $index) {
-                  <div class="flex items-center gap-2">
+                  <div [class]="design.galeria.linha">
                     @if (url.value) {
                       <button
-                        class="shrink-0 rounded-lg ring-offset-2"
                         type="button"
-                        [class.ring-2]="imagemSelecionada() === url.value"
-                        [class.ring-accent-500]="imagemSelecionada() === url.value"
+                        [class]="classesSelecao(design.galeria.miniaturaBotao, imagemSelecionada() === url.value)"
                         (click)="selecionarImagem(url.value)"
                       >
-                        <img class="h-12 w-12 rounded-lg object-cover" [src]="url.value" alt="Prévia da galeria" />
+                        <img [class]="design.galeria.miniatura" [src]="url.value" [alt]="conteudo.dados.galeria.altMiniatura" />
                       </button>
                     }
-                    <input class="input-field" [formControlName]="$index" placeholder="https://res.cloudinary.com/.../foto.jpg" />
-                    <button class="btn-secondary px-3" type="button" (click)="removerUrlGaleria($index)">Remover</button>
+                    <input [class]="design.galeria.entrada" [formControlName]="$index" [placeholder]="conteudo.dados.galeria.placeholder" />
+                    <button [class]="design.galeria.botaoRemover" type="button" (click)="removerUrlGaleria($index)">{{ conteudo.dados.galeria.remover }}</button>
                   </div>
                 }
               </div>
               @if (imagemSelecionada()) {
-                <div class="mt-3 overflow-hidden rounded-xl border border-brand-200 bg-brand-50">
-                  <p class="px-3 pt-3 text-xs font-medium text-brand-700">Imagem selecionada</p>
+                <div [class]="design.galeria.visualizacao">
+                  <p [class]="design.galeria.visualizacaoRotulo">{{ conteudo.dados.galeria.imagemSelecionada }}</p>
                   <img
-                    class="mx-auto max-h-72 w-full object-contain p-3"
+                    [class]="design.galeria.visualizacaoImagem"
                     [src]="imagemSelecionada()"
-                    alt="Imagem selecionada para visualização"
+                    [alt]="conteudo.dados.galeria.altVisualizacao"
                   />
                 </div>
               }
             </div>
 
-            <label class="block">
-              <span class="mb-1 block text-sm font-medium">Link da galeria no Google Drive (opcional)</span>
+            <label [class]="tema.componentes.campo">
+              <span [class]="tema.componentes.rotulo">{{ conteudo.dados.linkGaleria.rotulo }}</span>
               <input
-                class="input-field"
+                [class]="tema.componentes.entrada"
                 formControlName="linkGaleria"
-                placeholder="https://drive.google.com/drive/folders/..."
+                [placeholder]="conteudo.dados.linkGaleria.placeholder"
               />
-              <span class="mt-1 block text-xs text-brand-600">
-                O bot envia este link no WhatsApp junto com a foto principal, para o cliente ver fotos e vídeos em alta qualidade.
+              <span [class]="tema.componentes.dica">
+                {{ conteudo.dados.linkGaleria.dica }}
               </span>
             </label>
           }
 
           @if (aba() === 'robo') {
-            <h3 class="text-lg font-semibold text-brand-900">Configurações do Robô</h3>
-            <p class="text-sm text-brand-600">Defina como o bot atende no WhatsApp: tipo de locação, preços, regras e opções do menu.</p>
+            <h3 [class]="design.secao.titulo">{{ conteudo.robo.titulo }}</h3>
+            <p [class]="design.secao.descricao">{{ conteudo.robo.descricao }}</p>
 
-            <label class="flex cursor-pointer items-start justify-between gap-4 rounded-xl border border-brand-200 p-4">
+            <label [class]="design.opcao.linha">
               <span>
-                <span class="block text-sm font-medium">Aluguel por Hora</span>
-                <span class="text-xs text-brand-600">
-                  Ligado = cobrança por hora. Desligado = diária.
+                <span [class]="design.opcao.rotulo">{{ conteudo.robo.locacaoPorHora.rotulo }}</span>
+                <span [class]="design.opcao.dica">
+                  {{ conteudo.robo.locacaoPorHora.dica }}
                 </span>
               </span>
-              <input class="mt-1 h-5 w-9 accent-accent-500" type="checkbox" formControlName="locacaoPorHora" />
+              <input [class]="design.opcao.checkbox" type="checkbox" formControlName="locacaoPorHora" />
             </label>
 
-            <label class="flex cursor-pointer items-start justify-between gap-4 rounded-xl border border-brand-200 p-4">
+            <label [class]="design.opcao.linha">
               <span>
-                <span class="block text-sm font-medium">Reserva Automática pelo Bot</span>
-                <span class="text-xs text-brand-600">
-                  Ligada = o WhatsApp mostra a opção de solicitar reserva. Desligada = avisa que um atendente vai responder.
+                <span [class]="design.opcao.rotulo">{{ conteudo.robo.reservaAutomatica.rotulo }}</span>
+                <span [class]="design.opcao.dica">
+                  {{ conteudo.robo.reservaAutomatica.dica }}
                 </span>
               </span>
-              <input
-                class="mt-1 h-5 w-9 accent-accent-500"
-                type="checkbox"
-                formControlName="permiteReservaAutomatica"
-              />
+              <input [class]="design.opcao.checkbox" type="checkbox" formControlName="permiteReservaAutomatica" />
             </label>
 
-            <label class="block">
-              <span class="mb-1 block text-sm font-medium">Regras do Local e Cancelamento</span>
+            <label [class]="tema.componentes.campo">
+              <span [class]="tema.componentes.rotulo">{{ conteudo.robo.regrasLocacao.rotulo }}</span>
               <textarea
-                class="input-field min-h-32"
+                [class]="design.campos.regrasLocacao"
                 formControlName="regrasLocacao"
-                placeholder="Cancelar com 5 dias de antecedência"
+                [placeholder]="conteudo.robo.regrasLocacao.placeholder"
               ></textarea>
             </label>
 
-            <label class="block">
-              <span class="mb-1 block text-sm font-medium">Mensagem de preços</span>
+            <label [class]="tema.componentes.campo">
+              <span [class]="tema.componentes.rotulo">{{ conteudo.robo.tabelaDePrecos.rotulo }}</span>
               <textarea
-                class="input-field min-h-32"
+                [class]="design.campos.tabelaDePrecos"
                 formControlName="tabelaDePrecos"
-                placeholder="Diária padrão: R$ 500,00&#10;Final de semana: R$ 700,00"
+                [placeholder]="conteudo.robo.tabelaDePrecos.placeholder"
               ></textarea>
-              <span class="mt-1 block text-xs text-brand-600">
-                Texto que o bot envia no WhatsApp quando o cliente escolhe a opção de preços.
+              <span [class]="tema.componentes.dica">
+                {{ conteudo.robo.tabelaDePrecos.dica }}
               </span>
             </label>
 
             <div>
-              <h4 class="mb-1 text-sm font-semibold text-brand-900">Opções do menu do WhatsApp</h4>
-              <p class="mb-3 text-xs text-brand-600">
-                Ative cada opção e edite o texto que o cliente vê no bot (Fotos, Localização, Preços, Regras, Reserva).
+              <h4 [class]="design.menu.titulo">{{ conteudo.robo.menu.titulo }}</h4>
+              <p [class]="design.menu.descricao">
+                {{ conteudo.robo.menu.descricao }}
               </p>
 
-              <div class="space-y-3" formArrayName="modulosMenu">
+              <div [class]="design.menu.lista" formArrayName="modulosMenu">
                 @for (modulo of modulosMenu.controls; track modulo.controls.codigoAcao.value; let i = $index) {
-                  <div class="rounded-xl border border-brand-200 p-4" [formGroupName]="i">
-                    <div class="mb-3 flex items-start justify-between gap-4">
+                  <div [class]="design.menu.cartao" [formGroupName]="i">
+                    <div [class]="design.menu.cabecalho">
                       <span>
-                        <span class="block text-sm font-medium">{{ rotuloModulo(modulo.controls.codigoAcao.value) }}</span>
-                        <span class="text-xs text-brand-600">{{ descricaoModulo(modulo.controls.codigoAcao.value) }}</span>
+                        <span [class]="design.menu.rotulo">{{ rotuloModulo(modulo.controls.codigoAcao.value) }}</span>
+                        <span [class]="design.menu.dica">{{ descricaoModulo(modulo.controls.codigoAcao.value) }}</span>
                       </span>
-                      <label class="flex cursor-pointer items-center gap-2 text-sm">
-                        <input class="h-5 w-9 accent-accent-500" type="checkbox" formControlName="ativo" />
-                        <span class="text-brand-700">Ativo</span>
+                      <label [class]="design.menu.ativo">
+                        <input [class]="design.menu.checkbox" type="checkbox" formControlName="ativo" />
+                        <span [class]="design.menu.rotuloAtivo">{{ conteudo.robo.menu.ativo }}</span>
                       </label>
                     </div>
-                    <label class="block">
-                      <span class="mb-1 block text-xs font-medium text-brand-600">Texto do menu no WhatsApp</span>
-                      <input class="input-field" formControlName="textoMenu" />
+                    <label [class]="tema.componentes.campo">
+                      <span [class]="design.menu.rotuloCampo">{{ conteudo.robo.menu.textoMenu }}</span>
+                      <input [class]="tema.componentes.entrada" formControlName="textoMenu" />
                     </label>
                   </div>
                 }
@@ -242,47 +213,47 @@
             </div>
           }
 
-          <button class="btn-primary" type="submit" [disabled]="salvando()">
-            {{ salvando() ? 'Salvando...' : 'Atualizar perfil' }}
+          <button [class]="tema.componentes.botaoPrimario" type="submit" [disabled]="salvando()">
+            {{ salvando() ? conteudo.botoes.salvando : conteudo.botoes.atualizarPerfil }}
           </button>
         </form>
       }
 
       @if (aba() === 'configuracao') {
-        <form class="space-y-4" [formGroup]="formSenha" (ngSubmit)="alterarSenha()">
+        <form [class]="design.formulario" [formGroup]="formSenha" (ngSubmit)="alterarSenha()">
           <div>
-            <h3 class="text-lg font-semibold text-brand-900">Alterar senha</h3>
-            <p class="mt-1 text-sm text-brand-600">Troque a senha temporária por uma senha sua.</p>
+            <h3 [class]="design.secao.titulo">{{ conteudo.senha.titulo }}</h3>
+            <p [class]="design.secao.descricaoSenha">{{ conteudo.senha.descricao }}</p>
           </div>
 
-          <label class="block">
-            <span class="mb-1 block text-sm font-medium">E-mail de acesso</span>
-            <input class="input-field bg-brand-50" type="email" [value]="emailAcesso" readonly />
+          <label [class]="tema.componentes.campo">
+            <span [class]="tema.componentes.rotulo">{{ conteudo.senha.email }}</span>
+            <input [class]="design.campos.emailSomenteLeitura" type="email" [value]="emailAcesso" readonly />
           </label>
 
-          <label class="block">
-            <span class="mb-1 block text-sm font-medium">Senha atual</span>
-            <input class="input-field" type="password" formControlName="senhaAtual" autocomplete="current-password" />
+          <label [class]="tema.componentes.campo">
+            <span [class]="tema.componentes.rotulo">{{ conteudo.senha.senhaAtual }}</span>
+            <input [class]="tema.componentes.entrada" type="password" formControlName="senhaAtual" autocomplete="current-password" />
           </label>
 
-          <label class="block">
-            <span class="mb-1 block text-sm font-medium">Nova senha</span>
-            <input class="input-field" type="password" formControlName="novaSenha" autocomplete="new-password" />
+          <label [class]="tema.componentes.campo">
+            <span [class]="tema.componentes.rotulo">{{ conteudo.senha.novaSenha }}</span>
+            <input [class]="tema.componentes.entrada" type="password" formControlName="novaSenha" autocomplete="new-password" />
             @if (formSenha.controls.novaSenha.touched && formSenha.controls.novaSenha.invalid) {
-              <span class="mt-1 block text-xs text-red-600">A nova senha precisa ter ao menos 6 caracteres.</span>
+              <span [class]="tema.componentes.erroCampo">{{ conteudo.senha.novaSenhaInvalida }}</span>
             }
           </label>
 
-          <label class="block">
-            <span class="mb-1 block text-sm font-medium">Confirmar nova senha</span>
-            <input class="input-field" type="password" formControlName="confirmarSenha" autocomplete="new-password" />
+          <label [class]="tema.componentes.campo">
+            <span [class]="tema.componentes.rotulo">{{ conteudo.senha.confirmar }}</span>
+            <input [class]="tema.componentes.entrada" type="password" formControlName="confirmarSenha" autocomplete="new-password" />
             @if (senhasNaoConferem) {
-              <span class="mt-1 block text-xs text-red-600">As senhas não conferem.</span>
+              <span [class]="tema.componentes.erroCampo">{{ conteudo.senha.senhasNaoConferem }}</span>
             }
           </label>
 
-          <button class="btn-primary" type="submit" [disabled]="formSenha.invalid || salvandoSenha()">
-            {{ salvandoSenha() ? 'Salvando...' : 'Salvar nova senha' }}
+          <button [class]="tema.componentes.botaoPrimario" type="submit" [disabled]="formSenha.invalid || salvandoSenha()">
+            {{ salvandoSenha() ? conteudo.botoes.salvando : conteudo.botoes.salvarNovaSenha }}
           </button>
         </form>
       }
@@ -290,7 +261,7 @@
   </div>
 
   <div>
-    <h3 class="mb-3 text-sm font-semibold uppercase tracking-wide text-brand-600">Avisos e tutoriais</h3>
+    <h3 [class]="design.lateral.titulo">{{ conteudo.lateral.titulo }}</h3>
     <app-banner-avisos [avisos]="avisos()" [compacto]="true" />
   </div>
 </div>

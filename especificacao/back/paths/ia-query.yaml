@@ -1,0 +1,46 @@
+post:
+  tags:
+  - Consulta IA
+  summary: Consulta em grafo para a IA
+  description: >
+    Camada adicional, exclusiva do consumo otimizado pela IA. Recebe um documento
+    GraphQL e devolve somente os campos pedidos (por exemplo nome e tabelaDePrecos).
+    Não substitui nem altera as rotas REST de /empresas. Campos disponíveis nesta
+    camada: id, nome, tabelaDePrecos, ramoDeAtuacao, regrasLocacao, mensagemSaudacao,
+    sessaoWhatsapp, linkGoogleMaps, linkFotoPrincipal, linkGaleria, urlsGaleria,
+    usaIA, locacaoPorHora, permiteReservaAutomatica. Não expõe usuários, senha nem
+    googleCalendarId. Admin lê todas as empresas; cliente autenticado por JWT lê só a sua.
+  operationId: consultarGrafoIa
+  security:
+  - bearerAuth: []
+  parameters:
+  - name: x-admin-token
+    in: header
+    description: Token administrativo do SaaS. Alternativa ao JWT de admin.
+    required: false
+    schema:
+      type: string
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: "#/components/schemas/IaQueryRequest"
+        example:
+          query: "{ empresas { nome tabelaDePrecos } }"
+  responses:
+    "200":
+      description: JSON GraphQL apenas com os campos selecionados na query
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/IaQueryResponse"
+          example:
+            data:
+              empresas:
+              - nome: Recanto Vista Alegre
+                tabelaDePrecos: Diária R$ 500
+    "400":
+      description: JSON malformado
+    "401":
+      description: JWT ou token administrativo ausente

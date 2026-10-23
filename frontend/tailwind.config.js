@@ -1,35 +1,22 @@
 /** @type {import('tailwindcss').Config} */
+const design = require('../especificacao/front/telas.design.json');
+
 module.exports = {
-  content: ['./src/**/*.{html,ts}'],
+  content: [
+    './src/**/*.{html,ts}',
+    // Pasta onde o HTML colado do v0.dev entra no build do Tailwind.
+    './src/app/features/design-v0/**/*.{html,ts}',
+    '../especificacao/front/**/*.json'
+  ],
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-        display: ['Cinzel', 'Georgia', 'serif']
+        sans: design.tema.fontes.sans,
+        display: design.tema.fontes.display
       },
       colors: {
-        brand: {
-          50: '#f6f0fb',
-          100: '#ebe0f5',
-          200: '#d4bce8',
-          300: '#b889d4',
-          400: '#9b5cbf',
-          500: '#7c3aad',
-          600: '#652d90',
-          700: '#4e2473',
-          800: '#2E1A47',
-          900: '#1A0B2E'
-        },
-        accent: {
-          50: '#fff4ec',
-          100: '#ffe4d1',
-          200: '#ffc9a3',
-          300: '#ffab70',
-          400: '#FF8C42',
-          500: '#F7931E',
-          600: '#e07a12',
-          700: '#c4620d'
-        }
+        brand: design.tema.cores.brand,
+        accent: design.tema.cores.accent
       }
     }
   },

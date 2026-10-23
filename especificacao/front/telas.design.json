@@ -1,0 +1,134 @@
+{
+  "tema": {
+    "cores": {
+      "brand": {
+        "50": "#f6f0fb",
+        "100": "#ebe0f5",
+        "200": "#d4bce8",
+        "300": "#b889d4",
+        "400": "#9b5cbf",
+        "500": "#7c3aad",
+        "600": "#652d90",
+        "700": "#4e2473",
+        "800": "#2E1A47",
+        "900": "#1A0B2E"
+      },
+      "accent": {
+        "50": "#fff4ec",
+        "100": "#ffe4d1",
+        "200": "#ffc9a3",
+        "300": "#ffab70",
+        "400": "#FF8C42",
+        "500": "#F7931E",
+        "600": "#e07a12",
+        "700": "#c4620d"
+      }
+    },
+    "fontes": {
+      "sans": ["Inter", "ui-sans-serif", "system-ui", "sans-serif"],
+      "display": ["Cinzel", "Georgia", "serif"]
+    },
+    "componentes": {
+      "campo": "block",
+      "rotulo": "mb-1 block text-sm font-medium",
+      "dica": "mt-1 block text-xs text-brand-600",
+      "entrada": "input-field",
+      "botaoPrimario": "btn-primary",
+      "erroCampo": "mt-1 block text-xs text-red-600"
+    }
+  },
+  "telas": {
+    "clientePerfil": {
+      "pagina": {
+        "cabecalho": "mb-6",
+        "titulo": "text-2xl font-semibold text-brand-900",
+        "descricao": "text-sm text-brand-600",
+        "grade": "grid gap-6 xl:grid-cols-[1.4fr_0.8fr]",
+        "coluna": "space-y-4"
+      },
+      "cartao": "card space-y-4 p-5",
+      "formulario": "space-y-4",
+      "abas": {
+        "barra": "flex flex-wrap gap-2 border-b border-brand-200 pb-3",
+        "botao": "rounded-lg px-3 py-2 text-sm font-medium",
+        "ativaFundo": "bg-brand-100",
+        "ativaTexto": "text-brand-900",
+        "inativaTexto": "text-brand-600"
+      },
+      "alerta": {
+        "erro": "rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700",
+        "sucesso": "rounded-xl border border-accent-200 bg-accent-50 px-4 py-3 text-sm text-brand-800"
+      },
+      "campos": {
+        "mensagemSaudacao": "input-field min-h-24",
+        "regrasLocacao": "input-field min-h-32",
+        "tabelaDePrecos": "input-field min-h-32",
+        "emailSomenteLeitura": "input-field bg-brand-50"
+      },
+      "selecao": {
+        "anel": "ring-2",
+        "cor": "ring-accent-500"
+      },
+      "foto": {
+        "moldura": "mt-2 flex items-center gap-3 rounded-xl border border-brand-200 bg-brand-50 p-3",
+        "botao": "shrink-0 rounded-lg ring-offset-2",
+        "imagem": "h-16 w-16 rounded-lg object-cover",
+        "link": "truncate text-xs text-brand-700 underline"
+      },
+      "galeria": {
+        "cabecalho": "mb-2 flex flex-wrap items-center justify-between gap-3",
+        "rotulo": "text-sm font-medium",
+        "botaoAdicionar": "btn-secondary shrink-0 px-3 py-1 text-xs",
+        "dica": "mb-3 text-xs text-brand-600",
+        "lista": "space-y-2",
+        "linha": "flex flex-wrap items-center gap-2",
+        "miniaturaBotao": "shrink-0 rounded-lg ring-offset-2",
+        "miniatura": "h-12 w-12 rounded-lg object-cover",
+        "entrada": "input-field min-w-0 flex-1",
+        "botaoRemover": "btn-secondary shrink-0 px-3",
+        "visualizacao": "mt-3 overflow-hidden rounded-xl border border-brand-200 bg-brand-50",
+        "visualizacaoRotulo": "px-3 pt-3 text-xs font-medium text-brand-700",
+        "visualizacaoImagem": "mx-auto max-h-72 w-full object-contain p-3"
+      },
+      "secao": {
+        "titulo": "text-lg font-semibold text-brand-900",
+        "descricao": "text-sm text-brand-600",
+        "descricaoSenha": "mt-1 text-sm text-brand-600"
+      },
+      "opcao": {
+        "linha": "flex cursor-pointer items-start justify-between gap-4 rounded-xl border border-brand-200 p-4",
+        "rotulo": "block text-sm font-medium",
+        "dica": "text-xs text-brand-600",
+        "checkbox": "mt-1 h-5 w-9 shrink-0 accent-accent-500"
+      },
+      "menu": {
+        "titulo": "mb-1 text-sm font-semibold text-brand-900",
+        "descricao": "mb-3 text-xs text-brand-600",
+        "lista": "space-y-3",
+        "cartao": "rounded-xl border border-brand-200 p-4",
+        "cabecalho": "mb-3 flex flex-wrap items-start justify-between gap-4",
+        "rotulo": "block text-sm font-medium",
+        "dica": "text-xs text-brand-600",
+        "ativo": "flex cursor-pointer items-center gap-2 text-sm",
+        "checkbox": "h-5 w-9 accent-accent-500",
+        "rotuloAtivo": "text-brand-700",
+        "rotuloCampo": "mb-1 block text-xs font-medium text-brand-600"
+      },
+      "lateral": {
+        "titulo": "mb-3 text-sm font-semibold uppercase tracking-wide text-brand-600"
+      }
+    },
+    "v0Dashboard": {
+      "pagina": "min-h-screen bg-brand-50",
+      "cabecalho": "border-b border-brand-200 px-6 py-5",
+      "titulo": "text-2xl font-semibold text-brand-900",
+      "descricao": "mt-1 max-w-3xl text-sm text-brand-600",
+      "areaColagem": "p-6",
+      "exemplo": {
+        "cartao": "card max-w-xl space-y-2 p-5",
+        "titulo": "text-lg font-semibold text-brand-900",
+        "texto": "text-sm text-brand-600"
+      }
+    }
+  }
+}

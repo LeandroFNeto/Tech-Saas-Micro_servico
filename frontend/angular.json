@@ -24,6 +24,11 @@
               {
                 "glob": "**/*",
                 "input": "public"
+              },
+              {
+                "glob": "**/*.json",
+                "input": "../especificacao/front",
+                "output": "/assets/especificacao/front"
               }
             ],
             "styles": [
@@ -91,6 +96,11 @@
               {
                 "glob": "**/*",
                 "input": "public"
+              },
+              {
+                "glob": "**/*.json",
+                "input": "../especificacao/front",
+                "output": "/assets/especificacao/front"
               }
             ],
             "styles": [

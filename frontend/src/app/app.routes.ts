@@ -19,5 +19,10 @@ export const routes: Routes = [
     canActivate: [authGuard, roleGuard('CLIENTE')],
     loadChildren: () => import('./features/client/client.routes').then((m) => m.CLIENT_ROUTES)
   },
+  {
+    path: 'design-v0',
+    loadComponent: () =>
+      import('./features/design-v0/v0-dashboard/v0-dashboard.component').then((m) => m.V0DashboardComponent)
+  },
   { path: '**', redirectTo: 'login' }
 ];

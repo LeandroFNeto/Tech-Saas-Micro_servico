@@ -9,6 +9,8 @@ import { BannerAvisosComponent } from '../../../shared/components/banner-avisos/
 import { ConexaoWhatsappComponent } from '../../../shared/components/conexao-whatsapp/conexao-whatsapp.component';
 import { AvisoDTO } from '../../../shared/models/aviso.models';
 import { EmpresaView, MAX_URLS_GALERIA, MODULOS_MENU_BOT, ModuloMenuDTO } from '../../../shared/models/empresa.models';
+import contentData from '../../../../../../especificacao/front/cliente-perfil.content.json';
+import designData from '../../../../../../especificacao/front/telas.design.json';
 
 type AbaPerfil = 'dados' | 'robo' | 'configuracao';
 
@@ -23,6 +25,9 @@ export class PerfilComponent implements OnInit {
   private readonly empresasApi = inject(EmpresaService);
   private readonly avisosApi = inject(AvisoService);
 
+  readonly conteudo = contentData.clientePerfil;
+  readonly tema = designData.tema;
+  readonly design = designData.telas.clientePerfil;
   readonly catalogoMenu = MODULOS_MENU_BOT;
   readonly maxUrlsGaleria = MAX_URLS_GALERIA;
   readonly avisos = signal<AvisoDTO[]>([]);
@@ -77,7 +82,7 @@ export class PerfilComponent implements OnInit {
     });
 
     if (!this.sessao) {
-      this.erro.set('Sessão WhatsApp não encontrada neste usuário.');
+      this.erro.set(this.conteudo.mensagens.sessaoAusente);
       return;
     }
 
@@ -93,6 +98,18 @@ export class PerfilComponent implements OnInit {
 
   descricaoModulo(codigo: string): string {
     return this.catalogoMenu.find((item) => item.codigo === codigo)?.descricao ?? '';
+  }
+
+  classesAba(ativa: boolean): string {
+    const abas = this.design.abas;
+    return ativa ? `${abas.botao} ${abas.ativaFundo} ${abas.ativaTexto}` : `${abas.botao} ${abas.inativaTexto}`;
+  }
+
+  classesSelecao(base: string, selecionada: boolean): string {
+    if (!selecionada) {
+      return base;
+    }
+    return `${base} ${this.design.selecao.anel} ${this.design.selecao.cor}`;
   }
 
   salvar(): void {
@@ -114,7 +131,7 @@ export class PerfilComponent implements OnInit {
       })
       .subscribe({
       next: () => {
-        this.sucesso.set('Perfil e configurações do robô atualizados.');
+        this.sucesso.set(this.conteudo.mensagens.perfilAtualizado);
         this.salvando.set(false);
       },
       error: (err) => {
@@ -140,13 +157,13 @@ export class PerfilComponent implements OnInit {
         next: () => {
           this.formSenha.reset();
           this.salvandoSenha.set(false);
-          this.sucesso.set('Senha atualizada. Use a nova senha no próximo acesso.');
+          this.sucesso.set(this.conteudo.mensagens.senhaAtualizada);
         },
         error: (err) => {
           this.salvandoSenha.set(false);
           this.erro.set(
             err instanceof HttpErrorResponse && err.status === 401
-              ? 'Senha atual incorreta.'
+              ? this.conteudo.mensagens.senhaAtualIncorreta
               : mensagemHttp(err)
           );
         }

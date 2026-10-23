@@ -1,0 +1,32 @@
+"""
+Camada exclusiva da IA. O cliente pede só os campos que precisa.
+As rotas REST em /empresas permanecem o contrato do painel.
+"""
+type Query {
+  "Empresa pelo id. Null se não existir ou se o acesso não for da própria empresa."
+  empresa(id: ID!): EmpresaConsulta
+
+  "Admin vê todas. Cliente autenticado por JWT vê só a sua."
+  empresas: [EmpresaConsulta!]!
+
+  "Empresa pela sessão WhatsApp."
+  empresaPorSessao(sessaoWhatsapp: String!): EmpresaConsulta
+}
+
+"Projeção da empresa para a IA. tabelaDePrecos é o campo de preço."
+type EmpresaConsulta {
+  id: ID!
+  nome: String
+  tabelaDePrecos: String
+  ramoDeAtuacao: String
+  regrasLocacao: String
+  mensagemSaudacao: String
+  sessaoWhatsapp: String
+  linkGoogleMaps: String
+  linkFotoPrincipal: String
+  linkGaleria: String
+  urlsGaleria: [String!]!
+  usaIA: Boolean
+  locacaoPorHora: Boolean
+  permiteReservaAutomatica: Boolean
+}

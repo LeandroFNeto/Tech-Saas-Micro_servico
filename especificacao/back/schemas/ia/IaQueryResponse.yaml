@@ -1,0 +1,15 @@
+type: object
+description: >
+  Envelope GraphQL. O objeto data contém somente os campos pedidos.
+  As rotas REST de empresa continuam devolvendo EmpresaResponseDTO completo.
+properties:
+  data:
+    type: object
+    additionalProperties: true
+    description: Resultado parcial, limitado à seleção da query.
+  errors:
+    type: array
+    description: Erros de validação da query, quando houver.
+    items:
+      type: object
+      additionalProperties: true

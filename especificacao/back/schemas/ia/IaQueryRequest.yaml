@@ -1,0 +1,16 @@
+type: object
+description: Documento GraphQL over HTTP. A resposta inclui só os campos citados em query.
+required:
+- query
+properties:
+  query:
+    type: string
+    description: Seleção de campos da empresa. Exemplo mínimo para nome e preço.
+    example: "{ empresas { nome tabelaDePrecos } }"
+  operationName:
+    type: string
+    description: Nome da operação, quando a query declara mais de uma.
+  variables:
+    type: object
+    additionalProperties: true
+    description: Variáveis da operação, como o id em empresa(id: $id).
