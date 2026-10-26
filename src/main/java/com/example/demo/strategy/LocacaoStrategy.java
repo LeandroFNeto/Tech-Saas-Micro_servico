@@ -30,6 +30,12 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
     private static final DateTimeFormatter FORMATO_HORA = DateTimeFormatter.ofPattern("H:mm");
     private static final ZoneId FUSO_BRASILIA = ZoneId.of("America/Sao_Paulo");
     private static final int DIAS_AGENDA = 15;
+    private static final String MENSAGEM_DATA_PASSADA =
+            "Essa data já passou. Envie uma data de hoje em diante, no formato DD-MM-AAAA, por exemplo 16-09-2026.";
+    private static final String MENSAGEM_HORARIO_PASSADO =
+            "Esse horário de hoje já passou. Envie um horário que ainda não passou, no formato HH:MM, por exemplo 18:00.";
+    private static final String LEMBRETE_VOLTAR_MENU =
+            "🔄 *Lembrete:* Digite *0* a qualquer momento da conversa para voltar ao menu inicial.";
 
     @Autowired private ServicoMensagem servicoMensagem;
     @Autowired private GerenciadorSessao gerenciadorSessao;
@@ -89,17 +95,29 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
             case "VER_REGRAS" -> tratarRegras(empresa, numeroCliente);
             case "SOLICITAR_RESERVA" -> tratarSolicitacaoReserva(empresa, numeroCliente);
             case "PESQUISAR_DATA" -> {
-                servicoMensagem.enviarMensagemWPP(
-                        empresa, numeroCliente, "Por favor, me diga qual data você deseja verificar.");
+                servicoMensagem.enviarMensagemWPP(empresa, numeroCliente, textoPedidoDataEspecifica());
                 gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.ESPERANDO_DATA);
             }
             case "GOOGLE_CALENDAR" -> tratarAgendaProximosDias(empresa, numeroCliente);
             case "MENU_CARDAPIO" -> tratarCardapio(empresa, numeroCliente);
             case "IA_GEMINI" -> servicoMensagem.enviarMensagemWPP(
                     empresa, numeroCliente, "Recebemos sua mensagem. Logo um atendente vai te responder.");
-            default -> servicoMensagem.enviarMensagemWPP(
-                    empresa, numeroCliente, "Opção inválida. Digite o número de uma das opções do menu.");
+            default -> {
+                servicoMensagem.enviarMensagemWPP(
+                        empresa, numeroCliente, "Opção inválida. Digite o número de uma das opções do menu.");
+                return;
+            }
         }
+        enviarLembreteVoltarMenu(empresa, numeroCliente);
+    }
+
+    private String textoPedidoDataEspecifica() {
+        return "Por favor, me diga qual data você deseja verificar.\n\n"
+                + "💡 Digite a data no formato *DD/MM/AAAA* (Ex: 25/12/2026).";
+    }
+
+    private void enviarLembreteVoltarMenu(Empresa empresa, String numeroCliente) {
+        servicoMensagem.enviarMensagemWPP(empresa, numeroCliente, LEMBRETE_VOLTAR_MENU);
     }
 
     private void tratarFotos(Empresa empresa, String numeroCliente) {
@@ -110,11 +128,21 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
             servicoMensagem.enviarMensagemWPP(
                     empresa, numeroCliente, "Ainda não cadastramos a foto principal deste espaço.");
         }
-        servicoMensagem.enviarMensagemWPP(
-                empresa,
-                numeroCliente,
-                "Essa é a foto principal do nosso espaço! 📸 Deseja ver mais fotos do ambiente? (Responda SIM ou NÃO)");
+        servicoMensagem.enviarMensagemWPP(empresa, numeroCliente, textoConviteGaleria(empresa));
         gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.ESPERANDO_RESPOSTA_GALERIA);
+    }
+
+    private String textoConviteGaleria(Empresa empresa) {
+        String link = empresa.getLinkGaleria();
+        StringBuilder texto = new StringBuilder("📸 Essa é a foto principal do nosso espaço!\n\n");
+        if (link != null && !link.isBlank()) {
+            texto.append("📂 *Quer ver a galeria completa com fotos e vídeos em alta qualidade?*\n")
+                    .append("Acesse nosso Drive: ")
+                    .append(link.trim())
+                    .append("\n\n");
+        }
+        texto.append("👇 Deseja receber mais algumas fotos rápidas por aqui mesmo? (Responda *SIM* ou *NÃO*)");
+        return texto.toString();
     }
 
     private void tratarRespostaGaleria(Empresa empresa, String numeroCliente, String texto) {
@@ -192,6 +220,9 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
         if (data == null) {
             return;
         }
+        if (recusarDataPassada(empresa, numeroCliente, data)) {
+            return;
+        }
         if (!dataEstaLivreParaReserva(empresa, numeroCliente, data, texto)) {
             return;
         }
@@ -220,8 +251,22 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
             return;
         }
         DadosReservaSessao reserva = gerenciadorSessao.getOuCriarReserva(numeroCliente);
+        LocalDate dataReserva = reserva.getData();
+        if (dataReserva != null && dataReserva.equals(LocalDate.now(FUSO_BRASILIA))
+                && hora.isBefore(LocalTime.now(FUSO_BRASILIA))) {
+            servicoMensagem.enviarMensagemWPP(empresa, numeroCliente, MENSAGEM_HORARIO_PASSADO);
+            return;
+        }
         reserva.setHorario(hora.format(DateTimeFormatter.ofPattern("HH:mm")));
         pedirNome(empresa, numeroCliente);
+    }
+
+    private boolean recusarDataPassada(Empresa empresa, String numeroCliente, LocalDate data) {
+        if (!data.isBefore(LocalDate.now(FUSO_BRASILIA))) {
+            return false;
+        }
+        servicoMensagem.enviarMensagemWPP(empresa, numeroCliente, MENSAGEM_DATA_PASSADA);
+        return true;
     }
 
     private void pedirNome(Empresa empresa, String numeroCliente) {
@@ -391,6 +436,9 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
 
         LocalDate data = parseData(empresa, numeroCliente, texto);
         if (data == null) {
+            return;
+        }
+        if (recusarDataPassada(empresa, numeroCliente, data)) {
             return;
         }
 
