@@ -5,7 +5,7 @@ Arquivo em comum da equipe. Cada agente atualiza a própria linha ao começar e 
 | Tarefa | Etapa | IA | Local | Voltas | Estado |
 |---|---|---|---|---|---|
 | [definir-papeis-ia-desenvolvimento](archive/definir-papeis-ia-desenvolvimento/) | revisão | `claude-opus-5-5-medium` | `openspec/specs/desenvolvimento/spec.md` | 0 | aprovado |
-| [recusar-data-passada-conversa](changes/recusar-data-passada-conversa/) | segurança | `claude-opus-5-5-medium` | `src/main/java/com/example/demo/strategy/LocacaoStrategy.java` | 0 | aprovado |
+| [recusar-data-passada-conversa](changes/recusar-data-passada-conversa/) | revisão | `claude-opus-5-5-medium` | `openspec/specs/whatsapp/spec.md` | 0 | aprovado |
 
 Estado: `em andamento`, `aprovado`, `reprovado`, `erro`, `aguardando aprovado`.
 
