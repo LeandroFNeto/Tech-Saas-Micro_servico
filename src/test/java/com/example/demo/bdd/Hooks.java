@@ -23,6 +23,7 @@ public class Hooks {
         Mockito.clearInvocations(factoryModulo, observadorwhatsapp);
         Mockito.reset(servicoMensagem, servicoIA, servicoReserva);
         ctx.tokenAdmin = null;
+        ctx.jwt = null;
         ctx.status = 0;
         ctx.resposta = null;
         ctx.erroFactory = null;

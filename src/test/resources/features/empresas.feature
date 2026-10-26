@@ -65,3 +65,33 @@ Funcionalidade: Contratos de empresa do SaaS
     Quando eu envio PUT /empresas/sessao_admin_negado/admin sem token com o EmpresaUpdateAdminDTO:
       | locacaoPorHora | true |
     Então o status HTTP deve ser 401
+
+  Cenário: PUT /empresas/{sessao}/reset-senha grava a senha nova
+    Dado o token administrativo "sua-chave-admin"
+    Quando eu envio POST /empresas com o EmpresaCreateDTO:
+      | nome           | Espaço Reset      |
+      | sessaoWhatsapp | sessao_reset_ok   |
+      | ramoDeAtuacao  | LOCACAO           |
+      | email          | reset@recanto.com |
+      | senha          | SenhaCliente123   |
+    Quando eu envio PUT /empresas/sessao_reset_ok/reset-senha com o ResetSenhaAdminDTO:
+      | novaSenha | NovaSenha456 |
+    Então o status HTTP deve ser 204
+
+  Cenário: PUT /empresas/{sessao}/reset-senha rejeita senha curta
+    Dado o token administrativo "sua-chave-admin"
+    Quando eu envio PUT /empresas/sessao_reset_curta/reset-senha com o ResetSenhaAdminDTO:
+      | novaSenha | 12345 |
+    Então o status HTTP deve ser 400
+
+  Cenário: PUT /empresas/{sessao}/reset-senha rejeita token administrativo inválido
+    Dado o token administrativo "token-invalido"
+    Quando eu envio PUT /empresas/sessao_reset_negado/reset-senha com o ResetSenhaAdminDTO:
+      | novaSenha | NovaSenha456 |
+    Então o status HTTP deve ser 401
+
+  Cenário: PUT /empresas/{sessao}/reset-senha de sessão inexistente retorna 404
+    Dado o token administrativo "sua-chave-admin"
+    Quando eu envio PUT /empresas/sessao_reset_ausente/reset-senha com o ResetSenhaAdminDTO:
+      | novaSenha | NovaSenha456 |
+    Então o status HTTP deve ser 404

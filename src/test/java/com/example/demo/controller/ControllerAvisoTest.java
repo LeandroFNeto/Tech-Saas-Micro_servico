@@ -145,12 +145,80 @@ class ControllerAvisoTest {
     }
 
     @Test
+    @DisplayName("POST /admin/avisos sem token retorna 401")
+    void deveRecusarCriacaoSemToken() throws Exception {
+        mockMvc.perform(post("/admin/avisos")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(avisoValido()))
+                .andExpect(status().isUnauthorized());
+
+        verify(avisoRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("PUT /admin/avisos/{id} sem token retorna 401")
+    void deveRecusarAtualizacaoSemToken() throws Exception {
+        mockMvc.perform(put("/admin/avisos/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(avisoValido()))
+                .andExpect(status().isUnauthorized());
+
+        verify(avisoRepository, never()).findById(any());
+    }
+
+    @Test
+    @DisplayName("POST /admin/avisos com título vazio retorna 400")
+    void deveRecusarCriacaoComDadosInvalidos() throws Exception {
+        mockMvc.perform(post("/admin/avisos")
+                        .header("x-admin-token", "sua-chave-admin")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                              "tipo": "TUTORIAL",
+                              "titulo": "",
+                              "conteudo": "Escaneie o QR Code."
+                            }
+                            """))
+                .andExpect(status().isBadRequest());
+
+        verify(avisoRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("PUT /admin/avisos/{id} com título vazio retorna 400")
+    void deveRecusarAtualizacaoComDadosInvalidos() throws Exception {
+        mockMvc.perform(put("/admin/avisos/1")
+                        .header("x-admin-token", "sua-chave-admin")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                              "tipo": "TUTORIAL",
+                              "titulo": "",
+                              "conteudo": "Escaneie o QR Code."
+                            }
+                            """))
+                .andExpect(status().isBadRequest());
+
+        verify(avisoRepository, never()).findById(any());
+    }
+
+    @Test
     @DisplayName("DELETE /admin/avisos/{id} inexistente retorna 404")
     void deveRetornar404AoExcluirInexistente() throws Exception {
         when(avisoRepository.existsById(99L)).thenReturn(false);
 
         mockMvc.perform(delete("/admin/avisos/99").header("x-admin-token", "sua-chave-admin"))
                 .andExpect(status().isNotFound());
+    }
+
+    private static String avisoValido() {
+        return """
+                {
+                  "tipo": "TUTORIAL",
+                  "titulo": "Como conectar o WhatsApp",
+                  "conteudo": "Escaneie o QR Code."
+                }
+                """;
     }
 
     private static Aviso aviso(Long id, boolean ativo) {

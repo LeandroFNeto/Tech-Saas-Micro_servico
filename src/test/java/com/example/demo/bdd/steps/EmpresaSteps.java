@@ -59,6 +59,11 @@ public class EmpresaSteps {
         ctx.resposta = executar("PUT", "/empresas/" + sessao + "/admin", json(tabela), ctx.tokenAdmin, null);
     }
 
+    @Quando("eu envio PUT \\/empresas\\/{word}\\/reset-senha com o ResetSenhaAdminDTO:")
+    public void putResetSenha(String sessao, DataTable tabela) throws Exception {
+        ctx.resposta = executar("PUT", "/empresas/" + sessao + "/reset-senha", json(tabela), ctx.tokenAdmin, null);
+    }
+
     @Quando("eu envio PUT \\/empresas\\/{word}\\/admin sem token com o EmpresaUpdateAdminDTO:")
     public void putAdminSemToken(String sessao, DataTable tabela) throws Exception {
         ctx.tokenAdmin = null;

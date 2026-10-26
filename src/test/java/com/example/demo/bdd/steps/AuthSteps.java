@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 
 public class AuthSteps {
 
@@ -28,6 +29,45 @@ public class AuthSteps {
                 .andReturn();
         ctx.status = resultado.getResponse().getStatus();
         ctx.resposta = resultado.getResponse().getContentAsString();
+        ctx.jwt = extrairToken(ctx.resposta);
+    }
+
+    @Quando("eu envio PUT \\/auth\\/alterar-senha com o JWT do login e o AlterarSenhaDTO:")
+    public void putAlterarSenhaComJwt(DataTable tabela) throws Exception {
+        enviarAlterarSenha(json(tabela), ctx.jwt);
+    }
+
+    @Quando("eu envio PUT \\/auth\\/alterar-senha sem JWT com o AlterarSenhaDTO:")
+    public void putAlterarSenhaSemJwt(DataTable tabela) throws Exception {
+        enviarAlterarSenha(json(tabela), null);
+    }
+
+    @Quando("eu envio PUT \\/auth\\/alterar-senha com JWT inválido e o AlterarSenhaDTO:")
+    public void putAlterarSenhaJwtInvalido(DataTable tabela) throws Exception {
+        enviarAlterarSenha(json(tabela), "token-invalido");
+    }
+
+    private void enviarAlterarSenha(String corpo, String jwt) throws Exception {
+        var pedido = put("/auth/alterar-senha")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(corpo);
+        if (jwt != null) {
+            pedido.header("Authorization", "Bearer " + jwt);
+        }
+        MvcResult resultado = mockMvc.perform(pedido).andReturn();
+        ctx.status = resultado.getResponse().getStatus();
+        ctx.resposta = resultado.getResponse().getContentAsString();
+    }
+
+    private String extrairToken(String json) {
+        String marca = "\"token\":\"";
+        int inicio = json.indexOf(marca);
+        if (inicio < 0) {
+            return null;
+        }
+        inicio += marca.length();
+        int fim = json.indexOf('"', inicio);
+        return fim < 0 ? null : json.substring(inicio, fim);
     }
 
     @E("o corpo deve seguir o schema LoginResponseDTO")

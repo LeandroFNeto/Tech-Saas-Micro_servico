@@ -1,0 +1,16 @@
+---
+description: Atualiza o grafo do Graphify depois de criar ou alterar arquivo
+alwaysApply: true
+---
+
+# Graphify update
+
+Depois de criar ou alterar qualquer arquivo do projeto, rode uma vez, no fim do turno:
+
+```
+graphify update .
+```
+
+Vale para código, teste, spec, YAML, JSON e regra. Vários arquivos no mesmo turno pedem um único update, não um por arquivo. O comando é AST local e não usa API.
+
+Não encerre o turno com arquivo criado ou editado sem esse update, salvo quando `graphify-out/graph.json` ainda não existe.
