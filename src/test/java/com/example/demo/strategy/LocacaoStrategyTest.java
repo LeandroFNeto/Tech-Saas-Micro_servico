@@ -61,8 +61,6 @@ class LocacaoStrategyTest {
         verify(servicoMensagem).enviarMensagemWPP(eq(empresa), eq(REMETENTE), contains("2️⃣ - Ver localização"));
         verify(servicoMensagem).enviarMensagemWPP(eq(empresa), eq(REMETENTE), contains("3️⃣ - Pesquisar data disponível"));
         verify(servicoMensagem).enviarMensagemWPP(eq(empresa), eq(REMETENTE), contains("4️⃣ - Solicitar uma reserva"));
-        verify(servicoMensagem).enviarMensagemWPP(eq(empresa), eq(REMETENTE), contains("Digite o número da opção desejada"));
-        verify(servicoMensagem, never()).enviarMensagemWPP(eq(empresa), eq(REMETENTE), contains("DD/MM/AAAA"));
         verify(servicoMensagem, never()).enviarMensagemWPP(eq(empresa), eq(REMETENTE), contains("Falar com atendente virtual"));
         assertThat(gerenciadorSessao.getEstado(REMETENTE)).isEqualTo(EstadoUsuario.MENU_PRINCIPAL);
     }
@@ -72,7 +70,6 @@ class LocacaoStrategyTest {
     void deveRoteamentoDinamicoParaFotos() {
         Empresa empresa = empresaComMenu();
         empresa.setLinkFotoPrincipal("https://res.cloudinary.com/demo/image/upload/v1/hero_image.jpg");
-        empresa.setLinkGaleria("https://drive.google.com/drive/folders/exemplo");
         gerenciadorSessao.setEstado(REMETENTE, EstadoUsuario.MENU_PRINCIPAL);
 
         locacaoStrategy.processarMensagem(empresa, REMETENTE, "1", "MENU_PRINCIPAL");
@@ -83,10 +80,7 @@ class LocacaoStrategyTest {
                 eq("https://res.cloudinary.com/demo/image/upload/v1/hero_image.jpg"),
                 eq(null));
         verify(servicoMensagem).enviarMensagemWPP(
-                eq(empresa), eq(REMETENTE), contains("https://drive.google.com/drive/folders/exemplo"));
-        verify(servicoMensagem).enviarMensagemWPP(
-                eq(empresa), eq(REMETENTE), contains("Deseja receber mais algumas fotos rápidas"));
-        verify(servicoMensagem).enviarMensagemWPP(eq(empresa), eq(REMETENTE), contains("Digite *0*"));
+                eq(empresa), eq(REMETENTE), contains("Deseja ver mais fotos do ambiente"));
         assertThat(gerenciadorSessao.getEstado(REMETENTE)).isEqualTo(EstadoUsuario.ESPERANDO_RESPOSTA_GALERIA);
     }
 
@@ -227,9 +221,7 @@ class LocacaoStrategyTest {
         locacaoStrategy.processarMensagem(empresa, REMETENTE, "3", "MENU_PRINCIPAL");
 
         verify(servicoMensagem).enviarMensagemWPP(
-                eq(empresa), eq(REMETENTE), contains("qual data você deseja verificar"));
-        verify(servicoMensagem).enviarMensagemWPP(eq(empresa), eq(REMETENTE), contains("DD/MM/AAAA"));
-        verify(servicoMensagem).enviarMensagemWPP(eq(empresa), eq(REMETENTE), contains("Digite *0*"));
+                eq(empresa), eq(REMETENTE), eq("Por favor, me diga qual data você deseja verificar."));
         assertThat(gerenciadorSessao.getEstado(REMETENTE)).isEqualTo(EstadoUsuario.ESPERANDO_DATA);
     }
 
@@ -264,7 +256,6 @@ class LocacaoStrategyTest {
         locacaoStrategy.processarMensagem(empresa, REMETENTE, "9", "MENU_PRINCIPAL");
 
         verify(servicoMensagem).enviarMensagemWPP(eq(empresa), eq(REMETENTE), contains("Opção inválida"));
-        verify(servicoMensagem, never()).enviarMensagemWPP(eq(empresa), eq(REMETENTE), contains("Digite *0*"));
         assertThat(gerenciadorSessao.getEstado(REMETENTE)).isEqualTo(EstadoUsuario.MENU_PRINCIPAL);
     }
 
@@ -283,8 +274,7 @@ class LocacaoStrategyTest {
         InOrder ordem = inOrder(servicoMensagem);
         ordem.verify(servicoMensagem).enviarMensagemWPP(eq(empresa), eq(REMETENTE), contains("Pesquisar data disponível"));
         ordem.verify(servicoMensagem).enviarMensagemWPP(
-                eq(empresa), eq(REMETENTE), contains("qual data você deseja verificar"));
-        ordem.verify(servicoMensagem).enviarMensagemWPP(eq(empresa), eq(REMETENTE), contains("Digite *0*"));
+                eq(empresa), eq(REMETENTE), eq("Por favor, me diga qual data você deseja verificar."));
         ordem.verify(servicoMensagem).enviarMensagemWPP(
                 eq(empresa), eq(REMETENTE), eq("✅ Esta data está livre para locação!"));
         assertThat(gerenciadorSessao.getEstado(REMETENTE)).isEqualTo(EstadoUsuario.INICIO);
