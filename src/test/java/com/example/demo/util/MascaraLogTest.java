@@ -3,7 +3,10 @@ package com.example.demo.util;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 
 class MascaraLogTest {
 
@@ -153,5 +156,72 @@ class MascaraLogTest {
     @DisplayName("idMensagem com JID sem hash final mascara o telefone")
     void idMensagemSemHash() {
         assertThat(MascaraLog.idMensagem("false_5511999997777@c.us")).isEqualTo("false_***7777@c.us");
+    }
+
+    @Test
+    @DisplayName("idMensagem de mensagem direta com hash mascara só o telefone")
+    void idMensagemDiretaComHash() {
+        String mascarado = MascaraLog.idMensagem("false_5511999997777@c.us_3AE7951B92607B7B73F8");
+        assertThat(mascarado).isEqualTo("false_***7777@c.us_3AE7951B92607B7B73F8");
+        assertThat(mascarado).doesNotContain("5511999997777");
+    }
+
+    @Test
+    @DisplayName("idMensagem de grupo mascara o grupo e o participante")
+    void idMensagemGrupoComParticipante() {
+        String mascarado = MascaraLog.idMensagem("false_120363012345678901@g.us_3EB0ABC_5511999997777@c.us");
+        assertThat(mascarado).isEqualTo("false_***8901@g.us_3EB0ABC_***7777@c.us");
+        assertThat(mascarado).doesNotContain("5511999997777").doesNotContain("120363012345678901");
+    }
+
+    @Test
+    @DisplayName("idMensagem só com dígitos é mascarado")
+    void idMensagemSoDigitos() {
+        String mascarado = MascaraLog.idMensagem("5511999997777");
+        assertThat(mascarado).isEqualTo("***7777");
+        assertThat(mascarado).doesNotContain("5511999997777");
+    }
+
+    @Test
+    @DisplayName("idMensagem sem @ com segmento numérico mascara o número")
+    void idMensagemSemArrobaComSegmentoNumerico() {
+        String mascarado = MascaraLog.idMensagem("true_5511999997777_ABC");
+        assertThat(mascarado).isEqualTo("true_***7777_ABC");
+        assertThat(mascarado).doesNotContain("5511999997777");
+    }
+
+    @Test
+    @DisplayName("idMensagem com @lid de 11 caracteres mantém os 4 últimos")
+    void idMensagemLidLongo() {
+        String mascarado = MascaraLog.idMensagem("false_ABCD1234567@lid_HASH");
+        assertThat(mascarado).isEqualTo("false_lid:***4567@lid_HASH");
+        assertThat(mascarado).doesNotContain("ABCD1234567");
+    }
+
+    @Test
+    @DisplayName("idMensagem com entradas de borda não lança exceção")
+    void idMensagemBordas() {
+        assertThat(MascaraLog.idMensagem("@")).isEqualTo("***@");
+        assertThat(MascaraLog.idMensagem("x@@c.us")).isEqualTo("***@@c.us");
+        assertThat(MascaraLog.idMensagem("_@")).isEqualTo("_***@");
+        assertThat(MascaraLog.idMensagem("___")).isEqualTo("___");
+        assertThat(MascaraLog.idMensagem("1234")).isEqualTo("1234");
+        assertThat(MascaraLog.idMensagem("123-456@g.us")).isEqualTo("***3456@g.us");
+    }
+
+    @Test
+    @DisplayName("idMensagem com participante @lid dentro de grupo mascara os dois")
+    void idMensagemParticipanteLidEmGrupo() {
+        String mascarado = MascaraLog.idMensagem("false_1203@g.us_HASH_ABCD1234567@lid");
+        assertThat(mascarado).isEqualTo("false_***@g.us_HASH_lid:***4567@lid");
+        assertThat(mascarado).doesNotContain("ABCD1234567").doesNotContain("1203@");
+    }
+
+    @Test
+    @DisplayName("idMensagem gigante é mascarado sem exceção e em tempo curto")
+    void idMensagemGigante() {
+        String gigante = "a".repeat(100000) + "@c.us";
+        String mascarado = assertTimeoutPreemptively(Duration.ofSeconds(10), () -> MascaraLog.idMensagem(gigante));
+        assertThat(mascarado).isEqualTo("***@c.us");
     }
 }

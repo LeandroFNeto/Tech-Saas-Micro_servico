@@ -93,4 +93,26 @@ class WhatsappWebhookDTORaioXTest {
 
         assertThat(resumo).doesNotContain("5511999997777");
     }
+
+    @Test
+    @DisplayName("resumoRaioX com id de grupo de 4 partes não expõe grupo nem participante")
+    void resumoComIdDeGrupoNaoExpoeGrupoNemParticipante() throws Exception {
+        String json = """
+            {
+              "session": "RecantoBot",
+              "id": "false_120363012345678901@g.us_3EB0ABC_5511999997777@c.us",
+              "from": "120363012345678901@g.us",
+              "type": "chat",
+              "fromMe": false,
+              "isGroupMsg": true,
+              "body": "oi"
+            }
+            """;
+
+        String resumo = mapper.readValue(json, WhatsappWebhookDTO.class).resumoRaioX();
+
+        assertThat(resumo)
+                .doesNotContain("5511999997777")
+                .doesNotContain("120363012345678901");
+    }
 }
