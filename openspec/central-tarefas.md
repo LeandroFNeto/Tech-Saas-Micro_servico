@@ -14,3 +14,4 @@ Voltas: no máximo 2. Na terceira reprovação a equipe para.
 A programação começa quando a pessoa troca o estado desta linha para `aprovado`.
 
 Erro de teste: `openspec/changes/<tarefa>/teste-erro.md`. Sem esse arquivo, a regressão dessa tarefa passou.
+| [portar-design-para-main](changes/portar-design-para-main/) | proposta | `claude-sonnet-5-5` | `openspec/changes/portar-design-para-main/` | 0 | aguardando aprovado |
