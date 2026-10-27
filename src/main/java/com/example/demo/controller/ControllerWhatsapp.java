@@ -18,6 +18,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -35,6 +37,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class ControllerWhatsapp {
 
+    private static final Logger log = LoggerFactory.getLogger(ControllerWhatsapp.class);
+
     @Autowired private GerenciadorSessao gerenciadorSessao;
     @Autowired private EmpresaRepository empresaRepository;
     @Autowired private FactoryModulo moduloFactory;
@@ -51,7 +55,7 @@ public class ControllerWhatsapp {
     @ApiResponse(responseCode = "200", description = "Evento aceito. Mensagens filtradas também retornam 200 para o WPPConnect não reenviar.",
             content = @Content(schema = @Schema(hidden = true)))
     public ResponseEntity<Void> receberMensagem(@RequestBody WhatsappWebhookDTO payload) {
-        System.out.println(payload.resumoRaioX());
+        log.debug(payload.resumoRaioX());
 
         String sessao = payload.session();
         String rawFrom = payload.resolverRemoteJid();

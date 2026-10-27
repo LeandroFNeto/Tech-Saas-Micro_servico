@@ -5,6 +5,8 @@ import com.example.demo.model.Empresa;
 import com.google.api.client.util.DateTime;
 import com.google.api.services.calendar.model.Event;
 import com.google.api.services.calendar.model.Events;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -18,34 +20,32 @@ import java.time.format.TextStyle;
 @Service
 public class ServicoReserva {
 
+    private static final Logger log = LoggerFactory.getLogger(ServicoReserva.class);
+
     @Autowired
     private ServicoGoogleagenda agendaService;
 
-    // 1. Método para CRIAR a reserva (Já estava quase certo)
     public void agendarNoGoogle(Empresa empresa, String dataReserva, String nomeCliente) throws Exception {
         com.google.api.services.calendar.Calendar servicoAgenda = agendaService.conectarAgenda();
         String calendarId = empresa.getGoogleCalendarId();
 
         if(calendarId == null || calendarId.isEmpty()) {
-            System.out.println("⚠️ A empresa " + empresa.getNome() + " não cadastrou o ID da agenda no banco!");
+            log.warn("Empresa {} sem agenda cadastrada", empresa.getId());
             return;
         }
 
 
-        System.out.println("✅ Reserva salva na agenda da empresa: " + empresa.getNome());
+        log.info("Reserva salva na agenda da empresa {}", empresa.getId());
     }
 
-    // 2. Método para LISTAR (Agora recebe a Empresa)
-    // Removi o @GetMapping temporariamente se este for chamado diretamente pelo ServicoLocacao
     public List<DiaReservaDTO> listarReservas(Empresa empresa){
         try{
             com.google.api.services.calendar.Calendar servicoGoogle = agendaService.conectarAgenda();
             DateTime agora = new DateTime(System.currentTimeMillis());
 
             String calendarId = empresa.getGoogleCalendarId();
-            if(calendarId == null) return null; // Trava de segurança
+            if(calendarId == null) return null;
 
-            // CORREÇÃO: Passamos a variável calendarId no .list()
             Events eventos = servicoGoogle.events().list(calendarId)
                     .setMaxResults(100)
                     .setTimeMin(agora)
@@ -93,13 +93,11 @@ public class ServicoReserva {
             return listaDias;
 
         } catch (Exception e) {
-            System.out.println("⚠️ ERRO CRÍTICO NO GOOGLE CALENDAR (Listar): " + e.getMessage());
-            e.printStackTrace();
+            log.error("Erro no Google Calendar ao listar (empresa {}): {}", empresa.getId(), e.getClass().getSimpleName());
             return null;
         }
     }
 
-    // 3. Método para PESQUISAR (Agora recebe a Empresa também)
     public DiaReservaDTO pesquisarData(Empresa empresa, String dataRecebida) {
         try {
             DateTimeFormatter formatadorEntrada = DateTimeFormatter.ofPattern("dd-MM-yyyy");
@@ -124,7 +122,6 @@ public class ServicoReserva {
             String calendarId = empresa.getGoogleCalendarId();
             if(calendarId == null) throw new RuntimeException("Empresa sem calendário configurado.");
 
-            // CORREÇÃO: Passamos a variável calendarId no .list()
             Events eventos = servicoGoogle.events().list(calendarId)
                     .setTimeMin(tempoMinimo)
                     .setTimeMax(tempoMaximo)
@@ -142,9 +139,8 @@ public class ServicoReserva {
         } catch (IllegalArgumentException e) {
             throw e;
         } catch (Exception e) {
-            System.out.println("⚠️ ERRO CRÍTICO NO GOOGLE CALENDAR (Pesquisar): " + e.getMessage());
-            e.printStackTrace();
-            throw new RuntimeException("Erro ao buscar data: " + e.getMessage());
+            log.error("Erro no Google Calendar ao pesquisar (empresa {}): {}", empresa.getId(), e.getClass().getSimpleName());
+            throw new RuntimeException("Erro ao buscar data", e);
         }
     }
 }

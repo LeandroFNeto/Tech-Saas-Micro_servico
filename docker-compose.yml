@@ -31,6 +31,11 @@ services:
     volumes:
       - ./dados-wpp/userDataDir:/usr/src/wpp-server/userDataDir
       - ./dados-wpp/tokens:/usr/src/wpp-server/tokens
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
 
   # 3. Cérebro do Bot (Java Spring Boot)
   bot-java:
@@ -61,6 +66,11 @@ services:
       - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-*}
     networks:
       - bot-network
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
 
 networks:
   bot-network:

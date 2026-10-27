@@ -6,6 +6,7 @@ import com.example.demo.model.Usuario;
 import com.example.demo.repository.EmpresaRepository;
 import com.example.demo.repository.UsuarioRepository;
 import com.example.demo.servico.ServicoAuth;
+import com.example.demo.util.MascaraLog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -48,7 +49,7 @@ public class AdminInitializer implements CommandLineRunner {
 
     private void seedMaster() {
         if (usuarioRepository.existsByEmailIgnoreCase(emailMaster)) {
-            log.info("Usuário master {} já existe — seed ignorado.", emailMaster);
+            log.info("Usuário master {} já existe — seed ignorado.", MascaraLog.email(emailMaster));
             return;
         }
 
@@ -57,7 +58,7 @@ public class AdminInitializer implements CommandLineRunner {
         master.setSenha(passwordEncoder.encode(senhaMaster));
         master.setRole(Role.ADMIN);
         usuarioRepository.save(master);
-        log.info("Usuário master {} criado com role ADMIN.", emailMaster);
+        log.info("Usuário master {} criado com role ADMIN.", MascaraLog.email(emailMaster));
     }
 
     private void seedClientesJaCadastrados() {
@@ -77,7 +78,7 @@ public class AdminInitializer implements CommandLineRunner {
             cliente.setRole(Role.CLIENTE);
             cliente.setEmpresa(empresa);
             usuarioRepository.save(cliente);
-            log.info("Usuário CLIENTE {} criado para a empresa já cadastrada {}.", email, empresa.getSessaoWhatsapp());
+            log.info("Usuário CLIENTE {} criado para a sessão {}.", MascaraLog.email(email), empresa.getSessaoWhatsapp());
         }
     }
 }

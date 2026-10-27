@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.example.demo.util.MascaraLog;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.io.IOException;
@@ -217,11 +218,10 @@ public record WhatsappWebhookDTO(
     }
 
     public String resumoRaioX() {
-        String idLog = id == null ? null : (temTexto(id.serialized()) ? id.serialized() : id.remoteJid());
-        String contentLog = content == null ? null : content.body();
+        String idLog = id == null ? null : MascaraLog.idMensagem(temTexto(id.serialized()) ? id.serialized() : id.remoteJid());
         return String.format(
-                "🔬 [RAIO-X] ID=%s | type=%s | isGroupMsg=%s | fromMe=%s | from=%s | body=%s | content=%s",
-                idLog, type, isGroupMsg, fromMe, from, body, contentLog);
+                "Webhook ID=%s | type=%s | isGroupMsg=%s | fromMe=%s | numero=%s | texto=%s",
+                idLog, type, isGroupMsg, fromMe, MascaraLog.jid(resolverRemoteJid()), MascaraLog.tamanho(resolverTexto()));
     }
 
     public boolean deveDescartarComoRuido() {

@@ -6,6 +6,8 @@ Arquivo em comum da equipe. Cada agente atualiza a própria linha ao começar e 
 |---|---|---|---|---|---|
 | [definir-papeis-ia-desenvolvimento](archive/definir-papeis-ia-desenvolvimento/) | revisão | `claude-opus-5-5-medium` | `openspec/specs/desenvolvimento/spec.md` | 0 | aprovado |
 | [recusar-data-passada-conversa](archive/recusar-data-passada-conversa/) | deploy | `cursor-grok-4.6-low` | `openspec/archive/recusar-data-passada-conversa/` | 0 | aprovado |
+| [aplicar-novo-design-front](changes/aplicar-novo-design-front/) | deploy (producao feito; main pendente) | `claude-opus-5-5` | `openspec/changes/aplicar-novo-design-front/` | 0 | em andamento |
+| [proteger-dados-nos-logs](archive/proteger-dados-nos-logs/) | deploy | `claude-haiku-5-5` | `openspec/archive/proteger-dados-nos-logs/` | 2 | aprovado |
 
 Estado: `em andamento`, `aprovado`, `reprovado`, `erro`, `aguardando aprovado`.
 

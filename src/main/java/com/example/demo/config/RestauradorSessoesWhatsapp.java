@@ -11,10 +11,6 @@ import org.springframework.context.event.EventListener;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
-/**
- * Reabre no WPPConnect as sessões que já tinham token/perfil salvos,
- * para o bot voltar conectado depois de uma queda do servidor.
- */
 @Component
 @Order(2)
 @ConditionalOnProperty(name = "wppconnect.restaurar-sessoes", havingValue = "true", matchIfMissing = true)
@@ -42,7 +38,7 @@ public class RestauradorSessoesWhatsapp {
                 var status = servicoWppConnect.iniciarSessao(sessao);
                 log.info("Sessão WhatsApp {} restaurada com status {}.", sessao, status.status());
             } catch (Exception e) {
-                log.warn("Não foi possível restaurar a sessão WhatsApp {}: {}", sessao, e.getMessage());
+                log.warn("Não foi possível restaurar a sessão WhatsApp {}: {}", sessao, e.getClass().getSimpleName());
             }
         }
     }

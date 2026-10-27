@@ -55,11 +55,11 @@ public class ServicoGoogleagenda {
 
             log.info("Google Agenda inicializado e salvo em memória.");
         } catch (FileNotFoundException e) {
-            log.warn("Arquivo {} não encontrado. Google Agenda permanece desligado. {}", ARQUIVO_CREDENCIAL, e.getMessage());
+            log.warn("Arquivo {} não encontrado. Google Agenda permanece desligado. {}", ARQUIVO_CREDENCIAL, e.getClass().getSimpleName());
         } catch (IOException | RuntimeException e) {
-            log.warn("Não foi possível inicializar o Google Agenda. A API sobe normalmente. Motivo: {}", e.getMessage());
+            log.warn("Não foi possível inicializar o Google Agenda. A API sobe normalmente. Motivo: {}", e.getClass().getSimpleName());
         } catch (Exception e) {
-            log.warn("Falha inesperada ao conectar com Google Agenda. A API sobe normalmente. Motivo: {}", e.getMessage());
+            log.warn("Falha inesperada ao conectar com Google Agenda. A API sobe normalmente. Motivo: {}", e.getClass().getSimpleName());
         }
     }
 
