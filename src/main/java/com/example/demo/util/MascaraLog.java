@@ -38,22 +38,41 @@ public final class MascaraLog {
         if (id == null || id.isEmpty()) {
             return OCULTO;
         }
-        int arroba = id.indexOf('@');
-        if (arroba < 0) {
-            return id;
+        String[] segmentos = id.split("_", -1);
+        StringBuilder saida = new StringBuilder(id.length() + 8);
+        for (int i = 0; i < segmentos.length; i++) {
+            if (i > 0) {
+                saida.append('_');
+            }
+            saida.append(segmentoDeId(segmentos[i]));
         }
-        int inicio = id.lastIndexOf('_', arroba) + 1;
-        String parte = id.substring(inicio, arroba);
-        int fimDominio = id.indexOf('_', arroba);
-        String dominio = fimDominio < 0 ? id.substring(arroba) : id.substring(arroba, fimDominio);
-        String resto = fimDominio < 0 ? "" : id.substring(fimDominio);
-        String mascarado;
-        if (dominio.startsWith("@lid")) {
-            mascarado = parte.length() <= 4 ? "lid:" + OCULTO : "lid:" + OCULTO + parte.substring(parte.length() - 4);
-        } else {
-            mascarado = numero(parte);
+        return saida.toString();
+    }
+
+    private static String segmentoDeId(String segmento) {
+        int arroba = segmento.indexOf('@');
+        if (arroba >= 0) {
+            String parte = segmento.substring(0, arroba);
+            String dominio = segmento.substring(arroba);
+            if (dominio.startsWith("@lid")) {
+                return (parte.length() <= 4 ? "lid:" + OCULTO : "lid:" + OCULTO + parte.substring(parte.length() - 4)) + dominio;
+            }
+            return numero(parte) + dominio;
         }
-        return id.substring(0, inicio) + mascarado + dominio + resto;
+        if (segmento.length() >= 5 && apenasDigitos(segmento)) {
+            return OCULTO + segmento.substring(segmento.length() - 4);
+        }
+        return segmento;
+    }
+
+    private static boolean apenasDigitos(String texto) {
+        for (int i = 0; i < texto.length(); i++) {
+            char c = texto.charAt(i);
+            if (c < '0' || c > '9') {
+                return false;
+            }
+        }
+        return true;
     }
 
     public static String email(String email) {
