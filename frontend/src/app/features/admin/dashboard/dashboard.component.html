@@ -1,74 +1,77 @@
-<div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+<div class="mb-5 flex flex-wrap items-center justify-between gap-3">
   <div>
-    <h2 class="text-2xl font-semibold text-brand-900">Clientes cadastrados</h2>
-    <p class="text-sm text-brand-600">Empresas ativas no painel da gamb.</p>
+    <h1 class="text-[clamp(22px,4vw,28px)] font-bold leading-tight text-brand-900">Clientes cadastrados</h1>
+    <p class="mt-1 text-sm text-brand-600">Empresas ativas no painel da gamb.</p>
   </div>
-  <a class="btn-primary" routerLink="/admin/empresas/nova">Cadastrar cliente</a>
+  <a class="btn-primary min-h-12 px-5 text-[15px] font-bold" routerLink="/admin/empresas/nova">Cadastrar cliente</a>
 </div>
 
 @if (erro()) {
-  <div class="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-    {{ erro() }}
-    <button class="ml-2 font-semibold underline" type="button" (click)="carregar()">Tentar de novo</button>
+  <div class="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+    <span>{{ erro() }}</span>
+    <button class="inline-flex min-h-11 items-center rounded-lg px-2 font-semibold underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent-400" type="button" (click)="carregar()">
+      Tentar de novo
+    </button>
   </div>
 }
 
-<div class="card overflow-hidden">
-  <div class="overflow-x-auto">
-    <table class="min-w-full text-left text-sm">
-      <thead class="bg-brand-50 text-xs uppercase tracking-wide text-brand-600">
-        <tr>
-          <th class="px-4 py-3">Empresa</th>
-          <th class="px-4 py-3">Sessão WhatsApp</th>
-          <th class="px-4 py-3">Status</th>
-          <th class="px-4 py-3">Módulos</th>
-          <th class="px-4 py-3">Atualizado</th>
-          <th class="px-4 py-3"></th>
-        </tr>
-      </thead>
-      <tbody>
-        @if (carregando()) {
-          <tr>
-            <td class="px-4 py-8 text-brand-600" colspan="6">Carregando empresas...</td>
-          </tr>
-        } @else if (empresas().length === 0) {
-          <tr>
-            <td class="px-4 py-8 text-brand-600" colspan="6">Nenhum cliente cadastrado ainda.</td>
-          </tr>
-        } @else {
-          @for (empresa of empresas(); track empresa.sessaoWhatsapp || empresa.id) {
-            <tr class="border-t border-brand-100">
-              <td class="px-4 py-3 font-medium text-brand-900">{{ empresa.nome || '—' }}</td>
-              <td class="px-4 py-3 font-mono text-xs text-brand-700">{{ empresa.sessaoWhatsapp }}</td>
-              <td class="px-4 py-3">
-                @if (statusDe(empresa.sessaoWhatsapp) === 'CONNECTED') {
-                  <span class="inline-flex items-center gap-2 rounded-full bg-accent-50 px-2.5 py-1 text-xs font-semibold text-accent-700">
-                    <span class="h-2 w-2 rounded-full bg-accent-500"></span>
-                    WhatsApp Online
-                  </span>
-                } @else if (statusDe(empresa.sessaoWhatsapp) === 'DISCONNECTED') {
-                  <span class="inline-flex items-center rounded-full bg-brand-100 px-2.5 py-1 text-xs font-semibold text-brand-700">
-                    Desconectado
-                  </span>
-                } @else if (statusDe(empresa.sessaoWhatsapp) === 'QRCODE') {
-                  <span class="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800">
-                    Aguardando leitura
-                  </span>
-                } @else {
-                  <span class="text-xs text-brand-500">Consultando...</span>
-                }
-              </td>
-              <td class="px-4 py-3 text-brand-700">{{ empresa.modulosAtivos.length || '—' }}</td>
-              <td class="px-4 py-3 text-brand-600">{{ empresa.atualizadoEm | date: 'short' }}</td>
-              <td class="px-4 py-3 text-right">
-                <a class="font-semibold text-accent-600 hover:underline" [routerLink]="['/admin/empresas', empresa.sessaoWhatsapp]">
-                  Editar
-                </a>
-              </td>
-            </tr>
-          }
-        }
-      </tbody>
-    </table>
+@if (carregando()) {
+  <p class="rounded-[20px] border border-brand-100 bg-white px-4 py-8 text-sm text-brand-600" role="status">Carregando empresas...</p>
+} @else if (empresas().length === 0) {
+  <p class="rounded-[20px] border border-brand-100 bg-white px-4 py-8 text-sm text-brand-600">Nenhum cliente cadastrado ainda.</p>
+} @else {
+  <div
+    class="hidden px-5 pb-3 text-xs font-semibold uppercase tracking-[0.06em] text-brand-600 min-[1100px]:grid min-[1100px]:grid-cols-[1.6fr_1.6fr_1fr_0.7fr_1.1fr_96px] min-[1100px]:items-center min-[1100px]:gap-4"
+    aria-hidden="true"
+  >
+    <span>Empresa</span><span>Sessão WhatsApp</span><span>Status</span><span>Módulos</span><span>Atualizado</span><span></span>
   </div>
-</div>
+  <ul class="flex flex-col gap-3">
+    @for (empresa of empresas(); track empresa.sessaoWhatsapp || empresa.id) {
+      <li
+        class="grid grid-cols-2 items-center gap-x-4 gap-y-3 rounded-[20px] border border-brand-100 bg-white p-4 shadow-[0_1px_2px_rgba(46,26,71,0.05)] min-[1100px]:grid-cols-[1.6fr_1.6fr_1fr_0.7fr_1.1fr_96px] min-[1100px]:gap-4 min-[1100px]:px-5 min-[1100px]:py-3.5"
+      >
+        <div class="col-span-2 min-w-0 min-[1100px]:col-span-1">
+          <span class="mb-0.5 block text-[11px] font-semibold uppercase leading-4 tracking-[0.06em] text-brand-600 min-[1100px]:hidden">Empresa</span>
+          <b class="text-[17px] font-bold leading-6 text-brand-900">{{ empresa.nome || '—' }}</b>
+        </div>
+        <div class="min-w-0">
+          <span class="mb-0.5 block text-[11px] font-semibold uppercase leading-4 tracking-[0.06em] text-brand-600 min-[1100px]:hidden">Sessão WhatsApp</span>
+          <code class="break-all font-mono text-[13px] text-brand-700">{{ empresa.sessaoWhatsapp }}</code>
+        </div>
+        <div>
+          <span class="mb-0.5 block text-[11px] font-semibold uppercase leading-4 tracking-[0.06em] text-brand-600 min-[1100px]:hidden">Status</span>
+          @if (statusDe(empresa.sessaoWhatsapp) === 'CONNECTED') {
+            <span class="chip bg-accent-50 text-accent-700">
+              <span class="h-2 w-2 rounded-full bg-accent-500" aria-hidden="true"></span>
+              WhatsApp Online
+            </span>
+          } @else if (statusDe(empresa.sessaoWhatsapp) === 'DISCONNECTED') {
+            <span class="chip bg-brand-100 text-brand-700">Desconectado</span>
+          } @else if (statusDe(empresa.sessaoWhatsapp) === 'QRCODE') {
+            <span class="chip bg-amber-50 text-amber-800">Aguardando leitura</span>
+          } @else {
+            <span class="chip bg-brand-50 text-brand-500" role="status">Consultando...</span>
+          }
+        </div>
+        <div>
+          <span class="mb-0.5 block text-[11px] font-semibold uppercase leading-4 tracking-[0.06em] text-brand-600 min-[1100px]:hidden">Módulos</span>
+          <span class="text-sm text-brand-700">{{ empresa.modulosAtivos.length || '—' }}</span>
+        </div>
+        <div>
+          <span class="mb-0.5 block text-[11px] font-semibold uppercase leading-4 tracking-[0.06em] text-brand-600 min-[1100px]:hidden">Atualizado</span>
+          <span class="text-sm text-brand-700">{{ empresa.atualizadoEm | date: 'short' }}</span>
+        </div>
+        <div class="col-span-2 min-[1100px]:col-span-1">
+          <a
+            class="btn-secondary w-full px-3.5 min-[1100px]:w-auto"
+            [routerLink]="['/admin/empresas', empresa.sessaoWhatsapp]"
+            [attr.aria-label]="'Editar ' + (empresa.nome || empresa.sessaoWhatsapp)"
+          >
+            Editar
+          </a>
+        </div>
+      </li>
+    }
+  </ul>
+}

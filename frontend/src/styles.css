@@ -29,4 +29,9 @@
   .card {
     @apply rounded-2xl border border-brand-200 bg-white shadow-sm;
   }
+
+  /* Etiqueta de status; a cor de fundo e do texto vem de cada tela. */
+  .chip {
+    @apply inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold leading-4;
+  }
 }
