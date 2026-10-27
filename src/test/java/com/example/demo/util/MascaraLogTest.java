@@ -97,4 +97,61 @@ class MascaraLogTest {
         assertThat(MascaraLog.tamanho(null)).isEqualTo("0 caracteres");
         assertThat(MascaraLog.tamanho("")).isEqualTo("0 caracteres");
     }
+
+    @Test
+    @DisplayName("idMensagem nulo ou vazio devolve ***")
+    void idMensagemNuloEVazio() {
+        assertThat(MascaraLog.idMensagem(null)).isEqualTo("***");
+        assertThat(MascaraLog.idMensagem("")).isEqualTo("***");
+    }
+
+    @Test
+    @DisplayName("idMensagem sem @ volta intacto")
+    void idMensagemSemArroba() {
+        assertThat(MascaraLog.idMensagem("ABCDEF123456")).isEqualTo("ABCDEF123456");
+    }
+
+    @Test
+    @DisplayName("idMensagem com JID mascara só o telefone e mantém prefixo, domínio e hash")
+    void idMensagemComJid() {
+        String mascarado = MascaraLog.idMensagem("false_5511999997777@c.us_3AE7951B92607B7B73F8");
+        assertThat(mascarado).isEqualTo("false_***7777@c.us_3AE7951B92607B7B73F8");
+        assertThat(mascarado).doesNotContain("5511999997777");
+    }
+
+    @Test
+    @DisplayName("idMensagem mantém o prefixo true_")
+    void idMensagemPrefixoTrue() {
+        assertThat(MascaraLog.idMensagem("true_5511999997777@c.us_ABC123"))
+                .isEqualTo("true_***7777@c.us_ABC123");
+    }
+
+    @Test
+    @DisplayName("idMensagem com @lid vira lid:*** com os 4 últimos caracteres")
+    void idMensagemLid() {
+        String mascarado = MascaraLog.idMensagem("false_276974622781686@lid_HASH99");
+        assertThat(mascarado).isEqualTo("false_lid:***1686@lid_HASH99");
+        assertThat(mascarado).doesNotContain("27697462278");
+    }
+
+    @Test
+    @DisplayName("idMensagem com parte de 4 dígitos ou menos vira ***")
+    void idMensagemParteCurta() {
+        assertThat(MascaraLog.idMensagem("false_1234@c.us_HASH")).isEqualTo("false_***@c.us_HASH");
+        assertThat(MascaraLog.idMensagem("false_123@lid_HASH")).isEqualTo("false_lid:***@lid_HASH");
+    }
+
+    @Test
+    @DisplayName("idMensagem de grupo @g.us com hífens mascara só os dígitos")
+    void idMensagemGrupo() {
+        String mascarado = MascaraLog.idMensagem("false_5511999997777-1600000000@g.us_HASH");
+        assertThat(mascarado).isEqualTo("false_***0000@g.us_HASH");
+        assertThat(mascarado).doesNotContain("5511999997777");
+    }
+
+    @Test
+    @DisplayName("idMensagem com JID sem hash final mascara o telefone")
+    void idMensagemSemHash() {
+        assertThat(MascaraLog.idMensagem("false_5511999997777@c.us")).isEqualTo("false_***7777@c.us");
+    }
 }
