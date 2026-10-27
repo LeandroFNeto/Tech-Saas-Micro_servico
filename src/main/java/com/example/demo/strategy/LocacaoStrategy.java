@@ -399,7 +399,7 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
     }
 
     private void tratarDataInformada(Empresa empresa, String numeroCliente, String texto) {
-        Log.info("Buscando data: " + texto);
+        Log.info("Buscando data informada pelo cliente.");
         String calendarId = empresa.getGoogleCalendarId();
         if (calendarId == null || calendarId.isBlank()) {
             servicoMensagem.enviarMensagemWPP(

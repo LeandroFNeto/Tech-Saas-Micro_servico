@@ -140,7 +140,7 @@ public class ServicoReserva {
             throw e;
         } catch (Exception e) {
             log.error("Erro no Google Calendar ao pesquisar (empresa {}): {}", empresa.getId(), e.getClass().getSimpleName());
-            throw new RuntimeException("Erro ao buscar data: " + e.getMessage());
+            throw new RuntimeException("Erro ao buscar data", e);
         }
     }
 }
