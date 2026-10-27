@@ -34,6 +34,28 @@ public final class MascaraLog {
         return numero(jid);
     }
 
+    public static String idMensagem(String id) {
+        if (id == null || id.isEmpty()) {
+            return OCULTO;
+        }
+        int arroba = id.indexOf('@');
+        if (arroba < 0) {
+            return id;
+        }
+        int inicio = id.lastIndexOf('_', arroba) + 1;
+        String parte = id.substring(inicio, arroba);
+        int fimDominio = id.indexOf('_', arroba);
+        String dominio = fimDominio < 0 ? id.substring(arroba) : id.substring(arroba, fimDominio);
+        String resto = fimDominio < 0 ? "" : id.substring(fimDominio);
+        String mascarado;
+        if (dominio.startsWith("@lid")) {
+            mascarado = parte.length() <= 4 ? "lid:" + OCULTO : "lid:" + OCULTO + parte.substring(parte.length() - 4);
+        } else {
+            mascarado = numero(parte);
+        }
+        return id.substring(0, inicio) + mascarado + dominio + resto;
+    }
+
     public static String email(String email) {
         if (email == null) {
             return OCULTO;

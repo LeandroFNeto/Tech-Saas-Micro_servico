@@ -218,7 +218,7 @@ public record WhatsappWebhookDTO(
     }
 
     public String resumoRaioX() {
-        String idLog = id == null ? null : (temTexto(id.serialized()) ? id.serialized() : id.remoteJid());
+        String idLog = id == null ? null : MascaraLog.idMensagem(temTexto(id.serialized()) ? id.serialized() : id.remoteJid());
         return String.format(
                 "Webhook ID=%s | type=%s | isGroupMsg=%s | fromMe=%s | numero=%s | texto=%s",
                 idLog, type, isGroupMsg, fromMe, MascaraLog.jid(resolverRemoteJid()), MascaraLog.tamanho(resolverTexto()));
