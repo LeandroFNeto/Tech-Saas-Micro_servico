@@ -1,0 +1,72 @@
+{
+  "apresentacao": {
+    "marca": {
+      "nome": "gamb",
+      "logoAlt": "Logo gamb"
+    },
+    "topo": {
+      "entrar": "Entrar"
+    },
+    "hero": {
+      "selo": "Atendimento automático no WhatsApp",
+      "titulo": "O cliente pergunta.",
+      "destaque": "O gamb responde e reserva.",
+      "descricao": "Fotos, preços, regras e datas livres da sua Google Agenda, tudo dentro do WhatsApp. Você ajusta o atendimento pelo celular, quando quiser.",
+      "verComoFunciona": "Ver como funciona"
+    },
+    "conversa": {
+      "alt": "Conversa real no WhatsApp: o cliente diz Oi e o bot responde com o menu de 7 opções",
+      "legenda": "Atendimento real: o cliente diz \"Oi\" e recebe o menu na hora"
+    },
+    "como": {
+      "rotulo": "Como funciona",
+      "titulo": "Em três passos, o bot começa a atender",
+      "passos": [
+        {
+          "numero": "1",
+          "titulo": "Conecte o WhatsApp",
+          "texto": "Escaneie o QR Code no painel e pronto: sem terminal, sem instalar nada."
+        },
+        {
+          "numero": "2",
+          "titulo": "Cadastre o seu espaço",
+          "texto": "Fotos, localização, preços e regras. Você escolhe o que aparece no menu do bot."
+        },
+        {
+          "numero": "3",
+          "titulo": "O bot atende e reserva",
+          "texto": "Ele responde o cliente e só confirma a data que estiver livre na sua Google Agenda."
+        }
+      ]
+    },
+    "beneficios": {
+      "rotulo": "Por que o gamb",
+      "titulo": "Feito para quem toca o negócio pelo celular",
+      "itens": [
+        {
+          "titulo": "Atendimento onde o cliente já está",
+          "texto": "Conversa direto no WhatsApp, sem baixar aplicativo."
+        },
+        {
+          "titulo": "Agenda sempre em dia",
+          "texto": "Datas e horários conferidos na Google Agenda da sua empresa."
+        },
+        {
+          "titulo": "Você manda no menu",
+          "texto": "Ative, desative e reescreva cada opção que o cliente vê."
+        },
+        {
+          "titulo": "Painel no celular",
+          "texto": "Ajuste preços, regras e fotos de onde estiver."
+        }
+      ]
+    },
+    "chamada": {
+      "titulo": "Já é cliente? Entre no painel.",
+      "entrar": "Entrar"
+    },
+    "rodape": {
+      "texto": "© gamb · Painel de atendimento no WhatsApp"
+    }
+  }
+}

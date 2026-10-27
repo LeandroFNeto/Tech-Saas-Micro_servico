@@ -1,60 +1,150 @@
-<div class="min-h-screen lg:grid lg:grid-cols-[260px_1fr]">
-  <aside class="border-b border-brand-800 bg-brand-900 text-white lg:border-b-0 lg:border-r">
-    <div class="flex items-center justify-between px-5 py-4 lg:block">
-      <div class="flex items-center gap-3">
-        <img src="logo-gamb.jpg" alt="Logo gamb" class="h-12 w-12 rounded-xl object-cover ring-1 ring-accent-400/50" />
-        <div>
-          <p class="font-display text-lg font-semibold uppercase tracking-[0.18em] text-accent-400">gamb</p>
-          <h1 class="mt-0.5 text-sm font-medium text-brand-100">{{ admin ? 'Painel Master' : 'Painel do Cliente' }}</h1>
-        </div>
-      </div>
-      <p class="hidden text-sm text-brand-200 lg:mt-6 lg:block">{{ nomeUsuario }}</p>
-    </div>
+<!-- Ícones do menu (iguais ao desenho), definidos uma vez e reusados na barra lateral e nas abas. -->
+<ng-template #iconeEmpresas>
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M4 21V6l8-3 8 3v15" />
+    <path d="M9 21v-5h6v5M9 9h.01M12 9h.01M15 9h.01M9 12h.01M12 12h.01M15 12h.01" />
+  </svg>
+</ng-template>
+<ng-template #iconeNovo>
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 8v8M8 12h8" />
+  </svg>
+</ng-template>
+<ng-template #iconeAvisos>
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M6 9a6 6 0 1 1 12 0c0 5 2 6 2 6H4s2-1 2-6M10 19a2 2 0 0 0 4 0" />
+  </svg>
+</ng-template>
+<ng-template #iconePerfil>
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <circle cx="12" cy="8" r="4" />
+    <path d="M4 21c0-4 4-6 8-6s8 2 8 6" />
+  </svg>
+</ng-template>
 
-    <nav class="flex gap-2 overflow-x-auto px-4 pb-4 lg:flex-col lg:px-3">
+<ng-template #marca>
+  <a
+    [routerLink]="admin ? '/admin' : '/cliente'"
+    class="flex min-h-11 items-center gap-2.5 rounded-xl text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-400"
+  >
+    <img src="logo-gamb.png" alt="Logo gamb" width="40" height="40" class="h-10 w-10 shrink-0 object-contain" />
+    <span>
+      <span class="wordmark block text-base leading-5">gamb</span>
+      <span class="block text-xs leading-4 text-brand-200">{{ admin ? 'Painel Master' : 'Painel do Cliente' }}</span>
+    </span>
+  </a>
+</ng-template>
+
+<ng-template #botaoSair>
+  <button
+    type="button"
+    class="inline-flex min-h-11 items-center rounded-xl border border-white/30 px-3.5 text-sm font-semibold text-white transition hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-400"
+    (click)="sair()"
+  >
+    Sair
+  </button>
+</ng-template>
+
+<div class="flex min-h-screen flex-col lg:flex-row">
+  <!-- Celular e tablet: barra superior -->
+  <header class="flex items-center justify-between gap-3 bg-brand-900 px-4 py-2 text-white lg:hidden">
+    <ng-container [ngTemplateOutlet]="marca" />
+    <ng-container [ngTemplateOutlet]="botaoSair" />
+  </header>
+
+  <!-- Desktop: barra lateral de 248 px -->
+  <aside class="hidden w-[248px] shrink-0 flex-col gap-6 bg-brand-900 px-3 py-5 text-white lg:sticky lg:top-0 lg:flex lg:h-screen lg:overflow-y-auto">
+    <ng-container [ngTemplateOutlet]="marca" />
+
+    <nav class="flex flex-col gap-1" aria-label="Principal">
       @if (admin) {
         <a
           routerLink="/admin"
-          routerLinkActive="bg-accent-500/20 text-accent-300"
+          routerLinkActive="!bg-accent-500/20 !text-accent-300"
+          ariaCurrentWhenActive="page"
           [routerLinkActiveOptions]="{ exact: true }"
-          class="whitespace-nowrap rounded-xl px-3 py-2 text-sm text-brand-100 hover:bg-white/10"
+          [class]="linkLateral"
         >
+          <ng-container [ngTemplateOutlet]="iconeEmpresas" />
           Empresas
         </a>
         <a
           routerLink="/admin/empresas/nova"
-          routerLinkActive="bg-accent-500/20 text-accent-300"
-          class="whitespace-nowrap rounded-xl px-3 py-2 text-sm text-brand-100 hover:bg-white/10"
+          routerLinkActive="!bg-accent-500/20 !text-accent-300"
+          ariaCurrentWhenActive="page"
+          [class]="linkLateral"
         >
+          <ng-container [ngTemplateOutlet]="iconeNovo" />
           Novo cliente
         </a>
         <a
           routerLink="/admin/avisos"
-          routerLinkActive="bg-accent-500/20 text-accent-300"
-          class="whitespace-nowrap rounded-xl px-3 py-2 text-sm text-brand-100 hover:bg-white/10"
+          routerLinkActive="!bg-accent-500/20 !text-accent-300"
+          ariaCurrentWhenActive="page"
+          [class]="linkLateral"
         >
+          <ng-container [ngTemplateOutlet]="iconeAvisos" />
           Avisos
         </a>
       } @else {
         <a
           routerLink="/cliente"
-          routerLinkActive="bg-accent-500/20 text-accent-300"
+          routerLinkActive="!bg-accent-500/20 !text-accent-300"
+          ariaCurrentWhenActive="page"
           [routerLinkActiveOptions]="{ exact: true }"
-          class="whitespace-nowrap rounded-xl px-3 py-2 text-sm text-brand-100 hover:bg-white/10"
+          [class]="linkLateral"
         >
+          <ng-container [ngTemplateOutlet]="iconePerfil" />
           Meu perfil
         </a>
       }
     </nav>
+
+    <div class="mt-auto border-t border-white/[0.12] pt-4">
+      <p class="mb-2.5 break-all text-[13px] leading-[18px] text-brand-200">{{ emailUsuario }}</p>
+      <ng-container [ngTemplateOutlet]="botaoSair" />
+    </div>
   </aside>
 
-  <div class="flex min-h-screen flex-col">
-    <header class="flex items-center justify-between border-b border-brand-200 bg-white px-4 py-3 sm:px-6">
-      <p class="text-sm text-brand-600">{{ emailUsuario }}</p>
-      <button type="button" class="btn-secondary" (click)="sair()">Sair</button>
-    </header>
-    <main class="flex-1 p-4 sm:p-6">
-      <router-outlet />
-    </main>
-  </div>
+  <main class="min-w-0 flex-1 px-4 py-5 lg:px-10 lg:py-8">
+    <router-outlet />
+  </main>
+
+  <!-- Celular e tablet: abas fixas embaixo, só para o admin -->
+  @if (admin) {
+    <nav
+      class="sticky bottom-0 z-10 flex border-t border-brand-200 bg-white pb-[env(safe-area-inset-bottom)] lg:hidden"
+      aria-label="Principal"
+    >
+      <a
+        routerLink="/admin"
+        routerLinkActive="!text-accent-800 shadow-[inset_0_3px_0_#F7931E]"
+        ariaCurrentWhenActive="page"
+        [routerLinkActiveOptions]="{ exact: true }"
+        [class]="abaInferior"
+      >
+        <ng-container [ngTemplateOutlet]="iconeEmpresas" />
+        Empresas
+      </a>
+      <a
+        routerLink="/admin/empresas/nova"
+        routerLinkActive="!text-accent-800 shadow-[inset_0_3px_0_#F7931E]"
+        ariaCurrentWhenActive="page"
+        [class]="abaInferior"
+      >
+        <ng-container [ngTemplateOutlet]="iconeNovo" />
+        Novo cliente
+      </a>
+      <a
+        routerLink="/admin/avisos"
+        routerLinkActive="!text-accent-800 shadow-[inset_0_3px_0_#F7931E]"
+        ariaCurrentWhenActive="page"
+        [class]="abaInferior"
+      >
+        <ng-container [ngTemplateOutlet]="iconeAvisos" />
+        Avisos
+      </a>
+    </nav>
+  }
 </div>

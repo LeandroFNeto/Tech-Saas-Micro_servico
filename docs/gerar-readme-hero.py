@@ -12,7 +12,7 @@ BRAND_900 = (26, 11, 46)
 BRAND_500 = (124, 58, 173)
 ACCENT = (247, 147, 30)
 RAIZ = Path(__file__).resolve().parents[1]
-LOGO = RAIZ / "frontend" / "public" / "logo-gamb.jpg"
+LOGO = RAIZ / "docs" / "logo-gamb-antiga.jpg"
 SAIDA = Path(__file__).with_name("readme-hero.png")
 
 

@@ -10,19 +10,77 @@
 }
 
 @layer components {
+  /* Alvo de toque mínimo de 44 px (min-h-11) sem mudar o tamanho do texto. */
   .btn-primary {
-    @apply inline-flex items-center justify-center rounded-xl bg-accent-500 px-4 py-2.5 text-sm font-semibold text-brand-900 shadow-sm transition hover:bg-accent-400 focus:outline-none focus:ring-2 focus:ring-accent-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex min-h-11 items-center justify-center rounded-xl bg-accent-500 px-4 py-2.5 text-sm font-semibold text-brand-900 shadow-sm transition hover:bg-accent-400 focus:outline-none focus:ring-2 focus:ring-accent-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60;
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center rounded-xl border border-brand-200 bg-white px-4 py-2.5 text-sm font-semibold text-brand-800 shadow-sm transition hover:bg-brand-50 focus:outline-none focus:ring-2 focus:ring-accent-400 focus:ring-offset-2;
+    @apply inline-flex min-h-11 items-center justify-center rounded-xl border border-brand-200 bg-white px-4 py-2.5 text-sm font-semibold text-brand-800 shadow-sm transition hover:bg-brand-50 focus:outline-none focus:ring-2 focus:ring-accent-400 focus:ring-offset-2;
   }
 
+  /* 48 px de altura e 16 px de fonte: o iPhone não dá zoom ao digitar. */
   .input-field {
-    @apply w-full rounded-xl border border-brand-200 bg-white px-3.5 py-2.5 text-sm text-brand-900 shadow-sm outline-none transition placeholder:text-brand-400 focus:border-accent-400 focus:ring-2 focus:ring-accent-100;
+    @apply min-h-12 w-full rounded-xl border border-brand-200 bg-white px-4 py-3 text-base text-brand-900 shadow-sm outline-none transition placeholder:text-brand-400 focus:border-accent-400 focus:ring-2 focus:ring-accent-100;
   }
 
   .card {
     @apply rounded-2xl border border-brand-200 bg-white shadow-sm;
+  }
+
+  /*
+   * Interruptor 48x28 com checkbox real por baixo:
+   * <span class="switch"><input type="checkbox" ... /><span aria-hidden="true"></span></span>
+   */
+  .switch {
+    @apply relative inline-block h-7 w-12 shrink-0;
+  }
+
+  .switch > input {
+    @apply absolute inset-0 z-10 m-0 h-full w-full cursor-pointer opacity-0;
+  }
+
+  .switch > input + span {
+    @apply pointer-events-none absolute inset-0 rounded-full bg-brand-200 transition-colors;
+  }
+
+  .switch > input + span::after {
+    content: '';
+    @apply absolute left-[3px] top-[3px] h-[22px] w-[22px] rounded-full bg-white shadow transition-transform;
+  }
+
+  .switch > input:checked + span {
+    @apply bg-accent-500;
+  }
+
+  .switch > input:checked + span::after {
+    @apply translate-x-5;
+  }
+
+  .switch > input:focus-visible + span {
+    @apply outline outline-2 outline-offset-2 outline-accent-400;
+  }
+
+  .switch > input:disabled {
+    @apply cursor-not-allowed;
+  }
+
+  .switch > input:disabled + span {
+    @apply opacity-50;
+  }
+
+  /* Etiqueta de status/tipo; a cor de fundo e do texto vem de cada tela. */
+  .chip {
+    @apply inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold leading-4;
+  }
+
+  /* Escrito "gamb" com o degradê cobre da logo; #e2a775 fica de reserva sem background-clip. */
+  .wordmark {
+    @apply font-display font-semibold uppercase tracking-[0.18em];
+    color: #e2a775;
+    background-image: linear-gradient(90deg, #bc8561, #f48c52 55%, #e2b57f);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
   }
 }

@@ -7,7 +7,8 @@
     "abas": {
       "dados": "Dados do perfil",
       "robo": "Configurações do Robô",
-      "configuracao": "Configuração"
+      "configuracao": "Configuração",
+      "rotulo": "Seções do perfil"
     },
     "dados": {
       "nome": {
@@ -23,19 +24,22 @@
       "fotoPrincipal": {
         "rotulo": "Foto principal",
         "placeholder": "https://res.cloudinary.com/.../hero_image.jpg",
-        "dica": "Cole a URL pública da hero image. Clique na mini imagem para visualizar maior.",
-        "alt": "Prévia da foto principal"
+        "dica": "Cole a URL pública da imagem principal. Toque na miniatura para ver maior.",
+        "alt": "Prévia da foto principal",
+        "verMaior": "Ver foto principal maior"
       },
       "galeria": {
         "rotuloInicio": "Galeria de fotos (até",
         "rotuloFim": "URLs)",
         "adicionar": "Adicionar URL",
-        "dica": "Cole os links públicos do Cloudinary. Clique na mini imagem para visualizar. O bot envia essas fotos no WhatsApp se o cliente pedir mais imagens.",
+        "dica": "Cole os links públicos do Cloudinary. O bot envia essas fotos no WhatsApp se o cliente pedir mais imagens.",
         "altMiniatura": "Prévia da galeria",
         "placeholder": "https://res.cloudinary.com/.../foto.jpg",
         "remover": "Remover",
         "imagemSelecionada": "Imagem selecionada",
-        "altVisualizacao": "Imagem selecionada para visualização"
+        "altVisualizacao": "Imagem selecionada para visualização",
+        "rotuloEntrada": "URL da foto da galeria",
+        "verMaior": "Ver foto da galeria maior"
       },
       "linkGaleria": {
         "rotulo": "Link da galeria no Google Drive (opcional)",
@@ -65,9 +69,9 @@
       },
       "menu": {
         "titulo": "Opções do menu do WhatsApp",
-        "descricao": "Ative cada opção e edite o texto que o cliente vê no bot (Fotos, Localização, Preços, Regras, Reserva).",
-        "ativo": "Ativo",
-        "textoMenu": "Texto do menu no WhatsApp"
+        "descricao": "Ative cada opção e edite o texto que o cliente vê no bot.",
+        "textoMenu": "Texto do menu no WhatsApp",
+        "ativar": "Ativar"
       }
     },
     "senha": {
@@ -76,6 +80,7 @@
       "email": "E-mail de acesso",
       "senhaAtual": "Senha atual",
       "novaSenha": "Nova senha",
+      "novaSenhaDica": "Use ao menos 6 caracteres.",
       "novaSenhaInvalida": "A nova senha precisa ter ao menos 6 caracteres.",
       "confirmar": "Confirmar nova senha",
       "senhasNaoConferem": "As senhas não conferem."

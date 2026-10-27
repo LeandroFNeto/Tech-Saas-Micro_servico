@@ -1,5 +1,5 @@
 <div [class]="design.pagina.cabecalho">
-  <h2 [class]="design.pagina.titulo">{{ conteudo.cabecalho.titulo }}</h2>
+  <h1 [class]="design.pagina.titulo">{{ conteudo.cabecalho.titulo }}</h1>
   <p [class]="design.pagina.descricao">{{ conteudo.cabecalho.descricao }}</p>
 </div>
 
@@ -7,261 +7,334 @@
   <div [class]="design.pagina.coluna">
     <app-banner-avisos [avisos]="avisos()" />
 
-    <app-conexao-whatsapp [sessao]="sessao" />
+    <app-conexao-whatsapp [sessao]="sessao" [compacto]="true" />
 
     @if (erro()) {
-      <p [class]="design.alerta.erro">{{ erro() }}</p>
+      <p [class]="design.alerta.erro" role="alert">{{ erro() }}</p>
     }
     @if (sucesso()) {
-      <p [class]="design.alerta.sucesso">{{ sucesso() }}</p>
+      <p [class]="design.alerta.sucesso" role="status">{{ sucesso() }}</p>
     }
 
-    <div [class]="design.cartao">
-      <div [class]="design.abas.barra">
-        <button type="button" [class]="classesAba(aba() === 'dados')" (click)="aba.set('dados')">
+    <section [class]="design.cartao">
+      <div [class]="design.abas.barra" role="tablist" [attr.aria-label]="conteudo.abas.rotulo">
+        <button
+          id="aba-dados"
+          type="button"
+          role="tab"
+          aria-controls="painel-perfil"
+          [attr.aria-selected]="aba() === 'dados'"
+          [class]="classesAba(aba() === 'dados')"
+          (click)="aba.set('dados')"
+        >
           {{ conteudo.abas.dados }}
         </button>
-        <button type="button" [class]="classesAba(aba() === 'robo')" (click)="aba.set('robo')">
+        <button
+          id="aba-robo"
+          type="button"
+          role="tab"
+          aria-controls="painel-perfil"
+          [attr.aria-selected]="aba() === 'robo'"
+          [class]="classesAba(aba() === 'robo')"
+          (click)="aba.set('robo')"
+        >
           {{ conteudo.abas.robo }}
         </button>
-        <button type="button" [class]="classesAba(aba() === 'configuracao')" (click)="aba.set('configuracao')">
+        <button
+          id="aba-configuracao"
+          type="button"
+          role="tab"
+          aria-controls="painel-perfil"
+          [attr.aria-selected]="aba() === 'configuracao'"
+          [class]="classesAba(aba() === 'configuracao')"
+          (click)="aba.set('configuracao')"
+        >
           {{ conteudo.abas.configuracao }}
         </button>
       </div>
 
-      @if (aba() !== 'configuracao') {
-        <form [class]="design.formulario" [formGroup]="form" (ngSubmit)="salvar()">
-          @if (aba() === 'dados') {
-            <label [class]="tema.componentes.campo">
-              <span [class]="tema.componentes.rotulo">{{ conteudo.dados.nome.rotulo }}</span>
-              <input [class]="tema.componentes.entrada" formControlName="nome" />
-            </label>
-
-            <label [class]="tema.componentes.campo">
-              <span [class]="tema.componentes.rotulo">{{ conteudo.dados.mensagemSaudacao.rotulo }}</span>
-              <textarea [class]="design.campos.mensagemSaudacao" formControlName="mensagemSaudacao"></textarea>
-            </label>
-
-            <label [class]="tema.componentes.campo">
-              <span [class]="tema.componentes.rotulo">{{ conteudo.dados.linkGoogleMaps.rotulo }}</span>
-              <input [class]="tema.componentes.entrada" formControlName="linkGoogleMaps" [placeholder]="conteudo.dados.linkGoogleMaps.placeholder" />
-            </label>
-
-            <label [class]="tema.componentes.campo">
-              <span [class]="tema.componentes.rotulo">{{ conteudo.dados.fotoPrincipal.rotulo }}</span>
-              <input
-                [class]="tema.componentes.entrada"
-                formControlName="linkFotoPrincipal"
-                [placeholder]="conteudo.dados.fotoPrincipal.placeholder"
-              />
-              <span [class]="tema.componentes.dica">
-                {{ conteudo.dados.fotoPrincipal.dica }}
-              </span>
-              @if (form.controls.linkFotoPrincipal.value) {
-                <div [class]="design.foto.moldura">
-                  <button
-                    type="button"
-                    [class]="classesSelecao(design.foto.botao, imagemSelecionada() === form.controls.linkFotoPrincipal.value)"
-                    (click)="selecionarImagem(form.controls.linkFotoPrincipal.value)"
-                  >
-                    <img
-                      [class]="design.foto.imagem"
-                      [src]="form.controls.linkFotoPrincipal.value"
-                      [alt]="conteudo.dados.fotoPrincipal.alt"
-                    />
-                  </button>
-                  <a
-                    [class]="design.foto.link"
-                    [href]="form.controls.linkFotoPrincipal.value"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {{ form.controls.linkFotoPrincipal.value }}
-                  </a>
-                </div>
-              }
-            </label>
-
-            <div>
-              <div [class]="design.galeria.cabecalho">
-                <span [class]="design.galeria.rotulo">{{ conteudo.dados.galeria.rotuloInicio }} {{ maxUrlsGaleria }} {{ conteudo.dados.galeria.rotuloFim }}</span>
-                <button
-                  [class]="design.galeria.botaoAdicionar"
-                  type="button"
-                  [disabled]="urlsGaleria.length >= maxUrlsGaleria"
-                  (click)="adicionarUrlGaleria()"
-                >
-                  {{ conteudo.dados.galeria.adicionar }}
-                </button>
+      <div id="painel-perfil" role="tabpanel" [attr.aria-labelledby]="'aba-' + aba()">
+        @if (aba() !== 'configuracao') {
+          <form [class]="design.formulario" [formGroup]="form" (ngSubmit)="salvar()">
+            @if (aba() === 'dados') {
+              <div>
+                <label [class]="design.campo.rotulo" for="perfil-nome">{{ conteudo.dados.nome.rotulo }}</label>
+                <input id="perfil-nome" [class]="design.campo.entrada" formControlName="nome" />
               </div>
-              <p [class]="design.galeria.dica">
-                {{ conteudo.dados.galeria.dica }}
-              </p>
-              <div [class]="design.galeria.lista" formArrayName="urlsGaleria">
-                @for (url of urlsGaleria.controls; track $index) {
-                  <div [class]="design.galeria.linha">
-                    @if (url.value) {
-                      <button
-                        type="button"
-                        [class]="classesSelecao(design.galeria.miniaturaBotao, imagemSelecionada() === url.value)"
-                        (click)="selecionarImagem(url.value)"
-                      >
-                        <img [class]="design.galeria.miniatura" [src]="url.value" [alt]="conteudo.dados.galeria.altMiniatura" />
-                      </button>
-                    }
-                    <input [class]="design.galeria.entrada" [formControlName]="$index" [placeholder]="conteudo.dados.galeria.placeholder" />
-                    <button [class]="design.galeria.botaoRemover" type="button" (click)="removerUrlGaleria($index)">{{ conteudo.dados.galeria.remover }}</button>
-                  </div>
-                }
+
+              <div>
+                <label [class]="design.campo.rotulo" for="perfil-saudacao">{{ conteudo.dados.mensagemSaudacao.rotulo }}</label>
+                <textarea id="perfil-saudacao" [class]="design.campos.mensagemSaudacao" formControlName="mensagemSaudacao"></textarea>
               </div>
-              @if (imagemSelecionada()) {
-                <div [class]="design.galeria.visualizacao">
-                  <p [class]="design.galeria.visualizacaoRotulo">{{ conteudo.dados.galeria.imagemSelecionada }}</p>
-                  <img
-                    [class]="design.galeria.visualizacaoImagem"
-                    [src]="imagemSelecionada()"
-                    [alt]="conteudo.dados.galeria.altVisualizacao"
+
+              <div>
+                <label [class]="design.campo.rotulo" for="perfil-maps">{{ conteudo.dados.linkGoogleMaps.rotulo }}</label>
+                <input
+                  id="perfil-maps"
+                  [class]="design.campo.entrada"
+                  inputmode="url"
+                  formControlName="linkGoogleMaps"
+                  [placeholder]="conteudo.dados.linkGoogleMaps.placeholder"
+                />
+              </div>
+
+              <div>
+                <label [class]="design.campo.rotulo" for="perfil-foto">{{ conteudo.dados.fotoPrincipal.rotulo }}</label>
+                <div [class]="design.foto.linha">
+                  @if (form.controls.linkFotoPrincipal.value) {
+                    <button
+                      type="button"
+                      [class]="classesSelecao(design.foto.botao, imagemSelecionada() === form.controls.linkFotoPrincipal.value)"
+                      [attr.aria-label]="conteudo.dados.fotoPrincipal.verMaior"
+                      (click)="selecionarImagem(form.controls.linkFotoPrincipal.value)"
+                    >
+                      <img
+                        [class]="design.foto.imagem"
+                        [src]="form.controls.linkFotoPrincipal.value"
+                        [alt]="conteudo.dados.fotoPrincipal.alt"
+                      />
+                    </button>
+                  } @else {
+                    <span [class]="design.foto.vazia" aria-hidden="true">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="16" rx="3" /><circle cx="9" cy="10" r="1.5" /><path d="m21 16-5-5-8 8" />
+                      </svg>
+                    </span>
+                  }
+                  <input
+                    id="perfil-foto"
+                    [class]="design.galeria.entrada"
+                    inputmode="url"
+                    formControlName="linkFotoPrincipal"
+                    [placeholder]="conteudo.dados.fotoPrincipal.placeholder"
                   />
                 </div>
-              }
-            </div>
+                <p [class]="design.campo.dica">{{ conteudo.dados.fotoPrincipal.dica }}</p>
+              </div>
 
-            <label [class]="tema.componentes.campo">
-              <span [class]="tema.componentes.rotulo">{{ conteudo.dados.linkGaleria.rotulo }}</span>
-              <input
-                [class]="tema.componentes.entrada"
-                formControlName="linkGaleria"
-                [placeholder]="conteudo.dados.linkGaleria.placeholder"
-              />
-              <span [class]="tema.componentes.dica">
-                {{ conteudo.dados.linkGaleria.dica }}
-              </span>
-            </label>
-          }
-
-          @if (aba() === 'robo') {
-            <h3 [class]="design.secao.titulo">{{ conteudo.robo.titulo }}</h3>
-            <p [class]="design.secao.descricao">{{ conteudo.robo.descricao }}</p>
-
-            <label [class]="design.opcao.linha">
-              <span>
-                <span [class]="design.opcao.rotulo">{{ conteudo.robo.locacaoPorHora.rotulo }}</span>
-                <span [class]="design.opcao.dica">
-                  {{ conteudo.robo.locacaoPorHora.dica }}
-                </span>
-              </span>
-              <input [class]="design.opcao.checkbox" type="checkbox" formControlName="locacaoPorHora" />
-            </label>
-
-            <label [class]="design.opcao.linha">
-              <span>
-                <span [class]="design.opcao.rotulo">{{ conteudo.robo.reservaAutomatica.rotulo }}</span>
-                <span [class]="design.opcao.dica">
-                  {{ conteudo.robo.reservaAutomatica.dica }}
-                </span>
-              </span>
-              <input [class]="design.opcao.checkbox" type="checkbox" formControlName="permiteReservaAutomatica" />
-            </label>
-
-            <label [class]="tema.componentes.campo">
-              <span [class]="tema.componentes.rotulo">{{ conteudo.robo.regrasLocacao.rotulo }}</span>
-              <textarea
-                [class]="design.campos.regrasLocacao"
-                formControlName="regrasLocacao"
-                [placeholder]="conteudo.robo.regrasLocacao.placeholder"
-              ></textarea>
-            </label>
-
-            <label [class]="tema.componentes.campo">
-              <span [class]="tema.componentes.rotulo">{{ conteudo.robo.tabelaDePrecos.rotulo }}</span>
-              <textarea
-                [class]="design.campos.tabelaDePrecos"
-                formControlName="tabelaDePrecos"
-                [placeholder]="conteudo.robo.tabelaDePrecos.placeholder"
-              ></textarea>
-              <span [class]="tema.componentes.dica">
-                {{ conteudo.robo.tabelaDePrecos.dica }}
-              </span>
-            </label>
-
-            <div>
-              <h4 [class]="design.menu.titulo">{{ conteudo.robo.menu.titulo }}</h4>
-              <p [class]="design.menu.descricao">
-                {{ conteudo.robo.menu.descricao }}
-              </p>
-
-              <div [class]="design.menu.lista" formArrayName="modulosMenu">
-                @for (modulo of modulosMenu.controls; track modulo.controls.codigoAcao.value; let i = $index) {
-                  <div [class]="design.menu.cartao" [formGroupName]="i">
-                    <div [class]="design.menu.cabecalho">
-                      <span>
-                        <span [class]="design.menu.rotulo">{{ rotuloModulo(modulo.controls.codigoAcao.value) }}</span>
-                        <span [class]="design.menu.dica">{{ descricaoModulo(modulo.controls.codigoAcao.value) }}</span>
-                      </span>
-                      <label [class]="design.menu.ativo">
-                        <input [class]="design.menu.checkbox" type="checkbox" formControlName="ativo" />
-                        <span [class]="design.menu.rotuloAtivo">{{ conteudo.robo.menu.ativo }}</span>
-                      </label>
+              <div>
+                <div [class]="design.galeria.cabecalho">
+                  <span [class]="design.galeria.rotulo">
+                    {{ conteudo.dados.galeria.rotuloInicio }} {{ maxUrlsGaleria }} {{ conteudo.dados.galeria.rotuloFim }}
+                  </span>
+                  <button
+                    [class]="design.galeria.botaoAdicionar"
+                    type="button"
+                    [disabled]="urlsGaleria.length >= maxUrlsGaleria"
+                    (click)="adicionarUrlGaleria()"
+                  >
+                    {{ conteudo.dados.galeria.adicionar }}
+                  </button>
+                </div>
+                <p [class]="design.galeria.dica">{{ conteudo.dados.galeria.dica }}</p>
+                <div [class]="design.galeria.lista" formArrayName="urlsGaleria">
+                  @for (url of urlsGaleria.controls; track $index) {
+                    <div [class]="design.galeria.linha">
+                      @if (url.value) {
+                        <button
+                          type="button"
+                          [class]="classesSelecao(design.galeria.miniaturaBotao, imagemSelecionada() === url.value)"
+                          [attr.aria-label]="conteudo.dados.galeria.verMaior + ' ' + ($index + 1)"
+                          (click)="selecionarImagem(url.value)"
+                        >
+                          <img [class]="design.galeria.miniatura" [src]="url.value" [alt]="conteudo.dados.galeria.altMiniatura" />
+                        </button>
+                      }
+                      <input
+                        [class]="design.galeria.entrada"
+                        inputmode="url"
+                        [formControlName]="$index"
+                        [attr.aria-label]="conteudo.dados.galeria.rotuloEntrada + ' ' + ($index + 1)"
+                        [placeholder]="conteudo.dados.galeria.placeholder"
+                      />
+                      <button [class]="design.galeria.botaoRemover" type="button" (click)="removerUrlGaleria($index)">
+                        {{ conteudo.dados.galeria.remover }}
+                      </button>
                     </div>
-                    <label [class]="tema.componentes.campo">
-                      <span [class]="design.menu.rotuloCampo">{{ conteudo.robo.menu.textoMenu }}</span>
-                      <input [class]="tema.componentes.entrada" formControlName="textoMenu" />
-                    </label>
+                  }
+                </div>
+                @if (imagemSelecionada()) {
+                  <div [class]="design.galeria.visualizacao">
+                    <p [class]="design.galeria.visualizacaoRotulo">{{ conteudo.dados.galeria.imagemSelecionada }}</p>
+                    <img
+                      [class]="design.galeria.visualizacaoImagem"
+                      [src]="imagemSelecionada()"
+                      [alt]="conteudo.dados.galeria.altVisualizacao"
+                    />
                   </div>
                 }
               </div>
+
+              <div>
+                <label [class]="design.campo.rotulo" for="perfil-drive">{{ conteudo.dados.linkGaleria.rotulo }}</label>
+                <input
+                  id="perfil-drive"
+                  [class]="design.campo.entrada"
+                  inputmode="url"
+                  formControlName="linkGaleria"
+                  [placeholder]="conteudo.dados.linkGaleria.placeholder"
+                />
+                <p [class]="design.campo.dica">{{ conteudo.dados.linkGaleria.dica }}</p>
+              </div>
+            }
+
+            @if (aba() === 'robo') {
+              <div>
+                <h2 [class]="design.secao.titulo">{{ conteudo.robo.titulo }}</h2>
+                <p [class]="design.secao.descricao">{{ conteudo.robo.descricao }}</p>
+              </div>
+
+              <label [class]="design.opcao.linha">
+                <span>
+                  <span [class]="design.opcao.rotulo">{{ conteudo.robo.locacaoPorHora.rotulo }}</span>
+                  <span [class]="design.opcao.dica">{{ conteudo.robo.locacaoPorHora.dica }}</span>
+                </span>
+                <span class="switch">
+                  <input type="checkbox" formControlName="locacaoPorHora" />
+                  <span aria-hidden="true"></span>
+                </span>
+              </label>
+
+              <label [class]="design.opcao.linha">
+                <span>
+                  <span [class]="design.opcao.rotulo">{{ conteudo.robo.reservaAutomatica.rotulo }}</span>
+                  <span [class]="design.opcao.dica">{{ conteudo.robo.reservaAutomatica.dica }}</span>
+                </span>
+                <span class="switch">
+                  <input type="checkbox" formControlName="permiteReservaAutomatica" />
+                  <span aria-hidden="true"></span>
+                </span>
+              </label>
+
+              <div>
+                <label [class]="design.campo.rotulo" for="perfil-regras">{{ conteudo.robo.regrasLocacao.rotulo }}</label>
+                <textarea
+                  id="perfil-regras"
+                  [class]="design.campos.regrasLocacao"
+                  formControlName="regrasLocacao"
+                  [placeholder]="conteudo.robo.regrasLocacao.placeholder"
+                ></textarea>
+              </div>
+
+              <div>
+                <label [class]="design.campo.rotulo" for="perfil-precos">{{ conteudo.robo.tabelaDePrecos.rotulo }}</label>
+                <textarea
+                  id="perfil-precos"
+                  [class]="design.campos.tabelaDePrecos"
+                  formControlName="tabelaDePrecos"
+                  [placeholder]="conteudo.robo.tabelaDePrecos.placeholder"
+                ></textarea>
+                <p [class]="design.campo.dica">{{ conteudo.robo.tabelaDePrecos.dica }}</p>
+              </div>
+
+              <div [class]="design.menu.grupo">
+                <div>
+                  <h3 [class]="design.menu.titulo">{{ conteudo.robo.menu.titulo }}</h3>
+                  <p [class]="design.menu.descricao">{{ conteudo.robo.menu.descricao }}</p>
+                </div>
+
+                <div [class]="design.menu.lista" formArrayName="modulosMenu">
+                  @for (modulo of modulosMenu.controls; track modulo.controls.codigoAcao.value; let i = $index) {
+                    <div [class]="design.menu.cartao" [formGroupName]="i">
+                      <div [class]="design.menu.cabecalho">
+                        <span>
+                          <span [class]="design.menu.rotulo">{{ rotuloModulo(modulo.controls.codigoAcao.value) }}</span>
+                          <span [class]="design.menu.dica">{{ descricaoModulo(modulo.controls.codigoAcao.value) }}</span>
+                        </span>
+                        <span class="switch">
+                          <input
+                            type="checkbox"
+                            formControlName="ativo"
+                            [attr.aria-label]="conteudo.robo.menu.ativar + ' ' + rotuloModulo(modulo.controls.codigoAcao.value)"
+                          />
+                          <span aria-hidden="true"></span>
+                        </span>
+                      </div>
+                      <div>
+                        <label [class]="design.campo.rotuloPequeno" [attr.for]="'perfil-menu-' + i">{{ conteudo.robo.menu.textoMenu }}</label>
+                        <input
+                          [id]="'perfil-menu-' + i"
+                          [class]="design.campo.entrada"
+                          formControlName="textoMenu"
+                          [attr.aria-label]="conteudo.robo.menu.textoMenu + ': ' + rotuloModulo(modulo.controls.codigoAcao.value)"
+                        />
+                      </div>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+
+            <button [class]="design.botaoPrimario" type="submit" [disabled]="salvando()">
+              {{ salvando() ? conteudo.botoes.salvando : conteudo.botoes.atualizarPerfil }}
+            </button>
+          </form>
+        }
+
+        @if (aba() === 'configuracao') {
+          <form [class]="design.formulario" [formGroup]="formSenha" (ngSubmit)="alterarSenha()">
+            <div>
+              <h2 [class]="design.secao.titulo">{{ conteudo.senha.titulo }}</h2>
+              <p [class]="design.secao.descricaoSenha">{{ conteudo.senha.descricao }}</p>
             </div>
-          }
 
-          <button [class]="tema.componentes.botaoPrimario" type="submit" [disabled]="salvando()">
-            {{ salvando() ? conteudo.botoes.salvando : conteudo.botoes.atualizarPerfil }}
-          </button>
-        </form>
-      }
+            <div>
+              <label [class]="design.campo.rotulo" for="perfil-email">{{ conteudo.senha.email }}</label>
+              <input id="perfil-email" [class]="design.campos.emailSomenteLeitura" type="email" [value]="emailAcesso" readonly />
+            </div>
 
-      @if (aba() === 'configuracao') {
-        <form [class]="design.formulario" [formGroup]="formSenha" (ngSubmit)="alterarSenha()">
-          <div>
-            <h3 [class]="design.secao.titulo">{{ conteudo.senha.titulo }}</h3>
-            <p [class]="design.secao.descricaoSenha">{{ conteudo.senha.descricao }}</p>
-          </div>
+            <div>
+              <label [class]="design.campo.rotulo" for="perfil-senha-atual">{{ conteudo.senha.senhaAtual }}</label>
+              <input
+                id="perfil-senha-atual"
+                [class]="design.campo.entrada"
+                type="password"
+                formControlName="senhaAtual"
+                autocomplete="current-password"
+              />
+            </div>
 
-          <label [class]="tema.componentes.campo">
-            <span [class]="tema.componentes.rotulo">{{ conteudo.senha.email }}</span>
-            <input [class]="design.campos.emailSomenteLeitura" type="email" [value]="emailAcesso" readonly />
-          </label>
+            <div>
+              <label [class]="design.campo.rotulo" for="perfil-senha-nova">{{ conteudo.senha.novaSenha }}</label>
+              <input
+                id="perfil-senha-nova"
+                [class]="design.campo.entrada"
+                type="password"
+                formControlName="novaSenha"
+                autocomplete="new-password"
+                aria-describedby="perfil-senha-nova-dica"
+              />
+              <p id="perfil-senha-nova-dica" [class]="design.campo.dica">{{ conteudo.senha.novaSenhaDica }}</p>
+              @if (formSenha.controls.novaSenha.touched && formSenha.controls.novaSenha.invalid) {
+                <span [class]="design.campo.erro" role="alert">{{ conteudo.senha.novaSenhaInvalida }}</span>
+              }
+            </div>
 
-          <label [class]="tema.componentes.campo">
-            <span [class]="tema.componentes.rotulo">{{ conteudo.senha.senhaAtual }}</span>
-            <input [class]="tema.componentes.entrada" type="password" formControlName="senhaAtual" autocomplete="current-password" />
-          </label>
+            <div>
+              <label [class]="design.campo.rotulo" for="perfil-senha-confirmar">{{ conteudo.senha.confirmar }}</label>
+              <input
+                id="perfil-senha-confirmar"
+                [class]="design.campo.entrada"
+                type="password"
+                formControlName="confirmarSenha"
+                autocomplete="new-password"
+              />
+              @if (senhasNaoConferem) {
+                <span [class]="design.campo.erro" role="alert">{{ conteudo.senha.senhasNaoConferem }}</span>
+              }
+            </div>
 
-          <label [class]="tema.componentes.campo">
-            <span [class]="tema.componentes.rotulo">{{ conteudo.senha.novaSenha }}</span>
-            <input [class]="tema.componentes.entrada" type="password" formControlName="novaSenha" autocomplete="new-password" />
-            @if (formSenha.controls.novaSenha.touched && formSenha.controls.novaSenha.invalid) {
-              <span [class]="tema.componentes.erroCampo">{{ conteudo.senha.novaSenhaInvalida }}</span>
-            }
-          </label>
-
-          <label [class]="tema.componentes.campo">
-            <span [class]="tema.componentes.rotulo">{{ conteudo.senha.confirmar }}</span>
-            <input [class]="tema.componentes.entrada" type="password" formControlName="confirmarSenha" autocomplete="new-password" />
-            @if (senhasNaoConferem) {
-              <span [class]="tema.componentes.erroCampo">{{ conteudo.senha.senhasNaoConferem }}</span>
-            }
-          </label>
-
-          <button [class]="tema.componentes.botaoPrimario" type="submit" [disabled]="formSenha.invalid || salvandoSenha()">
-            {{ salvandoSenha() ? conteudo.botoes.salvando : conteudo.botoes.salvarNovaSenha }}
-          </button>
-        </form>
-      }
-    </div>
+            <button [class]="design.botaoPrimario" type="submit" [disabled]="formSenha.invalid || salvandoSenha()">
+              {{ salvandoSenha() ? conteudo.botoes.salvando : conteudo.botoes.salvarNovaSenha }}
+            </button>
+          </form>
+        }
+      </div>
+    </section>
   </div>
 
-  <div>
-    <h3 [class]="design.lateral.titulo">{{ conteudo.lateral.titulo }}</h3>
+  <div [class]="design.pagina.colunaLateral">
+    <h2 [class]="design.lateral.titulo">{{ conteudo.lateral.titulo }}</h2>
     <app-banner-avisos [avisos]="avisos()" [compacto]="true" />
   </div>
 </div>

@@ -21,7 +21,8 @@
         "400": "#FF8C42",
         "500": "#F7931E",
         "600": "#e07a12",
-        "700": "#c4620d"
+        "700": "#c4620d",
+        "800": "#9a4508"
       }
     },
     "fontes": {
@@ -38,84 +39,185 @@
     }
   },
   "telas": {
+    "apresentacao": {
+      "pagina": "font-sans text-brand-900 antialiased",
+      "conteiner": "mx-auto max-w-[1120px] px-[clamp(16px,5vw,48px)]",
+      "foco": "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-400",
+      "cabecalho": {
+        "fundo": "bg-brand-900 bg-[radial-gradient(circle_at_50%_0%,rgba(247,147,30,0.28),transparent_52%)] text-white",
+        "topo": "flex items-center justify-between gap-3 py-4",
+        "marca": "flex items-center gap-3",
+        "logo": "h-11 w-11 object-contain",
+        "nome": "wordmark text-lg",
+        "botaoEntrar": "inline-flex min-h-11 items-center justify-center rounded-xl bg-accent-500 px-5 text-sm font-semibold text-brand-900 transition hover:bg-accent-400"
+      },
+      "hero": {
+        "linha": "flex flex-wrap items-center gap-[clamp(32px,6vw,64px)] pb-[clamp(40px,8vw,88px)] pt-[clamp(32px,7vw,80px)]",
+        "texto": "min-w-0 flex-[1_1_420px]",
+        "selo": "mb-4 text-[13px] font-semibold uppercase tracking-[0.12em] text-brand-200",
+        "titulo": "font-display text-[clamp(30px,7vw,52px)] font-semibold leading-[1.2] text-white",
+        "destaque": "text-accent-400",
+        "descricao": "mt-5 max-w-[540px] text-[clamp(16px,2.4vw,18px)] leading-[1.6] text-brand-100",
+        "acoes": "mt-7",
+        "botaoComo": "inline-flex min-h-12 items-center justify-center rounded-xl border border-white/35 px-6 text-[15px] font-semibold text-white transition hover:bg-white/10"
+      },
+      "celular": {
+        "figura": "relative mx-auto min-w-0 max-w-full flex-[0_1_320px]",
+        "brilho": "pointer-events-none absolute -inset-6 rounded-[48px] bg-[radial-gradient(circle_at_50%_40%,rgba(247,147,30,0.35),transparent_70%)]",
+        "moldura": "relative rounded-[36px] border border-white/20 bg-[#0f0720] p-2.5 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.6),0_0_0_3px_rgba(255,140,66,0.25)]",
+        "tela": "overflow-hidden rounded-[27px] bg-white",
+        "imagem": "block h-auto w-full",
+        "legenda": "relative mt-4 text-center text-[13px] leading-[18px] text-brand-200"
+      },
+      "secao": {
+        "como": "scroll-mt-4 bg-brand-50 py-[clamp(40px,8vw,88px)]",
+        "beneficios": "bg-white py-[clamp(40px,8vw,88px)]",
+        "rotulo": "mb-2 text-[13px] font-semibold uppercase tracking-[0.12em] text-brand-600",
+        "titulo": "max-w-[640px] text-[clamp(24px,4.5vw,36px)] font-bold leading-[1.2] text-brand-900"
+      },
+      "passos": {
+        "lista": "mt-8 grid grid-cols-[repeat(auto-fit,minmax(min(100%,340px),1fr))] gap-4",
+        "item": "rounded-2xl border border-brand-200 bg-white p-5",
+        "numero": "inline-flex h-9 w-9 items-center justify-center rounded-full bg-accent-500 font-bold text-brand-900",
+        "titulo": "mt-3 text-lg font-semibold leading-[26px]",
+        "texto": "mt-1.5 text-[15px] leading-6 text-brand-700"
+      },
+      "beneficios": {
+        "lista": "mt-8 grid grid-cols-[repeat(auto-fit,minmax(min(100%,260px),1fr))] gap-4",
+        "item": "rounded-2xl bg-brand-50 p-5",
+        "titulo": "text-[17px] font-semibold leading-6",
+        "texto": "mt-1.5 text-[15px] leading-6 text-brand-700"
+      },
+      "chamada": {
+        "fundo": "bg-brand-900 bg-[radial-gradient(circle_at_50%_100%,rgba(247,147,30,0.22),transparent_60%)] py-[clamp(40px,8vw,80px)] text-white",
+        "linha": "mx-auto flex max-w-[1120px] flex-wrap items-center justify-between gap-6 px-[clamp(16px,5vw,48px)]",
+        "texto": "min-w-0 flex-[1_1_320px]",
+        "titulo": "font-display text-[clamp(24px,4.5vw,34px)] font-semibold leading-[1.25]",
+        "botaoEntrar": "inline-flex min-h-12 flex-[0_1_auto] items-center justify-center rounded-xl bg-accent-500 px-8 text-base font-semibold text-brand-900 transition hover:bg-accent-400"
+      },
+      "rodape": {
+        "fundo": "border-t border-white/10 bg-brand-900 py-6",
+        "linha": "mx-auto flex max-w-[1120px] flex-wrap items-center justify-between gap-3 px-[clamp(16px,5vw,48px)]",
+        "nome": "wordmark text-[15px]",
+        "texto": "text-[13px] text-brand-300"
+      }
+    },
+    "login": {
+      "pagina": "flex min-h-screen flex-wrap font-sans text-brand-900 antialiased",
+      "foco": "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-400",
+      "marca": {
+        "faixa": "relative flex min-w-0 flex-[1_1_520px] flex-col justify-between gap-8 overflow-hidden bg-[linear-gradient(160deg,#2E1A47_0%,#1A0B2E_65%)] p-[clamp(24px,5vw,64px)] text-white",
+        "brilho": "pointer-events-none absolute -right-[120px] -top-[120px] h-80 w-80 rounded-full bg-[radial-gradient(circle,rgba(247,147,30,0.45),rgba(247,147,30,0)_70%)]",
+        "link": "relative inline-flex min-h-11 items-center gap-4 self-start rounded-xl",
+        "logo": "h-[clamp(64px,11vw,96px)] w-[clamp(64px,11vw,96px)] object-contain",
+        "nome": "wordmark text-lg",
+        "texto": "relative max-w-[460px]",
+        "titulo": "font-display text-[clamp(28px,5.5vw,46px)] font-semibold leading-[1.15] text-white",
+        "descricao": "mt-4 text-[clamp(15px,2.2vw,17px)] leading-[1.6] text-brand-100"
+      },
+      "area": "flex min-w-0 flex-[1_1_420px] flex-col items-center justify-center gap-2 bg-brand-50 p-[clamp(16px,4vw,48px)]",
+      "cartao": {
+        "caixa": "w-full max-w-[420px] rounded-3xl border border-brand-100 bg-white p-[clamp(20px,5vw,36px)] shadow-[0_10px_30px_-12px_rgba(46,26,71,0.25)]",
+        "titulo": "text-[26px] font-bold leading-8 text-brand-900",
+        "descricao": "mt-1.5 text-[15px] leading-[22px] text-brand-600",
+        "ajuda": "mt-5 text-[13px] leading-5 text-brand-700"
+      },
+      "formulario": "mt-6 flex flex-col gap-[18px]",
+      "campo": {
+        "rotulo": "mb-1.5 block text-sm font-semibold leading-5 text-brand-800",
+        "entrada": "input-field h-[52px] rounded-[14px] shadow-none",
+        "caixaSenha": "relative",
+        "entradaSenha": "input-field h-[52px] rounded-[14px] pr-[84px] shadow-none",
+        "botaoMostrar": "absolute right-1 top-1 h-11 min-w-11 rounded-[10px] bg-transparent px-3 text-sm font-semibold text-brand-600 transition hover:bg-brand-50",
+        "erro": "mt-1.5 text-[13px] leading-[18px] text-red-700"
+      },
+      "alertaErro": "rounded-xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-sm leading-5 text-red-700",
+      "botaoEntrar": "btn-primary h-[52px] w-full rounded-[14px] text-base font-bold",
+      "linkVoltar": "inline-flex min-h-11 items-center rounded-xl px-3 text-sm font-semibold text-brand-600 transition hover:text-brand-700"
+    },
     "clientePerfil": {
       "pagina": {
-        "cabecalho": "mb-6",
-        "titulo": "text-2xl font-semibold text-brand-900",
-        "descricao": "text-sm text-brand-600",
-        "grade": "grid gap-6 xl:grid-cols-[1.4fr_0.8fr]",
-        "coluna": "space-y-4"
+        "cabecalho": "mb-5",
+        "titulo": "text-[clamp(22px,4vw,28px)] font-bold leading-tight text-brand-900",
+        "descricao": "mt-1 text-sm text-brand-600",
+        "grade": "flex flex-wrap items-start gap-5",
+        "coluna": "flex min-w-0 flex-[999_1_520px] flex-col gap-4",
+        "colunaLateral": "flex min-w-0 flex-[1_1_280px] flex-col gap-4"
       },
-      "cartao": "card space-y-4 p-5",
-      "formulario": "space-y-4",
+      "cartao": "flex flex-col gap-4 rounded-[20px] border border-brand-100 bg-white p-5 shadow-[0_1px_2px_rgba(46,26,71,0.05)]",
+      "formulario": "flex flex-col gap-4",
       "abas": {
-        "barra": "flex flex-wrap gap-2 border-b border-brand-200 pb-3",
-        "botao": "rounded-lg px-3 py-2 text-sm font-medium",
-        "ativaFundo": "bg-brand-100",
+        "barra": "flex gap-1 overflow-x-auto rounded-[14px] bg-brand-100 p-1",
+        "botao": "min-h-11 flex-[1_0_auto] whitespace-nowrap rounded-[10px] px-3.5 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-400",
+        "ativaFundo": "bg-white shadow-[0_1px_2px_rgba(46,26,71,0.15)]",
         "ativaTexto": "text-brand-900",
-        "inativaTexto": "text-brand-600"
+        "inativaTexto": "bg-transparent text-brand-700 hover:bg-white/60"
       },
       "alerta": {
         "erro": "rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700",
         "sucesso": "rounded-xl border border-accent-200 bg-accent-50 px-4 py-3 text-sm text-brand-800"
       },
-      "campos": {
-        "mensagemSaudacao": "input-field min-h-24",
-        "regrasLocacao": "input-field min-h-32",
-        "tabelaDePrecos": "input-field min-h-32",
-        "emailSomenteLeitura": "input-field bg-brand-50"
+      "campo": {
+        "rotulo": "mb-1.5 block text-sm font-semibold leading-5 text-brand-800",
+        "rotuloPequeno": "mb-1 block text-xs font-semibold leading-4 text-brand-600",
+        "entrada": "input-field shadow-none",
+        "dica": "mt-1.5 text-[13px] leading-[18px] text-brand-600",
+        "erro": "mt-1.5 block text-[13px] leading-[18px] text-red-700"
       },
+      "campos": {
+        "mensagemSaudacao": "input-field min-h-28 resize-y leading-normal shadow-none",
+        "regrasLocacao": "input-field min-h-28 resize-y leading-normal shadow-none",
+        "tabelaDePrecos": "input-field min-h-28 resize-y leading-normal shadow-none",
+        "emailSomenteLeitura": "input-field bg-brand-50 shadow-none"
+      },
+      "botaoPrimario": "btn-primary min-h-12 w-full px-5 text-[15px] font-bold",
       "selecao": {
         "anel": "ring-2",
         "cor": "ring-accent-500"
       },
       "foto": {
-        "moldura": "mt-2 flex items-center gap-3 rounded-xl border border-brand-200 bg-brand-50 p-3",
-        "botao": "shrink-0 rounded-lg ring-offset-2",
-        "imagem": "h-16 w-16 rounded-lg object-cover",
-        "link": "truncate text-xs text-brand-700 underline"
+        "linha": "flex items-center gap-2",
+        "botao": "shrink-0 rounded-xl ring-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-400",
+        "imagem": "h-14 w-14 rounded-xl object-cover",
+        "vazia": "flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-dashed border-brand-300 bg-brand-50 text-brand-500"
       },
       "galeria": {
-        "cabecalho": "mb-2 flex flex-wrap items-center justify-between gap-3",
-        "rotulo": "text-sm font-medium",
-        "botaoAdicionar": "btn-secondary shrink-0 px-3 py-1 text-xs",
-        "dica": "mb-3 text-xs text-brand-600",
-        "lista": "space-y-2",
-        "linha": "flex flex-wrap items-center gap-2",
-        "miniaturaBotao": "shrink-0 rounded-lg ring-offset-2",
-        "miniatura": "h-12 w-12 rounded-lg object-cover",
-        "entrada": "input-field min-w-0 flex-1",
-        "botaoRemover": "btn-secondary shrink-0 px-3",
+        "cabecalho": "mb-1.5 flex flex-wrap items-center justify-between gap-2",
+        "rotulo": "text-sm font-semibold leading-5 text-brand-800",
+        "botaoAdicionar": "btn-secondary shrink-0 px-3.5 disabled:cursor-not-allowed disabled:opacity-60",
+        "dica": "mb-2.5 text-[13px] leading-[18px] text-brand-600",
+        "lista": "flex flex-col gap-2",
+        "linha": "flex items-center gap-2",
+        "miniaturaBotao": "shrink-0 rounded-xl ring-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-400",
+        "miniatura": "h-11 w-11 rounded-xl object-cover",
+        "entrada": "input-field min-w-0 flex-1 shadow-none",
+        "botaoRemover": "btn-secondary shrink-0 px-3.5",
         "visualizacao": "mt-3 overflow-hidden rounded-xl border border-brand-200 bg-brand-50",
-        "visualizacaoRotulo": "px-3 pt-3 text-xs font-medium text-brand-700",
+        "visualizacaoRotulo": "px-3 pt-3 text-xs font-semibold text-brand-700",
         "visualizacaoImagem": "mx-auto max-h-72 w-full object-contain p-3"
       },
       "secao": {
-        "titulo": "text-lg font-semibold text-brand-900",
-        "descricao": "text-sm text-brand-600",
+        "titulo": "text-[17px] font-bold leading-6 text-brand-900",
+        "descricao": "mt-1 text-sm text-brand-600",
         "descricaoSenha": "mt-1 text-sm text-brand-600"
       },
       "opcao": {
-        "linha": "flex cursor-pointer items-start justify-between gap-4 rounded-xl border border-brand-200 p-4",
-        "rotulo": "block text-sm font-medium",
-        "dica": "text-xs text-brand-600",
-        "checkbox": "mt-1 h-5 w-9 shrink-0 accent-accent-500"
+        "linha": "flex cursor-pointer items-start justify-between gap-4 rounded-[14px] border border-brand-100 px-4 py-3.5",
+        "rotulo": "block text-[15px] font-semibold leading-[22px]",
+        "dica": "mt-0.5 block text-[13px] leading-[18px] text-brand-600"
       },
       "menu": {
-        "titulo": "mb-1 text-sm font-semibold text-brand-900",
-        "descricao": "mb-3 text-xs text-brand-600",
-        "lista": "space-y-3",
-        "cartao": "rounded-xl border border-brand-200 p-4",
-        "cabecalho": "mb-3 flex flex-wrap items-start justify-between gap-4",
-        "rotulo": "block text-sm font-medium",
-        "dica": "text-xs text-brand-600",
-        "ativo": "flex cursor-pointer items-center gap-2 text-sm",
-        "checkbox": "h-5 w-9 accent-accent-500",
-        "rotuloAtivo": "text-brand-700",
-        "rotuloCampo": "mb-1 block text-xs font-medium text-brand-600"
+        "grupo": "flex flex-col gap-4",
+        "titulo": "text-[15px] font-bold leading-[22px] text-brand-900",
+        "descricao": "mt-0.5 text-[13px] leading-[18px] text-brand-600",
+        "lista": "flex flex-col gap-4",
+        "cartao": "flex flex-col gap-3 rounded-[14px] border border-brand-100 px-4 py-3.5",
+        "cabecalho": "flex items-start justify-between gap-4",
+        "rotulo": "block text-[15px] font-semibold leading-[22px]",
+        "dica": "block text-[13px] leading-[18px] text-brand-600"
       },
       "lateral": {
-        "titulo": "mb-3 text-sm font-semibold uppercase tracking-wide text-brand-600"
+        "titulo": "text-[13px] font-bold uppercase leading-5 tracking-[0.06em] text-brand-600"
       }
     },
     "v0Dashboard": {

@@ -3,7 +3,12 @@ import { authGuard } from './core/guards/auth.guard';
 import { roleGuard } from './core/guards/role.guard';
 
 export const routes: Routes = [
-  { path: '', pathMatch: 'full', redirectTo: 'login' },
+  {
+    path: '',
+    pathMatch: 'full',
+    loadComponent: () =>
+      import('./features/apresentacao/apresentacao.component').then((m) => m.ApresentacaoComponent)
+  },
   {
     path: 'login',
     loadComponent: () =>
@@ -24,5 +29,5 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/design-v0/v0-dashboard/v0-dashboard.component').then((m) => m.V0DashboardComponent)
   },
-  { path: '**', redirectTo: 'login' }
+  { path: '**', redirectTo: '' }
 ];
