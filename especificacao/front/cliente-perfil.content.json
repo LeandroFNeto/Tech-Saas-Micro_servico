@@ -27,7 +27,8 @@
         "dica": "Cole a URL pública da imagem principal. Toque na miniatura para ver maior.",
         "alt": "Prévia da foto principal",
         "verMaior": "Ver foto principal maior",
-        "enviar": "Enviar foto principal"
+        "enviar": "Enviar foto principal",
+        "abrir": "Abrir foto em nova aba"
       },
       "galeria": {
         "rotuloInicio": "Galeria de fotos (até",
@@ -41,7 +42,8 @@
         "altVisualizacao": "Imagem selecionada para visualização",
         "rotuloEntrada": "URL da foto da galeria",
         "verMaior": "Ver foto da galeria maior",
-        "enviar": "Enviar fotos"
+        "enviar": "Enviar fotos",
+        "abrir": "Abrir"
       },
       "linkGaleria": {
         "rotulo": "Link da galeria no Google Drive (opcional)",

@@ -167,6 +167,16 @@
           formControlName="linkFotoPrincipal"
           placeholder="https://res.cloudinary.com/.../hero_image.jpg"
         />
+        @if (form.controls.linkFotoPrincipal.value) {
+          <a
+            class="inline-flex min-h-11 items-center text-sm font-semibold text-accent-800 underline"
+            [href]="form.controls.linkFotoPrincipal.value"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Abrir foto em nova aba
+          </a>
+        }
       </div>
 
       <div>
@@ -218,6 +228,17 @@
                 [attr.aria-label]="'URL da foto ' + ($index + 1) + ' da galeria'"
                 placeholder="https://res.cloudinary.com/.../foto.jpg"
               />
+              @if (url.value) {
+                <a
+                  class="inline-flex min-h-11 shrink-0 items-center px-1 text-sm font-semibold text-accent-800 underline"
+                  [href]="url.value"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  [attr.aria-label]="'Abrir foto ' + ($index + 1) + ' da galeria em nova aba'"
+                >
+                  Abrir
+                </a>
+              }
               <button class="btn-secondary shrink-0 px-3.5" type="button" (click)="removerUrlGaleria($index)">Remover</button>
             </div>
           }

@@ -128,6 +128,11 @@
                     [placeholder]="conteudo.dados.fotoPrincipal.placeholder"
                   />
                 </div>
+                @if (form.controls.linkFotoPrincipal.value) {
+                  <a [class]="design.link" [href]="form.controls.linkFotoPrincipal.value" target="_blank" rel="noopener noreferrer">
+                    {{ conteudo.dados.fotoPrincipal.abrir }}
+                  </a>
+                }
                 <button type="button" [class]="design.upload" (click)="abrirWidgetCloudinary('principal')">{{ conteudo.dados.fotoPrincipal.enviar }}</button>
                 <p [class]="design.campo.dica">{{ conteudo.dados.fotoPrincipal.dica }}</p>
               </div>
@@ -139,13 +144,13 @@
                   </span>
                   <span [class]="design.galeria.acoes">
                     <button
-                    [class]="design.galeria.botaoAdicionar"
-                    type="button"
-                    [disabled]="urlsGaleria.length >= maxUrlsGaleria"
-                    (click)="adicionarUrlGaleria()"
-                  >
-                    {{ conteudo.dados.galeria.adicionar }}
-                  </button>
+                      [class]="design.galeria.botaoAdicionar"
+                      type="button"
+                      [disabled]="urlsGaleria.length >= maxUrlsGaleria"
+                      (click)="adicionarUrlGaleria()"
+                    >
+                      {{ conteudo.dados.galeria.adicionar }}
+                    </button>
                     <button [class]="design.galeria.botaoAdicionar" type="button" [disabled]="galeriaCheia" (click)="abrirWidgetCloudinary('galeria')">
                       {{ conteudo.dados.galeria.enviar }}
                     </button>
@@ -172,6 +177,17 @@
                         [attr.aria-label]="conteudo.dados.galeria.rotuloEntrada + ' ' + ($index + 1)"
                         [placeholder]="conteudo.dados.galeria.placeholder"
                       />
+                      @if (url.value) {
+                        <a
+                          [class]="design.galeria.link"
+                          [href]="url.value"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          [attr.aria-label]="conteudo.dados.galeria.abrir + ' ' + ($index + 1)"
+                        >
+                          {{ conteudo.dados.galeria.abrir }}
+                        </a>
+                      }
                       <button [class]="design.galeria.botaoRemover" type="button" (click)="removerUrlGaleria($index)">
                         {{ conteudo.dados.galeria.remover }}
                       </button>
