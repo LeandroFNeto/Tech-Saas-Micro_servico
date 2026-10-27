@@ -63,8 +63,27 @@
               </div>
 
               <div>
-                <label [class]="design.campo.rotulo" for="perfil-saudacao">{{ conteudo.dados.mensagemSaudacao.rotulo }}</label>
-                <textarea id="perfil-saudacao" [class]="design.campos.mensagemSaudacao" formControlName="mensagemSaudacao"></textarea>
+                <div [class]="design.editor.barra">
+                  <label [class]="design.campo.rotulo" for="mensagemSaudacao">{{ conteudo.dados.mensagemSaudacao.rotulo }}</label>
+                  <span [class]="design.editor.botoes">
+                    <button type="button" [class]="design.editor.botao" [attr.aria-label]="conteudo.editor.negrito" (click)="aplicarFormatacao('mensagemSaudacao', '*', '*')"><b>B</b></button>
+                    <button type="button" [class]="design.editor.botao" [attr.aria-label]="conteudo.editor.italico" (click)="aplicarFormatacao('mensagemSaudacao', '_', '_')"><i>I</i></button>
+                  </span>
+                </div>
+                <textarea
+                  id="mensagemSaudacao"
+                  [class]="design.campos.mensagemSaudacao"
+                  formControlName="mensagemSaudacao"
+                  cdkTextareaAutosize
+                  cdkAutosizeMinRows="3"
+                  cdkAutosizeMaxRows="15"
+                  maxlength="1000"
+                  (paste)="aoColarTexto($event, 'mensagemSaudacao')"
+                ></textarea>
+                <p [class]="design.editor.contador">{{ form.controls.mensagemSaudacao.value.length }} / {{ limiteCaracteres }}</p>
+                @if (camposTruncados()['mensagemSaudacao']) {
+                  <p [class]="design.editor.aviso" role="status">{{ conteudo.editor.limitado }}</p>
+                }
               </div>
 
               <div>
@@ -109,6 +128,7 @@
                     [placeholder]="conteudo.dados.fotoPrincipal.placeholder"
                   />
                 </div>
+                <button type="button" [class]="design.upload" (click)="abrirWidgetCloudinary('principal')">{{ conteudo.dados.fotoPrincipal.enviar }}</button>
                 <p [class]="design.campo.dica">{{ conteudo.dados.fotoPrincipal.dica }}</p>
               </div>
 
@@ -117,7 +137,8 @@
                   <span [class]="design.galeria.rotulo">
                     {{ conteudo.dados.galeria.rotuloInicio }} {{ maxUrlsGaleria }} {{ conteudo.dados.galeria.rotuloFim }}
                   </span>
-                  <button
+                  <span [class]="design.galeria.acoes">
+                    <button
                     [class]="design.galeria.botaoAdicionar"
                     type="button"
                     [disabled]="urlsGaleria.length >= maxUrlsGaleria"
@@ -125,6 +146,10 @@
                   >
                     {{ conteudo.dados.galeria.adicionar }}
                   </button>
+                    <button [class]="design.galeria.botaoAdicionar" type="button" [disabled]="galeriaCheia" (click)="abrirWidgetCloudinary('galeria')">
+                      {{ conteudo.dados.galeria.enviar }}
+                    </button>
+                  </span>
                 </div>
                 <p [class]="design.galeria.dica">{{ conteudo.dados.galeria.dica }}</p>
                 <div [class]="design.galeria.lista" formArrayName="urlsGaleria">
@@ -207,23 +232,53 @@
               </label>
 
               <div>
-                <label [class]="design.campo.rotulo" for="perfil-regras">{{ conteudo.robo.regrasLocacao.rotulo }}</label>
+                <div [class]="design.editor.barra">
+                  <label [class]="design.campo.rotulo" for="regrasLocacao">{{ conteudo.robo.regrasLocacao.rotulo }}</label>
+                  <span [class]="design.editor.botoes">
+                    <button type="button" [class]="design.editor.botao" [attr.aria-label]="conteudo.editor.negrito" (click)="aplicarFormatacao('regrasLocacao', '*', '*')"><b>B</b></button>
+                    <button type="button" [class]="design.editor.botao" [attr.aria-label]="conteudo.editor.italico" (click)="aplicarFormatacao('regrasLocacao', '_', '_')"><i>I</i></button>
+                  </span>
+                </div>
                 <textarea
-                  id="perfil-regras"
+                  id="regrasLocacao"
                   [class]="design.campos.regrasLocacao"
                   formControlName="regrasLocacao"
                   [placeholder]="conteudo.robo.regrasLocacao.placeholder"
+                  cdkTextareaAutosize
+                  cdkAutosizeMinRows="3"
+                  cdkAutosizeMaxRows="15"
+                  maxlength="1000"
+                  (paste)="aoColarTexto($event, 'regrasLocacao')"
                 ></textarea>
+                <p [class]="design.editor.contador">{{ form.controls.regrasLocacao.value.length }} / {{ limiteCaracteres }}</p>
+                @if (camposTruncados()['regrasLocacao']) {
+                  <p [class]="design.editor.aviso" role="status">{{ conteudo.editor.limitado }}</p>
+                }
               </div>
 
               <div>
-                <label [class]="design.campo.rotulo" for="perfil-precos">{{ conteudo.robo.tabelaDePrecos.rotulo }}</label>
+                <div [class]="design.editor.barra">
+                  <label [class]="design.campo.rotulo" for="tabelaDePrecos">{{ conteudo.robo.tabelaDePrecos.rotulo }}</label>
+                  <span [class]="design.editor.botoes">
+                    <button type="button" [class]="design.editor.botao" [attr.aria-label]="conteudo.editor.negrito" (click)="aplicarFormatacao('tabelaDePrecos', '*', '*')"><b>B</b></button>
+                    <button type="button" [class]="design.editor.botao" [attr.aria-label]="conteudo.editor.italico" (click)="aplicarFormatacao('tabelaDePrecos', '_', '_')"><i>I</i></button>
+                  </span>
+                </div>
                 <textarea
-                  id="perfil-precos"
+                  id="tabelaDePrecos"
                   [class]="design.campos.tabelaDePrecos"
                   formControlName="tabelaDePrecos"
                   [placeholder]="conteudo.robo.tabelaDePrecos.placeholder"
+                  cdkTextareaAutosize
+                  cdkAutosizeMinRows="3"
+                  cdkAutosizeMaxRows="15"
+                  maxlength="1000"
+                  (paste)="aoColarTexto($event, 'tabelaDePrecos')"
                 ></textarea>
+                <p [class]="design.editor.contador">{{ form.controls.tabelaDePrecos.value.length }} / {{ limiteCaracteres }}</p>
+                @if (camposTruncados()['tabelaDePrecos']) {
+                  <p [class]="design.editor.aviso" role="status">{{ conteudo.editor.limitado }}</p>
+                }
                 <p [class]="design.campo.dica">{{ conteudo.robo.tabelaDePrecos.dica }}</p>
               </div>
 

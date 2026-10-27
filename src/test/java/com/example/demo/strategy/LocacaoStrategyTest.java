@@ -18,7 +18,9 @@ import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Set;
 
@@ -30,6 +32,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -37,6 +40,9 @@ class LocacaoStrategyTest {
 
     private static final String REMETENTE = "5511988887777@c.us";
     private static final String CALENDAR_ID = "agenda-cliente@group.calendar.google.com";
+    private static final ZoneId FUSO_BRASILIA = ZoneId.of("America/Sao_Paulo");
+    private static final DateTimeFormatter FORMATO_DATA = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+    private static final DateTimeFormatter FORMATO_HORA = DateTimeFormatter.ofPattern("HH:mm");
 
     @Mock private ServicoMensagem servicoMensagem;
     @Spy private ServicoMenu servicoMenu = new ServicoMenu();
@@ -151,8 +157,9 @@ class LocacaoStrategyTest {
         Empresa empresa = empresaComMenu();
         empresa.setLocacaoPorHora(false);
         gerenciadorSessao.setEstado(REMETENTE, EstadoUsuario.RESERVA_ESPERANDO_DATA);
+        String amanha = LocalDate.now(FUSO_BRASILIA).plusDays(1).format(FORMATO_DATA);
 
-        locacaoStrategy.processarMensagem(empresa, REMETENTE, "16-09-2026", "RESERVA_ESPERANDO_DATA");
+        locacaoStrategy.processarMensagem(empresa, REMETENTE, amanha, "RESERVA_ESPERANDO_DATA");
 
         assertThat(gerenciadorSessao.getReserva(REMETENTE).getHorario()).isEqualTo(DadosReservaSessao.HORARIO_DIARIA);
         verify(servicoMensagem).enviarMensagemWPP(eq(empresa), eq(REMETENTE), contains("nome do responsável"));
@@ -165,8 +172,9 @@ class LocacaoStrategyTest {
         Empresa empresa = empresaComMenu();
         empresa.setLocacaoPorHora(true);
         gerenciadorSessao.setEstado(REMETENTE, EstadoUsuario.RESERVA_ESPERANDO_DATA);
+        String amanha = LocalDate.now(FUSO_BRASILIA).plusDays(1).format(FORMATO_DATA);
 
-        locacaoStrategy.processarMensagem(empresa, REMETENTE, "16-09-2026", "RESERVA_ESPERANDO_DATA");
+        locacaoStrategy.processarMensagem(empresa, REMETENTE, amanha, "RESERVA_ESPERANDO_DATA");
 
         verify(servicoMensagem).enviarMensagemWPP(eq(empresa), eq(REMETENTE), contains("Qual horário você deseja"));
         assertThat(gerenciadorSessao.getEstado(REMETENTE)).isEqualTo(EstadoUsuario.RESERVA_ESPERANDO_HORARIO);
@@ -265,11 +273,12 @@ class LocacaoStrategyTest {
     void deveManterContextoAteReceberAData() throws Exception {
         Empresa empresa = empresaComMenu();
         empresa.setGoogleCalendarId(CALENDAR_ID);
-        when(servicoGoogleagenda.dataEstaLivre(eq(CALENDAR_ID), eq(LocalDate.of(2026, 9, 16)))).thenReturn(true);
+        LocalDate dataFutura = LocalDate.now(FUSO_BRASILIA).plusDays(5);
+        when(servicoGoogleagenda.dataEstaLivre(eq(CALENDAR_ID), eq(dataFutura))).thenReturn(true);
 
         locacaoStrategy.processarMensagem(empresa, REMETENTE, "oi", "INICIO");
         locacaoStrategy.processarMensagem(empresa, REMETENTE, "3", "MENU_PRINCIPAL");
-        locacaoStrategy.processarMensagem(empresa, REMETENTE, "16-09-2026", "ESPERANDO_DATA");
+        locacaoStrategy.processarMensagem(empresa, REMETENTE, dataFutura.format(FORMATO_DATA), "ESPERANDO_DATA");
 
         InOrder ordem = inOrder(servicoMensagem);
         ordem.verify(servicoMensagem).enviarMensagemWPP(eq(empresa), eq(REMETENTE), contains("Pesquisar data disponível"));
@@ -286,9 +295,10 @@ class LocacaoStrategyTest {
     void deveInformarQuandoDataEstaReservada() throws Exception {
         Empresa empresa = empresaComAgenda();
         gerenciadorSessao.setEstado(REMETENTE, EstadoUsuario.ESPERANDO_DATA);
-        when(servicoGoogleagenda.dataEstaLivre(eq(CALENDAR_ID), eq(LocalDate.of(2026, 9, 16)))).thenReturn(false);
+        LocalDate dataFutura = LocalDate.now(FUSO_BRASILIA).plusDays(5);
+        when(servicoGoogleagenda.dataEstaLivre(eq(CALENDAR_ID), eq(dataFutura))).thenReturn(false);
 
-        locacaoStrategy.processarMensagem(empresa, REMETENTE, "16-09-2026", "ESPERANDO_DATA");
+        locacaoStrategy.processarMensagem(empresa, REMETENTE, dataFutura.format(FORMATO_DATA), "ESPERANDO_DATA");
 
         verify(servicoMensagem).enviarMensagemWPP(
                 eq(empresa), eq(REMETENTE), eq("❌ Infelizmente esta data já está reservada."));
@@ -317,6 +327,113 @@ class LocacaoStrategyTest {
 
         verify(servicoMensagem).enviarMensagemWPP(eq(empresa), eq(REMETENTE), contains("Não entendi essa data"));
         assertThat(gerenciadorSessao.getEstado(REMETENTE)).isEqualTo(EstadoUsuario.ESPERANDO_DATA);
+    }
+
+    @Test
+    @DisplayName("Pesquisa: data anterior a hoje não consulta a agenda e mantém ESPERANDO_DATA")
+    void deveRecusarDataPassadaNaPesquisa() {
+        Empresa empresa = empresaComAgenda();
+        gerenciadorSessao.setEstado(REMETENTE, EstadoUsuario.ESPERANDO_DATA);
+        String ontem = LocalDate.now(FUSO_BRASILIA).minusDays(1).format(FORMATO_DATA);
+
+        locacaoStrategy.processarMensagem(empresa, REMETENTE, ontem, "ESPERANDO_DATA");
+
+        verify(servicoMensagem).enviarMensagemWPP(
+                eq(empresa),
+                eq(REMETENTE),
+                eq("Essa data já passou. Envie uma data de hoje em diante, no formato DD-MM-AAAA, por exemplo 16-09-2026."));
+        verifyNoInteractions(servicoGoogleagenda);
+        assertThat(gerenciadorSessao.getEstado(REMETENTE)).isEqualTo(EstadoUsuario.ESPERANDO_DATA);
+    }
+
+    @Test
+    @DisplayName("Pesquisa: data de hoje continua consultando a agenda")
+    void deveConsultarAgendaQuandoDataDaPesquisaForHoje() throws Exception {
+        Empresa empresa = empresaComAgenda();
+        gerenciadorSessao.setEstado(REMETENTE, EstadoUsuario.ESPERANDO_DATA);
+        LocalDate hoje = LocalDate.now(FUSO_BRASILIA);
+        when(servicoGoogleagenda.dataEstaLivre(eq(CALENDAR_ID), eq(hoje))).thenReturn(true);
+
+        locacaoStrategy.processarMensagem(empresa, REMETENTE, hoje.format(FORMATO_DATA), "ESPERANDO_DATA");
+
+        verify(servicoGoogleagenda).dataEstaLivre(eq(CALENDAR_ID), eq(hoje));
+        verify(servicoMensagem).enviarMensagemWPP(
+                eq(empresa), eq(REMETENTE), eq("✅ Esta data está livre para locação!"));
+        assertThat(gerenciadorSessao.getEstado(REMETENTE)).isEqualTo(EstadoUsuario.INICIO);
+    }
+
+    @Test
+    @DisplayName("Reserva: data anterior a hoje não consulta a agenda e mantém RESERVA_ESPERANDO_DATA")
+    void deveRecusarDataPassadaNaReserva() {
+        Empresa empresa = empresaComAgenda();
+        empresa.setLocacaoPorHora(true);
+        gerenciadorSessao.setEstado(REMETENTE, EstadoUsuario.RESERVA_ESPERANDO_DATA);
+        String ontem = LocalDate.now(FUSO_BRASILIA).minusDays(1).format(FORMATO_DATA);
+
+        locacaoStrategy.processarMensagem(empresa, REMETENTE, ontem, "RESERVA_ESPERANDO_DATA");
+
+        verify(servicoMensagem).enviarMensagemWPP(
+                eq(empresa),
+                eq(REMETENTE),
+                eq("Essa data já passou. Envie uma data de hoje em diante, no formato DD-MM-AAAA, por exemplo 16-09-2026."));
+        verifyNoInteractions(servicoGoogleagenda);
+        assertThat(gerenciadorSessao.getEstado(REMETENTE)).isEqualTo(EstadoUsuario.RESERVA_ESPERANDO_DATA);
+    }
+
+    @Test
+    @DisplayName("Reserva: data de hoje continua consultando a agenda")
+    void deveConsultarAgendaQuandoDataDaReservaForHoje() throws Exception {
+        Empresa empresa = empresaComAgenda();
+        empresa.setLocacaoPorHora(true);
+        gerenciadorSessao.setEstado(REMETENTE, EstadoUsuario.RESERVA_ESPERANDO_DATA);
+        LocalDate hoje = LocalDate.now(FUSO_BRASILIA);
+        when(servicoGoogleagenda.dataEstaLivre(eq(CALENDAR_ID), eq(hoje))).thenReturn(true);
+
+        locacaoStrategy.processarMensagem(empresa, REMETENTE, hoje.format(FORMATO_DATA), "RESERVA_ESPERANDO_DATA");
+
+        verify(servicoGoogleagenda).dataEstaLivre(eq(CALENDAR_ID), eq(hoje));
+        verify(servicoMensagem).enviarMensagemWPP(
+                eq(empresa), eq(REMETENTE), contains("Qual horário você deseja"));
+        assertThat(gerenciadorSessao.getEstado(REMETENTE)).isEqualTo(EstadoUsuario.RESERVA_ESPERANDO_HORARIO);
+        assertThat(gerenciadorSessao.getReserva(REMETENTE).getData()).isEqualTo(hoje);
+    }
+
+    @Test
+    @DisplayName("Horário: reserva de hoje com horário já passado não grava e mantém RESERVA_ESPERANDO_HORARIO")
+    void deveRecusarHorarioPassadoQuandoReservaForHoje() {
+        Empresa empresa = empresaComAgenda();
+        empresa.setLocacaoPorHora(true);
+        gerenciadorSessao.setEstado(REMETENTE, EstadoUsuario.RESERVA_ESPERANDO_HORARIO);
+        DadosReservaSessao reserva = gerenciadorSessao.getOuCriarReserva(REMETENTE);
+        reserva.setData(LocalDate.now(FUSO_BRASILIA));
+        String horarioPassado = LocalTime.now(FUSO_BRASILIA).minusMinutes(1).format(FORMATO_HORA);
+
+        locacaoStrategy.processarMensagem(empresa, REMETENTE, horarioPassado, "RESERVA_ESPERANDO_HORARIO");
+
+        verify(servicoMensagem).enviarMensagemWPP(
+                eq(empresa),
+                eq(REMETENTE),
+                eq("Esse horário de hoje já passou. Envie um horário que ainda não passou, no formato HH:MM, por exemplo 18:00."));
+        verifyNoInteractions(servicoGoogleagenda);
+        assertThat(gerenciadorSessao.getEstado(REMETENTE)).isEqualTo(EstadoUsuario.RESERVA_ESPERANDO_HORARIO);
+        assertThat(reserva.getHorario()).isNull();
+    }
+
+    @Test
+    @DisplayName("Horário: reserva de hoje com horário ainda válido pede o nome")
+    void deveAceitarHorarioAindaValidoQuandoReservaForHoje() {
+        Empresa empresa = empresaComAgenda();
+        empresa.setLocacaoPorHora(true);
+        gerenciadorSessao.setEstado(REMETENTE, EstadoUsuario.RESERVA_ESPERANDO_HORARIO);
+        DadosReservaSessao reserva = gerenciadorSessao.getOuCriarReserva(REMETENTE);
+        reserva.setData(LocalDate.now(FUSO_BRASILIA));
+
+        locacaoStrategy.processarMensagem(empresa, REMETENTE, "23:59", "RESERVA_ESPERANDO_HORARIO");
+
+        verify(servicoMensagem).enviarMensagemWPP(
+                eq(empresa), eq(REMETENTE), contains("nome do responsável"));
+        assertThat(gerenciadorSessao.getEstado(REMETENTE)).isEqualTo(EstadoUsuario.RESERVA_ESPERANDO_NOME);
+        assertThat(reserva.getHorario()).isEqualTo("23:59");
     }
 
     private static Empresa empresa() {

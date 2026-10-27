@@ -30,6 +30,10 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
     private static final DateTimeFormatter FORMATO_HORA = DateTimeFormatter.ofPattern("H:mm");
     private static final ZoneId FUSO_BRASILIA = ZoneId.of("America/Sao_Paulo");
     private static final int DIAS_AGENDA = 15;
+    private static final String MENSAGEM_DATA_PASSADA =
+            "Essa data já passou. Envie uma data de hoje em diante, no formato DD-MM-AAAA, por exemplo 16-09-2026.";
+    private static final String MENSAGEM_HORARIO_PASSADO =
+            "Esse horário de hoje já passou. Envie um horário que ainda não passou, no formato HH:MM, por exemplo 18:00.";
     private static final String LEMBRETE_VOLTAR_MENU =
             "🔄 *Lembrete:* Digite *0* a qualquer momento da conversa para voltar ao menu inicial.";
 
@@ -216,6 +220,9 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
         if (data == null) {
             return;
         }
+        if (recusarDataPassada(empresa, numeroCliente, data)) {
+            return;
+        }
         if (!dataEstaLivreParaReserva(empresa, numeroCliente, data, texto)) {
             return;
         }
@@ -244,8 +251,22 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
             return;
         }
         DadosReservaSessao reserva = gerenciadorSessao.getOuCriarReserva(numeroCliente);
+        LocalDate dataReserva = reserva.getData();
+        if (dataReserva != null && dataReserva.equals(LocalDate.now(FUSO_BRASILIA))
+                && hora.isBefore(LocalTime.now(FUSO_BRASILIA))) {
+            servicoMensagem.enviarMensagemWPP(empresa, numeroCliente, MENSAGEM_HORARIO_PASSADO);
+            return;
+        }
         reserva.setHorario(hora.format(DateTimeFormatter.ofPattern("HH:mm")));
         pedirNome(empresa, numeroCliente);
+    }
+
+    private boolean recusarDataPassada(Empresa empresa, String numeroCliente, LocalDate data) {
+        if (!data.isBefore(LocalDate.now(FUSO_BRASILIA))) {
+            return false;
+        }
+        servicoMensagem.enviarMensagemWPP(empresa, numeroCliente, MENSAGEM_DATA_PASSADA);
+        return true;
     }
 
     private void pedirNome(Empresa empresa, String numeroCliente) {
@@ -415,6 +436,9 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
 
         LocalDate data = parseData(empresa, numeroCliente, texto);
         if (data == null) {
+            return;
+        }
+        if (recusarDataPassada(empresa, numeroCliente, data)) {
             return;
         }
 
