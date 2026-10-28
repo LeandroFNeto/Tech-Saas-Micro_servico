@@ -167,6 +167,16 @@
           formControlName="linkFotoPrincipal"
           placeholder="https://res.cloudinary.com/.../hero_image.jpg"
         />
+        @if (form.controls.linkFotoPrincipal.value) {
+          <a
+            class="inline-flex min-h-11 items-center text-sm font-semibold text-accent-800 underline"
+            [href]="form.controls.linkFotoPrincipal.value"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Abrir foto em nova aba
+          </a>
+        }
       </div>
 
       <div>
@@ -218,6 +228,17 @@
                 [attr.aria-label]="'URL da foto ' + ($index + 1) + ' da galeria'"
                 placeholder="https://res.cloudinary.com/.../foto.jpg"
               />
+              @if (url.value) {
+                <a
+                  class="inline-flex min-h-11 shrink-0 items-center px-1 text-sm font-semibold text-accent-800 underline"
+                  [href]="url.value"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  [attr.aria-label]="'Abrir foto ' + ($index + 1) + ' da galeria em nova aba'"
+                >
+                  Abrir
+                </a>
+              }
               <button class="btn-secondary shrink-0 px-3.5" type="button" (click)="removerUrlGaleria($index)">Remover</button>
             </div>
           }
@@ -280,3 +301,36 @@
     </button>
   </div>
 </form>
+
+@if (modoEdicao() && sessaoOriginal()) {
+  <section class="mt-4 flex flex-col gap-4 rounded-[20px] border border-brand-100 bg-white p-5 shadow-[0_1px_2px_rgba(46,26,71,0.05)]">
+    <div>
+      <h2 class="text-[17px] font-bold leading-6 text-brand-900">Redefinir senha de acesso</h2>
+      <p class="mt-1 text-sm text-brand-600">Define uma nova senha para o cliente. A senha atual não é necessária.</p>
+    </div>
+
+    <form class="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-end" [formGroup]="formResetSenha" (ngSubmit)="resetarSenha()">
+      <div class="min-w-0 flex-1">
+        <label class="mb-1.5 block text-sm font-semibold text-brand-800" for="empresa-nova-senha">Nova senha</label>
+        <input
+          id="empresa-nova-senha"
+          class="input-field shadow-none"
+          type="password"
+          formControlName="novaSenha"
+          autocomplete="new-password"
+          placeholder="mínimo 6 caracteres"
+        />
+      </div>
+      <button class="btn-primary min-h-12 w-full shrink-0 px-5 text-[15px] font-bold sm:w-auto" type="submit" [disabled]="salvandoSenha()">
+        {{ salvandoSenha() ? 'Salvando...' : 'Redefinir senha' }}
+      </button>
+    </form>
+
+    @if (formResetSenha.controls.novaSenha.touched && formResetSenha.controls.novaSenha.invalid) {
+      <p class="text-xs text-red-600" role="alert">Use ao menos 6 caracteres.</p>
+    }
+    @if (sucessoSenha()) {
+      <p class="rounded-xl border border-accent-200 bg-accent-50 px-4 py-3 text-sm text-brand-800" role="status">{{ sucessoSenha() }}</p>
+    }
+  </section>
+}

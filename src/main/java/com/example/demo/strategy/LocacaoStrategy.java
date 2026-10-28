@@ -374,7 +374,7 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
             }
             return true;
         } catch (Exception e) {
-            Log.warn("Falha ao consultar Google Agenda na reserva para {}: {}", textoOriginal, e.getMessage());
+            Log.warn("Falha ao consultar Google Agenda na reserva: {}", e.getClass().getSimpleName());
             servicoMensagem.enviarMensagemWPP(
                     empresa, numeroCliente, "Não consegui consultar a agenda agora. Tente novamente em instantes.");
             return false;
@@ -397,7 +397,7 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
                     calendarId, hoje, hoje.plusDays(DIAS_AGENDA));
             servicoMensagem.enviarMensagemWPP(empresa, numeroCliente, montarListaProximosDias(hoje, ocupadas));
         } catch (Exception e) {
-            Log.warn("Falha ao listar agenda dos próximos {} dias: {}", DIAS_AGENDA, e.getMessage());
+            Log.warn("Falha ao listar agenda dos próximos {} dias: {}", DIAS_AGENDA, e.getClass().getSimpleName());
             servicoMensagem.enviarMensagemWPP(
                     empresa,
                     numeroCliente,
@@ -423,7 +423,7 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
     }
 
     private void tratarDataInformada(Empresa empresa, String numeroCliente, String texto) {
-        Log.info("Buscando data: " + texto);
+        Log.info("Buscando data informada pelo cliente.");
         String calendarId = empresa.getGoogleCalendarId();
         if (calendarId == null || calendarId.isBlank()) {
             servicoMensagem.enviarMensagemWPP(
@@ -449,7 +449,7 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
                     : "❌ Infelizmente esta data já está reservada.";
             servicoMensagem.enviarMensagemWPP(empresa, numeroCliente, resposta);
         } catch (Exception e) {
-            Log.warn("Falha ao consultar Google Agenda para {}: {}", texto, e.getMessage());
+            Log.warn("Falha ao consultar Google Agenda: {}", e.getClass().getSimpleName());
             servicoMensagem.enviarMensagemWPP(
                     empresa,
                     numeroCliente,

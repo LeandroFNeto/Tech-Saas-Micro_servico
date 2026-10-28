@@ -41,15 +41,18 @@
         </div>
         <div>
           <span class="mb-0.5 block text-[11px] font-semibold uppercase leading-4 tracking-[0.06em] text-brand-600 min-[1100px]:hidden">Status</span>
-          <span
-            class="chip"
-            [class.bg-accent-50]="empresa.statusSessao === 'CONNECTED'"
-            [class.text-accent-800]="empresa.statusSessao === 'CONNECTED'"
-            [class.bg-brand-100]="empresa.statusSessao !== 'CONNECTED'"
-            [class.text-brand-700]="empresa.statusSessao !== 'CONNECTED'"
-          >
-            {{ empresa.statusSessao || (empresa.usaIA ? 'IA ativa' : 'Padrão') }}
-          </span>
+          @if (statusDe(empresa.sessaoWhatsapp) === 'CONNECTED') {
+            <span class="chip bg-accent-50 text-accent-700">
+              <span class="h-2 w-2 rounded-full bg-accent-500" aria-hidden="true"></span>
+              WhatsApp Online
+            </span>
+          } @else if (statusDe(empresa.sessaoWhatsapp) === 'DISCONNECTED') {
+            <span class="chip bg-brand-100 text-brand-700">Desconectado</span>
+          } @else if (statusDe(empresa.sessaoWhatsapp) === 'QRCODE') {
+            <span class="chip bg-amber-50 text-amber-800">Aguardando leitura</span>
+          } @else {
+            <span class="chip bg-brand-50 text-brand-500" role="status">Consultando...</span>
+          }
         </div>
         <div>
           <span class="mb-0.5 block text-[11px] font-semibold uppercase leading-4 tracking-[0.06em] text-brand-600 min-[1100px]:hidden">Módulos</span>

@@ -27,7 +27,9 @@
         "placeholder": "https://res.cloudinary.com/.../hero_image.jpg",
         "dica": "Cole a URL pública da imagem principal. Toque na miniatura para ver maior.",
         "alt": "Prévia da foto principal",
-        "verMaior": "Ver foto principal maior"
+        "verMaior": "Ver foto principal maior",
+        "enviar": "Enviar foto principal",
+        "abrir": "Abrir foto em nova aba"
       },
       "galeria": {
         "rotuloInicio": "Galeria de fotos (até",
@@ -40,13 +42,20 @@
         "imagemSelecionada": "Imagem selecionada",
         "altVisualizacao": "Imagem selecionada para visualização",
         "rotuloEntrada": "URL da foto da galeria",
-        "verMaior": "Ver foto da galeria maior"
+        "verMaior": "Ver foto da galeria maior",
+        "enviar": "Enviar fotos",
+        "abrir": "Abrir"
       },
       "linkGaleria": {
         "rotulo": "Link da galeria no Google Drive (opcional)",
         "placeholder": "https://drive.google.com/drive/folders/...",
         "dica": "O bot envia este link no WhatsApp junto com a foto principal, para o cliente ver fotos e vídeos em alta qualidade."
       }
+    },
+    "editor": {
+      "negrito": "Negrito",
+      "italico": "Itálico",
+      "limitado": "O texto foi limitado a 1000 caracteres para evitar bloqueios por spam."
     },
     "robo": {
       "titulo": "Configurações do Robô",

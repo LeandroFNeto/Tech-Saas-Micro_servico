@@ -5,7 +5,13 @@ import com.example.demo.servico.ServicoMensagem;
 import com.example.demo.servico.observador.Observadorwhatsapp;
 import com.example.demo.strategy.FactoryModulo;
 import io.cucumber.datatable.DataTable;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
+import io.cucumber.java.After;
+import io.cucumber.java.pt.Dado;
 import io.cucumber.java.pt.E;
+import org.slf4j.LoggerFactory;
 import io.cucumber.java.pt.Quando;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -15,6 +21,7 @@ import org.springframework.test.web.servlet.MvcResult;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.contains;
@@ -31,6 +38,42 @@ public class WebhookSteps {
     @Autowired private Observadorwhatsapp observador;
     @Autowired private FactoryModulo factoryModulo;
     @Autowired private ServicoMensagem servicoMensagem;
+
+    private ListAppender<ILoggingEvent> capturaLog;
+
+    @Dado("que a saída de log está sendo capturada")
+    public void capturarLog() {
+        Logger raiz = (Logger) LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
+        capturaLog = new ListAppender<>();
+        capturaLog.start();
+        raiz.addAppender(capturaLog);
+    }
+
+    @After
+    public void pararCapturaLog() {
+        if (capturaLog != null) {
+            Logger raiz = (Logger) LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
+            raiz.detachAppender(capturaLog);
+            capturaLog.stop();
+            capturaLog = null;
+        }
+    }
+
+    @E("a saída de log deve conter {string}")
+    public void logContem(String trecho) {
+        assertThat(textoCapturado()).contains(trecho);
+    }
+
+    @E("a saída de log não deve conter {string}")
+    public void logNaoContem(String trecho) {
+        assertThat(textoCapturado()).doesNotContain(trecho);
+    }
+
+    private String textoCapturado() {
+        return capturaLog.list.stream()
+                .map(ILoggingEvent::getFormattedMessage)
+                .collect(Collectors.joining("\n"));
+    }
 
     @Quando("eu envio POST \\/webhook\\/whatsapp com o WhatsappWebhookDTO:")
     public void postWebhook(DataTable tabela) throws Exception {

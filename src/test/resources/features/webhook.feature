@@ -38,3 +38,18 @@ Funcionalidade: Webhook WhatsApp tipado
       | body    | foto              |
     Então o status HTTP deve ser 200
     E o observador deve registrar filtro contendo "ignorada"
+
+  Cenário: mensagem recebida e resposta enviada não deixam número completo nem texto no log
+    Dado que a saída de log está sendo capturada
+    E uma empresa persistida com sessão "sessao_logs" e ramo "LOCACAO"
+    Quando eu envio POST /webhook/whatsapp com o WhatsappWebhookDTO:
+      | session | sessao_logs                         |
+      | type    | chat                                |
+      | fromMe  | false                               |
+      | from    | 5511955553333@c.us                  |
+      | body    | Quero alugar o salao para sabado    |
+    Então o status HTTP deve ser 200
+    E a LocacaoStrategy deve ter processado a mensagem
+    E a saída de log deve conter "***3333"
+    E a saída de log não deve conter "5511955553333"
+    E a saída de log não deve conter "Quero alugar o salao para sabado"

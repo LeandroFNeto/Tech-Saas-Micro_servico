@@ -158,3 +158,31 @@ Cenário: hoje com horário ainda válido continua o fluxo
 - Quando, com a data de hoje na reserva, o cliente envia um horário que ainda não passou
 - Então o horário é gravado
 - E o bot pede o nome do responsável e o estado passa a `RESERVA_ESPERANDO_NOME`
+
+### WPP-06 Atendimento sem dado pessoal nos logs
+
+O sistema deve registrar o atendimento no log sem número de telefone completo, texto de mensagem, nome de cliente final, e-mail completo, token, senha nem identificador da agenda; o número aparece mascarado com os 4 últimos dígitos e o texto, só pelo tamanho; erros registram a classe da exceção e o código HTTP, nunca a mensagem; o detalhe técnico de cada evento do webhook só aparece em nível DEBUG.
+
+Contrato: nenhum (não há rota nem DTO de API novo)
+Prova: `src/test/resources/features/webhook.feature`, `src/test/java/com/example/demo/util/MascaraLogTest.java`, `src/test/java/com/example/demo/servico/observador/ObservadorwhatsappTest.java`, `src/test/java/com/example/demo/servico/observador/ObservadorGoogleAgendaTest.java`, `src/test/java/com/example/demo/dto/WhatsappWebhookDTORaioXTest.java`, `src/test/java/com/example/demo/servico/ServicoWppConnectLogTest.java`, `src/test/java/com/example/demo/strategy/LocacaoStrategyLogTest.java`
+
+Cenário: mensagem recebida e resposta enviada
+
+- Dado uma empresa `LOCACAO` na sessão informada e a saída de log capturada
+- Quando chega POST `/webhook/whatsapp` com `type=chat`, remetente `5511955553333@c.us` e texto
+- Então a API responde 200
+- E o log contém o número mascarado `***3333` e o tamanho do texto
+- E o log não contém o número completo nem o texto da mensagem recebida ou da resposta enviada
+
+Cenário: mensagem de grupo com participante
+
+- Dado o nível DEBUG ligado
+- Quando chega um evento com id `false_<grupo>@g.us_<hash>_<participante>@c.us`
+- Então o resumo técnico do evento traz id, tipo, `isGroupMsg`, `fromMe`, número mascarado e tamanho do texto
+- E não contém o número do grupo, o número do participante, `body` nem `content`
+
+Cenário: erro HTTP do WPPConnect
+
+- Quando o envio ou a consulta ao WPPConnect falha com erro HTTP cujo corpo traz nome ou segredo
+- Então o log registra a sessão, o número mascarado, a classe da exceção e o código HTTP
+- E não registra a mensagem da exceção, o corpo da resposta, o token nem o nome do cliente

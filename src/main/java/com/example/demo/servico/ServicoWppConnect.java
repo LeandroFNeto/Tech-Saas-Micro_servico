@@ -1,6 +1,8 @@
 package com.example.demo.servico;
 
 import com.example.demo.dto.whatsapp.SessaoStatusResponseDTO;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -19,6 +21,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class ServicoWppConnect {
+
+    private static final Logger log = LoggerFactory.getLogger(ServicoWppConnect.class);
 
     @Value("${wppconnect.url}")
     private String urlBase;
@@ -50,18 +54,18 @@ public class ServicoWppConnect {
 
             if (resposta != null && resposta.get("token") instanceof String token) {
                 tokensPorSessao.put(sessao, token);
-                System.out.println("✅ Novo Token WPPConnect gerado com sucesso para a sessão: " + sessao);
+                log.info("Novo token WPPConnect gerado para a sessão {}", sessao);
                 return token;
             }
         } catch (Exception e) {
-            System.out.println("⚠️ Erro ao obter token para a sessão " + sessao + ": " + e.getMessage());
+            log.warn("Erro ao obter token para a sessão {}: {}", sessao, e.getClass().getSimpleName());
         }
         return "";
     }
 
     public void invalidarToken() {
         tokensPorSessao.clear();
-        System.out.println("🔄 Token WPPConnect invalidado. Um novo será gerado na próxima requisição.");
+        log.info("Tokens WPPConnect invalidados");
     }
 
     public void invalidarToken(String sessao) {
@@ -74,7 +78,7 @@ public class ServicoWppConnect {
             return;
         }
         qrcodesPorSessao.put(sessao, normalizado);
-        System.out.println("✅ QR Code em cache para a sessão: " + sessao);
+        log.info("QR Code em cache para a sessão {}", sessao);
     }
 
     public SessaoStatusResponseDTO consultarStatus(String sessao) {
@@ -104,10 +108,10 @@ public class ServicoWppConnect {
             try {
                 return dispararStartSession(sessao);
             } catch (Exception retry) {
-                System.out.println("⚠️ Falha ao iniciar sessão WPPConnect (" + sessao + "): " + retry.getMessage());
+                log.warn("Falha ao iniciar sessão WPPConnect {}: {}", sessao, retry.getClass().getSimpleName());
             }
         } catch (Exception e) {
-            System.out.println("⚠️ Falha ao iniciar sessão WPPConnect (" + sessao + "): " + e.getMessage());
+            log.warn("Falha ao iniciar sessão WPPConnect {}: {}", sessao, e.getClass().getSimpleName());
         }
         return consultarStatus(sessao);
     }
@@ -116,8 +120,6 @@ public class ServicoWppConnect {
     private SessaoStatusResponseDTO dispararStartSession(String sessao) {
         Map<String, Object> body = new HashMap<>();
         body.put("webhook", webhookUrl);
-        // false: o Chromium abre em segundo plano. true faz o Java esperar o QR
-        // e, se a sessão antiga auto-fechar, a requisição fica presa até o timeout.
         body.put("waitQrCode", false);
         Map<String, Object> corpo = chamarWpp(sessao, "/start-session", HttpMethod.POST, body, Map.class);
         SessaoStatusResponseDTO dto = paraDto(sessao, corpo);
@@ -242,7 +244,7 @@ public class ServicoWppConnect {
     }
 
     private SessaoStatusResponseDTO desconectado(String sessao, Exception e) {
-        System.out.println("⚠️ Falha ao consultar status WPPConnect (" + sessao + "): " + e.getMessage());
+        log.warn("Falha ao consultar status WPPConnect {}: {}", sessao, e.getClass().getSimpleName());
         return new SessaoStatusResponseDTO(sessao, "DISCONNECTED", null);
     }
 }

@@ -258,6 +258,15 @@
         "anel": "ring-2",
         "cor": "ring-accent-500"
       },
+      "editor": {
+        "barra": "mb-1.5 flex items-center justify-between gap-2",
+        "botoes": "flex shrink-0 gap-1.5",
+        "botao": "btn-secondary min-h-11 min-w-11 px-3 text-sm",
+        "contador": "mt-1 text-right text-xs text-brand-600",
+        "aviso": "mt-1 text-xs text-accent-800"
+      },
+      "upload": "btn-secondary mt-2 w-full sm:w-auto",
+      "link": "inline-flex min-h-11 items-center text-sm font-semibold text-accent-800 underline",
       "foto": {
         "linha": "flex items-center gap-2",
         "botao": "shrink-0 rounded-xl ring-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-400",
@@ -267,6 +276,8 @@
       "galeria": {
         "cabecalho": "mb-1.5 flex flex-wrap items-center justify-between gap-2",
         "rotulo": "text-sm font-semibold leading-5 text-brand-800",
+        "acoes": "flex flex-wrap gap-2",
+        "link": "inline-flex min-h-11 shrink-0 items-center px-1 text-sm font-semibold text-accent-800 underline",
         "botaoAdicionar": "btn-secondary shrink-0 px-3.5 disabled:cursor-not-allowed disabled:opacity-60",
         "dica": "mb-2.5 text-[13px] leading-[18px] text-brand-600",
         "lista": "flex flex-col gap-2",
