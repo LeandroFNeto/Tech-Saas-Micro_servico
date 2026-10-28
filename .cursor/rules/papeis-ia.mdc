@@ -1,0 +1,48 @@
+---
+description: Orquestrador horadoshow — um agente por etapa, na ordem e no modelo da skill
+alwaysApply: true
+---
+
+# Papéis da equipe
+
+O procedimento está em `.cursor/skills/horadoshow/SKILL.md`. A lista de skills do assunto está em `.cursor/skills/horadoshow/acopladas.md`. O quadro está em `openspec/central-tarefas.md`.
+
+## Ordem
+
+Pesquisa e proposta acontecem antes do chamado. `horadoshow <nome>` abre `openspec/changes/<nome>/` e encaminha, nesta ordem: programação, testes, qualidade, segurança, revisão, deploy. A sessão que recebeu o chamado não executa o papel. Abre um agente no modelo da skill, espera a central mudar e encerra esse agente.
+
+A programação só começa com `aprovado` gravado pela pessoa na linha da central.
+
+## Modelos
+
+O agente usa a coluna da ferramenta em que está rodando, Cursor ou Claude, sem misturar. Em dúvida, pergunta uma vez.
+
+| Etapa | Cursor | Claude |
+|---|---|---|
+| Pesquisa | `cursor-grok-4.6-low` | `claude-haiku-5-5` |
+| Proposta | `grok-4.7-high-fast` | `claude-sonnet-5-5` |
+| Programação | `claude-sonnet-5-5-high` | `claude-sonnet-5-5` |
+| Testes | `gemini-4-argon-medium` | `claude-sonnet-5-5` |
+| Qualidade | `gpt-5.6-sol-medium` | `claude-sonnet-5-5`, em agente novo |
+| Segurança | `claude-opus-5-5-medium` | `claude-opus-5-5` |
+| Revisão e spec definitiva | `claude-opus-5-5-medium` | `claude-opus-5-5` |
+| Deploy | `cursor-grok-4.6-low` | `claude-haiku-5-5` |
+| Explicação | `cursor-grok-4.6-low` | `claude-haiku-5-5` |
+
+No Claude, "abrir um agente" é um subagente em primeiro plano (`Agent` com o `model` da coluna) ou uma sessão nova nesse modelo. No Cursor é um agente novo no modelo da coluna.
+
+Exceção: quando a change mexe em elemento visual, a skill `.cursor/skills/diasabatico/SKILL.md` fixa a parte visual da programação (HTML, Tailwind e `especificacao/front/`) no Opus da coluna da ferramenta. O resto da programação segue a tabela.
+
+## Regras de trabalho
+
+- Sem comentários no código. O comportamento está na spec (`openspec/`), não no código. Vale para código novo e para trechos alterados; comentário existente só sai quando o arquivo for mexido.
+- Explicação para a pessoa (como algo funciona, por que algo quebrou, resumo do que foi feito) roda no modelo da linha Explicação. Só sobe para o modelo da Proposta quando a explicação depende de raciocínio que o mais barato não dá conta.
+- Pesquisa no código pelo Graphify. Para achar arquivo, símbolo ou dependência, use `graphify query "<pergunta>"`, `graphify path "<A>" "<B>"` ou `graphify explain "<conceito>"` antes de Glob, Grep ou Read. Leia ou procure direto só depois de o grafo indicar o arquivo, ou se `graphify-out/graph.json` não existir. Depois de criar ou alterar arquivo, rode `graphify update .` uma vez no fim do turno ou da etapa. Vale para todo agente e subagente, e o prompt de cada um leva essa regra. Detalhe em `.cursor/rules/graphify.mdc` e `.cursor/rules/graphify-update.mdc`.
+
+## Skill nova
+
+Toda skill nova que escolhe modelo ou etapa nasce com as duas colunas, Cursor e Claude, no mesmo nível de potência, e ganha uma linha em `.cursor/skills/horadoshow/acopladas.md`. Alterar uma skill existente que só tem uma coluna é completar a outra. Os modelos vêm desta tabela; modelo novo entra aqui primeiro. Toda skill nova traz também a seção "Pesquisa no código" (Graphify), igual à das skills atuais.
+
+## Parada
+
+No máximo 2 voltas. A terceira reprovação para e chama a pessoa. Tela sem rota, autenticação ou dado não chama o subagente de segurança. A revisão grava a spec definitiva. O deploy só arquiva e sobe: front em `producao` (Vercel), código completo em `main` (Hostinger).

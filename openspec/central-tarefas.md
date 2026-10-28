@@ -4,7 +4,7 @@ Arquivo em comum da equipe. Cada agente atualiza a própria linha ao começar e 
 
 | Tarefa | Etapa | IA | Local | Voltas | Estado |
 |---|---|---|---|---|---|
-| [definir-papeis-ia-desenvolvimento](archive/definir-papeis-ia-desenvolvimento/) | revisão | `claude-opus-5-5-medium` | `openspec/specs/desenvolvimento/spec.md` | 0 | aprovado |
+| [definir-papeis-ia-desenvolvimento](archive/definir-papeis-ia-desenvolvimento/) | deploy | `claude-opus-5-5-medium` | `openspec/specs/desenvolvimento/spec.md` | 0 | aprovado |
 | [recusar-data-passada-conversa](archive/recusar-data-passada-conversa/) | deploy | `cursor-grok-4.6-low` | `openspec/archive/recusar-data-passada-conversa/` | 0 | aprovado |
 | [aplicar-novo-design-front](archive/aplicar-novo-design-front/) | deploy | `claude-haiku-5-5` | `openspec/archive/aplicar-novo-design-front/` | 0 | aprovado |
 | [proteger-dados-nos-logs](archive/proteger-dados-nos-logs/) | deploy | `claude-haiku-5-5` | `openspec/archive/proteger-dados-nos-logs/` | 2 | aprovado |

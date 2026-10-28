@@ -11,6 +11,7 @@ Esta pasta é a fonte da verdade do que o sistema faz. Cada domínio fica numa s
 | Google Agenda | `agenda/spec.md` | `observer-agenda.feature` |
 | Comunicados do painel | `avisos/spec.md` | `ControllerAvisoTest` |
 | Consulta em grafo para a IA | `ia/spec.md` | `ConsultaEmpresaGrafoTest`, `ia-query.feature` |
+| Equipe de desenvolvimento | `desenvolvimento/spec.md` | teste automatizado ainda não existe |
 
 ## O que cada dono guarda
 
