@@ -26,7 +26,7 @@ public record EmpresaCreateDTO(
                 example = "abc123@group.calendar.google.com")
         String googleCalendarId,
 
-        @Schema(description = "Quando true, o bot já nasce com a reserva automática habilitada no WhatsApp",
+        @Schema(description = "Quando true, liga a reserva automática no WhatsApp e exige googleCalendarId preenchido (400 sem agenda). Ausente ou false, a empresa nasce com a reserva automática desligada",
                 example = "false")
         Boolean permiteReservaAutomatica,
 

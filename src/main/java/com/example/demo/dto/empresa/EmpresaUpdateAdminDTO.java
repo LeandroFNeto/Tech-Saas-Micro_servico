@@ -17,6 +17,9 @@ public record EmpresaUpdateAdminDTO(
                 example = "abc123@group.calendar.google.com")
         String googleCalendarId,
 
+        @Schema(description = "Liga ou desliga a reserva automática. Ligar exige googleCalendarId cadastrado", example = "false")
+        Boolean permiteReservaAutomatica,
+
         @Schema(description = "URL pública da foto principal (Hero Image) hospedada no Cloudinary",
                 example = "https://res.cloudinary.com/demo/image/upload/v1/hero_image.jpg")
         String linkFotoPrincipal,

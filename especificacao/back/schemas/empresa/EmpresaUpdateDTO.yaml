@@ -38,7 +38,7 @@ properties:
     example: "https://drive.google.com/drive/folders/exemplo"
   permiteReservaAutomatica:
     type: boolean
-    description: Ativa ou desativa a reserva automática pelo bot no WhatsApp
+    description: Somente leitura para o cliente. Valor igual ao atual é ignorado; valor diferente responde 400 e nada é gravado. Quem liga ou desliga é o admin.
     default: false
     example: false
   locacaoPorHora:

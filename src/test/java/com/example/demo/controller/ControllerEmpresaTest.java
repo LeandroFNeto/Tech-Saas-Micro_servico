@@ -160,13 +160,50 @@ class ControllerEmpresaTest {
         assertEquals("GOOGLE_CALENDAR", empresa.getModulosAtivos().get(0).getCodigoAcao());
     }
 
+    private void exigirMensagem(org.springframework.test.web.servlet.MvcResult resultado, String trecho) {
+        assertTrue(resultado.getResolvedException().getMessage().contains(trecho));
+    }
+
+    private static String corpoPost(String extras) {
+        return "{\"nome\":\"Recanto Vista Alegre\",\"sessaoWhatsapp\":\"sessao_recanto_01\","
+                + "\"ramoDeAtuacao\":\"locacao\",\"email\":\"cliente@recanto.com\","
+                + "\"senha\":\"SenhaCliente123\"" + extras + "}";
+    }
+
     @Test
-    @DisplayName("PUT /empresas/{sessao}/cliente persiste permiteReservaAutomatica")
-    void deveAtualizarFlagDeReservaAutomaticaPeloCliente() throws Exception {
+    @DisplayName("PUT /empresas/{sessao}/cliente com valor diferente de permiteReservaAutomatica retorna 400 e não grava")
+    void deveRecusarMudancaDeReservaAutomaticaPeloCliente() throws Exception {
         Empresa empresa = new Empresa();
         empresa.setId(1L);
         empresa.setSessaoWhatsapp("sessao_recanto_01");
         empresa.setPermiteReservaAutomatica(false);
+        autenticarComoClienteDe(empresa);
+        when(empresaRepository.buscarPorSessaoComModulos("sessao_recanto_01")).thenReturn(empresa);
+
+        mockMvc.perform(put("/empresas/sessao_recanto_01/cliente")
+                        .header("x-cliente-token", "token-cliente")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                              "nome": "Recanto Vista Alegre",
+                              "permiteReservaAutomatica": true
+                            }
+                            """))
+                .andExpect(status().isBadRequest())
+                .andExpect(resultado -> exigirMensagem(resultado, "A reserva automática é liberada pelo administrador."));
+
+        verify(empresaRepository, never()).save(any(Empresa.class));
+        assertEquals(false, empresa.getPermiteReservaAutomatica());
+        assertEquals(null, empresa.getNome());
+    }
+
+    @Test
+    @DisplayName("PUT /empresas/{sessao}/cliente com permiteReservaAutomatica igual ao atual é aceito e ignorado")
+    void deveAceitarValorIgualDeReservaAutomaticaPeloCliente() throws Exception {
+        Empresa empresa = new Empresa();
+        empresa.setId(1L);
+        empresa.setSessaoWhatsapp("sessao_recanto_01");
+        empresa.setPermiteReservaAutomatica(true);
         autenticarComoClienteDe(empresa);
         when(empresaRepository.buscarPorSessaoComModulos("sessao_recanto_01")).thenReturn(empresa);
         when(empresaRepository.save(any(Empresa.class))).thenAnswer(invocacao -> invocacao.getArgument(0));
@@ -184,6 +221,346 @@ class ControllerEmpresaTest {
                 .andExpect(jsonPath("$.permiteReservaAutomatica").value(true));
 
         assertTrue(Boolean.TRUE.equals(empresa.getPermiteReservaAutomatica()));
+        assertEquals("Recanto Vista Alegre", empresa.getNome());
+    }
+
+    @Test
+    @DisplayName("PUT /empresas/{sessao}/cliente sem permiteReservaAutomatica mantém o valor atual")
+    void deveManterReservaAutomaticaQuandoClienteNaoEnviaOCampo() throws Exception {
+        Empresa empresa = new Empresa();
+        empresa.setId(1L);
+        empresa.setSessaoWhatsapp("sessao_recanto_01");
+        empresa.setPermiteReservaAutomatica(true);
+        autenticarComoClienteDe(empresa);
+        when(empresaRepository.buscarPorSessaoComModulos("sessao_recanto_01")).thenReturn(empresa);
+        when(empresaRepository.save(any(Empresa.class))).thenAnswer(invocacao -> invocacao.getArgument(0));
+
+        mockMvc.perform(put("/empresas/sessao_recanto_01/cliente")
+                        .header("x-cliente-token", "token-cliente")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                              "nome": "Recanto Vista Alegre"
+                            }
+                            """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.permiteReservaAutomatica").value(true));
+
+        assertTrue(Boolean.TRUE.equals(empresa.getPermiteReservaAutomatica()));
+    }
+
+    @Test
+    @DisplayName("POST /empresas ligando a reserva automática sem agenda retorna 400 e não grava")
+    void deveRecusarCadastroComReservaAutomaticaSemAgenda() throws Exception {
+        when(empresaRepository.findBySessaoWhatsapp("sessao_recanto_01")).thenReturn(null);
+
+        mockMvc.perform(post("/empresas")
+                        .header("x-admin-token", "sua-chave-admin")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(corpoPost(",\"permiteReservaAutomatica\":true")))
+                .andExpect(status().isBadRequest())
+                .andExpect(resultado -> exigirMensagem(resultado, "Cadastre a agenda do Google antes de ligar a reserva automática."));
+
+        verify(empresaRepository, never()).save(any(Empresa.class));
+    }
+
+    @Test
+    @DisplayName("POST /empresas ligando a reserva automática com agenda em branco retorna 400")
+    void deveRecusarCadastroComReservaAutomaticaEAgendaEmBranco() throws Exception {
+        when(empresaRepository.findBySessaoWhatsapp("sessao_recanto_01")).thenReturn(null);
+
+        mockMvc.perform(post("/empresas")
+                        .header("x-admin-token", "sua-chave-admin")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(corpoPost(",\"permiteReservaAutomatica\":true,\"googleCalendarId\":\"   \"")))
+                .andExpect(status().isBadRequest());
+
+        verify(empresaRepository, never()).save(any(Empresa.class));
+    }
+
+    @Test
+    @DisplayName("POST /empresas ligando a reserva automática com agenda grava a flag")
+    void deveCadastrarComReservaAutomaticaEAgenda() throws Exception {
+        when(empresaRepository.findBySessaoWhatsapp("sessao_recanto_01")).thenReturn(null);
+        when(empresaRepository.save(any(Empresa.class))).thenAnswer(invocacao -> {
+            Empresa empresa = invocacao.getArgument(0);
+            empresa.setId(1L);
+            return empresa;
+        });
+
+        mockMvc.perform(post("/empresas")
+                        .header("x-admin-token", "sua-chave-admin")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(corpoPost(",\"permiteReservaAutomatica\":true,\"googleCalendarId\":\"agenda@group.calendar.google.com\"")))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.permiteReservaAutomatica").value(true));
+
+        ArgumentCaptor<Empresa> captor = ArgumentCaptor.forClass(Empresa.class);
+        verify(empresaRepository).save(captor.capture());
+        assertTrue(Boolean.TRUE.equals(captor.getValue().getPermiteReservaAutomatica()));
+        assertEquals("agenda@group.calendar.google.com", captor.getValue().getGoogleCalendarId());
+    }
+
+    @Test
+    @DisplayName("POST /empresas sem agenda e sem ligar a reserva automática funciona")
+    void deveCadastrarSemAgendaQuandoReservaAutomaticaDesligada() throws Exception {
+        when(empresaRepository.findBySessaoWhatsapp("sessao_recanto_01")).thenReturn(null);
+        when(empresaRepository.save(any(Empresa.class))).thenAnswer(invocacao -> {
+            Empresa empresa = invocacao.getArgument(0);
+            empresa.setId(1L);
+            return empresa;
+        });
+
+        mockMvc.perform(post("/empresas")
+                        .header("x-admin-token", "sua-chave-admin")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(corpoPost("")))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.permiteReservaAutomatica").value(false));
+
+        ArgumentCaptor<Empresa> captor = ArgumentCaptor.forClass(Empresa.class);
+        verify(empresaRepository).save(captor.capture());
+        assertEquals(false, Boolean.TRUE.equals(captor.getValue().getPermiteReservaAutomatica()));
+    }
+
+    @Test
+    @DisplayName("PUT /empresas/{sessao}/admin ligando a reserva automática sem agenda retorna 400 e não grava")
+    void deveRecusarLigarReservaAutomaticaSemAgendaPeloAdmin() throws Exception {
+        Empresa empresa = new Empresa();
+        empresa.setId(1L);
+        empresa.setSessaoWhatsapp("sessao_recanto_01");
+        when(empresaRepository.buscarPorSessaoComModulos("sessao_recanto_01")).thenReturn(empresa);
+
+        mockMvc.perform(put("/empresas/sessao_recanto_01/admin")
+                        .header("x-admin-token", "sua-chave-admin")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                              "permiteReservaAutomatica": true
+                            }
+                            """))
+                .andExpect(status().isBadRequest())
+                .andExpect(resultado -> exigirMensagem(resultado, "Cadastre a agenda do Google antes de ligar a reserva automática."));
+
+        verify(empresaRepository, never()).save(any(Empresa.class));
+        assertEquals(false, empresa.getPermiteReservaAutomatica());
+    }
+
+    @Test
+    @DisplayName("PUT /empresas/{sessao}/admin ligando e apagando a agenda no mesmo pedido retorna 400")
+    void deveRecusarLigarReservaAutomaticaApagandoAAgenda() throws Exception {
+        Empresa empresa = empresaDe(1L, "sessao_recanto_01");
+        when(empresaRepository.buscarPorSessaoComModulos("sessao_recanto_01")).thenReturn(empresa);
+
+        mockMvc.perform(put("/empresas/sessao_recanto_01/admin")
+                        .header("x-admin-token", "sua-chave-admin")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                              "permiteReservaAutomatica": true,
+                              "googleCalendarId": ""
+                            }
+                            """))
+                .andExpect(status().isBadRequest());
+
+        verify(empresaRepository, never()).save(any(Empresa.class));
+        assertEquals("agenda-sessao_recanto_01@group.calendar.google.com", empresa.getGoogleCalendarId());
+    }
+
+    @Test
+    @DisplayName("PUT /empresas/{sessao}/admin ligando com agenda já cadastrada grava a flag")
+    void deveLigarReservaAutomaticaComAgendaJaCadastrada() throws Exception {
+        Empresa empresa = empresaDe(1L, "sessao_recanto_01");
+        when(empresaRepository.buscarPorSessaoComModulos("sessao_recanto_01")).thenReturn(empresa);
+        when(empresaRepository.save(any(Empresa.class))).thenAnswer(invocacao -> invocacao.getArgument(0));
+
+        mockMvc.perform(put("/empresas/sessao_recanto_01/admin")
+                        .header("x-admin-token", "sua-chave-admin")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                              "permiteReservaAutomatica": true
+                            }
+                            """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.permiteReservaAutomatica").value(true));
+
+        assertTrue(Boolean.TRUE.equals(empresa.getPermiteReservaAutomatica()));
+    }
+
+    @Test
+    @DisplayName("PUT /empresas/{sessao}/admin ligando junto com uma agenda nova grava as duas")
+    void deveLigarReservaAutomaticaJuntoComAgendaNova() throws Exception {
+        Empresa empresa = new Empresa();
+        empresa.setId(1L);
+        empresa.setSessaoWhatsapp("sessao_recanto_01");
+        when(empresaRepository.buscarPorSessaoComModulos("sessao_recanto_01")).thenReturn(empresa);
+        when(empresaRepository.save(any(Empresa.class))).thenAnswer(invocacao -> invocacao.getArgument(0));
+
+        mockMvc.perform(put("/empresas/sessao_recanto_01/admin")
+                        .header("x-admin-token", "sua-chave-admin")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                              "permiteReservaAutomatica": true,
+                              "googleCalendarId": "nova@group.calendar.google.com"
+                            }
+                            """))
+                .andExpect(status().isOk());
+
+        assertTrue(Boolean.TRUE.equals(empresa.getPermiteReservaAutomatica()));
+        assertEquals("nova@group.calendar.google.com", empresa.getGoogleCalendarId());
+    }
+
+    @Test
+    @DisplayName("PUT /empresas/{sessao}/admin apaga a agenda de empresa ligada sem erro")
+    void devePermitirApagarAgendaDeEmpresaComReservaAutomaticaLigada() throws Exception {
+        Empresa empresa = empresaDe(1L, "sessao_recanto_01");
+        empresa.setPermiteReservaAutomatica(true);
+        when(empresaRepository.buscarPorSessaoComModulos("sessao_recanto_01")).thenReturn(empresa);
+        when(empresaRepository.save(any(Empresa.class))).thenAnswer(invocacao -> invocacao.getArgument(0));
+
+        mockMvc.perform(put("/empresas/sessao_recanto_01/admin")
+                        .header("x-admin-token", "sua-chave-admin")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                              "googleCalendarId": ""
+                            }
+                            """))
+                .andExpect(status().isOk());
+
+        assertEquals(null, empresa.getGoogleCalendarId());
+        assertTrue(Boolean.TRUE.equals(empresa.getPermiteReservaAutomatica()));
+    }
+
+    @Test
+    @DisplayName("PUT /empresas/{sessao}/admin com true em empresa já ligada e sem agenda retorna 200")
+    void deveAceitarTrueEmEmpresaJaLigadaSemAgenda() throws Exception {
+        Empresa empresa = empresaDe(1L, "sessao_recanto_01");
+        empresa.setPermiteReservaAutomatica(true);
+        empresa.setGoogleCalendarId(null);
+        when(empresaRepository.buscarPorSessaoComModulos("sessao_recanto_01")).thenReturn(empresa);
+        when(empresaRepository.save(any(Empresa.class))).thenAnswer(invocacao -> invocacao.getArgument(0));
+
+        mockMvc.perform(put("/empresas/sessao_recanto_01/admin")
+                        .header("x-admin-token", "sua-chave-admin")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                              "permiteReservaAutomatica": true
+                            }
+                            """))
+                .andExpect(status().isOk());
+
+        assertTrue(Boolean.TRUE.equals(empresa.getPermiteReservaAutomatica()));
+    }
+
+    @Test
+    @DisplayName("PUT /empresas/{sessao}/admin apaga a agenda de empresa ligada mesmo mandando true")
+    void deveApagarAgendaDeEmpresaLigadaMandandoTrue() throws Exception {
+        Empresa empresa = empresaDe(1L, "sessao_recanto_01");
+        empresa.setPermiteReservaAutomatica(true);
+        when(empresaRepository.buscarPorSessaoComModulos("sessao_recanto_01")).thenReturn(empresa);
+        when(empresaRepository.save(any(Empresa.class))).thenAnswer(invocacao -> invocacao.getArgument(0));
+
+        mockMvc.perform(put("/empresas/sessao_recanto_01/admin")
+                        .header("x-admin-token", "sua-chave-admin")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                              "permiteReservaAutomatica": true,
+                              "googleCalendarId": ""
+                            }
+                            """))
+                .andExpect(status().isOk());
+
+        assertEquals(null, empresa.getGoogleCalendarId());
+        assertTrue(Boolean.TRUE.equals(empresa.getPermiteReservaAutomatica()));
+    }
+
+    @Test
+    @DisplayName("PUT /empresas/{sessao}/admin edita a agenda de empresa ligada mandando true")
+    void deveEditarAgendaDeEmpresaLigadaSemAgendaMandandoTrue() throws Exception {
+        Empresa empresa = empresaDe(1L, "sessao_recanto_01");
+        empresa.setPermiteReservaAutomatica(true);
+        when(empresaRepository.buscarPorSessaoComModulos("sessao_recanto_01")).thenReturn(empresa);
+        when(empresaRepository.save(any(Empresa.class))).thenAnswer(invocacao -> invocacao.getArgument(0));
+
+        mockMvc.perform(put("/empresas/sessao_recanto_01/admin")
+                        .header("x-admin-token", "sua-chave-admin")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                              "permiteReservaAutomatica": true,
+                              "googleCalendarId": "outra@group.calendar.google.com"
+                            }
+                            """))
+                .andExpect(status().isOk());
+
+        assertEquals("outra@group.calendar.google.com", empresa.getGoogleCalendarId());
+    }
+
+    @Test
+    @DisplayName("PUT /empresas/{sessao}/admin de desligada para ligada com agenda vazia retorna 400")
+    void deveRecusarDesligadaParaLigadaSemAgendaFinal() throws Exception {
+        Empresa empresa = empresaDe(1L, "sessao_recanto_01");
+        empresa.setPermiteReservaAutomatica(false);
+        empresa.setGoogleCalendarId(null);
+        when(empresaRepository.buscarPorSessaoComModulos("sessao_recanto_01")).thenReturn(empresa);
+        when(empresaRepository.save(any(Empresa.class))).thenAnswer(invocacao -> invocacao.getArgument(0));
+
+        mockMvc.perform(put("/empresas/sessao_recanto_01/admin")
+                        .header("x-admin-token", "sua-chave-admin")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                              "permiteReservaAutomatica": true
+                            }
+                            """))
+                .andExpect(status().isBadRequest());
+
+        verify(empresaRepository, never()).save(any(Empresa.class));
+    }
+
+    @Test
+    @DisplayName("PUT /empresas/{sessao}/admin desligando a reserva automática sem agenda é aceito")
+    void deveAceitarDesligarReservaAutomaticaSemAgenda() throws Exception {
+        Empresa empresa = empresaDe(1L, "sessao_recanto_01");
+        empresa.setPermiteReservaAutomatica(true);
+        empresa.setGoogleCalendarId(null);
+        when(empresaRepository.buscarPorSessaoComModulos("sessao_recanto_01")).thenReturn(empresa);
+        when(empresaRepository.save(any(Empresa.class))).thenAnswer(invocacao -> invocacao.getArgument(0));
+
+        mockMvc.perform(put("/empresas/sessao_recanto_01/admin")
+                        .header("x-admin-token", "sua-chave-admin")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                              "permiteReservaAutomatica": false
+                            }
+                            """))
+                .andExpect(status().isOk());
+
+        assertEquals(false, empresa.getPermiteReservaAutomatica());
+    }
+
+    @Test
+    @DisplayName("POST /empresas com agenda e sem o campo devolve permiteReservaAutomatica=false")
+    void deveNascerDesligadaQuandoPostNaoEnviaOCampo() throws Exception {
+        when(empresaRepository.findBySessaoWhatsapp("sessao_recanto_01")).thenReturn(null);
+        when(empresaRepository.save(any(Empresa.class))).thenAnswer(invocacao -> {
+            Empresa empresa = invocacao.getArgument(0);
+            empresa.setId(1L);
+            return empresa;
+        });
+
+        mockMvc.perform(post("/empresas")
+                        .header("x-admin-token", "sua-chave-admin")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(corpoPost(",\"googleCalendarId\":\"agenda@group.calendar.google.com\"")))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.permiteReservaAutomatica").value(false));
     }
 
     @Test

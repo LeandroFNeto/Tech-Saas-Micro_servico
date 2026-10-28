@@ -83,7 +83,7 @@ post:
             - $ref: "#/components/schemas/EmpresaResponseDTO"
             - $ref: "#/components/schemas/EntityModelEmpresa"
     "400":
-      description: Sessão WhatsApp já ocupada
+      description: Sessão WhatsApp já ocupada. Também responde 400 com "Cadastre a agenda do Google antes de ligar a reserva automática." quando permiteReservaAutomatica vem true sem googleCalendarId.
       content:
         application/hal+json:
           schema:

@@ -2,7 +2,7 @@ put:
   tags:
   - Gerenciamento de Empresas
   summary: Atualizar infraestrutura pelo admin
-  description: "Aplica EmpresaUpdateAdminDTO: sessão, tipo de locação, ID da agenda Google e módulos. Uso restrito ao administrador do SaaS."
+  description: "Aplica EmpresaUpdateAdminDTO: sessão, tipo de locação, ID da agenda Google, reserva automática e módulos. Ligar a reserva automática exige agenda cadastrada. Uso restrito ao administrador do SaaS."
   operationId: atualizarPeloAdmin
   parameters:
   - name: x-admin-token
@@ -32,6 +32,8 @@ put:
         application/hal+json:
           schema:
             $ref: "#/components/schemas/EmpresaResponseDTO"
+    "400":
+      description: Cadastre a agenda do Google antes de ligar a reserva automática.
     "401":
       description: Token administrativo inválido
       content:

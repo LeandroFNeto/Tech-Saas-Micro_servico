@@ -1,5 +1,6 @@
 package com.example.demo.strategy;
 
+import com.example.demo.evento.EventoReservaConfirmada;
 import com.example.demo.model.DadosReservaSessao;
 import com.example.demo.model.Empresa;
 import com.example.demo.model.EstadoUsuario;
@@ -10,6 +11,7 @@ import com.example.demo.servico.ServicoMenu;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -21,6 +23,7 @@ import java.time.format.TextStyle;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.UUID;
 
 @Service
 public class LocacaoStrategy implements ModuloAtendimentoStrategy {
@@ -34,6 +37,10 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
             "Essa data já passou. Envie uma data de hoje em diante, no formato DD-MM-AAAA, por exemplo 16-09-2026.";
     private static final String MENSAGEM_HORARIO_PASSADO =
             "Esse horário de hoje já passou. Envie um horário que ainda não passou, no formato HH:MM, por exemplo 18:00.";
+    private static final String MENSAGEM_RESERVA_MANUAL =
+            "Recebemos sua mensagem. Logo um atendente vai te responder.";
+    private static final String MENSAGEM_AINDA_REGISTRANDO =
+            "Ainda estou registrando sua reserva, já te respondo.";
     private static final String LEMBRETE_VOLTAR_MENU =
             "🔄 *Lembrete:* Digite *0* a qualquer momento da conversa para voltar ao menu inicial.";
 
@@ -41,6 +48,7 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
     @Autowired private GerenciadorSessao gerenciadorSessao;
     @Autowired private ServicoMenu servicoMenu;
     @Autowired private ServicoGoogleagenda servicoGoogleagenda;
+    @Autowired private ApplicationEventPublisher publicadorEventos;
 
     @Override
     public String getRamoDeAtuacao() {
@@ -50,6 +58,10 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
     @Override
     public void processarMensagem(Empresa empresa, String numeroCliente, String textoRecebido, String estadoAtual) {
         String texto = textoRecebido == null ? "" : textoRecebido.trim();
+        if (gerenciadorSessao.getEstado(numeroCliente) == EstadoUsuario.RESERVA_REGISTRANDO) {
+            servicoMensagem.enviarMensagemWPP(empresa, numeroCliente, MENSAGEM_AINDA_REGISTRANDO);
+            return;
+        }
         if (ehComandoMenuPrincipal(texto)) {
             gerenciadorSessao.atualizarEstado(numeroCliente, EstadoUsuario.INICIO.name());
             tratarInicio(empresa, numeroCliente);
@@ -70,6 +82,7 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
             case RESERVA_ESPERANDO_HORARIO -> tratarReservaHorario(empresa, numeroCliente, texto);
             case RESERVA_ESPERANDO_NOME -> tratarReservaNome(empresa, numeroCliente, texto);
             case RESERVA_CONFIRMACAO -> tratarReservaConfirmacao(empresa, numeroCliente, texto);
+            case RESERVA_REGISTRANDO -> servicoMensagem.enviarMensagemWPP(empresa, numeroCliente, MENSAGEM_AINDA_REGISTRANDO);
         }
     }
 
@@ -201,11 +214,13 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
     }
 
     private void tratarSolicitacaoReserva(Empresa empresa, String numeroCliente) {
-        if (!Boolean.TRUE.equals(empresa.getPermiteReservaAutomatica())) {
-            servicoMensagem.enviarMensagemWPP(
-                    empresa,
-                    numeroCliente,
-                    "Recebemos sua mensagem. Logo um atendente vai te responder.");
+        if (!Boolean.TRUE.equals(empresa.getPermiteReservaAutomatica()) || empresa.isLocacaoPorHora()) {
+            servicoMensagem.enviarMensagemWPP(empresa, numeroCliente, MENSAGEM_RESERVA_MANUAL);
+            return;
+        }
+        if (empresa.getGoogleCalendarId() == null || empresa.getGoogleCalendarId().isBlank()) {
+            Log.warn("Empresa {} com reserva automática ligada e sem agenda; atendendo como reserva manual", empresa.getId());
+            servicoMensagem.enviarMensagemWPP(empresa, numeroCliente, MENSAGEM_RESERVA_MANUAL);
             return;
         }
         gerenciadorSessao.limparReserva(numeroCliente);
@@ -296,15 +311,20 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
         String resposta = texto.toLowerCase(Locale.of("pt", "BR"));
         if (resposta.matches("sim|s|confirmar|1")) {
             DadosReservaSessao reserva = gerenciadorSessao.getOuCriarReserva(numeroCliente);
+            String data = formatarData(reserva.getData());
+            EventoReservaConfirmada evento = new EventoReservaConfirmada(
+                    empresa,
+                    data,
+                    reserva.getHorario(),
+                    reserva.getNomeCliente(),
+                    numeroCliente,
+                    UUID.randomUUID().toString());
+            gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.RESERVA_REGISTRANDO);
             servicoMensagem.enviarMensagemWPP(
                     empresa,
                     numeroCliente,
-                    "Reserva confirmada para "
-                            + formatarData(reserva.getData())
-                            + " (" + valorOuTraco(reserva.getHorario()) + ") em nome de "
-                            + valorOuTraco(reserva.getNomeCliente())
-                            + ". Obrigado!");
-            gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.INICIO);
+                    "Anotei seu pedido para " + data + ". Estou registrando na agenda e já confirmo.");
+            publicadorEventos.publishEvent(evento);
             return;
         }
         if (resposta.matches("n[aã]o|n|cancelar|2")) {

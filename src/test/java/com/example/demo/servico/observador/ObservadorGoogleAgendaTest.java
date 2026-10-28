@@ -2,6 +2,8 @@ package com.example.demo.servico.observador;
 
 import com.example.demo.evento.EventoReservaConfirmada;
 import com.example.demo.model.Empresa;
+import com.example.demo.servico.GerenciadorSessao;
+import com.example.demo.servico.ServicoGoogleagenda;
 import com.example.demo.servico.ServicoMensagem;
 import com.example.demo.servico.ServicoReserva;
 import org.junit.jupiter.api.DisplayName;
@@ -17,6 +19,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(OutputCaptureExtension.class)
 class ObservadorGoogleAgendaTest {
@@ -27,6 +30,7 @@ class ObservadorGoogleAgendaTest {
     private Empresa empresa() {
         Empresa empresa = new Empresa();
         empresa.setId(42L);
+        empresa.setGoogleCalendarId("agenda@group.calendar.google.com");
         return empresa;
     }
 
@@ -34,6 +38,14 @@ class ObservadorGoogleAgendaTest {
         ObservadorGoogleAgenda observador = new ObservadorGoogleAgenda();
         ReflectionTestUtils.setField(observador, "servicoReserva", reserva);
         ReflectionTestUtils.setField(observador, "servicoMensagem", mensagem);
+        ServicoGoogleagenda agenda = mock(ServicoGoogleagenda.class);
+        try {
+            when(agenda.dataEstaLivre(anyString(), any())).thenReturn(true);
+        } catch (java.io.IOException e) {
+            throw new IllegalStateException(e);
+        }
+        ReflectionTestUtils.setField(observador, "servicoGoogleagenda", agenda);
+        ReflectionTestUtils.setField(observador, "gerenciadorSessao", mock(GerenciadorSessao.class));
         return observador;
     }
 
@@ -43,10 +55,10 @@ class ObservadorGoogleAgendaTest {
         ServicoReserva reserva = mock(ServicoReserva.class);
         ServicoMensagem mensagem = mock(ServicoMensagem.class);
         doThrow(new IllegalStateException("Erro ao gravar evento de " + NOME_CLIENTE + " na agenda secreta@gmail.com"))
-                .when(reserva).agendarNoGoogle(any(), anyString(), anyString());
+                .when(reserva).agendarNoGoogle(any(), anyString(), anyString(), anyString(), anyString());
 
         observador(reserva, mensagem).registarNoGoogle(
-                new EventoReservaConfirmada(empresa(), "2026-12-01", NOME_CLIENTE, NUMERO));
+                new EventoReservaConfirmada(empresa(), "01-12-2026", "Diária Completa", NOME_CLIENTE, NUMERO, "pedido-1"));
 
         assertThat(saida.getAll())
                 .contains("empresa 42")
@@ -65,7 +77,7 @@ class ObservadorGoogleAgendaTest {
         ServicoMensagem mensagem = mock(ServicoMensagem.class);
 
         observador(reserva, mensagem).registarNoGoogle(
-                new EventoReservaConfirmada(empresa(), "2026-12-01", NOME_CLIENTE, NUMERO));
+                new EventoReservaConfirmada(empresa(), "01-12-2026", "Diária Completa", NOME_CLIENTE, NUMERO, "pedido-1"));
 
         assertThat(saida.getAll()).contains("empresa 42").doesNotContain(NOME_CLIENTE).doesNotContain("5511999997777");
     }

@@ -1,5 +1,6 @@
 package com.example.demo.bdd;
 
+import com.example.demo.servico.ServicoGoogleagenda;
 import com.example.demo.servico.ServicoIA;
 import com.example.demo.servico.ServicoMensagem;
 import com.example.demo.servico.ServicoReserva;
@@ -16,13 +17,14 @@ public class Hooks {
     @Autowired ServicoMensagem servicoMensagem;
     @Autowired ServicoIA servicoIA;
     @Autowired ServicoReserva servicoReserva;
+    @Autowired ServicoGoogleagenda servicoGoogleagenda;
     @Autowired com.example.demo.servico.previsao.ProvedorPrevisao provedorPrevisao;
     @Autowired BddContexto ctx;
 
     @Before
     public void limparCenario() {
         Mockito.clearInvocations(factoryModulo, observadorwhatsapp);
-        Mockito.reset(servicoMensagem, servicoIA, servicoReserva, provedorPrevisao);
+        Mockito.reset(servicoMensagem, servicoIA, servicoReserva, servicoGoogleagenda, provedorPrevisao);
         ctx.tokenAdmin = null;
         ctx.jwt = null;
         ctx.status = 0;

@@ -35,7 +35,7 @@ public record EmpresaUpdateDTO(
                 example = "https://drive.google.com/drive/folders/exemplo")
         String linkGaleria,
 
-        @Schema(description = "Ativa ou desativa a reserva automática pelo bot no WhatsApp", example = "false")
+        @Schema(description = "Somente o administrador altera a reserva automática; valor diferente do atual responde 400 e valor igual é ignorado", example = "false")
         Boolean permiteReservaAutomatica,
 
         @Schema(description = "Define se o local é alugado por hora (true) ou por diária (false)", example = "false")
