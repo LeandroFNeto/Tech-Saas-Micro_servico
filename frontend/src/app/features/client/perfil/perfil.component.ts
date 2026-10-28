@@ -133,7 +133,7 @@ export class PerfilComponent implements OnInit {
     }
 
     this.salvando.set(true);
-    const bruto = this.form.getRawValue();
+    const { permiteReservaAutomatica, ...bruto } = this.form.getRawValue();
     this.empresasApi
       .atualizarPeloCliente(this.sessao, {
         ...bruto,

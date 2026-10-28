@@ -186,3 +186,36 @@ Cenário: erro HTTP do WPPConnect
 - Quando o envio ou a consulta ao WPPConnect falha com erro HTTP cujo corpo traz nome ou segredo
 - Então o log registra a sessão, o número mascarado, a classe da exceção e o código HTTP
 - E não registra a mensagem da exceção, o corpo da resposta, o token nem o nome do cliente
+
+### WPP-07 Confirmar a reserva automática ao cliente só depois do registro
+
+O sistema deve, na conversa de locação com reserva automática, tratar o "sim" da confirmação (`sim`, `s`, `confirmar` ou `1` em `RESERVA_CONFIRMACAO`) como pedido, não como reserva feita: muda o estado para `RESERVA_REGISTRANDO` antes de publicar `EventoReservaConfirmada`, responde "Anotei seu pedido para <data>. Estou registrando na agenda e já confirmo." e deixa a confirmação final para o resultado da agenda (AGD-02). Em `RESERVA_REGISTRANDO`, qualquer mensagem, inclusive `0`, `menu`, `voltar` e um segundo "sim", recebe "Ainda estou registrando sua reserva, já te respondo.", sem publicar outro evento e sem sair do estado.
+
+Na solicitação de reserva, a empresa é atendida como reserva manual ("Recebemos sua mensagem. Logo um atendente vai te responder.") quando a reserva automática está desligada, quando a locação é por hora (até a change `reserva-por-hora`) ou quando a reserva automática está ligada sem `googleCalendarId`; neste último caso o log registra o id da empresa e o motivo.
+
+Contrato: `especificacao/back/paths/webhook-whatsapp.yaml`
+Prova: `src/test/java/com/example/demo/strategy/LocacaoStrategyTest.java`
+
+Cenário: "sim" na confirmação
+
+- Dado uma empresa `LOCACAO` de diária, com reserva automática e agenda, e o cliente em `RESERVA_CONFIRMACAO` com data e nome
+- Quando o cliente envia "sim"
+- Então o estado passa a `RESERVA_REGISTRANDO` antes da publicação
+- E `EventoReservaConfirmada` é publicado uma vez com data, nome, número e `idPedido`
+- E o bot responde "Anotei seu pedido para <data>. Estou registrando na agenda e já confirmo."
+- E o bot não responde "Reserva confirmada" nesse momento
+
+Cenário: mensagem durante o registro
+
+- Dado o cliente em `RESERVA_REGISTRANDO`
+- Quando ele envia "sim", `0`, `menu` ou `voltar`
+- Então o bot responde "Ainda estou registrando sua reserva, já te respondo."
+- E nenhum evento novo é publicado
+- E o estado continua `RESERVA_REGISTRANDO`
+
+Cenário: locação por hora ou empresa sem agenda
+
+- Dado uma empresa com reserva automática ligada e locação por hora, ou sem `googleCalendarId` (ausente ou em branco)
+- Quando o cliente pede a reserva
+- Então o bot responde "Recebemos sua mensagem. Logo um atendente vai te responder."
+- E não pede data nem nome

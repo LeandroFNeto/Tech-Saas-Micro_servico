@@ -36,6 +36,7 @@ export interface EmpresaUpdateAdminDTO {
   sessaoWhatsapp?: string;
   locacaoPorHora?: boolean;
   googleCalendarId?: string | null;
+  permiteReservaAutomatica?: boolean;
   linkFotoPrincipal?: string;
   urlsGaleria?: string[];
   linkGaleria?: string;

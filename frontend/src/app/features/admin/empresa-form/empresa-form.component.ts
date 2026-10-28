@@ -30,6 +30,7 @@ export class EmpresaFormComponent implements OnInit {
   readonly salvando = signal(false);
   readonly salvandoSenha = signal(false);
   readonly erro = signal('');
+  readonly erroReservaAutomatica = signal('');
   readonly sucesso = signal('');
   readonly sucessoSenha = signal('');
   readonly imagemSelecionada = signal('');
@@ -45,6 +46,7 @@ export class EmpresaFormComponent implements OnInit {
     precoBase: this.fb.control<number | null>(null),
     locacaoPorHora: [false],
     googleCalendarId: [''],
+    permiteReservaAutomatica: [false],
     email: [''],
     senha: [''],
     linkFotoPrincipal: [''],
@@ -87,6 +89,7 @@ export class EmpresaFormComponent implements OnInit {
 
   salvar(): void {
     this.erro.set('');
+    this.erroReservaAutomatica.set('');
     this.sucesso.set('');
     if (this.form.invalid) {
       this.form.markAllAsTouched();
@@ -104,6 +107,7 @@ export class EmpresaFormComponent implements OnInit {
           sessaoWhatsapp: valor.sessaoWhatsapp ?? undefined,
           locacaoPorHora: valor.locacaoPorHora ?? false,
           googleCalendarId: valor.googleCalendarId || null,
+          permiteReservaAutomatica: valor.permiteReservaAutomatica ?? false,
           linkFotoPrincipal: valor.linkFotoPrincipal || undefined,
           urlsGaleria,
           linkGaleria: (valor.linkGaleria ?? '').trim(),
@@ -116,8 +120,7 @@ export class EmpresaFormComponent implements OnInit {
             this.sessaoOriginal.set(valor.sessaoWhatsapp ?? this.sessaoOriginal());
           },
           error: (err) => {
-            this.erro.set(mensagemHttp(err));
-            this.salvando.set(false);
+            this.tratarErroSalvar(err);
           }
         });
       return;
@@ -130,6 +133,7 @@ export class EmpresaFormComponent implements OnInit {
         ramoDeAtuacao: valor.ramoDeAtuacao ?? undefined,
         precoBase: valor.precoBase,
         googleCalendarId: valor.googleCalendarId || null,
+        permiteReservaAutomatica: valor.permiteReservaAutomatica ?? false,
         email: valor.email ?? '',
         senha: valor.senha ?? '',
         linkFotoPrincipal: valor.linkFotoPrincipal || undefined,
@@ -143,10 +147,18 @@ export class EmpresaFormComponent implements OnInit {
           void this.router.navigateByUrl('/admin');
         },
         error: (err) => {
-          this.erro.set(mensagemHttp(err));
-          this.salvando.set(false);
+          this.tratarErroSalvar(err);
         }
       });
+  }
+
+  private tratarErroSalvar(err: unknown): void {
+    const mensagem = mensagemHttp(err);
+    this.erro.set(mensagem);
+    if ((err as { status?: number })?.status === 400 && /agenda/i.test(mensagem)) {
+      this.erroReservaAutomatica.set('Cadastre a agenda do Google antes de ligar a reserva automática.');
+    }
+    this.salvando.set(false);
   }
 
   resetarSenha(): void {
@@ -178,6 +190,7 @@ export class EmpresaFormComponent implements OnInit {
       ramoDeAtuacao: empresa.ramoDeAtuacao ?? 'locacao',
       locacaoPorHora: empresa.locacaoPorHora ?? false,
       googleCalendarId: empresa.googleCalendarId ?? '',
+      permiteReservaAutomatica: empresa.permiteReservaAutomatica ?? false,
       linkFotoPrincipal: empresa.linkFotoPrincipal ?? '',
       linkGaleria: empresa.linkGaleria ?? ''
     });

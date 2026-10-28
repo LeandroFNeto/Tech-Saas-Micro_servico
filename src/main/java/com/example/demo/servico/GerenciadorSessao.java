@@ -67,6 +67,25 @@ public class GerenciadorSessao {
         }
     }
 
+    public void concluirRegistro(String numeroCliente, EstadoUsuario novoEstado) {
+        if (numeroCliente == null || numeroCliente.isBlank() || novoEstado == null) {
+            return;
+        }
+
+        String chaveSessao = chave(numeroCliente);
+        boolean[] trocou = {false};
+        sessoes.computeIfPresent(chaveSessao, (ignorado, atual) -> {
+            if (!EstadoUsuario.RESERVA_REGISTRANDO.name().equals(atual.estadoAtual())) {
+                return atual;
+            }
+            trocou[0] = true;
+            return new SessaoAtendimento(novoEstado.name(), LocalDateTime.now(clock));
+        });
+        if (trocou[0] && novoEstado == EstadoUsuario.INICIO) {
+            reservas.remove(chaveSessao);
+        }
+    }
+
     public EstadoUsuario getEstado(String remetente) {
         return paraEnum(obterEstado(remetente));
     }

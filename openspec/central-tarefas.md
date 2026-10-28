@@ -9,6 +9,7 @@ Arquivo em comum da equipe. Cada agente atualiza a própria linha ao começar e 
 | [aplicar-novo-design-front](archive/aplicar-novo-design-front/) | deploy | `claude-haiku-5-5` | `openspec/archive/aplicar-novo-design-front/` | 0 | aprovado |
 | [proteger-dados-nos-logs](archive/proteger-dados-nos-logs/) | deploy | `claude-haiku-5-5` | `openspec/archive/proteger-dados-nos-logs/` | 2 | aprovado |
 | [exibir-previsao-tempo-reservas](archive/exibir-previsao-tempo-reservas/) | deploy | `claude-opus-5-5` | `openspec/archive/exibir-previsao-tempo-reservas/` | 3 | aprovado |
+| [corrigir-reserva-automatica](archive/corrigir-reserva-automatica/) | deploy | `claude-haiku-5-5` | `openspec/archive/corrigir-reserva-automatica/` | 1 | aprovado |
 
 Estado: `em andamento`, `aprovado`, `reprovado`, `erro`, `aguardando aprovado`.
 

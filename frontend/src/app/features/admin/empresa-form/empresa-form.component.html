@@ -59,6 +59,36 @@
         </p>
       </div>
 
+      <div>
+        <label
+          class="flex cursor-pointer items-start justify-between gap-4 rounded-[14px] border px-4 py-3.5"
+          [class.border-brand-100]="!erroReservaAutomatica()"
+          [class.border-red-300]="!!erroReservaAutomatica()"
+          [class.bg-red-50]="!!erroReservaAutomatica()"
+        >
+          <span>
+            <span class="block text-[15px] font-semibold leading-[22px]">Reserva automática pelo bot</span>
+            <span class="mt-0.5 block text-[13px] leading-[18px] text-brand-600">
+              Ligada = o WhatsApp mostra a opção de solicitar reserva. Desligada = avisa que um atendente vai responder.
+            </span>
+          </span>
+          <span class="switch">
+            <input
+              type="checkbox"
+              formControlName="permiteReservaAutomatica"
+              [attr.aria-invalid]="!!erroReservaAutomatica()"
+              [attr.aria-describedby]="erroReservaAutomatica() ? 'empresa-reserva-erro' : null"
+            />
+            <span aria-hidden="true"></span>
+          </span>
+        </label>
+        @if (erroReservaAutomatica()) {
+          <p id="empresa-reserva-erro" class="mt-1.5 text-[13px] font-semibold leading-[18px] text-red-700">
+            {{ erroReservaAutomatica() }}
+          </p>
+        }
+      </div>
+
       @if (!modoEdicao()) {
         <div>
           <label class="mb-1.5 block text-sm font-semibold text-brand-800" for="empresa-ramo">Ramo de atuação</label>

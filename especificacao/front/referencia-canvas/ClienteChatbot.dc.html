@@ -60,6 +60,11 @@ textarea.in{padding:12px 14px;min-height:112px;resize:vertical;line-height:1.5}
 .opt{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;border-radius:14px;border:1px solid #ebe0f5;padding:14px 16px;cursor:pointer}
 .opt b{display:block;font-size:15px;line-height:22px;font-weight:600}
 .opt .d{display:block;margin-top:2px;font-size:13px;line-height:18px;color:#652d90}
+.opt.ro{background:#f6f0fb;cursor:default}
+.sw input:disabled{cursor:not-allowed}
+.sw input:disabled + i{opacity:.5}
+.aviso{display:flex;align-items:flex-start;gap:6px;margin-top:8px;font-size:13px;line-height:18px;font-weight:600;color:#4e2473}
+.aviso svg{flex:none;margin-top:1px}
 .seg{display:flex;gap:4px;overflow-x:auto;padding:4px;border-radius:14px;background:#ebe0f5}
 .seg button{flex:1 0 auto;min-height:44px;padding:0 14px;border:0;border-radius:10px;background:transparent;font:inherit;font-size:14px;font-weight:600;color:#4e2473;cursor:pointer;white-space:nowrap}
 .seg button.on{background:#fff;color:#1A0B2E;box-shadow:0 1px 2px rgba(46,26,71,.15)}
@@ -142,7 +147,7 @@ textarea.in{padding:12px 14px;min-height:112px;resize:vertical;line-height:1.5}
 <form class="stack">
 <div><h3 class="sec">Configurações do Robô</h3><p class="sub">Defina como o bot atende no WhatsApp: tipo de locação, preços, regras e opções do menu.</p></div>
 <label class="opt"><span><b>Aluguel por Hora</b><span class="d">Ligado = cobrança por hora. Desligado = diária.</span></span><span class="sw"><input type="checkbox"><i></i></span></label>
-<label class="opt"><span><b>Reserva Automática pelo Bot</b><span class="d">Ligada = o WhatsApp mostra a opção de solicitar reserva. Desligada = avisa que um atendente vai responder.</span></span><span class="sw"><input type="checkbox" checked="{{ true }}"><i></i></span></label>
+<div class="opt ro"><span><b id="ra-rotulo">Reserva Automática pelo Bot</b><span id="ra-dica" class="d">Ligada = o WhatsApp mostra a opção de solicitar reserva. Desligada = avisa que um atendente vai responder.</span><span id="ra-aviso" class="aviso"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path></svg>A reserva automática é liberada pelo administrador.</span></span><span class="sw"><input type="checkbox" checked="{{ true }}" disabled="" aria-labelledby="ra-rotulo" aria-describedby="ra-dica ra-aviso"><i></i></span></div>
 <div><label class="lb" for="regras">Regras do Local e Cancelamento</label><textarea id="regras" class="in" placeholder="Cancelar com 5 dias de antecedência"></textarea></div>
 <div><label class="lb" for="precos">Mensagem de preços</label><textarea id="precos" class="in" placeholder="{{placeholderPrecos}}"></textarea><p class="hint">Texto que o bot envia no WhatsApp quando o cliente escolhe a opção de preços.</p></div>
 <div class="stack">

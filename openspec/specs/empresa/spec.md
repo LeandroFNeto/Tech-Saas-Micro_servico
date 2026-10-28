@@ -34,14 +34,16 @@ Cenário: sessão WhatsApp já ocupada
 
 O sistema deve aplicar `EmpresaUpdateDTO` na sessão da empresa: textos, links e aparência. Essa rota não altera cobrança nem infraestrutura. Na tela, o cliente envia a foto principal e as fotos da galeria pelo widget do Cloudinary e o sistema guarda só as URLs.
 
-Contrato: `especificacao/back/paths/empresas-cliente.yaml`
+A reserva automática (`permiteReservaAutomatica`) é opcional e só o admin a altera, até os planos liberarem a opção. Ela nasce `false` em empresa nova quando o POST `/empresas` não a envia. No PUT do cliente, valor igual ao atual é aceito e ignorado; valor diferente responde 400 com "A reserva automática é liberada pelo administrador." e nada do PUT é gravado. A tela do perfil mostra a opção só para leitura, com o aviso de que o administrador libera, e não envia o campo. Ligar exige `googleCalendarId`: o POST do admin com `true` sem agenda e o PUT do admin que passa a opção de desligada para ligada sem agenda final (a enviada no mesmo PUT ou a já gravada) respondem 400 com "Cadastre a agenda do Google antes de ligar a reserva automática.". O PUT do admin em empresa já ligada não repete a checagem: apagar a agenda é aceito e a empresa passa a atender como reserva manual (WPP-07). A agenda continua opcional para empresa sem reserva automática.
+
+Contrato: `especificacao/back/paths/empresas-cliente.yaml`, `especificacao/back/paths/empresas.yaml` e `especificacao/back/paths/empresas-admin.yaml` (regra da reserva automática)
 Conteúdo da tela: `especificacao/front/cliente-perfil.content.json`
-Prova: `src/test/resources/features/empresas.feature` e `frontend/src/app/features/client/perfil/perfil.component.spec.ts` (fotos)
+Prova: `src/test/resources/features/empresas.feature`, `src/test/java/com/example/demo/controller/ControllerEmpresaTest.java`, `frontend/src/app/features/client/perfil/perfil.component.spec.ts` (fotos e reserva automática só para leitura) e `frontend/src/app/features/admin/empresa-form/empresa-form.component.spec.ts` (aviso da agenda)
 
 Cenário: perfil do cliente é atualizado
 
 - Dado uma empresa persistida na sessão
-- Quando o cliente envia PUT `/empresas/{sessao}/cliente` com nome, saudação, link do mapa e reserva automática
+- Quando o cliente envia PUT `/empresas/{sessao}/cliente` com nome, saudação e link do mapa
 - Então a API responde 200
 - E o corpo segue `EmpresaResponseDTO`
 - E nome e link do mapa devolvidos são os enviados
@@ -53,6 +55,42 @@ Cenário: fotos do perfil são enviadas pelo Cloudinary e podem ser abertas
 - Então a foto principal e cada foto da galeria têm um link que abre a imagem em nova aba, sem acesso ao `window.opener`
 - E os botões "Enviar foto principal" e "Enviar fotos" abrem o widget do Cloudinary
 - E, se o script do Cloudinary não carregou, a tela avisa "O widget do Cloudinary não carregou. Recarregue a página."
+
+Cenário: cliente tenta mudar a reserva automática
+
+- Dado uma empresa com a reserva automática desligada
+- Quando o cliente envia PUT `/empresas/{sessao}/cliente` com nome novo e `permiteReservaAutomatica` `true`
+- Então a API responde 400 com "A reserva automática é liberada pelo administrador."
+- E uma leitura seguinte mostra a reserva automática desligada e o nome antigo
+
+Cenário: cliente reenvia o valor atual
+
+- Quando o cliente envia o PUT com `permiteReservaAutomatica` igual ao atual
+- Então a API responde 200 e grava o resto do perfil
+
+Cenário: empresa nova nasce com a reserva automática desligada
+
+- Quando o admin envia POST `/empresas` sem `permiteReservaAutomatica` e sem agenda
+- Então a API responde 201
+- E a reserva automática vem `false`
+
+Cenário: admin liga sem agenda
+
+- Quando o admin envia POST `/empresas` com `permiteReservaAutomatica` `true` e sem agenda, ou PUT `/empresas/{sessao}/admin` que liga a opção numa empresa desligada e sem agenda final
+- Então a API responde 400 com "Cadastre a agenda do Google antes de ligar a reserva automática."
+
+Cenário: admin liga com agenda
+
+- Quando o admin envia o POST ou o PUT do admin ligando a opção com `googleCalendarId` preenchido
+- Então a API responde 201 no POST ou 200 no PUT
+- E a reserva automática vem `true`
+
+Cenário: admin apaga a agenda de empresa já ligada
+
+- Dado uma empresa com a reserva automática ligada e agenda
+- Quando o admin envia PUT `/empresas/{sessao}/admin` com a agenda vazia
+- Então a API responde 200
+- E a reserva automática continua `true`
 
 ### EMP-03 Admin atualiza a infraestrutura
 

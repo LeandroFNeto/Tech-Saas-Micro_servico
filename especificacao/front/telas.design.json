@@ -298,7 +298,10 @@
       "opcao": {
         "linha": "flex cursor-pointer items-start justify-between gap-4 rounded-[14px] border border-brand-100 px-4 py-3.5",
         "rotulo": "block text-[15px] font-semibold leading-[22px]",
-        "dica": "mt-0.5 block text-[13px] leading-[18px] text-brand-600"
+        "dica": "mt-0.5 block text-[13px] leading-[18px] text-brand-600",
+        "linhaLeitura": "flex items-start justify-between gap-4 rounded-[14px] border border-brand-100 bg-brand-50 px-4 py-3.5",
+        "aviso": "mt-2 flex items-start gap-1.5 text-[13px] font-semibold leading-[18px] text-brand-700",
+        "avisoIcone": "mt-px h-4 w-4 shrink-0"
       },
       "menu": {
         "grupo": "flex flex-col gap-4",

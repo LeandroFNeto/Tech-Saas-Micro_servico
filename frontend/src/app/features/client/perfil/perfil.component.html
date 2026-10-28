@@ -240,16 +240,28 @@
                 </span>
               </label>
 
-              <label [class]="design.opcao.linha">
+              <div [class]="design.opcao.linhaLeitura">
                 <span>
-                  <span [class]="design.opcao.rotulo">{{ conteudo.robo.reservaAutomatica.rotulo }}</span>
-                  <span [class]="design.opcao.dica">{{ conteudo.robo.reservaAutomatica.dica }}</span>
+                  <span id="reserva-automatica-rotulo" [class]="design.opcao.rotulo">{{ conteudo.robo.reservaAutomatica.rotulo }}</span>
+                  <span id="reserva-automatica-dica" [class]="design.opcao.dica">{{ conteudo.robo.reservaAutomatica.dica }}</span>
+                  <span id="reserva-automatica-aviso" [class]="design.opcao.aviso">
+                    <svg [class]="design.opcao.avisoIcone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" />
+                    </svg>
+                    {{ conteudo.robo.reservaAutomatica.aviso }}
+                  </span>
                 </span>
                 <span class="switch">
-                  <input type="checkbox" formControlName="permiteReservaAutomatica" />
+                  <input
+                    type="checkbox"
+                    disabled
+                    [checked]="form.controls.permiteReservaAutomatica.value"
+                    aria-labelledby="reserva-automatica-rotulo"
+                    aria-describedby="reserva-automatica-dica reserva-automatica-aviso"
+                  />
                   <span aria-hidden="true"></span>
                 </span>
-              </label>
+              </div>
 
               <div>
                 <div [class]="design.editor.barra">

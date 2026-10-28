@@ -61,6 +61,9 @@ h1,h2,h3,p,ul,ol{margin:0}ul,ol{padding:0;list-style:none}
 .opt{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;border-radius:14px;border:1px solid #ebe0f5;padding:14px 16px;cursor:pointer}
 .opt b{display:block;font-size:15px;line-height:22px;font-weight:600}
 .opt .d{display:block;margin-top:2px;font-size:13px;line-height:18px;color:#652d90}
+.opt.err{border-color:#fca5a5;background:#fef2f2}
+.erro{border-radius:12px;border:1px solid #fecaca;background:#fef2f2;padding:12px 16px;font-size:14px;line-height:20px;color:#b91c1c;margin-bottom:16px}
+.errin{margin-top:6px;font-size:13px;line-height:18px;font-weight:600;color:#b91c1c}
 .thumb{display:flex;align-items:center;justify-content:center;flex:none;width:56px;height:56px;border-radius:12px;border:1px dashed #b889d4;background:#f6f0fb;color:#7c3aad}
 .urlrow{display:flex;align-items:center;gap:8px}
 @media(min-width:1024px){
@@ -94,6 +97,10 @@ h1,h2,h3,p,ul,ol{margin:0}ul,ol{padding:0;list-style:none}
 <a class="btn btn-s btn-sm" href="AdminEmpresas.dc.html">← Voltar</a>
 </div>
 
+<sc-if value="{{erroAgenda}}" hint-placeholder-val="{{ true }}">
+<p class="erro" role="alert">Cadastre a agenda do Google antes de ligar a reserva automática.</p>
+</sc-if>
+
 <form class="cols">
 
 <div class="stack">
@@ -102,6 +109,12 @@ h1,h2,h3,p,ul,ol{margin:0}ul,ol{padding:0;list-style:none}
 <div><label class="lb" for="nome">Nome fantasia</label><input id="nome" class="in" value="Recanto Teste" readonly></div>
 <div><label class="lb" for="sessao">Sessão WhatsApp</label><input id="sessao" class="in mono" value="sessao_recanto_01" placeholder="sessao_recanto_01"></div>
 <div><label class="lb" for="agenda">ID da agenda Google</label><input id="agenda" class="in mono" placeholder="...@group.calendar.google.com"><p class="hint">Cole o ID da agenda desta empresa e compartilhe essa agenda com a conta de serviço do bot. Cada cliente tem a sua: não use um ID único no .env.</p></div>
+<div>
+<label class="{{classeReserva}}"><span><b>Reserva automática pelo bot</b><span class="d">Ligada = o WhatsApp mostra a opção de solicitar reserva. Desligada = avisa que um atendente vai responder.</span></span><span class="sw"><input type="checkbox" checked="{{ true }}" aria-invalid="{{erroAgenda}}" aria-describedby="reserva-erro"><i></i></span></label>
+<sc-if value="{{erroAgenda}}" hint-placeholder-val="{{ true }}">
+<p id="reserva-erro" class="errin">Cadastre a agenda do Google antes de ligar a reserva automática.</p>
+</sc-if>
+</div>
 <label class="opt"><span><b>Locação por hora</b><span class="d">Desligado = cobrança por diária</span></span><span class="sw"><input type="checkbox"><i></i></span></label>
 </section>
 
@@ -154,7 +167,10 @@ h1,h2,h3,p,ul,ol{margin:0}ul,ol{padding:0;list-style:none}
 <script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":1500}}'>
 class Component extends DCLogic {
   renderVals() {
+    const erroAgenda = true;
     return {
+      erroAgenda,
+      classeReserva: erroAgenda ? 'opt err' : 'opt',
       modulos: [
         { label: 'Módulo de IA', descricao: 'Atendimento com Gemini quando o cliente sai do menu padrão', ativo: true },
         { label: 'Módulo de Agenda', descricao: 'Consulta e bloqueio de horários no Google Agenda', ativo: true },

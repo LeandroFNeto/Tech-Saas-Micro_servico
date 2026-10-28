@@ -46,11 +46,96 @@ Funcionalidade: Contratos de empresa do SaaS
       | nome                       | Recanto Vista Alegre Atualizado |
       | mensagemSaudacao           | Olá! Como posso ajudar?         |
       | linkGoogleMaps             | https://maps.app.goo.gl/exemplo |
-      | permiteReservaAutomatica   | true                            |
+      | permiteReservaAutomatica   | false                           |
     Então o status HTTP deve ser 200
     E o corpo deve seguir o schema EmpresaResponseDTO
     E o campo "nome" deve ser "Recanto Vista Alegre Atualizado"
     E o campo "linkGoogleMaps" deve ser "https://maps.app.goo.gl/exemplo"
+
+  Cenário: PUT /empresas/{sessao}/cliente com permiteReservaAutomatica diferente do atual retorna 400 e não grava
+    Dado uma empresa persistida com sessão "sessao_cliente_auto" e ramo "LOCACAO"
+    Quando eu envio PUT /empresas/sessao_cliente_auto/cliente com o EmpresaUpdateDTO:
+      | nome                       | Nome que não deve gravar |
+      | permiteReservaAutomatica   | true                     |
+    Então o status HTTP deve ser 400
+    Dado o token administrativo "sua-chave-admin"
+    Quando eu busco a empresa sessao_cliente_auto pelo painel com o token administrativo
+    Então o status HTTP deve ser 200
+    E o corpo deve conter "\"permiteReservaAutomatica\":false"
+    E o corpo não deve conter "Nome que não deve gravar"
+
+  Cenário: PUT /empresas/{sessao}/cliente com permiteReservaAutomatica igual ao atual é aceito
+    Dado uma empresa persistida com sessão "sessao_cliente_igual" e ramo "LOCACAO"
+    Quando eu envio PUT /empresas/sessao_cliente_igual/cliente com o EmpresaUpdateDTO:
+      | nome                       | Nome gravado |
+      | permiteReservaAutomatica   | false        |
+    Então o status HTTP deve ser 200
+    E o campo "nome" deve ser "Nome gravado"
+    E o corpo deve conter "\"permiteReservaAutomatica\":false"
+
+  Cenário: POST /empresas ligando a reserva automática sem agenda retorna 400
+    Dado o token administrativo "sua-chave-admin"
+    Quando eu envio POST /empresas com o EmpresaCreateDTO:
+      | nome                     | Espaço Sem Agenda    |
+      | sessaoWhatsapp           | sessao_auto_sem_ag   |
+      | ramoDeAtuacao            | LOCACAO              |
+      | email                    | semagenda@recanto.com |
+      | senha                    | SenhaCliente123      |
+      | permiteReservaAutomatica | true                 |
+    Então o status HTTP deve ser 400
+
+  Cenário: POST /empresas sem agenda e sem ligar a reserva automática funciona
+    Dado o token administrativo "sua-chave-admin"
+    Quando eu envio POST /empresas com o EmpresaCreateDTO:
+      | nome           | Espaço Manual         |
+      | sessaoWhatsapp | sessao_auto_manual    |
+      | ramoDeAtuacao  | LOCACAO               |
+      | email          | manual@recanto.com    |
+      | senha          | SenhaCliente123       |
+    Então o status HTTP deve ser 201
+    E o corpo deve conter "\"permiteReservaAutomatica\":false"
+
+  Cenário: POST /empresas ligando a reserva automática com agenda funciona
+    Dado o token administrativo "sua-chave-admin"
+    Quando eu envio POST /empresas com o EmpresaCreateDTO:
+      | nome                     | Espaço Com Agenda                     |
+      | sessaoWhatsapp           | sessao_auto_com_ag                    |
+      | ramoDeAtuacao            | LOCACAO                               |
+      | email                    | comagenda@recanto.com                 |
+      | senha                    | SenhaCliente123                       |
+      | googleCalendarId         | agenda-auto@group.calendar.google.com |
+      | permiteReservaAutomatica | true                                  |
+    Então o status HTTP deve ser 201
+    E o corpo deve conter "\"permiteReservaAutomatica\":true"
+
+  Cenário: PUT /empresas/{sessao}/admin ligando a reserva automática sem agenda retorna 400
+    Dado uma empresa persistida com sessão "sessao_admin_sem_ag" e ramo "LOCACAO"
+    E o token administrativo "sua-chave-admin"
+    Quando eu envio PUT /empresas/sessao_admin_sem_ag/admin com o EmpresaUpdateAdminDTO:
+      | permiteReservaAutomatica | true |
+    Então o status HTTP deve ser 400
+
+  Cenário: PUT /empresas/{sessao}/admin ligando a reserva automática com agenda funciona
+    Dado uma empresa persistida com sessão "sessao_admin_com_ag" e ramo "LOCACAO"
+    E o token administrativo "sua-chave-admin"
+    Quando eu envio PUT /empresas/sessao_admin_com_ag/admin com o EmpresaUpdateAdminDTO:
+      | permiteReservaAutomatica | true                                  |
+      | googleCalendarId         | agenda-admin@group.calendar.google.com |
+    Então o status HTTP deve ser 200
+    E o corpo deve conter "\"permiteReservaAutomatica\":true"
+
+  Cenário: PUT /empresas/{sessao}/admin em empresa já ligada apaga a agenda sem erro
+    Dado uma empresa persistida com sessão "sessao_admin_ja_ligada" e ramo "LOCACAO"
+    E o token administrativo "sua-chave-admin"
+    Quando eu envio PUT /empresas/sessao_admin_ja_ligada/admin com o EmpresaUpdateAdminDTO:
+      | permiteReservaAutomatica | true                                  |
+      | googleCalendarId         | agenda-ligada@group.calendar.google.com |
+    Então o status HTTP deve ser 200
+    Quando eu envio PUT /empresas/sessao_admin_ja_ligada/admin com o EmpresaUpdateAdminDTO:
+      | permiteReservaAutomatica | true |
+      | googleCalendarId         | [empty] |
+    Então o status HTTP deve ser 200
+    E o corpo deve conter "\"permiteReservaAutomatica\":true"
 
   Cenário: PUT /empresas/{sessao}/admin exige token e usa EmpresaUpdateAdminDTO
     Dado uma empresa persistida com sessão "sessao_admin" e ramo "LOCACAO"

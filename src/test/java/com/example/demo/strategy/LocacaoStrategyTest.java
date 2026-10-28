@@ -11,11 +11,14 @@ import com.example.demo.servico.ServicoMenu;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import com.example.demo.evento.EventoReservaConfirmada;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -48,6 +51,7 @@ class LocacaoStrategyTest {
     @Spy private ServicoMenu servicoMenu = new ServicoMenu();
     @Mock private ServicoGoogleagenda servicoGoogleagenda;
     @Spy private GerenciadorSessao gerenciadorSessao = new GerenciadorSessao();
+    @Mock private ApplicationEventPublisher publicadorEventos;
     @InjectMocks private LocacaoStrategy locacaoStrategy;
 
     @Test
@@ -142,6 +146,7 @@ class LocacaoStrategyTest {
     void devePedirDataQuandoReservaAutomaticaLigada() {
         Empresa empresa = empresaComMenu();
         empresa.setPermiteReservaAutomatica(true);
+        empresa.setGoogleCalendarId(CALENDAR_ID);
         gerenciadorSessao.setEstado(REMETENTE, EstadoUsuario.MENU_PRINCIPAL);
 
         locacaoStrategy.processarMensagem(empresa, REMETENTE, "4", "MENU_PRINCIPAL");
@@ -434,6 +439,132 @@ class LocacaoStrategyTest {
                 eq(empresa), eq(REMETENTE), contains("nome do responsável"));
         assertThat(gerenciadorSessao.getEstado(REMETENTE)).isEqualTo(EstadoUsuario.RESERVA_ESPERANDO_NOME);
         assertThat(reserva.getHorario()).isEqualTo("23:59");
+    }
+
+    private void prepararConfirmacao(Empresa empresa) {
+        DadosReservaSessao reserva = gerenciadorSessao.getOuCriarReserva(REMETENTE);
+        reserva.setData(LocalDate.of(2026, 12, 25));
+        reserva.setHorario(DadosReservaSessao.HORARIO_DIARIA);
+        reserva.setNomeCliente("Maria Silva");
+        gerenciadorSessao.setEstado(REMETENTE, EstadoUsuario.RESERVA_CONFIRMACAO);
+    }
+
+    @Test
+    @DisplayName("SIM na confirmação publica o evento, entra em RESERVA_REGISTRANDO e responde 'Anotei'")
+    void devePublicarEventoEEntrarEmRegistrandoNoSim() {
+        Empresa empresa = empresaComAgenda();
+        prepararConfirmacao(empresa);
+
+        locacaoStrategy.processarMensagem(empresa, REMETENTE, "sim", "RESERVA_CONFIRMACAO");
+
+        ArgumentCaptor<Object> captor = ArgumentCaptor.forClass(Object.class);
+        verify(publicadorEventos).publishEvent(captor.capture());
+        EventoReservaConfirmada evento = (EventoReservaConfirmada) captor.getValue();
+        assertThat(evento.getDataReserva()).isEqualTo("25-12-2026");
+        assertThat(evento.getHorario()).isEqualTo(DadosReservaSessao.HORARIO_DIARIA);
+        assertThat(evento.getNomeCliente()).isEqualTo("Maria Silva");
+        assertThat(evento.getNumeroWhatsapp()).isEqualTo(REMETENTE);
+        assertThat(evento.getEmpresa()).isSameAs(empresa);
+        assertThat(java.util.UUID.fromString(evento.getIdPedido())).isNotNull();
+        assertThat(gerenciadorSessao.getEstado(REMETENTE)).isEqualTo(EstadoUsuario.RESERVA_REGISTRANDO);
+        verify(servicoMensagem).enviarMensagemWPP(
+                eq(empresa), eq(REMETENTE),
+                eq("Anotei seu pedido para 25-12-2026. Estou registrando na agenda e já confirmo."));
+    }
+
+    @Test
+    @DisplayName("Estado muda para RESERVA_REGISTRANDO antes de publicar o evento")
+    void deveMudarEstadoAntesDePublicar() {
+        Empresa empresa = empresaComAgenda();
+        prepararConfirmacao(empresa);
+        doAnswer(invocacao -> {
+            assertThat(gerenciadorSessao.getEstado(REMETENTE)).isEqualTo(EstadoUsuario.RESERVA_REGISTRANDO);
+            return null;
+        }).when(publicadorEventos).publishEvent(any(Object.class));
+
+        locacaoStrategy.processarMensagem(empresa, REMETENTE, "sim", "RESERVA_CONFIRMACAO");
+
+        verify(publicadorEventos).publishEvent(any(Object.class));
+    }
+
+    @Test
+    @DisplayName("Segundo SIM em RESERVA_REGISTRANDO não publica de novo")
+    void naoDevePublicarDeNovoNoSegundoSim() {
+        Empresa empresa = empresaComAgenda();
+        prepararConfirmacao(empresa);
+
+        locacaoStrategy.processarMensagem(empresa, REMETENTE, "sim", "RESERVA_CONFIRMACAO");
+        locacaoStrategy.processarMensagem(empresa, REMETENTE, "sim", "RESERVA_REGISTRANDO");
+
+        verify(publicadorEventos, org.mockito.Mockito.times(1)).publishEvent(any(Object.class));
+        verify(servicoMensagem).enviarMensagemWPP(
+                eq(empresa), eq(REMETENTE), eq("Ainda estou registrando sua reserva, já te respondo."));
+        assertThat(gerenciadorSessao.getEstado(REMETENTE)).isEqualTo(EstadoUsuario.RESERVA_REGISTRANDO);
+    }
+
+    @Test
+    @DisplayName("0, menu e voltar em RESERVA_REGISTRANDO não saem do estado")
+    void naoDeveSairDoRegistroComComandosDeMenu() {
+        Empresa empresa = empresaComMenu();
+        for (String comando : List.of("0", "menu", "voltar", "MENU", "qualquer coisa")) {
+            gerenciadorSessao.setEstado(REMETENTE, EstadoUsuario.RESERVA_REGISTRANDO);
+
+            locacaoStrategy.processarMensagem(empresa, REMETENTE, comando, "RESERVA_REGISTRANDO");
+
+            assertThat(gerenciadorSessao.getEstado(REMETENTE)).isEqualTo(EstadoUsuario.RESERVA_REGISTRANDO);
+        }
+
+        verify(servicoMensagem, org.mockito.Mockito.times(5)).enviarMensagemWPP(
+                eq(empresa), eq(REMETENTE), eq("Ainda estou registrando sua reserva, já te respondo."));
+        verify(servicoMensagem, never()).enviarMensagemWPP(eq(empresa), eq(REMETENTE), contains("Digite o número da opção desejada"));
+        verify(publicadorEventos, never()).publishEvent(any(Object.class));
+    }
+
+    @Test
+    @DisplayName("Reserva por hora com a opção ligada responde como reserva manual")
+    void deveAtenderComoManualQuandoLocacaoPorHora() {
+        Empresa empresa = empresaComMenu();
+        empresa.setPermiteReservaAutomatica(true);
+        empresa.setGoogleCalendarId(CALENDAR_ID);
+        empresa.setLocacaoPorHora(true);
+        gerenciadorSessao.setEstado(REMETENTE, EstadoUsuario.MENU_PRINCIPAL);
+
+        locacaoStrategy.processarMensagem(empresa, REMETENTE, "4", "MENU_PRINCIPAL");
+
+        verify(servicoMensagem).enviarMensagemWPP(
+                eq(empresa), eq(REMETENTE), eq("Recebemos sua mensagem. Logo um atendente vai te responder."));
+        assertThat(gerenciadorSessao.getEstado(REMETENTE)).isEqualTo(EstadoUsuario.MENU_PRINCIPAL);
+    }
+
+    @Test
+    @DisplayName("Reserva automática ligada e sem agenda responde como reserva manual desde o início")
+    void deveAtenderComoManualQuandoNaoHaAgenda() {
+        Empresa empresa = empresaComMenu();
+        empresa.setPermiteReservaAutomatica(true);
+        gerenciadorSessao.setEstado(REMETENTE, EstadoUsuario.MENU_PRINCIPAL);
+
+        locacaoStrategy.processarMensagem(empresa, REMETENTE, "4", "MENU_PRINCIPAL");
+
+        verify(servicoMensagem).enviarMensagemWPP(
+                eq(empresa), eq(REMETENTE), eq("Recebemos sua mensagem. Logo um atendente vai te responder."));
+        verify(servicoMensagem, never()).enviarMensagemWPP(
+                eq(empresa), eq(REMETENTE), contains("qual data você deseja reservar"));
+        assertThat(gerenciadorSessao.getEstado(REMETENTE)).isEqualTo(EstadoUsuario.MENU_PRINCIPAL);
+    }
+
+    @Test
+    @DisplayName("Reserva automática ligada com agenda em branco também vira reserva manual")
+    void deveAtenderComoManualQuandoAgendaEmBranco() {
+        Empresa empresa = empresaComMenu();
+        empresa.setPermiteReservaAutomatica(true);
+        empresa.setGoogleCalendarId("   ");
+        gerenciadorSessao.setEstado(REMETENTE, EstadoUsuario.MENU_PRINCIPAL);
+
+        locacaoStrategy.processarMensagem(empresa, REMETENTE, "4", "MENU_PRINCIPAL");
+
+        verify(servicoMensagem).enviarMensagemWPP(
+                eq(empresa), eq(REMETENTE), contains("Logo um atendente vai te responder"));
+        assertThat(gerenciadorSessao.getEstado(REMETENTE)).isEqualTo(EstadoUsuario.MENU_PRINCIPAL);
     }
 
     private static Empresa empresa() {

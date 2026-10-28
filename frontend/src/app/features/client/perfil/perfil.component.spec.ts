@@ -95,6 +95,57 @@ function botao(fixture: ComponentFixture<PerfilComponent>, texto: string): HTMLB
   return achado as HTMLButtonElement;
 }
 
+describe('PerfilComponent, reserva automatica so leitura', () => {
+  function montarComEmpresaLigada() {
+    const atualizarPeloCliente = jasmine.createSpy('atualizarPeloCliente').and.returnValue(of({}));
+    TestBed.configureTestingModule({
+      imports: [PerfilComponent],
+      providers: [
+        provideRouter([]),
+        { provide: AuthService, useValue: { sessao: () => ({ sessaoWhatsapp: 'casa', sub: 'cliente@casa.com' }) } },
+        { provide: AvisoService, useValue: { listarAtivos: () => of([]) } },
+        {
+          provide: EmpresaService,
+          useValue: {
+            buscarPorSessao: () => of({ ...empresaCom(false), permiteReservaAutomatica: true }),
+            atualizarPeloCliente
+          }
+        }
+      ]
+    });
+    const fixture = TestBed.createComponent(PerfilComponent);
+    fixture.detectChanges();
+    return { fixture, atualizarPeloCliente };
+  }
+
+  it('salvar nao envia permiteReservaAutomatica', () => {
+    const { fixture, atualizarPeloCliente } = montarComEmpresaLigada();
+
+    fixture.componentInstance.salvar();
+
+    expect(atualizarPeloCliente).toHaveBeenCalledTimes(1);
+    const [sessao, dto] = atualizarPeloCliente.calls.mostRecent().args;
+    expect(sessao).toBe('casa');
+    expect(Object.keys(dto)).not.toContain('permiteReservaAutomatica');
+    expect(dto.nome).toBe('Casa de Festas');
+  });
+
+  it('mostra a opcao desabilitada, marcada e com o aviso do administrador', () => {
+    const { fixture } = montarComEmpresaLigada();
+    fixture.componentInstance.aba.set('robo');
+    fixture.detectChanges();
+    const raiz: HTMLElement = fixture.nativeElement;
+
+    const interruptor = raiz.querySelector<HTMLInputElement>('input[aria-labelledby="reserva-automatica-rotulo"]');
+    expect(interruptor).not.toBeNull();
+    expect(interruptor?.disabled).toBeTrue();
+    expect(interruptor?.checked).toBeTrue();
+    expect(raiz.querySelector('#reserva-automatica-aviso')?.textContent).toContain(
+      'A reserva automática é liberada pelo administrador.'
+    );
+  });
+});
+
 describe('PerfilComponent, fotos pelo Cloudinary', () => {
   it('abre a foto principal e cada foto da galeria em nova aba', () => {
     const fixture = montarComFotos(empresaCom(true));

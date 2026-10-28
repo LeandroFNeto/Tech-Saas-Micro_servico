@@ -13,6 +13,10 @@ properties:
     type: string
     description: ID da agenda Google desta empresa (não usar valor global no .env)
     example: abc123@group.calendar.google.com
+  permiteReservaAutomatica:
+    type: boolean
+    description: Liga ou desliga a reserva automática. Ligar exige googleCalendarId cadastrado (400 caso contrário). Só o admin altera.
+    example: false
   linkFotoPrincipal:
     type: string
     description: URL pública da foto principal (Hero Image) hospedada no Cloudinary

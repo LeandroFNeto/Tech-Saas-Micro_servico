@@ -133,7 +133,7 @@ public class ControllerEmpresa {
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Empresa criada com sucesso",
                     content = @Content(schema = @Schema(implementation = EmpresaResponseDTO.class))),
-            @ApiResponse(responseCode = "400", description = "Sessão WhatsApp já ocupada"),
+            @ApiResponse(responseCode = "400", description = "Sessão WhatsApp já ocupada ou reserva automática ligada sem agenda do Google"),
             @ApiResponse(responseCode = "401", description = "Token administrativo inválido")
     })
     public ResponseEntity<EmpresaResponseDTO> cadastrar(
@@ -163,6 +163,7 @@ public class ControllerEmpresa {
             empresa.setTabelaDePrecos(dto.precoBase().toString());
         }
         if (dto.permiteReservaAutomatica() != null) {
+            exigirAgendaParaReservaAutomatica(dto.permiteReservaAutomatica(), empresa.getGoogleCalendarId());
             empresa.setPermiteReservaAutomatica(dto.permiteReservaAutomatica());
         }
         if (dto.linkFotoPrincipal() != null) {
@@ -186,7 +187,7 @@ public class ControllerEmpresa {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Perfil do cliente atualizado",
                     content = @Content(schema = @Schema(implementation = EmpresaResponseDTO.class))),
-            @ApiResponse(responseCode = "400", description = "Cidade não encontrada"),
+            @ApiResponse(responseCode = "400", description = "Cidade não encontrada ou tentativa de alterar a reserva automática, liberada só pelo administrador"),
             @ApiResponse(responseCode = "403", description = "Cliente de outra empresa, token legado ou sessão inexistente para quem não é admin"),
             @ApiResponse(responseCode = "404", description = "Empresa não encontrada para a sessão informada (admin)"),
             @ApiResponse(responseCode = "429", description = "Limite de 5 trocas de cidade por dia atingido"),
@@ -209,6 +210,12 @@ public class ControllerEmpresa {
         }
         if (!admin && !isClienteDaEmpresa(empresa)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acesso negado a esta empresa");
+        }
+
+        if (dto.permiteReservaAutomatica() != null
+                && !dto.permiteReservaAutomatica().equals(Boolean.TRUE.equals(empresa.getPermiteReservaAutomatica()))) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "A reserva automática é liberada pelo administrador.");
         }
 
         ProvedorPrevisao.Localizacao novaLocalizacao = null;
@@ -246,9 +253,6 @@ public class ControllerEmpresa {
         if (dto.urlsGaleria() != null) empresa.setUrlsGaleria(dto.urlsGaleria());
         if (dto.linkGaleria() != null) {
             empresa.setLinkGaleria(dto.linkGaleria().isBlank() ? null : dto.linkGaleria().trim());
-        }
-        if (dto.permiteReservaAutomatica() != null) {
-            empresa.setPermiteReservaAutomatica(dto.permiteReservaAutomatica());
         }
         if (dto.locacaoPorHora() != null) {
             empresa.setLocacaoPorHora(dto.locacaoPorHora());
@@ -308,6 +312,7 @@ public class ControllerEmpresa {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Infraestrutura atualizada",
                     content = @Content(schema = @Schema(implementation = EmpresaResponseDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Reserva automática passando de desligada para ligada sem agenda do Google"),
             @ApiResponse(responseCode = "401", description = "Token administrativo inválido"),
             @ApiResponse(responseCode = "404", description = "Empresa não encontrada para a sessão informada")
     })
@@ -327,8 +332,17 @@ public class ControllerEmpresa {
             return ResponseEntity.notFound().build();
         }
 
+        if (Boolean.TRUE.equals(dto.permiteReservaAutomatica())
+                && !Boolean.TRUE.equals(empresa.getPermiteReservaAutomatica())) {
+            String agendaFinal = dto.googleCalendarId() != null
+                    ? (dto.googleCalendarId().isBlank() ? null : dto.googleCalendarId().trim())
+                    : empresa.getGoogleCalendarId();
+            exigirAgendaParaReservaAutomatica(true, agendaFinal);
+        }
+
         if (dto.sessaoWhatsapp() != null) empresa.setSessaoWhatsapp(dto.sessaoWhatsapp());
         if (dto.locacaoPorHora() != null) empresa.setLocacaoPorHora(dto.locacaoPorHora());
+        if (dto.permiteReservaAutomatica() != null) empresa.setPermiteReservaAutomatica(dto.permiteReservaAutomatica());
         if (dto.googleCalendarId() != null) empresa.setGoogleCalendarId(dto.googleCalendarId().isBlank() ? null : dto.googleCalendarId().trim());
         if (dto.linkFotoPrincipal() != null) empresa.setLinkFotoPrincipal(dto.linkFotoPrincipal());
         if (dto.urlsGaleria() != null) empresa.setUrlsGaleria(dto.urlsGaleria());
@@ -366,6 +380,13 @@ public class ControllerEmpresa {
 
         servicoAuth.resetarSenhaDoCliente(sessao, dto.novaSenha());
         return ResponseEntity.noContent().build();
+    }
+
+    private void exigirAgendaParaReservaAutomatica(boolean ligar, String googleCalendarId) {
+        if (ligar && (googleCalendarId == null || googleCalendarId.isBlank())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Cadastre a agenda do Google antes de ligar a reserva automática.");
+        }
     }
 
     private boolean isClienteDaEmpresa(Empresa empresa) {

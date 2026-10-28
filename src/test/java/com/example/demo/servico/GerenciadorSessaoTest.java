@@ -96,6 +96,74 @@ class GerenciadorSessaoTest {
         assertThat(gerenciador.obterEstado(CLIENTE)).isEqualTo(EstadoUsuario.ESPERANDO_DATA.name());
     }
 
+    @Test
+    @DisplayName("concluirRegistro troca RESERVA_REGISTRANDO por INICIO e limpa o rascunho")
+    void deveConcluirRegistroParaInicio() {
+        gerenciadorSessao.getOuCriarReserva(CLIENTE).setHorario("14:00");
+        gerenciadorSessao.setEstado(CLIENTE, EstadoUsuario.RESERVA_REGISTRANDO);
+
+        gerenciadorSessao.concluirRegistro(CLIENTE, EstadoUsuario.INICIO);
+
+        assertThat(gerenciadorSessao.getEstado(CLIENTE)).isEqualTo(EstadoUsuario.INICIO);
+        assertThat(gerenciadorSessao.getReserva(CLIENTE)).isNull();
+    }
+
+    @Test
+    @DisplayName("concluirRegistro para RESERVA_ESPERANDO_DATA mantém o rascunho da reserva")
+    void deveConcluirRegistroParaEsperandoDataMantendoRascunho() {
+        gerenciadorSessao.getOuCriarReserva(CLIENTE).setNomeCliente("Joana");
+        gerenciadorSessao.setEstado(CLIENTE, EstadoUsuario.RESERVA_REGISTRANDO);
+
+        gerenciadorSessao.concluirRegistro(CLIENTE, EstadoUsuario.RESERVA_ESPERANDO_DATA);
+
+        assertThat(gerenciadorSessao.getEstado(CLIENTE)).isEqualTo(EstadoUsuario.RESERVA_ESPERANDO_DATA);
+        assertThat(gerenciadorSessao.getReserva(CLIENTE).getNomeCliente()).isEqualTo("Joana");
+    }
+
+    @Test
+    @DisplayName("concluirRegistro não sobrescreve sessão que já saiu de RESERVA_REGISTRANDO")
+    void naoDeveSobrescreverEstadoDiferenteDeRegistrando() {
+        gerenciadorSessao.setEstado(CLIENTE, EstadoUsuario.MENU_PRINCIPAL);
+
+        gerenciadorSessao.concluirRegistro(CLIENTE, EstadoUsuario.INICIO);
+
+        assertThat(gerenciadorSessao.getEstado(CLIENTE)).isEqualTo(EstadoUsuario.MENU_PRINCIPAL);
+    }
+
+    @Test
+    @DisplayName("concluirRegistro não cria sessão para remetente sem estado")
+    void naoDeveCriarSessaoQuandoNaoHaEstado() {
+        gerenciadorSessao.concluirRegistro(CLIENTE, EstadoUsuario.RESERVA_ESPERANDO_DATA);
+
+        assertThat(gerenciadorSessao.getEstado(CLIENTE)).isEqualTo(EstadoUsuario.INICIO);
+    }
+
+    @Test
+    @DisplayName("concluirRegistro ignora sessão expirada e não a ressuscita")
+    void naoDeveRessuscitarSessaoExpirada() {
+        RelogioControlado relogio = new RelogioControlado(INICIO_RELOGIO);
+        GerenciadorSessao gerenciador = new GerenciadorSessao(relogio);
+        gerenciador.atualizarEstado(CLIENTE, EstadoUsuario.RESERVA_REGISTRANDO.name());
+        relogio.avancarMinutos(31);
+        assertThat(gerenciador.getEstado(CLIENTE)).isEqualTo(EstadoUsuario.INICIO);
+
+        gerenciador.concluirRegistro(CLIENTE, EstadoUsuario.RESERVA_ESPERANDO_DATA);
+
+        assertThat(gerenciador.getEstado(CLIENTE)).isEqualTo(EstadoUsuario.INICIO);
+    }
+
+    @Test
+    @DisplayName("concluirRegistro ignora número vazio e estado nulo")
+    void deveIgnorarArgumentosInvalidosEmConcluirRegistro() {
+        gerenciadorSessao.setEstado(CLIENTE, EstadoUsuario.RESERVA_REGISTRANDO);
+
+        gerenciadorSessao.concluirRegistro(null, EstadoUsuario.INICIO);
+        gerenciadorSessao.concluirRegistro(" ", EstadoUsuario.INICIO);
+        gerenciadorSessao.concluirRegistro(CLIENTE, null);
+
+        assertThat(gerenciadorSessao.getEstado(CLIENTE)).isEqualTo(EstadoUsuario.RESERVA_REGISTRANDO);
+    }
+
     private static final class RelogioControlado extends Clock {
         private Instant instante;
 

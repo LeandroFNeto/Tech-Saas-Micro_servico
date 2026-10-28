@@ -24,7 +24,7 @@ properties:
     example: abc123@group.calendar.google.com
   permiteReservaAutomatica:
     type: boolean
-    description: Quando true, o bot já nasce com a reserva automática habilitada no WhatsApp
+    description: Quando true, liga a reserva automática no WhatsApp e exige googleCalendarId preenchido (400 sem agenda). Ausente ou false, a empresa nasce com a reserva automática desligada
     default: false
     example: false
   linkFotoPrincipal:
