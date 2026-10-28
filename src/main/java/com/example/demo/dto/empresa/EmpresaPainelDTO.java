@@ -22,6 +22,9 @@ public record EmpresaPainelDTO(
         Boolean locacaoPorHora,
         Boolean permiteReservaAutomatica,
         List<ModuloPainelDTO> modulosAtivos,
+        String cidadePrevisao,
+        String cidadePrevisaoResolvida,
+        Boolean previsaoTempoAtiva,
         LocalDateTime atualizadoEm
 ) {
     public record ModuloPainelDTO(

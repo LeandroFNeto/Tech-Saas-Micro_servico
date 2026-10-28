@@ -56,3 +56,13 @@ properties:
     description: Opções do menu do WhatsApp (Fotos, Localização, Preços, Regras, Reserva). O cliente liga, desliga e edita o texto_menu.
     items:
       $ref: ./ModuloMenuDTO.yaml
+  cidadePrevisao:
+    type: string
+    maxLength: 100
+    description: Cidade do espaço para a previsão do tempo. Ao mudar, o back geocodifica o centro da cidade (400 se não achar, 429 após 5 trocas no dia, 503 se o provedor estiver fora).
+    example: Atibaia
+  previsaoTempoAtiva:
+    type: boolean
+    description: Interruptor "Mostrar previsão do tempo". Desligado por padrão.
+    default: false
+    example: false

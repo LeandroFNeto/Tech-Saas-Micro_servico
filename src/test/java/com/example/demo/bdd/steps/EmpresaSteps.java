@@ -51,7 +51,7 @@ public class EmpresaSteps {
 
     @Quando("eu envio PUT \\/empresas\\/{word}\\/cliente com o EmpresaUpdateDTO:")
     public void putCliente(String sessao, DataTable tabela) throws Exception {
-        ctx.resposta = executar("PUT", "/empresas/" + sessao + "/cliente", json(tabela), null, "token-cliente");
+        ctx.resposta = executar("PUT", "/empresas/" + sessao + "/cliente", json(tabela), "sua-chave-admin", null);
     }
 
     @Quando("eu envio PUT \\/empresas\\/{word}\\/admin com o EmpresaUpdateAdminDTO:")

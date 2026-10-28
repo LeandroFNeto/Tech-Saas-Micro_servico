@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>gamb · Gestão de avisos</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#f6f0fb;font-family:Inter,ui-sans-serif,system-ui,sans-serif;color:#1A0B2E;-webkit-font-smoothing:antialiased}
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid #FF8C42;outline-offset:2px}
+h1,h2,h3,p,ul,ol{margin:0}ul,ol{padding:0;list-style:none}
+.app{display:flex;flex-direction:column;min-height:100vh}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#1A0B2E;padding:8px 16px;color:#fff}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:#fff}
+.brand img{width:40px;height:40px;object-fit:contain}
+.brand b{display:block;font-family:Cinzel,Georgia,serif;font-size:16px;line-height:20px;font-weight:600;text-transform:uppercase;letter-spacing:.18em;color:#e2a775;background:linear-gradient(90deg,#bc8561,#f48c52 55%,#e2b57f);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.brand small{display:block;font-size:12px;line-height:16px;color:#d4bce8}
+.sair{display:inline-flex;align-items:center;min-height:44px;padding:0 14px;border-radius:12px;border:1px solid rgba(255,255,255,.3);font-size:14px;font-weight:600;color:#fff;text-decoration:none;box-sizing:border-box}
+.side{display:none}
+.tabs{position:sticky;bottom:0;z-index:5;display:flex;background:#fff;border-top:1px solid #d4bce8}
+.tabs a{flex:1;min-height:60px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:12px;font-weight:600;color:#652d90;text-decoration:none}
+.tabs a.on{color:#9a4508;box-shadow:inset 0 3px 0 #F7931E}
+.main{flex:1;min-width:0;padding:20px 16px}
+.snav{display:flex;flex-direction:column;gap:4px}
+.snav a{display:flex;align-items:center;gap:10px;min-height:44px;padding:0 12px;border-radius:12px;font-size:14px;font-weight:500;color:#ebe0f5;text-decoration:none}
+.snav a:hover{background:rgba(255,255,255,.08)}
+.snav a.on{background:rgba(247,147,30,.2);color:#ffab70}
+.suser{margin-top:auto;padding-top:16px;border-top:1px solid rgba(255,255,255,.12)}
+.suser p{margin-bottom:10px;font-size:13px;line-height:18px;color:#d4bce8;word-break:break-all}
+.ph{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px}
+.ph h1{font-size:clamp(22px,4vw,28px);line-height:1.2;font-weight:700}
+.ph p{margin-top:4px;font-size:14px;line-height:20px;color:#652d90}
+.card{border-radius:20px;border:1px solid #ebe0f5;background:#fff;padding:20px;box-shadow:0 1px 2px rgba(46,26,71,.05)}
+.sec{font-size:17px;line-height:24px;font-weight:700}
+.stack{display:flex;flex-direction:column;gap:16px}
+.cols{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));align-items:start}
+.lb{display:block;margin-bottom:6px;font-size:14px;line-height:20px;font-weight:600;color:#2E1A47}
+.in{box-sizing:border-box;width:100%;min-height:48px;border-radius:12px;border:1px solid #d4bce8;background:#fff;padding:0 14px;font:inherit;font-size:16px;color:#1A0B2E}
+.in:focus{border-color:#FF8C42;box-shadow:0 0 0 3px #ffe4d1}
+textarea.in{padding:12px 14px;min-height:120px;resize:vertical;line-height:1.5}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 20px;border-radius:12px;border:0;font:inherit;font-size:15px;font-weight:700;cursor:pointer;text-decoration:none;box-sizing:border-box}
+.btn-p{background:#F7931E;color:#1A0B2E}.btn-p:hover{background:#FF8C42}
+.btn-s{background:#fff;color:#2E1A47;border:1px solid #d4bce8}.btn-s:hover{background:#f6f0fb}
+.btn-d{background:#fff;color:#b91c1c;border:1px solid #fecaca}
+.btn-sm{min-height:44px;padding:0 14px;font-size:14px}
+.chip{display:inline-flex;align-items:center;border-radius:9999px;padding:4px 10px;font-size:12px;line-height:16px;font-weight:600;white-space:nowrap}
+.sw{position:relative;display:inline-block;width:48px;height:28px;flex:none}
+.sw input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer}
+.sw i{position:absolute;inset:0;border-radius:9999px;background:#d4bce8}
+.sw i::after{content:"";position:absolute;left:3px;top:3px;width:22px;height:22px;border-radius:9999px;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+.sw input:checked + i{background:#F7931E}
+.sw input:checked + i::after{transform:translateX(20px)}
+.sw input:focus-visible + i{outline:2px solid #FF8C42;outline-offset:2px}
+.opt{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;border-radius:14px;border:1px solid #ebe0f5;padding:14px 16px;cursor:pointer}
+.opt b{display:block;font-size:15px;line-height:22px;font-weight:600}
+.opt .d{display:block;margin-top:2px;font-size:13px;line-height:18px;color:#652d90}
+.avisos{display:flex;flex-direction:column;gap:12px}
+.av{display:flex;flex-direction:column;gap:10px;border-radius:20px;border:1px solid #ebe0f5;background:#fff;padding:16px;box-shadow:0 1px 2px rgba(46,26,71,.05)}
+.av h3{font-size:16px;line-height:24px;font-weight:700}
+.av .top{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.av .acts{display:flex;gap:8px}
+.av .acts .btn{flex:1}
+@media(min-width:1024px){
+.app{flex-direction:row}
+.topbar,.tabs{display:none}
+.side{display:flex;flex-direction:column;gap:24px;flex:none;width:248px;box-sizing:border-box;padding:20px 12px;background:#1A0B2E;color:#fff}
+.main{padding:32px 40px}
+.av .acts .btn{flex:none}
+}
+</style>
+</helmet>
+<div class="app">
+
+<header class="topbar">
+<a class="brand" href="AdminEmpresas.dc.html"><img src="/_blob/2afaeee994f3399be9d349cc4eb1cf72" alt="Logo gamb"><span><b>gamb</b><small>Painel Master</small></span></a>
+<a class="sair" href="Main.dc.html">Sair</a>
+</header>
+
+<aside class="side">
+<a class="brand" href="AdminEmpresas.dc.html"><img src="/_blob/2afaeee994f3399be9d349cc4eb1cf72" alt="Logo gamb"><span><b>gamb</b><small>Painel Master</small></span></a>
+<nav class="snav" aria-label="Principal">
+<a href="AdminEmpresas.dc.html"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21V6l8-3 8 3v15"/><path d="M9 21v-5h6v5M9 9h.01M12 9h.01M15 9h.01M9 12h.01M12 12h.01M15 12h.01"/></svg>Empresas</a>
+<a href="AdminClienteForm.dc.html"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>Novo cliente</a>
+<a class="on" href="AdminAvisos.dc.html"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9a6 6 0 1 1 12 0c0 5 2 6 2 6H4s2-1 2-6M10 19a2 2 0 0 0 4 0"/></svg>Avisos</a>
+</nav>
+<div class="suser"><p>admin@gamb.com.br</p><a class="sair" href="Main.dc.html">Sair</a></div>
+</aside>
+
+<main class="main">
+<div class="ph"><div><h1>Gestão de avisos</h1><p>Crie e edite os avisos que aparecem no painel do cliente.</p></div></div>
+
+<div class="cols">
+<ul class="avisos" aria-label="Avisos cadastrados">
+<sc-for list="{{avisos}}" as="aviso" hint-placeholder-count="3">
+<li class="av">
+<div class="top">
+<span class="chip" style="background: {{aviso.fundo}}; color: {{aviso.cor}}">{{aviso.tipo}}</span>
+<span class="chip" style="background: {{aviso.statusFundo}}; color: {{aviso.statusCor}}">{{aviso.status}}</span>
+</div>
+<h3>{{aviso.titulo}}</h3>
+<div class="acts"><button class="btn btn-s btn-sm" type="button" onClick="{{aviso.editar}}">Editar</button><button class="btn btn-d btn-sm" type="button">Excluir</button></div>
+</li>
+</sc-for>
+</ul>
+
+<form class="card stack">
+<h2 class="sec">{{tituloForm}}</h2>
+<div><label class="lb" for="titulo">Título</label><input id="titulo" class="in" placeholder="Manutenção programada" value="{{form.titulo}}"></div>
+<div><label class="lb" for="tipo">Tipo</label>
+<select id="tipo" class="in" value="{{form.tipo}}">
+<option value="MANUTENCAO">Manutenção</option>
+<option value="TUTORIAL">Tutorial</option>
+<option value="PRECO">Preço</option>
+<option value="COMUNICADO">Comunicado</option>
+</select></div>
+<div><label class="lb" for="conteudo">Conteúdo</label><textarea id="conteudo" class="in" placeholder="Texto ou HTML simples exibido no painel do cliente" value="{{form.conteudo}}"></textarea></div>
+<div><label class="lb" for="link">Link (opcional)</label><input id="link" class="in" inputmode="url" placeholder="https://www.youtube.com/watch?v=..."></div>
+<label class="opt"><span><b>Ativo</b><span class="d">Desligado = some do painel do cliente</span></span><span class="sw"><input type="checkbox" checked="{{ true }}"><i></i></span></label>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<button class="btn btn-p" type="button" style="flex: 1 1 200px">{{rotuloSalvar}}</button>
+<sc-if value="{{editando}}" hint-placeholder-val="{{ false }}">
+<button class="btn btn-s" type="button" onClick="{{cancelar}}">Cancelar</button>
+</sc-if>
+</div>
+</form>
+</div>
+</main>
+
+<nav class="tabs" aria-label="Principal">
+<a href="AdminEmpresas.dc.html"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21V6l8-3 8 3v15"/><path d="M9 21v-5h6v5M9 9h.01M12 9h.01M15 9h.01M9 12h.01M12 12h.01M15 12h.01"/></svg>Empresas</a>
+<a href="AdminClienteForm.dc.html"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>Novo cliente</a>
+<a class="on" href="AdminAvisos.dc.html"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9a6 6 0 1 1 12 0c0 5 2 6 2 6H4s2-1 2-6M10 19a2 2 0 0 0 4 0"/></svg>Avisos</a>
+</nav>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { editandoId: null };
+  }
+  renderVals() {
+    const tipos = {
+      MANUTENCAO: { nome: 'Manutenção', fundo: '#fef2f2', cor: '#b91c1c' },
+      TUTORIAL: { nome: 'Tutorial', fundo: '#ebe0f5', cor: '#4e2473' },
+      PRECO: { nome: 'Preço', fundo: '#fff4ec', cor: '#9a4508' },
+      COMUNICADO: { nome: 'Comunicado', fundo: '#f6f0fb', cor: '#652d90' }
+    };
+    const base = [
+      { id: 1, titulo: 'Como conectar o WhatsApp', tipo: 'TUTORIAL', conteudo: 'Escaneie o QR Code.', ativo: true },
+      { id: 2, titulo: 'Manutenção programada', tipo: 'MANUTENCAO', conteudo: '[DATA E HORÁRIO DA MANUTENÇÃO]', ativo: true },
+      { id: 3, titulo: '[TÍTULO DO COMUNICADO]', tipo: 'COMUNICADO', conteudo: '', ativo: false }
+    ];
+    const editando = base.find((a) => a.id === this.state.editandoId);
+    return {
+      avisos: base.map((a) => ({
+        titulo: a.titulo,
+        tipo: tipos[a.tipo].nome,
+        fundo: tipos[a.tipo].fundo,
+        cor: tipos[a.tipo].cor,
+        status: a.ativo ? 'Ativo' : 'Inativo',
+        statusFundo: a.ativo ? '#fff4ec' : '#ebe0f5',
+        statusCor: a.ativo ? '#9a4508' : '#4e2473',
+        editar: () => this.setState({ editandoId: a.id })
+      })),
+      editando: !!editando,
+      tituloForm: editando ? 'Editar aviso' : 'Novo aviso',
+      rotuloSalvar: editando ? 'Salvar alterações' : 'Criar aviso',
+      form: editando ? { titulo: editando.titulo, tipo: editando.tipo, conteudo: editando.conteudo } : { titulo: '', tipo: 'MANUTENCAO', conteudo: '' },
+      cancelar: () => this.setState({ editandoId: null })
+    };
+  }
+}
+</script>
+</body>
+</html>

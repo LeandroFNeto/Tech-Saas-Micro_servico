@@ -46,6 +46,15 @@ public record EmpresaResponseDTO(
         @Schema(description = "Opções do menu do WhatsApp configuradas pelo cliente")
         List<ModuloMenuDTO> modulosMenu,
 
+        @Schema(description = "Cidade digitada pelo cliente para a previsão do tempo", example = "Atibaia")
+        String cidadePrevisao,
+
+        @Schema(description = "Nome, estado e país devolvidos pela geocodificação", example = "Atibaia, São Paulo, BR")
+        String cidadePrevisaoResolvida,
+
+        @Schema(description = "Interruptor Mostrar previsão do tempo", example = "false")
+        Boolean previsaoTempoAtiva,
+
         @Schema(description = "Data e hora da última modificação retornada pela API", example = "2026-09-03T14:30:00")
         LocalDateTime atualizadoEm
 ) {

@@ -49,6 +49,8 @@ Empresa:
       type: string
     googleCalendarId:
       type: string
+      nullable: true
+      description: Só o admin recebe o valor. Para o cliente vem nulo.
     locacaoPorHora:
       type: boolean
     permiteReservaAutomatica:
@@ -92,9 +94,18 @@ EntityModelEmpresa:
       type: string
     googleCalendarId:
       type: string
+      nullable: true
+      description: Só o admin recebe o valor. Para o cliente vem nulo.
     locacaoPorHora:
       type: boolean
     permiteReservaAutomatica:
+      type: boolean
+      default: false
+    cidadePrevisao:
+      type: string
+    cidadePrevisaoResolvida:
+      type: string
+    previsaoTempoAtiva:
       type: boolean
       default: false
     modulosAtivos:
@@ -185,6 +196,8 @@ EmpresaRequestBody:
       type: string
     googleCalendarId:
       type: string
+      nullable: true
+      description: Só o admin recebe o valor. Para o cliente vem nulo.
     locacaoPorHora:
       type: boolean
     permiteReservaAutomatica:

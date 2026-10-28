@@ -19,6 +19,10 @@ Três donos, sem copiar conteúdo entre eles:
 | HTTP | `especificacao/back/` |
 | Tela | `especificacao/front/` |
 
+## Pesquisa no código
+
+Para achar arquivo, símbolo ou dependência, use o Graphify antes de Glob, Grep ou Read: `graphify query "<pergunta>"`, `graphify path "<A>" "<B>"`, `graphify explain "<conceito>"`. Leia direto só depois de o grafo indicar o arquivo, ou se `graphify-out/graph.json` não existir. Ao fim, se criou ou alterou arquivo, rode `graphify update .` uma vez. O prompt de cada agente que a skill abre leva essa regra. Regra do projeto: `.cursor/rules/graphify.mdc`.
+
 ## Quando agir
 
 1. Funcionalidade nova ou tela nova → mode **propor**. Pare. Não escreva YAML, Java nem Angular.

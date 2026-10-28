@@ -2,7 +2,7 @@ put:
   tags:
   - Gerenciamento de Empresas
   summary: Atualizar perfil pelo cliente
-  description: "Aplica EmpresaUpdateDTO: textos, links e aparência. Não altera cobrança nem infraestrutura."
+  description: "Aplica EmpresaUpdateDTO: textos, links, aparência, cidade da previsão e interruptor da previsão. Não altera cobrança nem infraestrutura."
   operationId: atualizarPeloCliente
   parameters:
   - name: x-cliente-token
@@ -31,8 +31,16 @@ put:
         application/hal+json:
           schema:
             $ref: "#/components/schemas/EmpresaResponseDTO"
+    "400":
+      description: Cidade não encontrada. Confira o nome da cidade.
+    "403":
+      description: Só o admin ou o cliente da própria empresa. Cliente de outra empresa, token legado x-cliente-token e sessão inexistente (para quem não é admin) recebem 403 antes de qualquer escrita ou consumo de cota.
+    "429":
+      description: Muitas alterações de cidade hoje. Tente amanhã. (limite de 5 trocas por empresa por dia)
+    "503":
+      description: Não foi possível verificar a cidade agora. Tente novamente em alguns minutos. Nada é gravado e a troca não conta no limite diário.
     "404":
-      description: Empresa não encontrada para a sessão informada
+      description: Empresa não encontrada para a sessão informada (só para o admin)
       content:
         application/hal+json:
           schema:

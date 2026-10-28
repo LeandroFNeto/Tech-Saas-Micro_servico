@@ -1,0 +1,63 @@
+{
+  "clientePainel": {
+    "cabecalho": {
+      "titulo": "Painel",
+      "descricao": "Veja se o WhatsApp está conectado e como vem o tempo nos próximos dias."
+    },
+    "chatbot": {
+      "titulo": "Configuração do chatbot",
+      "descricao": "Mensagem de boas-vindas, fotos, preços, regras do robô e senha de acesso.",
+      "botao": "Configuração do chatbot"
+    },
+    "previsao": {
+      "titulo": "Previsão dos próximos dias",
+      "dica": "Os dias reservados aparecem destacados, com o risco de desmarcação pela chuva.",
+      "editar": "Editar",
+      "cidade": {
+        "rotulo": "Cidade do espaço",
+        "placeholder": "Ex.: Atibaia",
+        "dica": "Usamos o centro da cidade. Bairro não entra."
+      },
+      "interruptor": {
+        "rotulo": "Mostrar previsão do tempo",
+        "dica": "Desligue se o espaço for coberto."
+      },
+      "botoes": {
+        "salvar": "Salvar",
+        "salvando": "Salvando...",
+        "cancelar": "Cancelar"
+      },
+      "estados": {
+        "semCidade": "Informe a cidade para ver a previsão.",
+        "carregando": "Carregando previsão...",
+        "vazio": "Nenhum dia de previsão para mostrar agora.",
+        "desligada": "A previsão do tempo está desligada. Toque em Editar para ligar.",
+        "erroTitulo": "Previsão indisponível no momento.",
+        "erroDica": "Tente de novo em alguns minutos.",
+        "reservasIndisponiveis": "Reservas indisponíveis no momento. A previsão aparece sem a marcação de reservado.",
+        "sucesso": "Cidade salva. A previsão foi atualizada.",
+        "cidadeNaoEncontrada": "Cidade não encontrada. Confira o nome da cidade.",
+        "limiteTrocas": "Muitas alterações de cidade hoje. Tente amanhã.",
+        "provedorIndisponivel": "Não foi possível verificar a cidade agora. Tente novamente em alguns minutos."
+      },
+      "dia": {
+        "reservado": "Reservado",
+        "maxima": "Máxima",
+        "minima": "Mínima",
+        "chanceChuva": "Chance de chuva",
+        "chuva": "Chuva",
+        "estimativa": "estimativa",
+        "risco": "Risco"
+      },
+      "risco": {
+        "BAIXO": "baixo",
+        "MEDIO": "médio",
+        "ALTO": "alto"
+      },
+      "atualizadoAs": "Atualizado às",
+      "atribuicao": "Dados meteorológicos: OpenWeather",
+      "atribuicaoUrl": "https://openweathermap.org/",
+      "atribuicaoNovaAba": "(abre em nova aba)"
+    }
+  }
+}

@@ -8,11 +8,17 @@ import com.example.demo.dto.empresa.EmpresaUpdateAdminDTO;
 import com.example.demo.dto.empresa.EmpresaUpdateDTO;
 import com.example.demo.dto.empresa.ModuloMenuDTO;
 import com.example.demo.dto.empresa.ResetSenhaAdminDTO;
+import com.example.demo.dto.previsao.PrevisaoTempoResponseDTO;
 import com.example.demo.model.Empresa;
 import com.example.demo.model.ModuloEmpresa;
+import com.example.demo.model.Role;
+import com.example.demo.model.Usuario;
 import com.example.demo.repository.EmpresaRepository;
 import com.example.demo.servico.CatalogoModulos;
 import com.example.demo.servico.ServicoAuth;
+import com.example.demo.servico.previsao.ProvedorIndisponivelException;
+import com.example.demo.servico.previsao.ProvedorPrevisao;
+import com.example.demo.servico.previsao.ServicoPrevisaoTempo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -41,6 +47,7 @@ public class ControllerEmpresa {
 
     @Autowired private EmpresaRepository empresaRepository;
     @Autowired private ServicoAuth servicoAuth;
+    @Autowired private ServicoPrevisaoTempo servicoPrevisaoTempo;
     @Value("${admin.api.key}") private String adminApiKey;
 
     private boolean possuiPapel(String papel) {
@@ -83,7 +90,7 @@ public class ControllerEmpresa {
         }
 
         List<EmpresaPainelDTO> itens = empresaRepository.listarComModulos().stream()
-                .map(this::paraPainel)
+                .map(empresa -> paraPainel(empresa, true))
                 .toList();
         return ResponseEntity.ok(new ColecaoEmpresaHalDTO(new ColecaoEmpresaHalDTO.Embedded(itens)));
     }
@@ -93,7 +100,8 @@ public class ControllerEmpresa {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Empresa encontrada"),
             @ApiResponse(responseCode = "401", description = "Token administrativo ou de cliente inválido"),
-            @ApiResponse(responseCode = "404", description = "Empresa não encontrada para a sessão informada")
+            @ApiResponse(responseCode = "403", description = "Cliente de outra empresa, token legado ou sessão inexistente para quem não é admin"),
+            @ApiResponse(responseCode = "404", description = "Empresa não encontrada para a sessão informada (admin)")
     })
     public ResponseEntity<EmpresaPainelDTO> buscarPorSessao(
             @Parameter(description = "Token administrativo do SaaS", example = "sua-chave-admin")
@@ -106,11 +114,18 @@ public class ControllerEmpresa {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token Inválido");
         }
 
+        boolean admin = !isAcessoNegado(adminToken);
         Empresa empresa = empresaRepository.buscarPorSessaoComModulos(sessaoWhatsapp);
         if (empresa == null) {
-            return ResponseEntity.notFound().build();
+            if (admin) {
+                return ResponseEntity.notFound().build();
+            }
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acesso negado a esta empresa");
         }
-        return ResponseEntity.ok(paraPainel(empresa));
+        if (!admin && !isClienteDaEmpresa(empresa)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acesso negado a esta empresa");
+        }
+        return ResponseEntity.ok(paraPainel(empresa, admin));
     }
 
     @PostMapping
@@ -171,7 +186,11 @@ public class ControllerEmpresa {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Perfil do cliente atualizado",
                     content = @Content(schema = @Schema(implementation = EmpresaResponseDTO.class))),
-            @ApiResponse(responseCode = "404", description = "Empresa não encontrada para a sessão informada")
+            @ApiResponse(responseCode = "400", description = "Cidade não encontrada"),
+            @ApiResponse(responseCode = "403", description = "Cliente de outra empresa, token legado ou sessão inexistente para quem não é admin"),
+            @ApiResponse(responseCode = "404", description = "Empresa não encontrada para a sessão informada (admin)"),
+            @ApiResponse(responseCode = "429", description = "Limite de 5 trocas de cidade por dia atingido"),
+            @ApiResponse(responseCode = "503", description = "Provedor de previsão indisponível")
     })
     public ResponseEntity<EmpresaResponseDTO> atualizarPeloCliente(
             @Parameter(description = "Token do painel do cliente")
@@ -180,9 +199,43 @@ public class ControllerEmpresa {
             @PathVariable String sessao,
             @Valid @RequestBody EmpresaUpdateDTO dto) {
 
+        boolean admin = possuiPapel("ROLE_ADMIN");
         Empresa empresa = empresaRepository.buscarPorSessaoComModulos(sessao);
         if (empresa == null) {
-            return ResponseEntity.notFound().build();
+            if (admin) {
+                return ResponseEntity.notFound().build();
+            }
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acesso negado a esta empresa");
+        }
+        if (!admin && !isClienteDaEmpresa(empresa)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acesso negado a esta empresa");
+        }
+
+        ProvedorPrevisao.Localizacao novaLocalizacao = null;
+        boolean limparCidade = false;
+        String cidadeNova = null;
+        if (dto.cidadePrevisao() != null) {
+            cidadeNova = dto.cidadePrevisao().trim();
+            if (cidadeNova.isEmpty()) {
+                limparCidade = true;
+            } else if (!cidadeNova.equalsIgnoreCase(empresa.getCidadePrevisao()) || empresa.getLatitude() == null) {
+                novaLocalizacao = geocodificarCidade(empresa, cidadeNova);
+            }
+        }
+
+        if (limparCidade) {
+            empresa.setCidadePrevisao(null);
+            empresa.setCidadePrevisaoResolvida(null);
+            empresa.setLatitude(null);
+            empresa.setLongitude(null);
+        } else if (novaLocalizacao != null) {
+            empresa.setCidadePrevisao(cidadeNova);
+            empresa.setCidadePrevisaoResolvida(novaLocalizacao.nomeResolvido());
+            empresa.setLatitude(novaLocalizacao.latitude());
+            empresa.setLongitude(novaLocalizacao.longitude());
+        }
+        if (dto.previsaoTempoAtiva() != null) {
+            empresa.setPrevisaoTempoAtiva(dto.previsaoTempoAtiva());
         }
 
         if (dto.nome() != null) empresa.setNome(dto.nome());
@@ -210,6 +263,44 @@ public class ControllerEmpresa {
         }
 
         return ResponseEntity.ok(paraResposta(empresaRepository.save(empresa)));
+    }
+
+    @GetMapping("/{sessao}/previsao")
+    @Operation(summary = "Previsão do tempo dos próximos dias da empresa",
+            description = "Devolve PrevisaoTempoResponseDTO. Aceita o admin ou o cliente da própria empresa.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Previsão, ou disponivel=false",
+                    content = @Content(schema = @Schema(implementation = PrevisaoTempoResponseDTO.class))),
+            @ApiResponse(responseCode = "401", description = "Sem token"),
+            @ApiResponse(responseCode = "403", description = "Cliente de outra empresa, token legado ou sessão inexistente para quem não é admin"),
+            @ApiResponse(responseCode = "404", description = "Empresa não encontrada para a sessão informada (admin)")
+    })
+    public ResponseEntity<PrevisaoTempoResponseDTO> buscarPrevisao(
+            @Parameter(description = "Token administrativo do SaaS", example = "sua-chave-admin")
+            @RequestHeader(value = "x-admin-token", required = false) String adminToken,
+            @Parameter(description = "Token do painel do cliente")
+            @RequestHeader(value = "x-cliente-token", required = false) String clienteToken,
+            @Parameter(description = "Identificador da sessão WhatsApp da empresa", example = "sessao_recanto_01")
+            @PathVariable String sessao) {
+
+        boolean admin = !isAcessoNegado(adminToken);
+        if (!admin && isClienteSemToken(clienteToken)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token Inválido");
+        }
+
+        Empresa empresa = empresaRepository.findBySessaoWhatsapp(sessao);
+        if (empresa == null) {
+            if (admin) {
+                return ResponseEntity.notFound().build();
+            }
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acesso negado a esta empresa");
+        }
+
+        if (!admin && !isClienteDaEmpresa(empresa)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acesso negado a esta empresa");
+        }
+
+        return ResponseEntity.ok(servicoPrevisaoTempo.consultar(empresa));
     }
 
     @PutMapping("/{sessao}/admin")
@@ -277,6 +368,33 @@ public class ControllerEmpresa {
         return ResponseEntity.noContent().build();
     }
 
+    private boolean isClienteDaEmpresa(Empresa empresa) {
+        Authentication autenticacao = SecurityContextHolder.getContext().getAuthentication();
+        if (autenticacao == null || !(autenticacao.getPrincipal() instanceof Usuario usuario)) {
+            return false;
+        }
+        return usuario.getRole() == Role.CLIENTE
+                && usuario.getEmpresa() != null
+                && empresa.getId() != null
+                && empresa.getId().equals(usuario.getEmpresa().getId());
+    }
+
+    private ProvedorPrevisao.Localizacao geocodificarCidade(Empresa empresa, String cidade) {
+        if (!servicoPrevisaoTempo.consumirTrocaDeCidade(empresa.getId())) {
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS,
+                    "Muitas alterações de cidade hoje. Tente amanhã.");
+        }
+        try {
+            return servicoPrevisaoTempo.geocodificar(cidade)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                            "Cidade não encontrada. Confira o nome da cidade."));
+        } catch (ProvedorIndisponivelException falha) {
+            servicoPrevisaoTempo.estornarTrocaDeCidade(empresa.getId());
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
+                    "Não foi possível verificar a cidade agora. Tente novamente em alguns minutos.");
+        }
+    }
+
     private EmpresaResponseDTO paraResposta(Empresa empresa) {
         List<ModuloMenuDTO> menu = (empresa.getModulosAtivos() == null
                 ? List.<ModuloEmpresa>of()
@@ -303,11 +421,14 @@ public class ControllerEmpresa {
                 Boolean.TRUE.equals(empresa.getLocacaoPorHora()),
                 empresa.getRegrasLocacao(),
                 menu,
+                empresa.getCidadePrevisao(),
+                empresa.getCidadePrevisaoResolvida(),
+                Boolean.TRUE.equals(empresa.getPrevisaoTempoAtiva()),
                 LocalDateTime.now()
         );
     }
 
-    private EmpresaPainelDTO paraPainel(Empresa empresa) {
+    private EmpresaPainelDTO paraPainel(Empresa empresa, boolean admin) {
         List<EmpresaPainelDTO.ModuloPainelDTO> modulos = (empresa.getModulosAtivos() == null
                 ? List.<ModuloEmpresa>of()
                 : empresa.getModulosAtivos())
@@ -333,10 +454,13 @@ public class ControllerEmpresa {
                 empresa.getLinkFotoPrincipal(),
                 List.copyOf(empresa.getUrlsGaleria()),
                 empresa.getLinkGaleria(),
-                empresa.getGoogleCalendarId(),
+                admin ? empresa.getGoogleCalendarId() : null,
                 empresa.getLocacaoPorHora(),
                 Boolean.TRUE.equals(empresa.getPermiteReservaAutomatica()),
                 modulos,
+                empresa.getCidadePrevisao(),
+                empresa.getCidadePrevisaoResolvida(),
+                Boolean.TRUE.equals(empresa.getPrevisaoTempoAtiva()),
                 LocalDateTime.now()
         );
     }

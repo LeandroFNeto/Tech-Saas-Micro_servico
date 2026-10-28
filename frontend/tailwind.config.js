@@ -16,7 +16,8 @@ module.exports = {
       },
       colors: {
         brand: design.tema.cores.brand,
-        accent: design.tema.cores.accent
+        accent: design.tema.cores.accent,
+        risco: design.tema.cores.risco
       }
     }
   },

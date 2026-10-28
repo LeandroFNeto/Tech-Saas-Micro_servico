@@ -8,6 +8,10 @@ export const CLIENT_ROUTES: Routes = [
     children: [
       {
         path: '',
+        loadComponent: () => import('./painel/painel.component').then((m) => m.PainelComponent)
+      },
+      {
+        path: 'chatbot',
         loadComponent: () => import('./perfil/perfil.component').then((m) => m.PerfilComponent)
       }
     ]

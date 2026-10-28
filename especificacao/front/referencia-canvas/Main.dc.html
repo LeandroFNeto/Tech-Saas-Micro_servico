@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>gamb · Entrar</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#652d90}a:hover{color:#4e2473}
+a:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid #FF8C42;outline-offset:2px}
+</style>
+</helmet>
+<div style="display: flex; flex-wrap: wrap; min-height: 100vh; font-family: Inter, ui-sans-serif, system-ui, sans-serif; color: #1A0B2E; -webkit-font-smoothing: antialiased">
+
+<section style="position: relative; overflow: hidden; flex: 1 1 520px; min-width: 0; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; gap: 32px; padding: clamp(24px, 5vw, 64px); background: linear-gradient(160deg, #2E1A47 0%, #1A0B2E 65%); color: #ffffff">
+<div aria-hidden="true" style="position: absolute; right: -120px; top: -120px; width: 320px; height: 320px; border-radius: 9999px; background: radial-gradient(circle, rgba(247,147,30,0.45), rgba(247,147,30,0) 70%)"></div>
+
+<a href="Apresentacao.dc.html" style="position: relative; display: inline-flex; align-items: center; gap: 16px; align-self: flex-start; min-height: 44px; text-decoration: none">
+<img src="/_blob/2afaeee994f3399be9d349cc4eb1cf72" alt="Logo gamb" style="width: clamp(64px, 11vw, 96px); height: clamp(64px, 11vw, 96px); object-fit: contain">
+<span style="font-family: Cinzel, Georgia, serif; font-size: 18px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.18em; color: #e2a775; background: linear-gradient(90deg, #bc8561, #f48c52 55%, #e2b57f); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent">gamb</span>
+</a>
+
+<div style="position: relative; max-width: 460px">
+<h1 style="margin: 0; font-family: Cinzel, Georgia, serif; font-size: clamp(28px, 5.5vw, 46px); line-height: 1.15; font-weight: 600; color: #ffffff">Bem-vindo de volta.</h1>
+<p style="margin: 16px 0 0; font-size: clamp(15px, 2.2vw, 17px); line-height: 1.6; color: #ebe0f5">Entre para ajustar o menu do bot, os preços e a agenda do seu espaço.</p>
+</div>
+</section>
+
+<section style="flex: 1 1 420px; min-width: 0; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: clamp(16px, 4vw, 48px); background: #f6f0fb">
+
+<div style="width: 100%; max-width: 420px; box-sizing: border-box; border-radius: 24px; border: 1px solid #ebe0f5; background: #ffffff; padding: clamp(20px, 5vw, 36px); box-shadow: 0 10px 30px -12px rgba(46,26,71,0.25)">
+<h2 style="margin: 0; font-size: 26px; line-height: 32px; font-weight: 700; color: #1A0B2E">Entrar</h2>
+<p style="margin: 6px 0 0; font-size: 15px; line-height: 22px; color: #652d90">Use o e-mail de acesso da sua empresa.</p>
+
+<form style="margin-top: 24px; display: flex; flex-direction: column; gap: 18px" onSubmit="{{entrar}}">
+<div>
+<label for="email" style="display: block; margin-bottom: 6px; font-size: 14px; line-height: 20px; font-weight: 600; color: #2E1A47">E-mail</label>
+<input id="email" type="email" autocomplete="username" inputmode="email" placeholder="sessao@gamb.com.br" value="{{email}}" onInput="{{digitarEmail}}" style="box-sizing: border-box; width: 100%; height: 52px; border-radius: 14px; border: 1px solid #d4bce8; background: #ffffff; padding: 0 16px; font: inherit; font-size: 16px; color: #1A0B2E">
+<sc-if value="{{emailInvalido}}" hint-placeholder-val="{{ false }}">
+<p role="alert" style="margin: 6px 0 0; font-size: 13px; line-height: 18px; color: #b91c1c">O e-mail de acesso é o nome da sua sessão seguido de @gamb.com.br</p>
+</sc-if>
+</div>
+
+<div>
+<label for="senha" style="display: block; margin-bottom: 6px; font-size: 14px; line-height: 20px; font-weight: 600; color: #2E1A47">Senha</label>
+<div style="position: relative">
+<input id="senha" type="{{tipoSenha}}" autocomplete="current-password" placeholder="Sua senha" style="box-sizing: border-box; width: 100%; height: 52px; border-radius: 14px; border: 1px solid #d4bce8; background: #ffffff; padding: 0 84px 0 16px; font: inherit; font-size: 16px; color: #1A0B2E">
+<button type="button" aria-label="{{rotuloMostrar}}" onClick="{{alternarSenha}}" style="position: absolute; right: 4px; top: 4px; height: 44px; min-width: 44px; padding: 0 12px; border: 0; border-radius: 10px; background: transparent; cursor: pointer; font: inherit; font-size: 14px; font-weight: 600; color: #652d90">{{textoMostrar}}</button>
+</div>
+</div>
+
+<sc-if value="{{mostrarErro}}" hint-placeholder-val="{{ false }}">
+<p role="alert" style="margin: 0; border-radius: 12px; border: 1px solid #fecaca; background: #fef2f2; padding: 10px 14px; font-size: 14px; line-height: 20px; color: #b91c1c">E-mail ou senha inválidos. Confira os dados e tente de novo.</p>
+</sc-if>
+
+<button type="submit" style="width: 100%; height: 52px; border: 0; border-radius: 14px; background: #F7931E; cursor: pointer; font: inherit; font-size: 16px; font-weight: 700; color: #1A0B2E; opacity: {{opacidadeBotao}}">{{rotuloBotao}}</button>
+</form>
+
+<p style="margin: 20px 0 0; font-size: 13px; line-height: 20px; color: #4e2473">Esqueceu a senha? Peça ao administrador da gamb para redefinir.</p>
+</div>
+
+<a href="Apresentacao.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 12px; font-size: 14px; font-weight: 600; text-decoration: none">← Conhecer o gamb</a>
+</section>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"mostrarErro":{"editor":"boolean","default":false},"$preview":{"width":1280,"height":820}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { email: '', tocado: false, enviando: false, verSenha: false };
+  }
+  renderVals() {
+    const email = this.state.email;
+    const valido = /^[a-z0-9_]+@gamb\.com\.br$/i.test(email);
+    return {
+      email: email,
+      emailInvalido: this.state.tocado && email.length > 0 && !valido,
+      mostrarErro: this.props.mostrarErro ?? false,
+      rotuloBotao: this.state.enviando ? 'Entrando...' : 'Entrar',
+      opacidadeBotao: this.state.enviando ? 0.6 : 1,
+      tipoSenha: this.state.verSenha ? 'text' : 'password',
+      textoMostrar: this.state.verSenha ? 'Ocultar' : 'Mostrar',
+      rotuloMostrar: this.state.verSenha ? 'Ocultar senha' : 'Mostrar senha',
+      alternarSenha: () => this.setState({ verSenha: !this.state.verSenha }),
+      digitarEmail: (e) => this.setState({ email: e.target.value, tocado: true }),
+      entrar: (e) => {
+        e.preventDefault();
+        this.setState({ enviando: true });
+        setTimeout(() => this.setState({ enviando: false }), 1200);
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>

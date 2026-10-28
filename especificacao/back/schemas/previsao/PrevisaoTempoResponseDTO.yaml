@@ -1,0 +1,27 @@
+type: object
+description: Previsão dos próximos dias da cidade da empresa, com os dias reservados marcados. Falha do provedor responde 200 com disponivel=false.
+properties:
+  disponivel:
+    type: boolean
+    description: false quando o interruptor está desligado, a cidade não foi informada, a chave da API está ausente ou o provedor falhou sem cache
+    example: true
+  reservasDisponiveis:
+    type: boolean
+    description: false quando a empresa tem agenda configurada e o Google Agenda falhou. Nesse caso nenhum dia sai como reservado.
+    example: true
+  atualizadoEm:
+    type: string
+    format: date-time
+    nullable: true
+    description: Horário real (America/Sao_Paulo) da entrada de cache usada
+    example: 2026-10-27T14:30:00
+  cidade:
+    type: string
+    nullable: true
+    description: Nome resolvido da cidade (por exemplo "Atibaia, São Paulo, BR")
+    example: Atibaia, São Paulo, BR
+  dias:
+    type: array
+    description: Até 8 dias a partir de hoje. Vazia quando disponivel é false.
+    items:
+      $ref: ./PrevisaoDiaDTO.yaml

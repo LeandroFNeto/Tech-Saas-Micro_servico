@@ -1,0 +1,36 @@
+{
+  "login": {
+    "marca": {
+      "nome": "gamb",
+      "logoAlt": "Logo gamb",
+      "titulo": "Bem-vindo de volta.",
+      "descricao": "Entre para ajustar o menu do bot, os preços e a agenda do seu espaço."
+    },
+    "cartao": {
+      "titulo": "Entrar",
+      "descricao": "Use o e-mail de acesso da sua empresa.",
+      "ajuda": "Esqueceu a senha? Peça ao administrador da gamb para redefinir."
+    },
+    "email": {
+      "rotulo": "E-mail",
+      "placeholder": "sessao@gamb.com.br",
+      "erro": "O e-mail de acesso é o nome da sua sessão seguido de @gamb.com.br"
+    },
+    "senha": {
+      "rotulo": "Senha",
+      "placeholder": "Sua senha",
+      "mostrar": "Mostrar",
+      "ocultar": "Ocultar",
+      "mostrarRotulo": "Mostrar senha",
+      "ocultarRotulo": "Ocultar senha"
+    },
+    "botao": {
+      "entrar": "Entrar",
+      "entrando": "Entrando..."
+    },
+    "erros": {
+      "credenciaisInvalidas": "E-mail ou senha inválidos. Confira os dados e tente de novo."
+    },
+    "voltar": "← Conhecer o gamb"
+  }
+}

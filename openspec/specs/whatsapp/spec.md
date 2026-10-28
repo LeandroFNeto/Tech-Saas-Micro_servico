@@ -117,3 +117,44 @@ Cenário: GET em iniciar
 - Quando o painel envia GET `/whatsapp/{sessao}/iniciar`
 - Então a API responde 405
 - E a sessão não é iniciada
+
+### WPP-05 Recusar data e horário que já passaram na conversa de locação
+
+O sistema deve recusar, no fuso `America/Sao_Paulo`, data anterior a hoje na pesquisa (`ESPERANDO_DATA`) e na reserva (`RESERVA_ESPERANDO_DATA`), e horário de hoje que já passou na reserva por hora (`RESERVA_ESPERANDO_HORARIO`). A recusa acontece antes do Google Agenda, a conversa permanece no mesmo passo e o cliente pode enviar outro valor. Hoje com horário ainda válido segue o fluxo normal. Formato inválido e data futura ocupada mantêm as mensagens que já existiam.
+
+Contrato: `especificacao/back/paths/webhook-whatsapp.yaml`
+Prova: `src/test/java/com/example/demo/strategy/LocacaoStrategyTest.java`
+
+Cenário: data passada na pesquisa
+
+- Dado uma empresa `LOCACAO` com agenda configurada e o cliente em `ESPERANDO_DATA`
+- Quando o cliente envia a data de ontem no formato DD-MM-AAAA
+- Então o bot responde "Essa data já passou. Envie uma data de hoje em diante, no formato DD-MM-AAAA, por exemplo 16-09-2026."
+- E o Google Agenda não é consultado
+- E o estado continua `ESPERANDO_DATA`
+
+Cenário: data passada na reserva
+
+- Dado uma empresa `LOCACAO` com reserva automática e o cliente em `RESERVA_ESPERANDO_DATA`
+- Quando o cliente envia a data de ontem
+- Então o bot responde "Essa data já passou. Envie uma data de hoje em diante, no formato DD-MM-AAAA, por exemplo 16-09-2026."
+- E o Google Agenda não é consultado
+- E o estado continua `RESERVA_ESPERANDO_DATA`
+
+Cenário: horário de hoje já passado na reserva por hora
+
+- Dado uma empresa com locação por hora e o cliente em `RESERVA_ESPERANDO_HORARIO` com a data de hoje na reserva
+- Quando o cliente envia um horário anterior à hora atual
+- Então o bot responde "Esse horário de hoje já passou. Envie um horário que ainda não passou, no formato HH:MM, por exemplo 18:00."
+- E o horário não é gravado na reserva
+- E o estado continua `RESERVA_ESPERANDO_HORARIO`
+
+Cenário: hoje com horário ainda válido continua o fluxo
+
+- Dado o cliente em `ESPERANDO_DATA` ou `RESERVA_ESPERANDO_DATA`
+- Quando envia a data de hoje
+- Então o Google Agenda é consultado para essa data
+- E, na reserva por hora, o bot pede o horário e o estado passa a `RESERVA_ESPERANDO_HORARIO`
+- Quando, com a data de hoje na reserva, o cliente envia um horário que ainda não passou
+- Então o horário é gravado
+- E o bot pede o nome do responsável e o estado passa a `RESERVA_ESPERANDO_NOME`

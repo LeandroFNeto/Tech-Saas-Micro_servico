@@ -62,6 +62,21 @@ public class Empresa {
     @Column(name = "permite_reserva_automatica")
     private Boolean permiteReservaAutomatica = false;
 
+    @Column(name = "cidade_previsao")
+    private String cidadePrevisao;
+
+    @Column(name = "cidade_previsao_resolvida")
+    private String cidadePrevisaoResolvida;
+
+    @Column(name = "latitude")
+    private Double latitude;
+
+    @Column(name = "longitude")
+    private Double longitude;
+
+    @Column(name = "previsao_tempo_ativa")
+    private Boolean previsaoTempoAtiva;
+
     @OneToMany(mappedBy = "empresa", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("ordemExibicao ASC")
     private List<ModuloEmpresa> modulosAtivos = new ArrayList<>();
@@ -95,6 +110,46 @@ public class Empresa {
 
     public void setPermiteReservaAutomatica(Boolean permiteReservaAutomatica) {
         this.permiteReservaAutomatica = permiteReservaAutomatica;
+    }
+
+    public String getCidadePrevisao() {
+        return cidadePrevisao;
+    }
+
+    public void setCidadePrevisao(String cidadePrevisao) {
+        this.cidadePrevisao = cidadePrevisao;
+    }
+
+    public String getCidadePrevisaoResolvida() {
+        return cidadePrevisaoResolvida;
+    }
+
+    public void setCidadePrevisaoResolvida(String cidadePrevisaoResolvida) {
+        this.cidadePrevisaoResolvida = cidadePrevisaoResolvida;
+    }
+
+    public Double getLatitude() {
+        return latitude;
+    }
+
+    public void setLatitude(Double latitude) {
+        this.latitude = latitude;
+    }
+
+    public Double getLongitude() {
+        return longitude;
+    }
+
+    public void setLongitude(Double longitude) {
+        this.longitude = longitude;
+    }
+
+    public Boolean getPrevisaoTempoAtiva() {
+        return previsaoTempoAtiva;
+    }
+
+    public void setPrevisaoTempoAtiva(Boolean previsaoTempoAtiva) {
+        this.previsaoTempoAtiva = previsaoTempoAtiva;
     }
 
     public List<ModuloEmpresa> getModulosAtivos() {

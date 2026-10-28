@@ -1,10 +1,9 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { NEVER, of } from 'rxjs';
+import { of } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
 import { AvisoService } from '../../../core/services/aviso.service';
 import { EmpresaService } from '../../../core/services/empresa.service';
-import { WhatsappConnectionService } from '../../../core/services/whatsapp-connection.service';
 import { camposAbaixoDoMinimo, garantirTailwindCarregado, medirCampos } from '../../../testing/campos-fonte.testing';
 import { PerfilComponent } from './perfil.component';
 
@@ -27,8 +26,7 @@ describe('PerfilComponent regressao visual', () => {
           useValue: { sessao: () => ({ sessaoWhatsapp: 'quadra', sub: 'quadra@gamb.com.br', papel: 'CLIENTE' }) }
         },
         { provide: EmpresaService, useValue: { buscarPorSessao: () => of(empresa) } },
-        { provide: AvisoService, useValue: { listarAtivos: () => of([]) } },
-        { provide: WhatsappConnectionService, useValue: { consultarStatus: () => NEVER, iniciar: () => NEVER } }
+        { provide: AvisoService, useValue: { listarAtivos: () => of([]) } }
       ]
     });
     const fixture = TestBed.createComponent(PerfilComponent);
@@ -49,4 +47,13 @@ describe('PerfilComponent regressao visual', () => {
       raiz.remove();
     });
   }
+
+  it('mostra o link Voltar ao painel para /cliente e nao mostra a conexao do WhatsApp', () => {
+    const fixture = montar();
+    const raiz: HTMLElement = fixture.nativeElement;
+    const link = raiz.querySelector('a[href="/cliente"]');
+    expect(link?.textContent).toContain('Voltar ao painel');
+    expect(raiz.querySelector('app-conexao-whatsapp')).toBeNull();
+    raiz.remove();
+  });
 });

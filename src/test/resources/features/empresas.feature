@@ -95,3 +95,192 @@ Funcionalidade: Contratos de empresa do SaaS
     Quando eu envio PUT /empresas/sessao_reset_ausente/reset-senha com o ResetSenhaAdminDTO:
       | novaSenha | NovaSenha456 |
     Então o status HTTP deve ser 404
+
+  Cenário: PUT /empresas/{sessao}/cliente grava cidade válida e liga a previsão
+    Dado uma empresa persistida com sessão "sessao_prev_ok" e ramo "LOCACAO"
+    E o provedor de previsão reconhece qualquer cidade
+    Quando a empresa "sessao_prev_ok" troca a cidade da previsão para "Atibaia"
+    Então o status HTTP deve ser 200
+    E o campo "cidadePrevisaoResolvida" deve ser "Atibaia, São Paulo, BR"
+    E o corpo deve conter "\"previsaoTempoAtiva\":true"
+    E a empresa "sessao_prev_ok" deve ter a cidade de previsão "Atibaia" gravada
+
+  Cenário: PUT /empresas/{sessao}/cliente rejeita cidade inexistente com 400
+    Dado uma empresa persistida com sessão "sessao_prev_invalida" e ramo "LOCACAO"
+    E o provedor de previsão não reconhece a cidade
+    Quando a empresa "sessao_prev_invalida" troca a cidade da previsão para "Xyzcidade"
+    Então o status HTTP deve ser 400
+    E a empresa "sessao_prev_invalida" não deve ter cidade de previsão gravada
+
+  Cenário: PUT /empresas/{sessao}/cliente com provedor fora do ar devolve 503 sem gravar nada
+    Dado uma empresa persistida com sessão "sessao_prev_fora" e ramo "LOCACAO"
+    E o provedor de previsão está fora do ar
+    Quando a empresa "sessao_prev_fora" troca a cidade da previsão para "Atibaia"
+    Então o status HTTP deve ser 503
+    E a empresa "sessao_prev_fora" não deve ter cidade de previsão gravada
+
+  Cenário: PUT /empresas/{sessao}/cliente na sexta troca de cidade no mesmo dia devolve 429
+    Dado uma empresa persistida com sessão "sessao_prev_limite" e ramo "LOCACAO"
+    E o provedor de previsão reconhece qualquer cidade
+    Quando a empresa "sessao_prev_limite" troca a cidade da previsão 5 vezes
+    Então o status HTTP deve ser 200
+    Quando a empresa "sessao_prev_limite" troca a cidade da previsão para "Bragança Paulista"
+    Então o status HTTP deve ser 429
+
+  Cenário: GET /empresas/{sessao}/previsao devolve 200 ao admin com os dias e o risco
+    Dado uma empresa persistida com sessão "sessao_prev_get" e ramo "LOCACAO"
+    E o token administrativo "sua-chave-admin"
+    E o provedor de previsão reconhece qualquer cidade
+    E o provedor de previsão devolve hoje com chuva forte
+    Quando a empresa "sessao_prev_get" troca a cidade da previsão para "Atibaia"
+    E eu envio GET /empresas/sessao_prev_get/previsao com o token administrativo
+    Então o status HTTP deve ser 200
+    E o corpo deve conter "\"disponivel\":true"
+    E o corpo deve conter "\"risco\":\"ALTO\""
+    E o corpo deve conter "\"reservado\":false"
+
+  Cenário: GET /empresas/{sessao}/previsao devolve 200 ao cliente da própria empresa
+    Dado o token administrativo "sua-chave-admin"
+    Quando eu envio POST /empresas com o EmpresaCreateDTO:
+      | nome           | Espaço Previsão Dono |
+      | sessaoWhatsapp | sessao_prev_dono     |
+      | ramoDeAtuacao  | LOCACAO              |
+      | email          | dono@recanto.com     |
+      | senha          | SenhaCliente123      |
+    E eu envio POST /auth/login com o LoginRequestDTO:
+      | email | sessao_prev_dono@gamb.com.br |
+      | senha | SenhaCliente123              |
+    E eu envio GET /empresas/sessao_prev_dono/previsao com o JWT do login
+    Então o status HTTP deve ser 200
+    E o corpo deve conter "\"disponivel\":false"
+
+  Cenário: GET /empresas/{sessao}/previsao sem token retorna 401
+    Dado uma empresa persistida com sessão "sessao_prev_401" e ramo "LOCACAO"
+    Quando eu envio GET /empresas/sessao_prev_401/previsao sem token
+    Então o status HTTP deve ser 401
+
+  Cenário: GET /empresas/{sessao}/previsao de cliente de outra empresa retorna 403
+    Dado o token administrativo "sua-chave-admin"
+    Quando eu envio POST /empresas com o EmpresaCreateDTO:
+      | nome           | Espaço Alvo      |
+      | sessaoWhatsapp | sessao_prev_alvo |
+      | ramoDeAtuacao  | LOCACAO          |
+      | email          | alvo@recanto.com |
+      | senha          | SenhaCliente123  |
+    E eu envio POST /empresas com o EmpresaCreateDTO:
+      | nome           | Espaço Intruso      |
+      | sessaoWhatsapp | sessao_prev_intruso |
+      | ramoDeAtuacao  | LOCACAO             |
+      | email          | intruso@recanto.com |
+      | senha          | SenhaCliente123     |
+    E eu envio POST /auth/login com o LoginRequestDTO:
+      | email | sessao_prev_intruso@gamb.com.br |
+      | senha | SenhaCliente123                 |
+    E eu envio GET /empresas/sessao_prev_alvo/previsao com o JWT do login
+    Então o status HTTP deve ser 403
+
+  Cenário: GET /empresas/{sessao}/previsao com o token legado de cliente retorna 403
+    Dado uma empresa persistida com sessão "sessao_prev_legado" e ramo "LOCACAO"
+    Quando eu envio GET /empresas/sessao_prev_legado/previsao com o token legado de cliente
+    Então o status HTTP deve ser 403
+
+  Cenário: GET /empresas/{sessao}/previsao de sessão inexistente retorna 404
+    Dado o token administrativo "sua-chave-admin"
+    Quando eu envio GET /empresas/sessao_prev_ausente/previsao com o token administrativo
+    Então o status HTTP deve ser 404
+
+  Cenário: PUT /empresas/{sessao}/cliente com o token legado retorna 403 sem consultar o provedor
+    Dado uma empresa persistida com sessão "sessao_put_legado" e ramo "LOCACAO"
+    E o provedor de previsão reconhece qualquer cidade
+    E o provedor de previsão ainda não foi consultado
+    Quando eu envio PUT /empresas/sessao_put_legado/cliente com a cidade "Atibaia" e o token legado de cliente
+    Então o status HTTP deve ser 403
+    E o provedor de previsão não deve ter sido consultado
+    E a empresa "sessao_put_legado" não deve ter cidade de previsão gravada
+
+  Cenário: PUT e GET do painel de cliente de outra empresa retornam 403 sem gastar contador nem cota
+    Dado o token administrativo "sua-chave-admin"
+    E o provedor de previsão reconhece qualquer cidade
+    E o provedor de previsão ainda não foi consultado
+    Quando eu envio POST /empresas com o EmpresaCreateDTO:
+      | nome           | Espaço Alvo Put     |
+      | sessaoWhatsapp | sessao_put_alvo     |
+      | ramoDeAtuacao  | LOCACAO             |
+      | email          | alvoput@recanto.com |
+      | senha          | SenhaCliente123     |
+    E eu envio POST /empresas com o EmpresaCreateDTO:
+      | nome           | Espaço Intruso Put     |
+      | sessaoWhatsapp | sessao_put_intruso     |
+      | ramoDeAtuacao  | LOCACAO                |
+      | email          | intrusoput@recanto.com |
+      | senha          | SenhaCliente123        |
+    E eu envio POST /auth/login com o LoginRequestDTO:
+      | email | sessao_put_intruso@gamb.com.br |
+      | senha | SenhaCliente123                |
+    E eu envio PUT /empresas/sessao_put_alvo/cliente com a cidade "Atibaia" e o JWT do login
+    Então o status HTTP deve ser 403
+    Quando eu busco a empresa sessao_put_alvo pelo painel com o JWT do login
+    Então o status HTTP deve ser 403
+    E o provedor de previsão não deve ter sido consultado
+    Quando a empresa "sessao_put_alvo" troca a cidade da previsão 5 vezes
+    Então o status HTTP deve ser 200
+
+  Cenário: painel devolve googleCalendarId ao admin e não devolve ao cliente da própria empresa
+    Dado o token administrativo "sua-chave-admin"
+    Quando eu envio POST /empresas com o EmpresaCreateDTO:
+      | nome             | Espaço Agenda                         |
+      | sessaoWhatsapp   | sessao_agenda_dono                    |
+      | ramoDeAtuacao    | LOCACAO                               |
+      | email            | agendadono@recanto.com                |
+      | senha            | SenhaCliente123                       |
+      | googleCalendarId | agenda-dono@group.calendar.google.com |
+    E eu busco a empresa sessao_agenda_dono pelo painel com o token administrativo
+    Então o status HTTP deve ser 200
+    E o corpo deve conter "agenda-dono@group.calendar.google.com"
+    Quando eu envio POST /auth/login com o LoginRequestDTO:
+      | email | sessao_agenda_dono@gamb.com.br |
+      | senha | SenhaCliente123                |
+    E eu busco a empresa sessao_agenda_dono pelo painel com o JWT do login
+    Então o status HTTP deve ser 200
+    E o corpo não deve conter "agenda-dono@group.calendar.google.com"
+
+  Cenário: sessão inexistente e sessão de outra empresa dão a mesma resposta ao cliente
+    Dado o token administrativo "sua-chave-admin"
+    Quando eu envio POST /empresas com o EmpresaCreateDTO:
+      | nome           | Espaço Alvo Enum     |
+      | sessaoWhatsapp | sessao_enum_alvo     |
+      | ramoDeAtuacao  | LOCACAO              |
+      | email          | alvoenum@recanto.com |
+      | senha          | SenhaCliente123      |
+    E eu envio POST /empresas com o EmpresaCreateDTO:
+      | nome           | Espaço Intruso Enum     |
+      | sessaoWhatsapp | sessao_enum_intruso     |
+      | ramoDeAtuacao  | LOCACAO                 |
+      | email          | intrusoenum@recanto.com |
+      | senha          | SenhaCliente123         |
+    E eu envio POST /auth/login com o LoginRequestDTO:
+      | email | sessao_enum_intruso@gamb.com.br |
+      | senha | SenhaCliente123                 |
+    E eu envio GET /empresas/sessao_enum_alvo/previsao com o JWT do login
+    E a resposta guardada como "outra"
+    E eu envio GET /empresas/sessao_enum_inexistente/previsao com o JWT do login
+    Então o status HTTP deve ser 403
+    E a resposta atual deve ser igual à guardada como "outra"
+
+  Cenário: PUT /empresas/{sessao}/cliente com 503 do provedor não conta na troca diária
+    Dado uma empresa persistida com sessão "sessao_conta_503" e ramo "LOCACAO"
+    E o provedor de previsão está fora do ar
+    Quando a empresa "sessao_conta_503" troca a cidade da previsão 5 vezes
+    Então o status HTTP deve ser 503
+    Dado o provedor de previsão reconhece qualquer cidade
+    Quando a empresa "sessao_conta_503" troca a cidade da previsão para "Atibaia"
+    Então o status HTTP deve ser 200
+
+  Cenário: PUT /empresas/{sessao}/cliente com 400 de cidade não encontrada conta na troca diária
+    Dado uma empresa persistida com sessão "sessao_conta_400" e ramo "LOCACAO"
+    E o provedor de previsão não reconhece a cidade
+    Quando a empresa "sessao_conta_400" troca a cidade da previsão 5 vezes
+    Então o status HTTP deve ser 400
+    Dado o provedor de previsão reconhece qualquer cidade
+    Quando a empresa "sessao_conta_400" troca a cidade da previsão para "Atibaia"
+    Então o status HTTP deve ser 429

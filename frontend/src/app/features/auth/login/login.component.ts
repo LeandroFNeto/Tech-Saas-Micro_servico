@@ -1,21 +1,27 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { mensagemHttp } from '../../../core/interceptors/auth.interceptor';
 import { AuthService } from '../../../core/services/auth.service';
+import contentData from '../../../../../../especificacao/front/login.content.json';
+import designData from '../../../../../../especificacao/front/telas.design.json';
 
 const EMAIL_GAMB = /^[a-zA-Z0-9._%+-]+@gamb\.com\.br$/;
 
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, RouterLink],
   templateUrl: './login.component.html'
 })
 export class LoginComponent {
   private readonly fb = inject(FormBuilder);
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+
+  readonly conteudo = contentData.login;
+  readonly design = designData.telas.login;
+  readonly mostrarSenha = signal(false);
 
   erro = '';
   enviando = false;
@@ -35,6 +41,10 @@ export class LoginComponent {
     return this.form.controls.email.touched && this.form.controls.email.invalid;
   }
 
+  alternarSenha(): void {
+    this.mostrarSenha.update((visivel) => !visivel);
+  }
+
   entrar(): void {
     this.erro = '';
     if (this.form.invalid) {
@@ -51,7 +61,7 @@ export class LoginComponent {
       error: (erro: unknown) => {
         this.enviando = false;
         this.erro = erro instanceof HttpErrorResponse && erro.status === 401
-          ? 'Senha incorreta'
+          ? this.conteudo.erros.credenciaisInvalidas
           : mensagemHttp(erro);
       }
     });

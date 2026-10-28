@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>gamb · Editar cliente</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#f6f0fb;font-family:Inter,ui-sans-serif,system-ui,sans-serif;color:#1A0B2E;-webkit-font-smoothing:antialiased}
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid #FF8C42;outline-offset:2px}
+h1,h2,h3,p,ul,ol{margin:0}ul,ol{padding:0;list-style:none}
+.app{display:flex;flex-direction:column;min-height:100vh}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#1A0B2E;padding:8px 16px;color:#fff}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:#fff}
+.brand img{width:40px;height:40px;object-fit:contain}
+.brand b{display:block;font-family:Cinzel,Georgia,serif;font-size:16px;line-height:20px;font-weight:600;text-transform:uppercase;letter-spacing:.18em;color:#e2a775;background:linear-gradient(90deg,#bc8561,#f48c52 55%,#e2b57f);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.brand small{display:block;font-size:12px;line-height:16px;color:#d4bce8}
+.sair{display:inline-flex;align-items:center;min-height:44px;padding:0 14px;border-radius:12px;border:1px solid rgba(255,255,255,.3);font-size:14px;font-weight:600;color:#fff;text-decoration:none;box-sizing:border-box}
+.side{display:none}
+.tabs{position:sticky;bottom:0;z-index:5;display:flex;background:#fff;border-top:1px solid #d4bce8}
+.tabs a{flex:1;min-height:60px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:12px;font-weight:600;color:#652d90;text-decoration:none}
+.tabs a.on{color:#9a4508;box-shadow:inset 0 3px 0 #F7931E}
+.main{flex:1;min-width:0;padding:20px 16px}
+.snav{display:flex;flex-direction:column;gap:4px}
+.snav a{display:flex;align-items:center;gap:10px;min-height:44px;padding:0 12px;border-radius:12px;font-size:14px;font-weight:500;color:#ebe0f5;text-decoration:none}
+.snav a:hover{background:rgba(255,255,255,.08)}
+.snav a.on{background:rgba(247,147,30,.2);color:#ffab70}
+.suser{margin-top:auto;padding-top:16px;border-top:1px solid rgba(255,255,255,.12)}
+.suser p{margin-bottom:10px;font-size:13px;line-height:18px;color:#d4bce8;word-break:break-all}
+.ph{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px}
+.ph h1{font-size:clamp(22px,4vw,28px);line-height:1.2;font-weight:700}
+.ph p{margin-top:4px;font-size:14px;line-height:20px;color:#652d90}
+.card{border-radius:20px;border:1px solid #ebe0f5;background:#fff;padding:20px;box-shadow:0 1px 2px rgba(46,26,71,.05)}
+.sec{font-size:17px;line-height:24px;font-weight:700}
+.sub{margin-top:4px;font-size:14px;line-height:20px;color:#652d90}
+.stack{display:flex;flex-direction:column;gap:16px}
+.cols{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));align-items:start}
+.lb{display:block;margin-bottom:6px;font-size:14px;line-height:20px;font-weight:600;color:#2E1A47}
+.hint{margin-top:6px;font-size:13px;line-height:18px;color:#652d90}
+.in{box-sizing:border-box;width:100%;min-height:48px;border-radius:12px;border:1px solid #d4bce8;background:#fff;padding:0 14px;font:inherit;font-size:16px;color:#1A0B2E}
+.in:focus{border-color:#FF8C42;box-shadow:0 0 0 3px #ffe4d1}
+.in[readonly]{background:#f6f0fb}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:14px}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 20px;border-radius:12px;border:0;font:inherit;font-size:15px;font-weight:700;cursor:pointer;text-decoration:none;box-sizing:border-box}
+.btn-p{background:#F7931E;color:#1A0B2E}.btn-p:hover{background:#FF8C42}
+.btn-s{background:#fff;color:#2E1A47;border:1px solid #d4bce8}.btn-s:hover{background:#f6f0fb}
+.btn-sm{min-height:44px;padding:0 14px;font-size:14px}
+.chip{display:inline-flex;align-items:center;border-radius:9999px;padding:4px 10px;font-size:12px;line-height:16px;font-weight:600;white-space:nowrap}
+.sw{position:relative;display:inline-block;width:48px;height:28px;flex:none}
+.sw input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer}
+.sw i{position:absolute;inset:0;border-radius:9999px;background:#d4bce8}
+.sw i::after{content:"";position:absolute;left:3px;top:3px;width:22px;height:22px;border-radius:9999px;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+.sw input:checked + i{background:#F7931E}
+.sw input:checked + i::after{transform:translateX(20px)}
+.sw input:focus-visible + i{outline:2px solid #FF8C42;outline-offset:2px}
+.opt{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;border-radius:14px;border:1px solid #ebe0f5;padding:14px 16px;cursor:pointer}
+.opt b{display:block;font-size:15px;line-height:22px;font-weight:600}
+.opt .d{display:block;margin-top:2px;font-size:13px;line-height:18px;color:#652d90}
+.thumb{display:flex;align-items:center;justify-content:center;flex:none;width:56px;height:56px;border-radius:12px;border:1px dashed #b889d4;background:#f6f0fb;color:#7c3aad}
+.urlrow{display:flex;align-items:center;gap:8px}
+@media(min-width:1024px){
+.app{flex-direction:row}
+.topbar,.tabs{display:none}
+.side{display:flex;flex-direction:column;gap:24px;flex:none;width:248px;box-sizing:border-box;padding:20px 12px;background:#1A0B2E;color:#fff}
+.main{padding:32px 40px}
+}
+</style>
+</helmet>
+<div class="app">
+
+<header class="topbar">
+<a class="brand" href="AdminEmpresas.dc.html"><img src="/_blob/2afaeee994f3399be9d349cc4eb1cf72" alt="Logo gamb"><span><b>gamb</b><small>Painel Master</small></span></a>
+<a class="sair" href="Main.dc.html">Sair</a>
+</header>
+
+<aside class="side">
+<a class="brand" href="AdminEmpresas.dc.html"><img src="/_blob/2afaeee994f3399be9d349cc4eb1cf72" alt="Logo gamb"><span><b>gamb</b><small>Painel Master</small></span></a>
+<nav class="snav" aria-label="Principal">
+<a href="AdminEmpresas.dc.html"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21V6l8-3 8 3v15"/><path d="M9 21v-5h6v5M9 9h.01M12 9h.01M15 9h.01M9 12h.01M12 12h.01M15 12h.01"/></svg>Empresas</a>
+<a class="on" href="AdminClienteForm.dc.html"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>Novo cliente</a>
+<a href="AdminAvisos.dc.html"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9a6 6 0 1 1 12 0c0 5 2 6 2 6H4s2-1 2-6M10 19a2 2 0 0 0 4 0"/></svg>Avisos</a>
+</nav>
+<div class="suser"><p>admin@gamb.com.br</p><a class="sair" href="Main.dc.html">Sair</a></div>
+</aside>
+
+<main class="main">
+<div class="ph">
+<div><h1>Editar cliente</h1><p>Atualize os dados e os módulos deste cliente.</p></div>
+<a class="btn btn-s btn-sm" href="AdminEmpresas.dc.html">← Voltar</a>
+</div>
+
+<form class="cols">
+
+<div class="stack">
+<section class="card stack">
+<h2 class="sec">Dados da empresa</h2>
+<div><label class="lb" for="nome">Nome fantasia</label><input id="nome" class="in" value="Recanto Teste" readonly></div>
+<div><label class="lb" for="sessao">Sessão WhatsApp</label><input id="sessao" class="in mono" value="sessao_recanto_01" placeholder="sessao_recanto_01"></div>
+<div><label class="lb" for="agenda">ID da agenda Google</label><input id="agenda" class="in mono" placeholder="...@group.calendar.google.com"><p class="hint">Cole o ID da agenda desta empresa e compartilhe essa agenda com a conta de serviço do bot. Cada cliente tem a sua: não use um ID único no .env.</p></div>
+<label class="opt"><span><b>Locação por hora</b><span class="d">Desligado = cobrança por diária</span></span><span class="sw"><input type="checkbox"><i></i></span></label>
+</section>
+
+<section class="card stack">
+<h2 class="sec">Fotos</h2>
+<div>
+<span class="lb">Foto principal (Cloudinary)</span>
+<div class="urlrow" style="margin-bottom: 8px"><span class="thumb" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="1.5"/><path d="m21 16-5-5-8 8"/></svg></span><button class="btn btn-p btn-sm" type="button" style="flex: 1">Enviar foto principal</button></div>
+<input class="in" aria-label="URL da foto principal" placeholder="https://res.cloudinary.com/.../hero_image.jpg">
+</div>
+<div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px"><span class="lb" style="margin: 0">Galeria (até 5 URLs)</span>
+<span style="display: flex; flex-wrap: wrap; gap: 8px"><button class="btn btn-p btn-sm" type="button">Enviar fotos</button><button class="btn btn-s btn-sm" type="button">Adicionar URL</button></span></div>
+<p class="hint" style="margin: 0 0 10px">Envie imagens pelo widget ou cole links públicos do Cloudinary. O bot usa essas fotos no WhatsApp.</p>
+<div class="urlrow"><span class="thumb" aria-hidden="true" style="width: 44px; height: 44px"></span><input class="in" aria-label="URL da foto da galeria" placeholder="https://res.cloudinary.com/.../foto.jpg"><button class="btn btn-s btn-sm" type="button">Remover</button></div>
+</div>
+<div><label class="lb" for="drive">Link da galeria no Google Drive (opcional)</label><input id="drive" class="in" placeholder="https://drive.google.com/drive/folders/..."><p class="hint">O bot envia este link no WhatsApp junto com a foto principal, para o cliente ver fotos e vídeos em alta qualidade.</p></div>
+</section>
+</div>
+
+<div class="stack">
+<section class="card stack">
+<div><h2 class="sec">Gestão de módulos</h2><p class="sub">Ligue ou desligue as funcionalidades do bot desta empresa.</p></div>
+<sc-for list="{{modulos}}" as="modulo" hint-placeholder-count="5">
+<label class="opt"><span><b>{{modulo.label}}</b><span class="d">{{modulo.descricao}}</span></span><span class="sw"><input type="checkbox" checked="{{modulo.ativo}}"><i></i></span></label>
+</sc-for>
+</section>
+
+<section class="card stack">
+<div style="display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px">
+<div><h2 class="sec">Conexão WhatsApp</h2><p class="sub">Escaneie o QR Code nesta tela. Não é preciso abrir os logs do Docker.</p><p class="mono" style="margin-top: 6px; font-size: 13px; color: #7c3aad">sessao_recanto_01</p></div>
+<span class="chip" style="background: #ebe0f5; color: #4e2473">Desconectado</span>
+</div>
+<button class="btn btn-p" type="button">Conectar WhatsApp</button>
+</section>
+</div>
+
+<div style="grid-column: 1 / -1"><button class="btn btn-p" type="submit" style="width: 100%; max-width: 320px">Salvar alterações</button></div>
+</form>
+</main>
+
+<nav class="tabs" aria-label="Principal">
+<a href="AdminEmpresas.dc.html"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21V6l8-3 8 3v15"/><path d="M9 21v-5h6v5M9 9h.01M12 9h.01M15 9h.01M9 12h.01M12 12h.01M15 12h.01"/></svg>Empresas</a>
+<a class="on" href="AdminClienteForm.dc.html"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>Novo cliente</a>
+<a href="AdminAvisos.dc.html"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9a6 6 0 1 1 12 0c0 5 2 6 2 6H4s2-1 2-6M10 19a2 2 0 0 0 4 0"/></svg>Avisos</a>
+</nav>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":1500}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      modulos: [
+        { label: 'Módulo de IA', descricao: 'Atendimento com Gemini quando o cliente sai do menu padrão', ativo: true },
+        { label: 'Módulo de Agenda', descricao: 'Consulta e bloqueio de horários no Google Agenda', ativo: true },
+        { label: 'Galeria de fotos', descricao: 'Envia fotos do espaço pelo WhatsApp', ativo: true },
+        { label: 'Pesquisa de datas', descricao: 'Fluxo de disponibilidade e reserva', ativo: true },
+        { label: 'Preços', descricao: 'Envia a tabela de preços cadastrada pelo WhatsApp', ativo: false }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -18,6 +18,8 @@ paths:
     $ref: ./paths/empresas-reset-senha.yaml
   /empresas/{sessao}/cliente:
     $ref: ./paths/empresas-cliente.yaml
+  /empresas/{sessao}/previsao:
+    $ref: ./paths/empresas-previsao.yaml
   /empresas/search/findBySessaoWhatsapp:
     $ref: ./paths/empresas-search.yaml
   /profile:
@@ -69,6 +71,10 @@ components:
       $ref: ./schemas/empresa/EmpresaResponseDTO.yaml
     ModuloMenuDTO:
       $ref: ./schemas/empresa/ModuloMenuDTO.yaml
+    PrevisaoTempoResponseDTO:
+      $ref: ./schemas/previsao/PrevisaoTempoResponseDTO.yaml
+    PrevisaoDiaDTO:
+      $ref: ./schemas/previsao/PrevisaoDiaDTO.yaml
     SessaoStatusResponseDTO:
       $ref: ./schemas/whatsapp/SessaoStatusResponseDTO.yaml
     WhatsappWebhookDTO:

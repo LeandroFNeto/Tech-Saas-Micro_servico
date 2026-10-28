@@ -125,6 +125,9 @@ class EconomiaTokenAuditoriaTest {
                 empresa.getLocacaoPorHora(),
                 empresa.getRegrasLocacao(),
                 menu,
+                empresa.getCidadePrevisao(),
+                empresa.getCidadePrevisaoResolvida(),
+                Boolean.TRUE.equals(empresa.getPrevisaoTempoAtiva()),
                 LocalDateTime.of(2026, 10, 22, 14, 30));
     }
 

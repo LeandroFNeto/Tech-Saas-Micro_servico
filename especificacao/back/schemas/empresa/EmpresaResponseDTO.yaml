@@ -58,6 +58,19 @@ properties:
     description: Opções do menu do WhatsApp configuradas pelo cliente
     items:
       $ref: ./ModuloMenuDTO.yaml
+  cidadePrevisao:
+    type: string
+    description: Cidade digitada pelo cliente para a previsão do tempo
+    example: Atibaia
+  cidadePrevisaoResolvida:
+    type: string
+    description: Nome, estado e país devolvidos pela geocodificação, para o cliente conferir cidades homônimas
+    example: Atibaia, São Paulo, BR
+  previsaoTempoAtiva:
+    type: boolean
+    description: Interruptor "Mostrar previsão do tempo"
+    default: false
+    example: false
   atualizadoEm:
     type: string
     format: date-time

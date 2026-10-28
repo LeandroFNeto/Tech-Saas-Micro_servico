@@ -1,12 +1,12 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
+import { RouterLink } from '@angular/router';
 import { mensagemHttp } from '../../../core/interceptors/auth.interceptor';
 import { AuthService } from '../../../core/services/auth.service';
 import { AvisoService } from '../../../core/services/aviso.service';
 import { EmpresaService } from '../../../core/services/empresa.service';
 import { BannerAvisosComponent } from '../../../shared/components/banner-avisos/banner-avisos.component';
-import { ConexaoWhatsappComponent } from '../../../shared/components/conexao-whatsapp/conexao-whatsapp.component';
 import { AvisoDTO } from '../../../shared/models/aviso.models';
 import { EmpresaView, MAX_URLS_GALERIA, MODULOS_MENU_BOT, ModuloMenuDTO } from '../../../shared/models/empresa.models';
 import contentData from '../../../../../../especificacao/front/cliente-perfil.content.json';
@@ -16,7 +16,7 @@ type AbaPerfil = 'dados' | 'robo' | 'configuracao';
 
 @Component({
   selector: 'app-perfil',
-  imports: [ReactiveFormsModule, BannerAvisosComponent, ConexaoWhatsappComponent],
+  imports: [ReactiveFormsModule, RouterLink, BannerAvisosComponent],
   templateUrl: './perfil.component.html'
 })
 export class PerfilComponent implements OnInit {

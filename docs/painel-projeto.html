@@ -1,0 +1,361 @@
+<title>Painel do gamb</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root {
+  --fundo: #f6f0fb;
+  --superficie: #ffffff;
+  --superficie-2: #ebe0f5;
+  --texto: #1A0B2E;
+  --texto-2: #4e2473;
+  --texto-3: #652d90;
+  --borda: #d4bce8;
+  --marca: #2E1A47;
+  --marca-fundo: #1A0B2E;
+  --laranja: #F7931E;
+  --laranja-forte: #c4620d;
+  --ok: #1f7a4a;
+  --ok-fundo: #e2f4ea;
+  --andamento: #8a4b00;
+  --andamento-fundo: #ffe4d1;
+  --espera: #4e2473;
+  --espera-fundo: #ebe0f5;
+  --ruim: #b42318;
+  --ruim-fundo: #fde7e5;
+  --fonte-display: 'Cinzel', Georgia, serif;
+  --fonte-texto: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --fonte-mono: 'JetBrains Mono', ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --fundo: #140823; --superficie: #1f1033; --superficie-2: #2E1A47; --texto: #f6f0fb; --texto-2: #d4bce8;
+    --texto-3: #b889d4; --borda: #3d2560; --marca: #2E1A47; --marca-fundo: #0f0720; --laranja: #FF8C42;
+    --laranja-forte: #ffab70; --ok: #7ad9a4; --ok-fundo: #12331f; --andamento: #ffc9a3; --andamento-fundo: #3a2210;
+    --espera: #d4bce8; --espera-fundo: #2E1A47; --ruim: #ffb4ab; --ruim-fundo: #3d1512; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --fundo: #140823; --superficie: #1f1033; --superficie-2: #2E1A47; --texto: #f6f0fb; --texto-2: #d4bce8;
+  --texto-3: #b889d4; --borda: #3d2560; --marca: #2E1A47; --marca-fundo: #0f0720; --laranja: #FF8C42;
+  --laranja-forte: #ffab70; --ok: #7ad9a4; --ok-fundo: #12331f; --andamento: #ffc9a3; --andamento-fundo: #3a2210;
+  --espera: #d4bce8; --espera-fundo: #2E1A47; --ruim: #ffb4ab; --ruim-fundo: #3d1512; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--fundo); color: var(--texto); font: 15px/1.6 var(--fonte-texto); -webkit-font-smoothing: antialiased; }
+code { font-family: var(--fonte-mono); font-size: 0.86em; background: var(--superficie-2); color: var(--texto-2); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
+h1, h2, h3 { text-wrap: balance; margin: 0; }
+.faixa { background: var(--marca-fundo); background-image: radial-gradient(circle at 85% 0%, rgba(247,147,30,0.30), transparent 55%); color: #f6f0fb; }
+.conteiner { max-width: 1080px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.topo { padding-block: 36px 32px; display: grid; gap: 20px; }
+.marca { font-family: var(--fonte-display); font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: #FF8C42; font-size: 15px; }
+.topo h1 { font-size: clamp(28px, 5vw, 40px); font-weight: 700; line-height: 1.15; }
+.topo .sub { color: #d4bce8; margin: 0; font-size: 14px; }
+.topo .sub code { background: rgba(255,255,255,0.1); color: #f6f0fb; }
+.resumo { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 12px; }
+.resumo li { display: flex; align-items: baseline; gap: 10px; border-top: 1px solid rgba(255,255,255,0.18); padding-top: 10px; color: #d4bce8; font-size: 14px; }
+.resumo .numero { font-size: 30px; font-weight: 700; color: #ffffff; font-variant-numeric: tabular-nums; }
+nav.indice { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--fundo); border-bottom: 1px solid var(--borda); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--fundo); }
+nav.indice ul { list-style: none; margin: 0; padding-block: 10px; display: flex; gap: 6px; overflow-x: auto; }
+nav.indice a { display: inline-block; white-space: nowrap; padding: 6px 12px; border-radius: 999px; color: var(--texto-2); text-decoration: none; font-weight: 500; font-size: 14px; }
+nav.indice a:hover, nav.indice a:focus-visible { background: var(--superficie-2); color: var(--texto); outline: none; }
+main section { padding-block: 40px 8px; scroll-margin-top: 64px; }
+.secao-topo { display: grid; gap: 4px; margin-bottom: 20px; }
+.eyebrow { display: block; font-size: 12px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--texto-3); margin: 0; }
+h2 { font-size: clamp(22px, 3.4vw, 28px); font-weight: 700; line-height: 1.2; }
+.secao-topo p { margin: 4px 0 0; color: var(--texto-2); max-width: 65ch; }
+.rolagem { overflow-x: auto; border: 1px solid var(--borda); border-radius: 12px; background: var(--superficie); }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--borda); vertical-align: top; }
+tr:last-child td { border-bottom: 0; }
+th { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--texto-3); font-weight: 600; background: var(--superficie-2); }
+td.num { font-variant-numeric: tabular-nums; }
+.pill { display: inline-flex; align-items: center; white-space: nowrap; border-radius: 999px; padding: 2px 10px; font-size: 12px; font-weight: 600; }
+.pill.ok { background: var(--ok-fundo); color: var(--ok); }
+.pill.andamento { background: var(--andamento-fundo); color: var(--andamento); }
+.pill.espera { background: var(--espera-fundo); color: var(--espera); }
+.pill.ruim { background: var(--ruim-fundo); color: var(--ruim); }
+.changes { display: grid; gap: 16px; }
+.change { background: var(--superficie); border: 1px solid var(--borda); border-radius: 14px; padding: 20px; display: grid; gap: 14px; min-width: 0; }
+.change-topo { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; }
+.change-titulo { min-width: 0; flex: 1 1 320px; display: grid; gap: 8px; }
+.change h3 { font-family: var(--fonte-mono); font-size: 17px; font-weight: 500; overflow-wrap: anywhere; }
+.metas { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+.meta { font-size: 13px; color: var(--texto-2); }
+.meta.aviso { color: var(--laranja-forte); font-weight: 600; }
+.progresso { flex: 0 0 160px; display: grid; gap: 6px; align-content: start; }
+.progresso .numero { font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1; }
+.progresso small { font-size: 15px; color: var(--texto-3); font-weight: 500; }
+.barra { display: block; height: 6px; border-radius: 99px; background: var(--superficie-2); overflow: hidden; }
+.barra span { display: block; height: 100%; background: var(--laranja); }
+.trilha { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 4px; }
+.passo { display: grid; gap: 6px; font-size: 12px; color: var(--texto-3); min-width: 0; }
+.passo .bolinha { height: 6px; border-radius: 99px; background: var(--superficie-2); }
+.passo.feita .bolinha { background: var(--texto-3); }
+.passo.atual .bolinha { background: var(--laranja); }
+.passo.atual { color: var(--texto); font-weight: 700; }
+.rotulo-passo { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.problema { margin: 0; color: var(--texto-2); max-width: 75ch; }
+.proximo { margin: 0; padding: 12px 14px; border-radius: 10px; background: var(--superficie-2); display: grid; gap: 4px; }
+.ordem { margin: 0; font-size: 14px; color: var(--texto-2); display: grid; gap: 4px; }
+.entra { margin: 10px 0 0; padding-left: 20px; display: grid; gap: 6px; font-size: 14px; color: var(--texto-2); }
+.arquivos-change { margin-top: 10px; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+.grupo-arquivos { min-width: 0; background: var(--superficie-2); border-radius: 10px; padding: 12px 14px; }
+.grupo-arquivos h4 { margin: 0 0 8px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--texto-3); }
+.grupo-arquivos ul { margin: 0; padding-left: 16px; display: grid; gap: 6px; font-size: 13px; color: var(--texto-2); overflow-wrap: anywhere; }
+details summary { cursor: pointer; color: var(--texto-2); font-weight: 600; font-size: 14px; padding-block: 4px; }
+details summary:focus-visible { outline: 2px solid var(--laranja); outline-offset: 2px; border-radius: 4px; }
+.tarefas { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 8px; font-size: 14px; }
+.tarefa { display: flex; gap: 10px; align-items: flex-start; min-width: 0; }
+.tarefa > span:last-child { min-width: 0; }
+.tarefa.nivel-1 { padding-left: 28px; }
+.tarefa.feita > span:last-child { color: var(--texto-3); text-decoration: line-through; }
+.caixa { flex: 0 0 18px; height: 18px; margin-top: 2px; border: 1.5px solid var(--borda); border-radius: 5px; display: grid; place-items: center; font-size: 12px; color: var(--ok); }
+.feita .caixa { border-color: var(--ok); background: var(--ok-fundo); }
+.arquivo { list-style: none; margin: 16px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.familia + .familia { margin-top: 24px; }
+.familia h3 { font-size: 15px; text-transform: capitalize; margin-bottom: 10px; }
+.amostras { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 10px; }
+.amostra { display: grid; gap: 2px; font-size: 12px; }
+.cor { height: 64px; border-radius: 10px; display: flex; align-items: flex-end; padding: 6px 8px; font-weight: 600; border: 1px solid var(--borda); }
+.hex { font-family: var(--fonte-mono); font-weight: 500; margin-top: 4px; }
+.token { color: var(--texto-3); font-family: var(--fonte-mono); }
+.uso { color: var(--texto-2); }
+.fontes { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 16px; }
+.fonte { border-top: 2px solid var(--texto); padding-top: 14px; display: grid; gap: 6px; min-width: 0; }
+.fonte p { margin: 0; }
+.fonte-nome { font-size: 34px; font-weight: 700; line-height: 1.1; }
+.fonte-exemplo { font-size: 18px; color: var(--texto-2); }
+.pilha code { font-size: 12px; }
+.dominios { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 20px 24px; }
+.dominio h3 { font-size: 15px; display: flex; gap: 8px; align-items: baseline; text-transform: capitalize; }
+.dominio small { color: var(--texto-3); font-weight: 500; font-variant-numeric: tabular-nums; }
+.dominio ul { margin: 8px 0 0; padding: 0; list-style: none; display: grid; gap: 4px; font-size: 14px; color: var(--texto-2); }
+footer { padding-block: 40px; color: var(--texto-3); font-size: 13px; }
+footer p { margin: 0; }
+@media (max-width: 640px) {
+  .trilha { grid-template-columns: repeat(4, minmax(0, 1fr)); row-gap: 10px; }
+  .progresso { flex-basis: 100%; }
+}
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+</style>
+
+<header class="faixa">
+  <div class="conteiner topo">
+    <span class="marca">gamb</span>
+    <h1>Painel do projeto</h1>
+    <p class="sub">Gerado em 27/10/2026 às 23:13 · ramo <code>producao</code> · último commit <code>45d5e77 test: regressao visual de fonte minima de 16 px nos campos do front</code></p>
+    <ul class="resumo"><li><span class="numero">0</span><span>em andamento</span></li><li><span class="numero">4</span><span>aguardando seu aprovado</span></li><li><span class="numero">5</span><span>changes arquivadas</span></li><li><span class="numero">28</span><span>requisitos nas specs</span></li></ul>
+  </div>
+</header>
+
+<nav class="indice" aria-label="Seções">
+  <div class="conteiner">
+    <ul>
+      <li><a href="#quadro">Onde estamos</a></li>
+      <li><a href="#changes">O que falta</a></li>
+      <li><a href="#equipe">Equipe</a></li>
+      <li><a href="#paleta">Paleta</a></li>
+      <li><a href="#fontes">Fontes</a></li>
+      <li><a href="#componentes">Componentes</a></li>
+      <li><a href="#specs">Specs</a></li>
+    </ul>
+  </div>
+</nav>
+
+<main class="conteiner">
+  <section id="quadro">
+    <div class="secao-topo">
+      <p class="eyebrow">openspec/central-tarefas.md</p>
+      <h2>Onde estamos</h2>
+      <p>Cada tarefa, em que etapa da equipe ela está e quem está com ela. Change sem linha na central ainda espera o seu aprovado.</p>
+    </div>
+    <div class="rolagem">
+      <table>
+        <thead><tr><th>Tarefa</th><th>Etapa</th><th>IA</th><th>Voltas</th><th>Estado</th></tr></thead>
+        <tbody><tr><td><strong>definir-papeis-ia-desenvolvimento</strong></td><td>deploy</td><td><code>claude-opus-5-5-medium</code></td><td class='num'>0</td><td><span class='pill ok'>aprovado</span></td></tr><tr><td><strong>recusar-data-passada-conversa</strong></td><td>deploy</td><td><code>cursor-grok-4.6-low</code></td><td class='num'>0</td><td><span class='pill ok'>aprovado</span></td></tr><tr><td><strong>aplicar-novo-design-front</strong></td><td>deploy</td><td><code>claude-haiku-5-5</code></td><td class='num'>0</td><td><span class='pill ok'>aprovado</span></td></tr><tr><td><strong>proteger-dados-nos-logs</strong></td><td>deploy</td><td><code>claude-haiku-5-5</code></td><td class='num'>2</td><td><span class='pill ok'>aprovado</span></td></tr><tr><td><strong>corrigir-reserva-automatica</strong></td><td>proposta</td><td><code>—</code></td><td class='num'>0</td><td><span class='pill espera'>aguardando aprovado</span></td></tr><tr><td><strong>exibir-previsao-tempo-reservas</strong></td><td>proposta</td><td><code>—</code></td><td class='num'>0</td><td><span class='pill espera'>aguardando aprovado</span></td></tr><tr><td><strong>lembrar-confirmacao-reserva</strong></td><td>proposta</td><td><code>—</code></td><td class='num'>0</td><td><span class='pill espera'>aguardando aprovado</span></td></tr><tr><td><strong>reserva-por-hora</strong></td><td>proposta</td><td><code>—</code></td><td class='num'>0</td><td><span class='pill espera'>aguardando aprovado</span></td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="changes">
+    <div class="secao-topo">
+      <p class="eyebrow">openspec/changes</p>
+      <h2>O que falta fazer</h2>
+      <p>Uma change por funcionalidade. A trilha mostra a etapa atual; o próximo passo é a primeira tarefa sem marcar no <code>tasks.md</code>.</p>
+    </div>
+    <div class="changes">
+<article class="change" id="corrigir-reserva-automatica">
+  <header class="change-topo">
+    <div class="change-titulo">
+      <h3>corrigir-reserva-automatica</h3>
+      <div class="metas">
+        <span class="pill espera">aguardando aprovado</span>
+        <span class="meta">Etapa: proposta</span>
+        <span class="meta">Voltas: 0/2</span>
+        <span class="meta aviso">tem pré-requisito</span>
+      </div>
+    </div>
+    <div class="progresso" aria-label="0 de 11 tarefas feitas">
+      <span class="numero">0<small>/11</small></span>
+      <span class="barra"><span style="width:0%"></span></span>
+    </div>
+  </header>
+  <ol class="trilha" aria-label="Etapas da equipe"><li class="passo feita"><span class="bolinha"></span><span class="rotulo-passo">Pesquisa</span></li><li class="passo atual"><span class="bolinha"></span><span class="rotulo-passo">Proposta</span></li><li class="passo futura"><span class="bolinha"></span><span class="rotulo-passo">Programação</span></li><li class="passo futura"><span class="bolinha"></span><span class="rotulo-passo">Testes</span></li><li class="passo futura"><span class="bolinha"></span><span class="rotulo-passo">Qualidade</span></li><li class="passo futura"><span class="bolinha"></span><span class="rotulo-passo">Segurança</span></li><li class="passo futura"><span class="bolinha"></span><span class="rotulo-passo">Revisão</span></li><li class="passo futura"><span class="bolinha"></span><span class="rotulo-passo">Deploy</span></li></ol>
+  <p class="problema">A reserva automática é uma opção, não um padrão: todo cliente nasce com ela desligada, porque às vezes o dono prefere fechar a reserva por conta própria. Por enquanto só o admin liga ou desliga, no ajuste da empresa, até os planos existirem e a liberação ficar automática por plano. Quem a liga espera que, ao dizer "sim" no fim da conversa, a reserva fique registrada na agenda. Hoje isso não acontece:</p>
+  <p class="proximo"><span class="eyebrow">Próximo passo</span>Contrato YAML: 400 da regra da agenda (admin) e 400 do PUT do cliente em <code>paths/empresas-admin.yaml</code> e <code>paths/empresas-cliente.yaml</code></p>
+  <p class="ordem"><span class="eyebrow">Ordem</span>Vem depois de <code>proteger-dados-nos-logs</code> e antes de <code>lembrar-confirmacao-reserva</code>. Também melhora <code>exibir-previsao-tempo-reservas</code>, porque as reservas do bot passam a existir na agenda.</p>
+  <details open><summary>O que entra (8)</summary><ul class="entra"><li>A confirmação final ("sim") publica <code>EventoReservaConfirmada</code> com data, horário, nome e o número original do cliente, e responde "Anotei seu pedido, estou registrando na agenda".</li><li>O evento passa a ser criado de verdade no Google Agenda do cliente:</li><li>Antes de criar, o sistema consulta de novo a disponibilidade da data.</li><li>A mensagem de sucesso só sai depois que o Google confirma.</li><li>Reserva automática ligada sem agenda cadastrada deixa de ser silencioso:</li><li>A reserva automática sai sempre desativada em empresa nova (<code>false</code>), e o valor só muda pelo admin.</li><li>O PUT do cliente deixa de alterar <code>permiteReservaAutomatica</code>:</li><li>O admin não consegue ligar a reserva automática sem agenda cadastrada, no cadastro nem na edição:</li></ul></details>
+  <details><summary>Arquivos que a change toca (16)</summary><div class="arquivos-change"><div class="grupo-arquivos"><h4>Contrato</h4><ul><li><code>especificacao/back/paths/empresas-admin.yaml</code> (400 da regra da agenda no POST e no PUT)</li><li><code>especificacao/back/paths/empresas-cliente.yaml</code> (400 da regra do admin)</li></ul></div><div class="grupo-arquivos"><h4>Java</h4><ul><li><code>model/EstadoUsuario.java</code> (<code>RESERVA_REGISTRANDO</code>)</li><li><code>servico/GerenciadorSessao.java</code> (<code>concluirRegistro</code>)</li><li><code>evento/EventoReservaConfirmada.java</code> (horário, número original, nome, <code>idPedido</code>)</li><li><code>strategy/LocacaoStrategy.java</code> (estado novo, segundo "sim", menu bloqueado, reserva por hora e sem agenda como manual, resposta "anotei")</li><li><code>servico/ServicoReserva.java</code> (<code>agendarNoGoogle</code> com evento de dia inteiro e id determinístico)</li><li><code>servico/AgendaNaoConfiguradaException.java</code> (novo)</li><li><code>servico/observador/ObservadorGoogleAgenda.java</code> (resultado real, tentativas, bloqueio, estado final)</li><li><code>controller/ControllerEmpresa.java</code> (POST e PUT do admin validam a agenda; PUT do cliente rejeita mudança)</li></ul></div><div class="grupo-arquivos"><h4>Front</h4><ul><li><code>perfil.component</code>: opção só para leitura, com aviso de que o admin libera, e sem enviar o campo</li><li>tela do admin: mostrar o 400 da regra da agenda</li></ul></div><div class="grupo-arquivos"><h4>Prova</h4><ul><li><code>LocacaoStrategyTest</code>: "sim" publica o evento e entra em <code>RESERVA_REGISTRANDO</code>; segundo "sim" não publica; <code>0</code> em <code>RESERVA_REGISTRANDO</code> não sai do estado; reserva por hora e empresa sem agenda respondem como manual</li><li><code>GerenciadorSessaoTest</code>: <code>concluirRegistro</code> só troca de <code>RESERVA_REGISTRANDO</code></li><li><code>src/test/resources/features/observer-agenda.feature</code>: sucesso cria o evento e confirma; 409 conta como sucesso; falha 5xx tenta 3 vezes e avisa; 403 falha sem repetir; agenda não configurada avisa; data ocupada volta a pedir data; duas confirmações da mesma data, só uma reserva</li><li><code>src/test/resources/features/empresas.feature</code>: POST e PUT do admin ligando sem agenda respondem 400; POST sem agenda e sem ligar funciona; PUT do cliente com valor diferente responde 400 e um GET seguinte mostra o valor antigo; PUT do cliente com valor igual funciona</li></ul></div></div></details>
+  <details>
+    <summary>Ver todas as tarefas</summary>
+    <ul class="tarefas"><li class="tarefa nivel-0"><span class="caixa" aria-hidden="true"></span><span>Contrato YAML: 400 da regra da agenda (admin) e 400 do PUT do cliente em <code>paths/empresas-admin.yaml</code> e <code>paths/empresas-cliente.yaml</code></span></li><li class="tarefa nivel-0"><span class="caixa" aria-hidden="true"></span><span>Java: <code>EstadoUsuario.RESERVA_REGISTRANDO</code> e <code>GerenciadorSessao.concluirRegistro</code></span></li><li class="tarefa nivel-0"><span class="caixa" aria-hidden="true"></span><span>Java: <code>EventoReservaConfirmada</code> com horário, número original, nome e <code>idPedido</code>; <code>AgendaNaoConfiguradaException</code></span></li><li class="tarefa nivel-0"><span class="caixa" aria-hidden="true"></span><span>Java: <code>ServicoReserva.agendarNoGoogle</code> cria o evento de dia inteiro, com id derivado do <code>idPedido</code>, e devolve o id</span></li><li class="tarefa nivel-0"><span class="caixa" aria-hidden="true"></span><span>Java: <code>LocacaoStrategy</code> com estado <code>RESERVA_REGISTRANDO</code>, segundo "sim" ignorado, menu bloqueado no registro, reserva por hora e empresa sem agenda como reserva manual, resposta "anotei"</span></li><li class="tarefa nivel-0"><span class="caixa" aria-hidden="true"></span><span>Java: <code>ObservadorGoogleAgenda</code> com reconsulta sob bloqueio, 409 como sucesso, 3 tentativas só em erro transitório, mensagens de falha e <code>concluirRegistro</code></span></li><li class="tarefa nivel-0"><span class="caixa" aria-hidden="true"></span><span>Java: <code>ControllerEmpresa</code> com POST e PUT do admin exigindo agenda para ligar, e PUT do cliente rejeitando mudança com 400</span></li><li class="tarefa nivel-0"><span class="caixa" aria-hidden="true"></span><span>Front: opção só para leitura no perfil do cliente, com aviso de que o admin libera; 400 da agenda na tela do admin</span></li><li class="tarefa nivel-0"><span class="caixa" aria-hidden="true"></span><span>Prova: ajustar <code>ControllerEmpresaTest</code> (hoje o PUT do cliente espera <code>true</code>) e criar os casos de <code>LocacaoStrategyTest</code>, <code>GerenciadorSessaoTest</code>, <code>observer-agenda.feature</code> e <code>empresas.feature</code>, conforme <code>design.md</code>, seção Arquivos</span></li><li class="tarefa nivel-0"><span class="caixa" aria-hidden="true"></span><span>Revisão: gravar AGD-02, WPP-06 e a regra de EMP-02 nos <code>spec.md</code>, ajustar AGD-01 e atualizar <code>openspec/specs/README.md</code></span></li><li class="tarefa nivel-0"><span class="caixa" aria-hidden="true"></span><span>Deploy: mover esta pasta para <code>openspec/archive/corrigir-reserva-automatica/</code></span></li></ul>
+  </details>
+</article>
+<article class="change" id="exibir-previsao-tempo-reservas">
+  <header class="change-topo">
+    <div class="change-titulo">
+      <h3>exibir-previsao-tempo-reservas</h3>
+      <div class="metas">
+        <span class="pill espera">aguardando aprovado</span>
+        <span class="meta">Etapa: proposta</span>
+        <span class="meta">Voltas: 0/2</span>
+        
+      </div>
+    </div>
+    <div class="progresso" aria-label="0 de 11 tarefas feitas">
+      <span class="numero">0<small>/11</small></span>
+      <span class="barra"><span style="width:0%"></span></span>
+    </div>
+  </header>
+  <ol class="trilha" aria-label="Etapas da equipe"><li class="passo feita"><span class="bolinha"></span><span class="rotulo-passo">Pesquisa</span></li><li class="passo atual"><span class="bolinha"></span><span class="rotulo-passo">Proposta</span></li><li class="passo futura"><span class="bolinha"></span><span class="rotulo-passo">Programação</span></li><li class="passo futura"><span class="bolinha"></span><span class="rotulo-passo">Testes</span></li><li class="passo futura"><span class="bolinha"></span><span class="rotulo-passo">Qualidade</span></li><li class="passo futura"><span class="bolinha"></span><span class="rotulo-passo">Segurança</span></li><li class="passo futura"><span class="bolinha"></span><span class="rotulo-passo">Revisão</span></li><li class="passo futura"><span class="bolinha"></span><span class="rotulo-passo">Deploy</span></li></ol>
+  <p class="problema">Em espaço aberto (chácara, área de lazer, quadra), chuva forte no dia é um dos principais motivos de desistência. Hoje o dono não tem esse aviso no painel e só percebe o risco quando a pessoa cancela. Ver a previsão dos próximos dias, com os dias já reservados destacados, permite que ele aja antes: confirmar com quem reservou, oferecer outra data ou reforçar o contato.</p>
+  <p class="proximo"><span class="eyebrow">Próximo passo</span>Contrato YAML: campos em <code>EmpresaUpdateDTO</code>/<code>EmpresaResponseDTO</code>, <code>PrevisaoTempoResponseDTO</code>, <code>PrevisaoDiaDTO</code>, <code>paths/empresas-previsao.yaml</code> (200, 401, 403, 404), 400, 429 e 503 em <code>empresas-cliente.yaml</code> e <code>$ref</code> em <code>especificacao/back/swagger.yaml</code></p>
+  <p class="ordem"><span class="eyebrow">Ordem</span>Não depende de outra change. Usa a ocupação que o Google Agenda já fornece (<code>ServicoReserva.listarReservas</code>).</p>
+  <details open><summary>O que entra (6)</summary><ul class="entra"><li>Localização do espaço no perfil:</li><li>Interruptor "Mostrar previsão do tempo", desligado por padrão.</li><li>Bloco "Previsão dos próximos dias" na tela do cliente, com um cartão por dia (até 8 dias, limite do plano gratuito do provedor):</li><li>Regra do indicador (pela previsão diária):</li><li>A previsão de cada cidade é atualizada no máximo a cada 8 horas e compartilhada entre as empresas da mesma cidade.</li><li>Só o cliente da própria empresa (ou o admin) consulta a previsão.</li></ul></details>
+  <details><summary>Arquivos que a change toca (19)</summary><div class="arquivos-change"><div class="grupo-arquivos"><h4>Contrato</h4><ul><li><code>especificacao/back/schemas/empresa/EmpresaUpdateDTO.yaml</code> (<code>cidadePrevisao</code>, <code>previsaoTempoAtiva</code>)</li><li><code>especificacao/back/schemas/empresa/EmpresaResponseDTO.yaml</code> (os dois campos e <code>cidadePrevisaoResolvida</code>)</li><li><code>especificacao/back/schemas/previsao/PrevisaoTempoResponseDTO.yaml</code> e <code>PrevisaoDiaDTO.yaml</code> (novos; dia: data, diaSemana, reservado, resumo, codigoTempo, tempMax, tempMin, chanceChuva, chuvaMm, risco <code>BAIXO|MEDIO|ALTO</code>, estimativa)</li><li><code>especificacao/back/paths/empresas-previsao.yaml</code> (novo; 200, 401, 403 e 404) e <code>$ref</code> em <code>swagger.yaml</code></li><li><code>especificacao/back/paths/empresas-cliente.yaml</code> (400 de cidade não encontrada, 429 de limite de trocas e 503 de provedor indisponível)</li></ul></div><div class="grupo-arquivos"><h4>Java</h4><ul><li><code>model/Empresa.java</code> (localização e interruptor)</li><li><code>servico/previsao/ProvedorPrevisao.java</code>, <code>ProvedorOpenWeather.java</code>, <code>ServicoPrevisaoTempo.java</code>, <code>CalculadoraRiscoDesmarcacao.java</code></li><li><code>servico/ServicoReserva.java</code> (<code>listarReservas</code> devolve os 30 dias "Disponível" quando a agenda não tem eventos)</li><li><code>controller/ControllerEmpresa.java</code> (GET previsão com checagem de empresa; geocodificar no PUT do cliente)</li><li><code>src/main/resources/application.properties</code> (chave da API e URL por variável de ambiente)</li></ul></div><div class="grupo-arquivos"><h4>Infra</h4><ul><li><code>docker-compose.yml</code> (<code>OPENWEATHER_API_KEY</code> no <code>environment</code> da API) e <code>.env.example</code></li></ul></div><div class="grupo-arquivos"><h4>Front</h4><ul><li>Antes do Angular: canvas de design, seção "Previsão do tempo" no board <code>ClientePerfil</code> (cidade, interruptor e cartões dos dias)</li><li><code>especificacao/front/cliente-perfil.content.json</code> e <code>telas.design.json</code> (cores do selo baixo/médio/alto nos tokens)</li><li><code>frontend/src/app/features/client/perfil/</code> (campos e bloco de cartões) e um serviço Angular para GET previsão</li><li>Atribuição "Dados meteorológicos: OpenWeather" no rodapé do bloco</li></ul></div><div class="grupo-arquivos"><h4>Prova</h4><ul><li><code>src/test/java/com/example/demo/servico/previsao/CalculadoraRiscoDesmarcacaoTest.java</code> (limites de cada faixa, 69 e 70%, 9,9 e 10 mm, 1,9 e 2 mm, temporal)</li><li><code>src/test/java/com/example/demo/servico/previsao/ServicoPrevisaoTempoTest.java</code> com <code>ProvedorPrevisao</code> simulado (cache de 8 h por coordenada compartilhado entre empresas, cache sem ocupação, falha devolve indisponível, cruzamento com dias reservados, fuso <code>America/Sao_Paulo</code> perto da meia-noite, <code>listarReservas</code> nulo com agenda configurada, empresa sem agenda)</li><li><code>src/test/resources/features/empresas.feature</code> (PUT com cidade válida, inválida, provedor fora do ar e sexta troca no dia; GET previsão 200, 401, 403 e 404)</li><li>Teste do componente do perfil no Angular: a atribuição aparece quando há cartões</li></ul></div></div></details>
+  <details>
+    <summary>Ver todas as tarefas</summary>
+    <ul class="tarefas"><li class="tarefa nivel-0"><span class="caixa" aria-hidden="true"></span><span>Contrato YAML: campos em <code>EmpresaUpdateDTO</code>/<code>EmpresaResponseDTO</code>, <code>PrevisaoTempoResponseDTO</code>, <code>PrevisaoDiaDTO</code>, <code>paths/empresas-previsao.yaml</code> (200, 401, 403, 404), 400, 429 e 503 em <code>empresas-cliente.yaml</code> e <code>$ref</code> em <code>especificacao/back/swagger.yaml</code></span></li><li class="tarefa nivel-0"><span class="caixa" aria-hidden="true"></span><span>Java: campos em <code>Empresa</code> (<code>previsaoTempoAtiva</code> nulo vale <code>false</code>), <code>ProvedorPrevisao</code>, <code>ProvedorOpenWeather</code>, <code>ServicoPrevisaoTempo</code> com cache de 8 h por coordenada e <code>CalculadoraRiscoDesmarcacao</code></span></li><li class="tarefa nivel-0"><span class="caixa" aria-hidden="true"></span><span>Java: <code>listarReservas</code> devolve os 30 dias "Disponível" quando a agenda não tem eventos; fuso <code>America/Sao_Paulo</code> no cruzamento das datas</span></li><li class="tarefa nivel-0"><span class="caixa" aria-hidden="true"></span><span>Java: geocodificação no PUT do cliente (400, 429 após 5 trocas por dia, 503) e GET <code>/empresas/{sessao}/previsao</code> que só aceita admin ou o cliente da própria empresa</span></li><li class="tarefa nivel-0"><span class="caixa" aria-hidden="true"></span><span>Infra: <code>OPENWEATHER_API_KEY</code> em <code>application.properties</code>, <code>docker-compose.yml</code> e <code>.env.example</code></span></li><li class="tarefa nivel-0"><span class="caixa" aria-hidden="true"></span><span>Front: canvas de design (<code>ClientePerfil</code>) antes do Angular</span></li><li class="tarefa nivel-0"><span class="caixa" aria-hidden="true"></span><span>Front: <code>cliente-perfil.content.json</code> e <code>telas.design.json</code></span></li><li class="tarefa nivel-0"><span class="caixa" aria-hidden="true"></span><span>Front: cidade e interruptor no perfil; cartões dos dias com selo de risco, marcação de reservado, "estimativa" do 6º ao 8º dia, aviso "Reservas indisponíveis no momento" e atribuição</span></li><li class="tarefa nivel-0"><span class="caixa" aria-hidden="true"></span><span>Prova: <code>CalculadoraRiscoDesmarcacaoTest</code>, <code>ServicoPrevisaoTempoTest</code>, cenários em <code>empresas.feature</code> e teste Angular da atribuição, conforme <code>design.md</code>, seção Arquivos</span></li><li class="tarefa nivel-0"><span class="caixa" aria-hidden="true"></span><span>Revisão: gravar EMP-05 e EMP-06 em <code>openspec/specs/empresa/spec.md</code> e a linha em <code>openspec/specs/README.md</code></span></li><li class="tarefa nivel-0"><span class="caixa" aria-hidden="true"></span><span>Deploy: mover esta pasta para <code>openspec/archive/exibir-previsao-tempo-reservas/</code></span></li></ul>
+  </details>
+</article>
+<article class="change" id="lembrar-confirmacao-reserva">
+  <header class="change-topo">
+    <div class="change-titulo">
+      <h3>lembrar-confirmacao-reserva</h3>
+      <div class="metas">
+        <span class="pill espera">aguardando aprovado</span>
+        <span class="meta">Etapa: proposta</span>
+        <span class="meta">Voltas: 0/2</span>
+        <span class="meta aviso">tem pré-requisito</span>
+      </div>
+    </div>
+    <div class="progresso" aria-label="0 de 15 tarefas feitas">
+      <span class="numero">0<small>/15</small></span>
+      <span class="barra"><span style="width:0%"></span></span>
+    </div>
+  </header>
+  <ol class="trilha" aria-label="Etapas da equipe"><li class="passo feita"><span class="bolinha"></span><span class="rotulo-passo">Pesquisa</span></li><li class="passo atual"><span class="bolinha"></span><span class="rotulo-passo">Proposta</span></li><li class="passo futura"><span class="bolinha"></span><span class="rotulo-passo">Programação</span></li><li class="passo futura"><span class="bolinha"></span><span class="rotulo-passo">Testes</span></li><li class="passo futura"><span class="bolinha"></span><span class="rotulo-passo">Qualidade</span></li><li class="passo futura"><span class="bolinha"></span><span class="rotulo-passo">Segurança</span></li><li class="passo futura"><span class="bolinha"></span><span class="rotulo-passo">Revisão</span></li><li class="passo futura"><span class="bolinha"></span><span class="rotulo-passo">Deploy</span></li></ol>
+  <p class="problema">O dono do espaço perde tempo repetindo a mesma rotina: responder data, preço, fotos e regras, e depois descobrir só no dia que a pessoa desistiu, com o espaço parado. Nem todo cliente da plataforma quer reserva automática pelo bot. Muitos só querem tirar o retrabalho de atendimento e continuam fechando a reserva por conta própria, direto no Google Agenda. Também não há registro de quem já conversou com o bot, então cada contato que não fechou na hora se perde.</p>
+  <p class="proximo"><span class="eyebrow">Próximo passo</span>Contrato YAML: <code>LembreteConfirmacaoDTO</code>, campo em <code>EmpresaUpdateDTO</code>/<code>EmpresaResponseDTO</code>, <code>ReservaResumoDTO</code>, <code>VincularContatoDTO</code>, <code>ContatoResumoDTO</code>, <code>NumeroContatoDTO</code>, os cinco <code>paths</code> novos (200, 401, 403, 404, 409, 429 e 502 conforme a rota) e <code>$ref</code> em <code>especificacao/back/swagger.yaml</code></p>
+  <p class="ordem"><span class="eyebrow">Ordem</span>Vem depois de <code>proteger-dados-nos-logs</code>, <code>corrigir-reserva-automatica</code> e <code>exibir-previsao-tempo-reservas</code>: as quatro mudam <code>ControllerEmpresa</code>, os DTOs de empresa, o perfil do cliente, <code>swagger.yaml</code> e partes do fluxo de reserva. A tela de reservas pode reaproveitar o selo de risco da previsão.</p>
+  <details open><summary>O que entra (10)</summary><ul class="entra"><li><strong>Contatos do cliente.</strong> Todo número que fala com o bot de uma empresa vira um contato daquela empresa:</li><li><strong>Reservas lidas da agenda do dono.</strong> O sistema lê os eventos dos próximos 30 dias do Google Agenda da empresa e mantém uma cópia em <code>reservas</code>, atualizada de hora em hora e quando o dono abre a tela.</li><li><strong>Vínculo com o contato.</strong> O sistema procura um telefone no título ou na descrição do evento (o evento criado pelo bot já leva o telefone).</li><li><strong>Lembrete de confirmação</strong> com três modos por empresa, desligado por padrão:</li><li>Configuração do lembrete:</li><li><strong>Resposta em linguagem natural.</strong> O cliente final responde com suas palavras ("pode ser", "confirmo", "preciso mudar a data", "não vou poder"), sem número obrigatório.</li><li><strong>Tela "Reservas" do cliente</strong>, com a tabela do dia (hoje, amanhã e próximos 30 dias) e a situação de cada reserva:</li><li>Tela "Contatos" com a lista de interessados da empresa.</li><li><strong>Proteção dos dados dos contatos:</strong></li><li>Retenção:</li></ul></details>
+  <details><summary>Arquivos que a change toca (22)</summary><div class="arquivos-change"><div class="grupo-arquivos"><h4>Contrato</h4><ul><li><code>especificacao/back/schemas/empresa/LembreteConfirmacaoDTO.yaml</code> (novo)</li><li><code>especificacao/back/schemas/empresa/EmpresaUpdateDTO.yaml</code> e <code>EmpresaResponseDTO.yaml</code> (campo <code>lembreteConfirmacao</code>)</li><li><code>especificacao/back/schemas/reserva/ReservaResumoDTO.yaml</code> (novo: id, data, horario, titulo, nomeCliente, situacao, riscoPerda, precisaAtencao, origem, contatoId, telefoneMascarado, podeAvisar), <code>VincularContatoDTO.yaml</code> (novo: <code>contatoId</code> ou <code>telefone</code>) e <code>schemas/contato/ContatoResumoDTO.yaml</code> (novo), <code>NumeroContatoDTO.yaml</code> (novo: <code>numero</code>)</li><li><code>especificacao/back/paths/empresas-reservas.yaml</code>, <code>empresas-reservas-lembrete.yaml</code>, <code>empresas-reservas-contato.yaml</code>, <code>empresas-contatos.yaml</code> e <code>empresas-contatos-numero.yaml</code> (novos) e <code>$ref</code> em <code>swagger.yaml</code></li></ul></div><div class="grupo-arquivos"><h4>Java</h4><ul><li><code>model/Contato.java</code>, <code>model/Reserva.java</code>, <code>model/SituacaoReserva.java</code>, <code>model/ModoLembrete.java</code>, <code>model/AuditoriaAcessoContato.java</code>, <code>repository/ContatoRepository.java</code>, <code>repository/ReservaRepository.java</code>, <code>repository/AuditoriaAcessoContatoRepository.java</code> (todos <code>exported = false</code>)</li><li><code>model/Empresa.java</code> (campos do lembrete)</li><li><code>util/CriptografiaCampo.java</code> (conversor e HMAC)</li><li><code>servico/ServicoReserva.java</code> (<code>listarEventosProximos</code>)</li><li><code>servico/ServicoSincronizacaoAgenda.java</code>, <code>servico/ServicoLembreteReserva.java</code>, <code>servico/ServicoRespostaLembrete.java</code>, <code>servico/InterpretadorRespostaLembrete.java</code>, <code>servico/InterpretadorPorPalavras.java</code>, <code>servico/ServicoContato.java</code> (novos)</li><li><code>servico/ServicoMensagem.java</code> (<code>tentarEnviarMensagemWPP</code>)</li><li><code>servico/observador/ObservadorGoogleAgenda.java</code> (grava a <code>Reserva</code> do bot depois do resultado do Google)</li><li><code>controller/ControllerWhatsapp.java</code> (registrar contato e chamar <code>ServicoRespostaLembrete</code>) e <code>controller/ControllerEmpresa.java</code> (rotas do painel e mapeamento dos DTOs)</li><li><code>DemoApplication.java</code> (<code>@EnableScheduling</code>), <code>application.properties</code> (<code>contatos.cripto.chave</code>, <code>contatos.indice.chave</code>, <code>retencao.meses</code>), <code>docker-compose.yml</code> e <code>.env.example</code> (<code>CONTATOS_CHAVE_CRIPTO</code> e <code>CONTATOS_CHAVE_INDICE</code>)</li></ul></div><div class="grupo-arquivos"><h4>Front</h4><ul><li>Antes do Angular: artboard <code>ClientePerfil</code> no canvas de design (seção "Lembrete de confirmação") e boards novos <code>ClienteReservas</code> (tabela do dia) e <code>ClienteContatos</code></li><li><code>especificacao/front/cliente-perfil.content.json</code>, <code>cliente-reservas.content.json</code> e <code>cliente-contatos.content.json</code> (novos) e <code>telas.design.json</code> (cores de confirmada, aguardando, sem resposta com risco alto, remarcar e precisa de atenção)</li><li><code>frontend/src/app/features/client/perfil/</code> (bloco do lembrete), <code>features/client/reservas/</code>, <code>features/client/contatos/</code> (com a ação "ver número", um contato por vez), rotas em <code>client.routes.ts</code> e itens no shell</li></ul></div><div class="grupo-arquivos"><h4>Prova</h4><ul><li><code>src/test/java/com/example/demo/servico/ServicoSincronizacaoAgendaTest.java</code> (upsert por evento, telefone achado e não achado, reserva do bot não duplica, evento removido, evento remarcado, falha do Google mantém os dados)</li><li><code>src/test/java/com/example/demo/servico/ServicoLembreteReservaTest.java</code> (modo automático envia uma vez; modo sugerido só marca; reserva criada depois do momento de envio não sai; janela até 20:00; falha reenvia até 3 vezes; <code>naoContatar</code>; 12 h sem resposta vira <code>SEM_RESPOSTA</code>; data passada encerra; limite diário)</li><li><code>src/test/java/com/example/demo/servico/InterpretadorPorPalavrasTest.java</code> e <code>ServicoRespostaLembreteTest.java</code> (frases naturais de confirmação, remarcação e parada; frase com duas intenções vira <code>OUTRO</code>; fora do estado <code>INICIO</code> a opção 1 do menu segue valendo; lembrete enviado há mais de 72 horas não responde)</li><li><code>src/test/java/com/example/demo/util/CriptografiaCampoTest.java</code> e um teste de persistência que lê a coluna crua e confirma que número e nome não estão em claro</li><li><code>src/test/resources/features/empresas.feature</code> (PUT com lembrete e limites; GET reservas 200, 401, 403 e 404; admin recebe 403; POST lembrete 200, 409 e 502; vínculo de contato; GET contatos mascarado; POST número 200 e 429; <code>/contatos</code> e <code>/reservas</code> da API REST automática respondem 404)</li><li>Testes Angular: tabela do dia, destaque de risco alto, ação "ligar contato" e ação "ver número"</li></ul></div></div></details>
+  <details>
+    <summary>Ver todas as tarefas</summary>
+    <ul class="tarefas"><li class="tarefa nivel-0"><span class="caixa" aria-hidden="true"></span><span>Contrato YAML: <code>LembreteConfirmacaoDTO</code>, campo em <code>EmpresaUpdateDTO</code>/<code>EmpresaResponseDTO</code>, <code>ReservaResumoDTO</code>, <code>VincularContatoDTO</code>, <code>ContatoResumoDTO</code>, <code>NumeroContatoDTO</code>, os cinco <code>paths</code> novos (200, 401, 403, 404, 409, 429 e 502 conforme a rota) e <code>$ref</code> em <code>especificacao/back/swagger.yaml</code></span></li><li class="tarefa nivel-0"><span class="caixa" aria-hidden="true"></span><span>Java: <code>CriptografiaCampo</code> (AES-256-GCM e HMAC), entidades <code>Contato</code>, <code>Reserva</code> e <code>AuditoriaAcessoContato</code>, enums <code>SituacaoReserva</code> e <code>ModoLembrete</code>, repositórios com <code>exported = false</code> e campos do lembrete em <code>Empresa</code> (nulo vale <code>DESLIGADO</code>)</span></li><li class="tarefa nivel-0"><span class="caixa" aria-hidden="true"></span><span>Java: <code>ServicoReserva.listarEventosProximos</code> e <code>ServicoSincronizacaoAgenda</code> (upsert por evento, telefone no título ou na descrição, evento removido ou remarcado)</span></li><li class="tarefa nivel-0"><span class="caixa" aria-hidden="true"></span><span>Java: <code>ServicoMensagem.tentarEnviarMensagemWPP</code> com resultado</span></li><li class="tarefa nivel-0"><span class="caixa" aria-hidden="true"></span><span>Java: <code>ServicoLembreteReserva</code> agendado com <code>@EnableScheduling</code> (modos automático e sugerido, janela, reenvio, <code>SEM_RESPOSTA</code>, <code>ENCERRADA</code>, limites de envio) e rotina de retenção</span></li><li class="tarefa nivel-0"><span class="caixa" aria-hidden="true"></span><span>Java: <code>InterpretadorRespostaLembrete</code>, <code>InterpretadorPorPalavras</code> e <code>ServicoRespostaLembrete</code>, chamado pelo <code>ControllerWhatsapp</code> só no estado <code>INICIO</code>; o controller também registra o contato</span></li><li class="tarefa nivel-0"><span class="caixa" aria-hidden="true"></span><span>Java: <code>ObservadorGoogleAgenda</code> grava a <code>Reserva</code> do bot (<code>AGUARDANDO_LEMBRETE</code> ou <code>FALHA_AGENDA</code>)</span></li><li class="tarefa nivel-0"><span class="caixa" aria-hidden="true"></span><span>Java: rotas do painel (reservas, enviar lembrete, ligar contato, contatos, número completo), só com o token da própria empresa e 403 para o admin, e mapeamento dos DTOs no PUT do cliente</span></li><li class="tarefa nivel-0"><span class="caixa" aria-hidden="true"></span><span>Infra: <code>CONTATOS_CHAVE_CRIPTO</code>, <code>CONTATOS_CHAVE_INDICE</code> e <code>retencao.meses</code> em <code>application.properties</code>, <code>docker-compose.yml</code> e <code>.env.example</code></span></li><li class="tarefa nivel-0"><span class="caixa" aria-hidden="true"></span><span>Front: canvas de design (<code>ClientePerfil</code>, <code>ClienteReservas</code> e <code>ClienteContatos</code>) antes do Angular</span></li><li class="tarefa nivel-0"><span class="caixa" aria-hidden="true"></span><span>Front: <code>cliente-perfil.content.json</code>, <code>cliente-reservas.content.json</code>, <code>cliente-contatos.content.json</code> e <code>telas.design.json</code></span></li><li class="tarefa nivel-0"><span class="caixa" aria-hidden="true"></span><span>Front: bloco do lembrete no perfil, tabela do dia com destaque de risco alto e ação "ligar contato", e lista de contatos com "ver número" um por vez</span></li><li class="tarefa nivel-0"><span class="caixa" aria-hidden="true"></span><span>Prova: <code>ServicoSincronizacaoAgendaTest</code>, <code>ServicoLembreteReservaTest</code>, <code>InterpretadorPorPalavrasTest</code>, <code>ServicoRespostaLembreteTest</code>, <code>CriptografiaCampoTest</code>, persistência cifrada, cenários em <code>empresas.feature</code> e testes Angular, conforme <code>design.md</code>, seção Arquivos</span></li><li class="tarefa nivel-0"><span class="caixa" aria-hidden="true"></span><span>Revisão: gravar AGD-03, AGD-04, WPP-07, WPP-08, EMP-07, EMP-08 e EMP-09 nos <code>spec.md</code> dos domínios e as linhas em <code>openspec/specs/README.md</code></span></li><li class="tarefa nivel-0"><span class="caixa" aria-hidden="true"></span><span>Deploy: mover esta pasta para <code>openspec/archive/lembrar-confirmacao-reserva/</code></span></li></ul>
+  </details>
+</article>
+<article class="change" id="reserva-por-hora">
+  <header class="change-topo">
+    <div class="change-titulo">
+      <h3>reserva-por-hora</h3>
+      <div class="metas">
+        <span class="pill espera">aguardando aprovado</span>
+        <span class="meta">Etapa: proposta</span>
+        <span class="meta">Voltas: 0/2</span>
+        <span class="meta aviso">tem pré-requisito</span>
+      </div>
+    </div>
+    <div class="progresso" aria-label="0 de 0 tarefas feitas">
+      <span class="numero">0<small>/0</small></span>
+      <span class="barra"><span style="width:0%"></span></span>
+    </div>
+  </header>
+  <ol class="trilha" aria-label="Etapas da equipe"><li class="passo feita"><span class="bolinha"></span><span class="rotulo-passo">Pesquisa</span></li><li class="passo atual"><span class="bolinha"></span><span class="rotulo-passo">Proposta</span></li><li class="passo futura"><span class="bolinha"></span><span class="rotulo-passo">Programação</span></li><li class="passo futura"><span class="bolinha"></span><span class="rotulo-passo">Testes</span></li><li class="passo futura"><span class="bolinha"></span><span class="rotulo-passo">Qualidade</span></li><li class="passo futura"><span class="bolinha"></span><span class="rotulo-passo">Segurança</span></li><li class="passo futura"><span class="bolinha"></span><span class="rotulo-passo">Revisão</span></li><li class="passo futura"><span class="bolinha"></span><span class="rotulo-passo">Deploy</span></li></ol>
+  <p class="problema">Empresas com <code>locacaoPorHora</code> precisam de reserva automática por horário, e hoje isso não existe. A change <code>corrigir-reserva-automatica</code> cobre só a diária e deixa essas empresas como reserva manual.</p>
+  
+  <p class="ordem"><span class="eyebrow">Ordem</span>Vem depois de <code>corrigir-reserva-automatica</code>.</p>
+  
+  
+  <details>
+    <summary>Ver todas as tarefas</summary>
+    <ul class="tarefas"></ul>
+  </details>
+</article></div>
+    <ul class="arquivo" aria-label="Changes arquivadas"><li class="eyebrow" style="align-self:center">Arquivadas</li><li><code>alinhar-codigo-openspec</code></li><li><code>aplicar-novo-design-front</code></li><li><code>definir-papeis-ia-desenvolvimento</code></li><li><code>proteger-dados-nos-logs</code></li><li><code>recusar-data-passada-conversa</code></li></ul>
+  </section>
+
+  <section id="equipe">
+    <div class="secao-topo">
+      <p class="eyebrow">.cursor/rules/papeis-ia.mdc</p>
+      <h2>Equipe e modelos</h2>
+      <p>A ordem das etapas e o modelo de cada uma nas duas ferramentas. Programação só começa com aprovado na central; no máximo 2 voltas.</p>
+    </div>
+    <div class="rolagem">
+      <table>
+        <thead><tr><th>Etapa</th><th>Claude</th><th>Cursor</th></tr></thead>
+        <tbody><tr><td>Pesquisa</td><td><code>claude-haiku-5-5</code></td><td><code>cursor-grok-4.6-low</code></td></tr><tr><td>Proposta</td><td><code>claude-sonnet-5-5</code></td><td><code>grok-4.7-high-fast</code></td></tr><tr><td>Programação</td><td><code>claude-sonnet-5-5</code></td><td><code>claude-sonnet-5-5-high</code></td></tr><tr><td>Testes</td><td><code>claude-sonnet-5-5</code></td><td><code>gemini-4-argon-medium</code></td></tr><tr><td>Qualidade</td><td><code>claude-sonnet-5-5</code>, em agente novo</td><td><code>gpt-5.6-sol-medium</code></td></tr><tr><td>Segurança</td><td><code>claude-opus-5-5</code></td><td><code>claude-opus-5-5-medium</code></td></tr><tr><td>Revisão e spec definitiva</td><td><code>claude-opus-5-5</code></td><td><code>claude-opus-5-5-medium</code></td></tr><tr><td>Deploy</td><td><code>claude-haiku-5-5</code></td><td><code>cursor-grok-4.6-low</code></td></tr><tr><td>Explicação</td><td><code>claude-haiku-5-5</code></td><td><code>cursor-grok-4.6-low</code></td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="paleta">
+    <div class="secao-topo">
+      <p class="eyebrow">especificacao/front/telas.design.json</p>
+      <h2>Paleta</h2>
+      <p>Roxo da marca para fundo, texto e bordas; laranja só para ação e foco. No Tailwind a classe é o token, por exemplo <code>bg-brand-900</code> ou <code>text-accent-500</code>.</p>
+    </div>
+    <div class="familia"><h3>brand</h3><ul class="amostras"><li class="amostra"><span class="cor" style="background:#f6f0fb;color:#1A0B2E">50</span><span class="hex">#F6F0FB</span><span class="token">brand-50</span><span class="uso">fundo do painel</span></li><li class="amostra"><span class="cor" style="background:#ebe0f5;color:#1A0B2E">100</span><span class="hex">#EBE0F5</span><span class="token">brand-100</span><span class="uso"></span></li><li class="amostra"><span class="cor" style="background:#d4bce8;color:#1A0B2E">200</span><span class="hex">#D4BCE8</span><span class="token">brand-200</span><span class="uso">bordas</span></li><li class="amostra"><span class="cor" style="background:#b889d4;color:#1A0B2E">300</span><span class="hex">#B889D4</span><span class="token">brand-300</span><span class="uso"></span></li><li class="amostra"><span class="cor" style="background:#9b5cbf;color:#ffffff">400</span><span class="hex">#9B5CBF</span><span class="token">brand-400</span><span class="uso"></span></li><li class="amostra"><span class="cor" style="background:#7c3aad;color:#ffffff">500</span><span class="hex">#7C3AAD</span><span class="token">brand-500</span><span class="uso"></span></li><li class="amostra"><span class="cor" style="background:#652d90;color:#ffffff">600</span><span class="hex">#652D90</span><span class="token">brand-600</span><span class="uso">dicas e rótulos</span></li><li class="amostra"><span class="cor" style="background:#4e2473;color:#ffffff">700</span><span class="hex">#4E2473</span><span class="token">brand-700</span><span class="uso">texto secundário</span></li><li class="amostra"><span class="cor" style="background:#2E1A47;color:#ffffff">800</span><span class="hex">#2E1A47</span><span class="token">brand-800</span><span class="uso">faixa do login</span></li><li class="amostra"><span class="cor" style="background:#1A0B2E;color:#ffffff">900</span><span class="hex">#1A0B2E</span><span class="token">brand-900</span><span class="uso">texto principal e topo</span></li></ul></div><div class="familia"><h3>accent</h3><ul class="amostras"><li class="amostra"><span class="cor" style="background:#fff4ec;color:#1A0B2E">50</span><span class="hex">#FFF4EC</span><span class="token">accent-50</span><span class="uso"></span></li><li class="amostra"><span class="cor" style="background:#ffe4d1;color:#1A0B2E">100</span><span class="hex">#FFE4D1</span><span class="token">accent-100</span><span class="uso"></span></li><li class="amostra"><span class="cor" style="background:#ffc9a3;color:#1A0B2E">200</span><span class="hex">#FFC9A3</span><span class="token">accent-200</span><span class="uso"></span></li><li class="amostra"><span class="cor" style="background:#ffab70;color:#1A0B2E">300</span><span class="hex">#FFAB70</span><span class="token">accent-300</span><span class="uso"></span></li><li class="amostra"><span class="cor" style="background:#FF8C42;color:#1A0B2E">400</span><span class="hex">#FF8C42</span><span class="token">accent-400</span><span class="uso">hover e foco</span></li><li class="amostra"><span class="cor" style="background:#F7931E;color:#1A0B2E">500</span><span class="hex">#F7931E</span><span class="token">accent-500</span><span class="uso">botão principal</span></li><li class="amostra"><span class="cor" style="background:#e07a12;color:#ffffff">600</span><span class="hex">#E07A12</span><span class="token">accent-600</span><span class="uso"></span></li><li class="amostra"><span class="cor" style="background:#c4620d;color:#ffffff">700</span><span class="hex">#C4620D</span><span class="token">accent-700</span><span class="uso"></span></li><li class="amostra"><span class="cor" style="background:#9a4508;color:#ffffff">800</span><span class="hex">#9A4508</span><span class="token">accent-800</span><span class="uso"></span></li></ul></div>
+  </section>
+
+  <section id="fontes">
+    <div class="secao-topo">
+      <p class="eyebrow">Google Fonts em frontend/src/index.html</p>
+      <h2>Fontes</h2>
+      <p>Campo de digitação com no mínimo 16 px, para o iPhone não dar zoom.</p>
+    </div>
+    <div class="fontes"><div class="fonte"><p class="eyebrow">font-sans</p><p class="fonte-nome" style="font-family:'Inter',ui-sans-serif,system-ui,sans-serif">Inter</p><p class="fonte-exemplo" style="font-family:'Inter',ui-sans-serif,system-ui,sans-serif">Reserva confirmada para sábado, 14/11. Diária R$ 500,00.</p><p class="uso">Texto, botões, campos e títulos das telas</p><p class="pilha"><code>Inter, ui-sans-serif, system-ui, sans-serif</code></p></div><div class="fonte"><p class="eyebrow">font-display</p><p class="fonte-nome" style="font-family:'Cinzel',Georgia,serif">Cinzel</p><p class="fonte-exemplo" style="font-family:'Cinzel',Georgia,serif">O gamb responde e reserva</p><p class="uso">Marca gamb e títulos de destaque</p><p class="pilha"><code>Cinzel, Georgia, serif</code></p></div></div>
+  </section>
+
+  <section id="componentes">
+    <div class="secao-topo">
+      <p class="eyebrow">tema.componentes</p>
+      <h2>Componentes</h2>
+      <p>Classes prontas em <code>frontend/src/styles.css</code>. Use estas antes de escrever Tailwind solto.</p>
+    </div>
+    <div class="rolagem">
+      <table>
+        <thead><tr><th>Peça</th><th>Classe</th></tr></thead>
+        <tbody><tr><td><strong>campo</strong></td><td><code>block</code></td></tr><tr><td><strong>rotulo</strong></td><td><code>mb-1 block text-sm font-medium</code></td></tr><tr><td><strong>dica</strong></td><td><code>mt-1 block text-xs text-brand-600</code></td></tr><tr><td><strong>entrada</strong></td><td><code>input-field</code></td></tr><tr><td><strong>botaoPrimario</strong></td><td><code>btn-primary</code></td></tr><tr><td><strong>erroCampo</strong></td><td><code>mt-1 block text-xs text-red-600</code></td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="specs">
+    <div class="secao-topo">
+      <p class="eyebrow">openspec/specs</p>
+      <h2>Requisitos já valendo</h2>
+      <p>O que o sistema faz hoje, por domínio. Requisito novo só entra aqui depois que a change é aplicada e arquivada.</p>
+    </div>
+    <div class="dominios"><div class="dominio"><h3>agenda <small>1</small></h3><ul><li><code>AGD-01</code> Confirmar reserva sem bloquear o publicador</li></ul></div><div class="dominio"><h3>auth <small>3</small></h3><ul><li><code>AUTH-01</code> Login com JWT</li><li><code>AUTH-02</code> Alterar a própria senha</li><li><code>AUTH-03</code> Página pública de apresentação</li></ul></div><div class="dominio"><h3>avisos <small>2</small></h3><ul><li><code>AVI-01</code> Listar avisos ativos</li><li><code>AVI-02</code> Admin lista, cria, atualiza e exclui</li></ul></div><div class="dominio"><h3>desenvolvimento <small>10</small></h3><ul><li><code>DEV-01</code> Pesquisa e proposta antes da equipe</li><li><code>DEV-02</code> Programação só com aprovado na central</li><li><code>DEV-03</code> Equipe em ordem, um agente por etapa</li><li><code>DEV-04</code> Regressão e arquivo de erro</li><li><code>DEV-05</code> Segurança só com dado ou acesso</li><li><code>DEV-06</code> Revisão grava a spec e há no máximo duas voltas</li><li><code>DEV-07</code> Deploy separa front e código completo</li><li><code>DEV-08</code> Skill do assunto na lista viva</li><li><code>DEV-09</code> Skill e regra de modelo nas duas ferramentas</li><li><code>DEV-10</code> Pesquisa no código pelo Graphify</li></ul></div><div class="dominio"><h3>empresa <small>4</small></h3><ul><li><code>EMP-01</code> Criar empresa</li><li><code>EMP-02</code> Cliente atualiza o próprio perfil</li><li><code>EMP-03</code> Admin atualiza a infraestrutura</li><li><code>EMP-04</code> Admin redefine a senha do cliente</li></ul></div><div class="dominio"><h3>ia <small>3</small></h3><ul><li><code>IA-01</code> Devolver só os campos pedidos</li><li><code>IA-02</code> Admin vê todas; cliente vê só a sua</li><li><code>IA-03</code> Não expor segredo nem calendário</li></ul></div><div class="dominio"><h3>whatsapp <small>5</small></h3><ul><li><code>WPP-01</code> Aceitar mensagem de chat e rotear pelo ramo</li><li><code>WPP-02</code> Filtrar ruído sem tratar como atendimento</li><li><code>WPP-03</code> Identificar o cliente no chat privado</li><li><code>WPP-04</code> Consultar e iniciar a sessão do painel</li><li><code>WPP-05</code> Recusar data e horário que já passaram na conversa de locação</li></ul></div></div>
+  </section>
+</main>
+
+<footer class="conteiner">
+  <p>Gerado por <code>python docs/gerar-painel-projeto.py</code>. Para atualizar, rode de novo.</p>
+</footer>

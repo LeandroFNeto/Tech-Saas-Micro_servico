@@ -11,6 +11,8 @@ import { SessaoStatusResponseDTO, StatusSessaoWhatsapp } from '../../models/what
 })
 export class ConexaoWhatsappComponent implements OnChanges {
   @Input({ required: true }) sessao = '';
+  /** Só visual: esconde a frase de instrução (cartão curto do perfil). */
+  @Input() compacto = false;
 
   private readonly api = inject(WhatsappConnectionService);
   private readonly sessao$ = new ReplaySubject<string>(1);

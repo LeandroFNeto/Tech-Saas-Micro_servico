@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>gamb · Configuração do chatbot</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#f6f0fb;font-family:Inter,ui-sans-serif,system-ui,sans-serif;color:#1A0B2E;-webkit-font-smoothing:antialiased}
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid #FF8C42;outline-offset:2px}
+h1,h2,h3,h4,p,ul,ol{margin:0}ul,ol{padding:0;list-style:none}
+.app{display:flex;flex-direction:column;min-height:100vh}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#1A0B2E;padding:8px 16px;color:#fff}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:#fff}
+.brand img{width:40px;height:40px;object-fit:contain}
+.brand b{display:block;font-family:Cinzel,Georgia,serif;font-size:16px;line-height:20px;font-weight:600;text-transform:uppercase;letter-spacing:.18em;color:#e2a775;background:linear-gradient(90deg,#bc8561,#f48c52 55%,#e2b57f);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.brand small{display:block;font-size:12px;line-height:16px;color:#d4bce8}
+.sair{display:inline-flex;align-items:center;min-height:44px;padding:0 14px;border-radius:12px;border:1px solid rgba(255,255,255,.3);font-size:14px;font-weight:600;color:#fff;text-decoration:none;box-sizing:border-box}
+.side{display:none}
+.main{flex:1;min-width:0;padding:20px 16px 32px}
+.snav{display:flex;flex-direction:column;gap:4px}
+.snav a{display:flex;align-items:center;gap:10px;min-height:44px;padding:0 12px;border-radius:12px;font-size:14px;font-weight:500;color:#ebe0f5;text-decoration:none}
+.snav a.on{background:rgba(247,147,30,.2);color:#ffab70}
+.suser{margin-top:auto;padding-top:16px;border-top:1px solid rgba(255,255,255,.12)}
+.suser p{margin-bottom:10px;font-size:13px;line-height:18px;color:#d4bce8;word-break:break-all}
+.ph{margin-bottom:20px}
+.ph h1{font-size:clamp(22px,4vw,28px);line-height:1.2;font-weight:700}
+.ph p{margin-top:4px;font-size:14px;line-height:20px;color:#652d90}
+.card{border-radius:20px;border:1px solid #ebe0f5;background:#fff;padding:20px;box-shadow:0 1px 2px rgba(46,26,71,.05)}
+.sec{font-size:17px;line-height:24px;font-weight:700}
+.sub{margin-top:4px;font-size:14px;line-height:20px;color:#652d90}
+.stack{display:flex;flex-direction:column;gap:16px}
+.cols{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start}
+.colmain{flex:999 1 520px;min-width:0}
+.colside{flex:1 1 280px;min-width:0}
+.lb{display:block;margin-bottom:6px;font-size:14px;line-height:20px;font-weight:600;color:#2E1A47}
+.lbs{display:block;margin-bottom:4px;font-size:12px;line-height:16px;font-weight:600;color:#652d90}
+.hint{margin-top:6px;font-size:13px;line-height:18px;color:#652d90}
+.in{box-sizing:border-box;width:100%;min-height:48px;border-radius:12px;border:1px solid #d4bce8;background:#fff;padding:0 14px;font:inherit;font-size:16px;color:#1A0B2E}
+.in:focus{border-color:#FF8C42;box-shadow:0 0 0 3px #ffe4d1}
+.in[readonly]{background:#f6f0fb}
+textarea.in{padding:12px 14px;min-height:112px;resize:vertical;line-height:1.5}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 20px;border-radius:12px;border:0;font:inherit;font-size:15px;font-weight:700;cursor:pointer;text-decoration:none;box-sizing:border-box}
+.btn-p{background:#F7931E;color:#1A0B2E}.btn-p:hover{background:#FF8C42}
+.btn-s{background:#fff;color:#2E1A47;border:1px solid #d4bce8}.btn-s:hover{background:#f6f0fb}
+.btn-sm{min-height:44px;padding:0 14px;font-size:14px}
+.chip{display:inline-flex;align-items:center;gap:6px;border-radius:9999px;padding:4px 12px;font-size:12px;line-height:16px;font-weight:600;white-space:nowrap}
+.sw{position:relative;display:inline-block;width:48px;height:28px;flex:none}
+.sw input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer}
+.sw i{position:absolute;inset:0;border-radius:9999px;background:#d4bce8}
+.sw i::after{content:"";position:absolute;left:3px;top:3px;width:22px;height:22px;border-radius:9999px;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+.sw input:checked + i{background:#F7931E}
+.sw input:checked + i::after{transform:translateX(20px)}
+.sw input:focus-visible + i{outline:2px solid #FF8C42;outline-offset:2px}
+.opt{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;border-radius:14px;border:1px solid #ebe0f5;padding:14px 16px;cursor:pointer}
+.opt b{display:block;font-size:15px;line-height:22px;font-weight:600}
+.opt .d{display:block;margin-top:2px;font-size:13px;line-height:18px;color:#652d90}
+.seg{display:flex;gap:4px;overflow-x:auto;padding:4px;border-radius:14px;background:#ebe0f5}
+.seg button{flex:1 0 auto;min-height:44px;padding:0 14px;border:0;border-radius:10px;background:transparent;font:inherit;font-size:14px;font-weight:600;color:#4e2473;cursor:pointer;white-space:nowrap}
+.seg button.on{background:#fff;color:#1A0B2E;box-shadow:0 1px 2px rgba(46,26,71,.15)}
+.thumb{display:flex;align-items:center;justify-content:center;flex:none;width:56px;height:56px;border-radius:12px;border:1px dashed #b889d4;background:#f6f0fb;color:#7c3aad}
+.urlrow{display:flex;align-items:center;gap:8px}
+.mn{border-radius:14px;border:1px solid #ebe0f5;padding:14px 16px}
+.voltar{display:inline-flex;align-items:center;gap:6px;min-height:44px;margin-bottom:4px;font-size:14px;font-weight:600;color:#652d90;text-decoration:none;border-radius:12px}
+.voltar:hover{color:#2E1A47}
+.tabs{position:sticky;bottom:0;display:flex;border-top:1px solid #d4bce8;background:#fff}
+.tabs a{display:flex;flex:1;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:60px;font-size:12px;font-weight:600;color:#652d90;text-decoration:none}
+.tabs a.on{color:#9a4508;box-shadow:inset 0 3px 0 #F7931E}
+@media(min-width:1024px){
+.app{flex-direction:row}
+.topbar,.tabs{display:none}
+.side{display:flex;flex-direction:column;gap:24px;flex:none;width:248px;box-sizing:border-box;padding:20px 12px;background:#1A0B2E;color:#fff}
+.main{padding:32px 40px}
+}
+</style>
+</helmet>
+<div class="app">
+
+<header class="topbar">
+<a class="brand" href="ClientePainel.dc.html"><img src="/_blob/2afaeee994f3399be9d349cc4eb1cf72" alt="Logo gamb"><span><b>gamb</b><small>Painel do Cliente</small></span></a>
+<a class="sair" href="Main.dc.html">Sair</a>
+</header>
+
+<aside class="side">
+<a class="brand" href="ClientePainel.dc.html"><img src="/_blob/2afaeee994f3399be9d349cc4eb1cf72" alt="Logo gamb"><span><b>gamb</b><small>Painel do Cliente</small></span></a>
+<nav class="snav" aria-label="Principal">
+<a href="ClientePainel.dc.html"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"></path><path d="M5 10v10h14V10"></path></svg>Painel</a>
+<a class="on" href="ClienteChatbot.dc.html" aria-current="page"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"></path><path d="M8 10h.01M12 10h.01M16 10h.01"></path></svg>Configuração do chatbot</a>
+</nav>
+<div class="suser"><p>sessao_recanto_01@gamb.com.br</p><a class="sair" href="Main.dc.html">Sair</a></div>
+</aside>
+
+<main class="main">
+<div class="ph"><a class="voltar" href="ClientePainel.dc.html"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg>Voltar ao painel</a><h1>Configuração do chatbot</h1><p>Mensagem de boas-vindas, fotos, preços, regras do robô e senha de acesso.</p></div>
+
+<div class="cols">
+<div class="colmain stack">
+
+<section role="alert" style="border-radius: 16px; background: #b91c1c; padding: 14px 18px; color: #ffffff">
+<p style="font-size: 12px; line-height: 16px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #fecaca">Manutenção</p>
+<h2 style="margin-top: 2px; font-size: 17px; line-height: 24px; font-weight: 700">Manutenção programada</h2>
+<p style="margin-top: 2px; font-size: 14px; line-height: 20px; color: #fef2f2">[DATA E HORÁRIO DA MANUTENÇÃO]</p>
+</section>
+
+<sc-if value="{{sucesso}}" hint-placeholder-val="{{ false }}">
+<p role="status" style="border-radius: 12px; border: 1px solid #ffc9a3; background: #fff4ec; padding: 12px 16px; font-size: 14px; line-height: 20px; color: #2E1A47">Perfil e configurações do robô atualizados.</p>
+</sc-if>
+
+<section class="card stack">
+<div class="seg" role="tablist">
+<sc-for list="{{abas}}" as="aba" hint-placeholder-count="3">
+<button type="button" role="tab" class="{{aba.classe}}" onClick="{{aba.abrir}}">{{aba.rotulo}}</button>
+</sc-for>
+</div>
+
+<sc-if value="{{abaDados}}" hint-placeholder-val="{{ true }}">
+<form class="stack">
+<div><label class="lb" for="nome">Nome</label><input id="nome" class="in" value="Recanto Teste"></div>
+<div><label class="lb" for="boasvindas">Mensagem de boas vindas</label><textarea id="boasvindas" class="in">Olá!</textarea></div>
+<div><label class="lb" for="maps">Link do Google Maps</label><input id="maps" class="in" inputmode="url" placeholder="https://maps.app.goo.gl/..."></div>
+<div>
+<label class="lb" for="foto">Foto principal</label>
+<div class="urlrow"><span class="thumb" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"></rect><circle cx="9" cy="10" r="1.5"></circle><path d="m21 16-5-5-8 8"></path></svg></span><input id="foto" class="in" inputmode="url" placeholder="https://res.cloudinary.com/.../hero_image.jpg"></div>
+<p class="hint">Cole a URL pública da imagem principal. Toque na miniatura para ver maior.</p>
+</div>
+<div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px"><span class="lb" style="margin: 0">Galeria de fotos (até 5 URLs)</span><button class="btn btn-s btn-sm" type="button">Adicionar URL</button></div>
+<p class="hint" style="margin: 0 0 10px">Cole os links públicos do Cloudinary. O bot envia essas fotos no WhatsApp se o cliente pedir mais imagens.</p>
+<div class="urlrow"><input class="in" aria-label="URL da foto da galeria" inputmode="url" placeholder="https://res.cloudinary.com/.../foto.jpg"><button class="btn btn-s btn-sm" type="button">Remover</button></div>
+</div>
+<div><label class="lb" for="drive">Link da galeria no Google Drive (opcional)</label><input id="drive" class="in" inputmode="url" placeholder="https://drive.google.com/drive/folders/..."><p class="hint">O bot envia este link no WhatsApp junto com a foto principal, para o cliente ver fotos e vídeos em alta qualidade.</p></div>
+<button class="btn btn-p" type="button">Atualizar perfil</button>
+</form>
+</sc-if>
+
+<sc-if value="{{abaRobo}}" hint-placeholder-val="{{ false }}">
+<form class="stack">
+<div><h3 class="sec">Configurações do Robô</h3><p class="sub">Defina como o bot atende no WhatsApp: tipo de locação, preços, regras e opções do menu.</p></div>
+<label class="opt"><span><b>Aluguel por Hora</b><span class="d">Ligado = cobrança por hora. Desligado = diária.</span></span><span class="sw"><input type="checkbox"><i></i></span></label>
+<label class="opt"><span><b>Reserva Automática pelo Bot</b><span class="d">Ligada = o WhatsApp mostra a opção de solicitar reserva. Desligada = avisa que um atendente vai responder.</span></span><span class="sw"><input type="checkbox" checked="{{ true }}"><i></i></span></label>
+<div><label class="lb" for="regras">Regras do Local e Cancelamento</label><textarea id="regras" class="in" placeholder="Cancelar com 5 dias de antecedência"></textarea></div>
+<div><label class="lb" for="precos">Mensagem de preços</label><textarea id="precos" class="in" placeholder="{{placeholderPrecos}}"></textarea><p class="hint">Texto que o bot envia no WhatsApp quando o cliente escolhe a opção de preços.</p></div>
+<div class="stack">
+<div><h4 style="font-size: 15px; line-height: 22px; font-weight: 700">Opções do menu do WhatsApp</h4><p class="hint" style="margin-top: 2px">Ative cada opção e edite o texto que o cliente vê no bot.</p></div>
+<sc-for list="{{menu}}" as="item" hint-placeholder-count="5">
+<div class="mn stack" style="gap: 12px">
+<div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 16px"><span><b style="display: block; font-size: 15px; line-height: 22px">{{item.label}}</b><span style="display: block; font-size: 13px; line-height: 18px; color: #652d90">{{item.descricao}}</span></span>
+<label class="sw" aria-label="Ativar {{item.label}}"><input type="checkbox" checked="{{ true }}"><i></i></label></div>
+<div><span class="lbs">Texto do menu no WhatsApp</span><input class="in" aria-label="Texto do menu no WhatsApp: {{item.label}}" value="{{item.texto}}"></div>
+</div>
+</sc-for>
+</div>
+<button class="btn btn-p" type="button">Atualizar perfil</button>
+</form>
+</sc-if>
+
+<sc-if value="{{abaConfig}}" hint-placeholder-val="{{ false }}">
+<form class="stack">
+<div><h3 class="sec">Alterar senha</h3><p class="sub">Troque a senha temporária por uma senha sua.</p></div>
+<div><label class="lb" for="mail">E-mail de acesso</label><input id="mail" class="in" type="email" value="sessao_recanto_01@gamb.com.br" readonly=""></div>
+<div><label class="lb" for="atual">Senha atual</label><input id="atual" class="in" type="password" autocomplete="current-password"></div>
+<div><label class="lb" for="nova">Nova senha</label><input id="nova" class="in" type="password" autocomplete="new-password"><p class="hint">Use ao menos 6 caracteres.</p></div>
+<div><label class="lb" for="conf">Confirmar nova senha</label><input id="conf" class="in" type="password" autocomplete="new-password"></div>
+<button class="btn btn-p" type="button">Salvar nova senha</button>
+</form>
+</sc-if>
+</section>
+</div>
+
+<div class="colside stack">
+<h2 style="font-size: 13px; line-height: 20px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #652d90">Avisos e tutoriais</h2>
+<article class="card" style="padding: 16px">
+<p style="font-size: 12px; line-height: 16px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #4e2473">Tutorial</p>
+<h3 style="margin-top: 4px; font-size: 16px; line-height: 24px; font-weight: 700">Como conectar o WhatsApp</h3>
+<p style="margin-top: 4px; font-size: 14px; line-height: 20px; color: #4e2473">Escaneie o QR Code.</p>
+<a class="btn btn-s btn-sm" href="#" style="margin-top: 12px">Ver tutorial →</a>
+</article>
+</div>
+</div>
+</main>
+
+<nav class="tabs" aria-label="Principal">
+<a href="ClientePainel.dc.html"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"></path><path d="M5 10v10h14V10"></path></svg>Painel</a>
+<a class="on" href="ClienteChatbot.dc.html" aria-current="page"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"></path><path d="M8 10h.01M12 10h.01M16 10h.01"></path></svg>Chatbot</a>
+</nav>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"abaInicial":{"editor":"enum","options":["dados","robo","configuracao"],"default":"dados"},"mostrarSucesso":{"editor":"boolean","default":false},"$preview":{"width":1280,"height":1500}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { aba: null };
+  }
+  renderVals() {
+    const atual = this.state.aba ?? this.props.abaInicial ?? 'dados';
+    const lista = [
+      { id: 'dados', rotulo: 'Dados do perfil' },
+      { id: 'robo', rotulo: 'Configurações do Robô' },
+      { id: 'configuracao', rotulo: 'Configuração' }
+    ];
+    return {
+      abas: lista.map((a) => ({
+        rotulo: a.rotulo,
+        classe: a.id === atual ? 'on' : '',
+        abrir: () => this.setState({ aba: a.id })
+      })),
+      abaDados: atual === 'dados',
+      abaRobo: atual === 'robo',
+      abaConfig: atual === 'configuracao',
+      sucesso: this.props.mostrarSucesso ?? false,
+      placeholderPrecos: 'Diária padrão: R$ 500,00\nFinal de semana: R$ 700,00',
+      menu: [
+        { label: 'Fotos', descricao: 'Envia fotos do espaço pelo WhatsApp', texto: 'Ver fotos do espaço' },
+        { label: 'Localização', descricao: 'Envia o link do Google Maps no menu do bot', texto: 'Ver localização' },
+        { label: 'Preços', descricao: 'Envia a mensagem de preços cadastrada pelo WhatsApp', texto: 'Ver preços' },
+        { label: 'Regras', descricao: 'Mostra as regras do local e o cancelamento', texto: 'Ver regras e cancelamento' },
+        { label: 'Reserva', descricao: 'Opção de solicitar reserva no WhatsApp', texto: 'Solicitar uma reserva' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

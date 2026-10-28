@@ -53,11 +53,7 @@ public class ServicoReserva {
                     .setSingleEvents(true)
                     .execute();
 
-            List<Event> itens = eventos.getItems();
-
-            if(itens == null || itens.isEmpty()){
-                return null;
-            }
+            List<Event> itens = eventos.getItems() == null ? List.of() : eventos.getItems();
 
             List<DiaReservaDTO> listaDias = new ArrayList<>();
             Set<LocalDate> diasAlugados = new HashSet<>();
@@ -76,7 +72,7 @@ public class ServicoReserva {
             }
 
             DateTimeFormatter formatadorDia = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-            LocalDate hoje = LocalDate.now();
+            LocalDate hoje = LocalDate.now(ZoneId.of("America/Sao_Paulo"));
             Locale idiomaBrasil = new Locale("pt", "BR");
 
             for (int i = 0; i < 30; i++){

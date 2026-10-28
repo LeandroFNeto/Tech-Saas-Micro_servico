@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>gamb · Clientes cadastrados</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#f6f0fb;font-family:Inter,ui-sans-serif,system-ui,sans-serif;color:#1A0B2E;-webkit-font-smoothing:antialiased}
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid #FF8C42;outline-offset:2px}
+h1,h2,h3,p,ul,ol{margin:0}ul,ol{padding:0;list-style:none}
+.app{display:flex;flex-direction:column;min-height:100vh}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#1A0B2E;padding:8px 16px;color:#fff}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:#fff}
+.brand img{width:40px;height:40px;object-fit:contain}
+.brand b{display:block;font-family:Cinzel,Georgia,serif;font-size:16px;line-height:20px;font-weight:600;text-transform:uppercase;letter-spacing:.18em;color:#e2a775;background:linear-gradient(90deg,#bc8561,#f48c52 55%,#e2b57f);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.brand small{display:block;font-size:12px;line-height:16px;color:#d4bce8}
+.sair{display:inline-flex;align-items:center;min-height:44px;padding:0 14px;border-radius:12px;border:1px solid rgba(255,255,255,.3);font-size:14px;font-weight:600;color:#fff;text-decoration:none;box-sizing:border-box}
+.side{display:none}
+.tabs{position:sticky;bottom:0;z-index:5;display:flex;background:#fff;border-top:1px solid #d4bce8}
+.tabs a{flex:1;min-height:60px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:12px;font-weight:600;color:#652d90;text-decoration:none}
+.tabs a.on{color:#9a4508;box-shadow:inset 0 3px 0 #F7931E}
+.main{flex:1;min-width:0;padding:20px 16px}
+.snav{display:flex;flex-direction:column;gap:4px}
+.snav a{display:flex;align-items:center;gap:10px;min-height:44px;padding:0 12px;border-radius:12px;font-size:14px;font-weight:500;color:#ebe0f5;text-decoration:none}
+.snav a:hover{background:rgba(255,255,255,.08)}
+.snav a.on{background:rgba(247,147,30,.2);color:#ffab70}
+.suser{margin-top:auto;padding-top:16px;border-top:1px solid rgba(255,255,255,.12)}
+.suser p{margin-bottom:10px;font-size:13px;line-height:18px;color:#d4bce8;word-break:break-all}
+.ph{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px}
+.ph h1{font-size:clamp(22px,4vw,28px);line-height:1.2;font-weight:700}
+.ph p{margin-top:4px;font-size:14px;line-height:20px;color:#652d90}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 20px;border-radius:12px;border:0;font:inherit;font-size:15px;font-weight:700;cursor:pointer;text-decoration:none;box-sizing:border-box}
+.btn-p{background:#F7931E;color:#1A0B2E}.btn-p:hover{background:#FF8C42}
+.btn-s{background:#fff;color:#2E1A47;border:1px solid #d4bce8}.btn-s:hover{background:#f6f0fb}
+.btn-sm{min-height:44px;padding:0 14px;font-size:14px}
+.chip{display:inline-flex;align-items:center;border-radius:9999px;padding:4px 10px;font-size:12px;line-height:16px;font-weight:600;white-space:nowrap}
+.list{display:flex;flex-direction:column;gap:12px}
+.thead{display:none}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px 16px;align-items:center;border-radius:20px;border:1px solid #ebe0f5;background:#fff;padding:16px;box-shadow:0 1px 2px rgba(46,26,71,.05)}
+.row .c-nome{grid-column:1 / -1}
+.row .c-act{grid-column:1 / -1}
+.row .btn{width:100%}
+.k{display:block;margin-bottom:2px;font-size:11px;line-height:16px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#652d90}
+.row b{font-size:17px;line-height:24px;font-weight:700}
+.row code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;color:#4e2473;word-break:break-all}
+.row .v{font-size:14px;line-height:20px;color:#4e2473}
+@media(min-width:1024px){
+.app{flex-direction:row}
+.topbar,.tabs{display:none}
+.side{display:flex;flex-direction:column;gap:24px;flex:none;width:248px;box-sizing:border-box;padding:20px 12px;background:#1A0B2E;color:#fff}
+.main{padding:32px 40px}
+}
+@media(min-width:1100px){
+.thead,.row{display:grid;grid-template-columns:1.6fr 1.6fr 1fr .7fr 1.1fr 96px;gap:16px;align-items:center}
+.thead{padding:0 20px;font-size:12px;line-height:16px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#652d90}
+.row{padding:14px 20px}
+.row .c-nome,.row .c-act{grid-column:auto}
+.k{display:none}
+.row .btn{width:auto}
+}
+</style>
+</helmet>
+<div class="app">
+
+<header class="topbar">
+<a class="brand" href="AdminEmpresas.dc.html"><img src="/_blob/2afaeee994f3399be9d349cc4eb1cf72" alt="Logo gamb"><span><b>gamb</b><small>Painel Master</small></span></a>
+<a class="sair" href="Main.dc.html">Sair</a>
+</header>
+
+<aside class="side">
+<a class="brand" href="AdminEmpresas.dc.html"><img src="/_blob/2afaeee994f3399be9d349cc4eb1cf72" alt="Logo gamb"><span><b>gamb</b><small>Painel Master</small></span></a>
+<nav class="snav" aria-label="Principal">
+<a class="on" href="AdminEmpresas.dc.html"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21V6l8-3 8 3v15"/><path d="M9 21v-5h6v5M9 9h.01M12 9h.01M15 9h.01M9 12h.01M12 12h.01M15 12h.01"/></svg>Empresas</a>
+<a href="AdminClienteForm.dc.html"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>Novo cliente</a>
+<a href="AdminAvisos.dc.html"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9a6 6 0 1 1 12 0c0 5 2 6 2 6H4s2-1 2-6M10 19a2 2 0 0 0 4 0"/></svg>Avisos</a>
+</nav>
+<div class="suser"><p>admin@gamb.com.br</p><a class="sair" href="Main.dc.html">Sair</a></div>
+</aside>
+
+<main class="main">
+<div class="ph">
+<div><h1>Clientes cadastrados</h1><p>Empresas ativas no painel da gamb.</p></div>
+<a class="btn btn-p" href="AdminClienteForm.dc.html">Cadastrar cliente</a>
+</div>
+
+<div class="thead" aria-hidden="true"><span>Empresa</span><span>Sessão WhatsApp</span><span>Status</span><span>Módulos</span><span>Atualizado</span><span></span></div>
+<ul class="list">
+<sc-for list="{{empresas}}" as="empresa" hint-placeholder-count="3">
+<li class="row">
+<div class="c-nome"><span class="k">Empresa</span><b>{{empresa.nome}}</b></div>
+<div><span class="k">Sessão WhatsApp</span><code>{{empresa.sessao}}</code></div>
+<div><span class="k">Status</span><span class="chip" style="background: {{empresa.fundo}}; color: {{empresa.cor}}">{{empresa.status}}</span></div>
+<div><span class="k">Módulos</span><span class="v">{{empresa.modulos}}</span></div>
+<div><span class="k">Atualizado</span><span class="v">{{empresa.atualizado}}</span></div>
+<div class="c-act"><a class="btn btn-s btn-sm" href="AdminClienteForm.dc.html">Editar</a></div>
+</li>
+</sc-for>
+</ul>
+</main>
+
+<nav class="tabs" aria-label="Principal">
+<a class="on" href="AdminEmpresas.dc.html"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21V6l8-3 8 3v15"/><path d="M9 21v-5h6v5M9 9h.01M12 9h.01M15 9h.01M9 12h.01M12 12h.01M15 12h.01"/></svg>Empresas</a>
+<a href="AdminClienteForm.dc.html"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>Novo cliente</a>
+<a href="AdminAvisos.dc.html"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9a6 6 0 1 1 12 0c0 5 2 6 2 6H4s2-1 2-6M10 19a2 2 0 0 0 4 0"/></svg>Avisos</a>
+</nav>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":820}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      empresas: [
+        { nome: 'Recanto Teste', sessao: 'sessao_recanto_01', status: 'CONNECTED', fundo: '#fff4ec', cor: '#9a4508', modulos: '4', atualizado: '26/10/26, 14:02' },
+        { nome: '[NOME DA EMPRESA]', sessao: 'sessao_exemplo_02', status: 'IA ativa', fundo: '#ebe0f5', cor: '#4e2473', modulos: '3', atualizado: '25/10/26, 09:15' },
+        { nome: '[NOME DA EMPRESA]', sessao: 'sessao_exemplo_03', status: 'Padrão', fundo: '#ebe0f5', cor: '#4e2473', modulos: '—', atualizado: '20/10/26, 18:40' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

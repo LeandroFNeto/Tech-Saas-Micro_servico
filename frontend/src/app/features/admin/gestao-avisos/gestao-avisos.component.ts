@@ -21,6 +21,14 @@ export class GestaoAvisosComponent implements OnInit {
   readonly sucesso = signal('');
   readonly editandoId = signal<number | null>(null);
 
+  /** Só visual: cor do chip de cada tipo de aviso. */
+  readonly corTipo: Record<TipoAviso, string> = {
+    MANUTENCAO: 'bg-red-50 text-red-700',
+    TUTORIAL: 'bg-brand-100 text-brand-700',
+    PRECO: 'bg-accent-50 text-accent-800',
+    COMUNICADO: 'bg-brand-50 text-brand-600'
+  };
+
   readonly form = this.fb.nonNullable.group({
     titulo: ['', Validators.required],
     tipo: this.fb.nonNullable.control<TipoAviso>('COMUNICADO', Validators.required),

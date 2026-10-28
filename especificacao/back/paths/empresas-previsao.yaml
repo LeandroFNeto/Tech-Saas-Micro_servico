@@ -1,0 +1,39 @@
+get:
+  tags:
+  - Gerenciamento de Empresas
+  summary: Previsão do tempo dos próximos dias da empresa
+  description: "Devolve PrevisaoTempoResponseDTO. Aceita o admin (x-admin-token ou ROLE_ADMIN) ou o cliente da própria empresa. Interruptor desligado, sem cidade ou falha do provedor: 200 com disponivel=false."
+  operationId: buscarPrevisao
+  parameters:
+  - name: x-admin-token
+    in: header
+    description: Token administrativo do SaaS
+    required: false
+    schema:
+      type: string
+  - name: x-cliente-token
+    in: header
+    description: Token do painel do cliente
+    required: false
+    schema:
+      type: string
+  - name: sessao
+    in: path
+    description: Identificador da sessão WhatsApp da empresa
+    required: true
+    schema:
+      type: string
+    example: sessao_recanto_01
+  responses:
+    "200":
+      description: Previsão (ou disponivel=false)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/PrevisaoTempoResponseDTO"
+    "401":
+      description: Sem token
+    "403":
+      description: Cliente de outra empresa, token legado ou sessão inexistente para quem não é admin (mesma resposta, sem enumerar sessões)
+    "404":
+      description: Empresa não encontrada para a sessão informada (só para o admin)

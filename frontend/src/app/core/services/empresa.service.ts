@@ -77,6 +77,9 @@ export class EmpresaService {
       googleCalendarId: item['googleCalendarId'] as string | undefined,
       modulosAtivos: this.extrairCodigos(item['modulosAtivos']),
       modulosMenu: this.extrairModulos(item['modulosAtivos'] ?? item['modulosMenu']),
+      cidadePrevisao: item['cidadePrevisao'] as string | undefined,
+      cidadePrevisaoResolvida: item['cidadePrevisaoResolvida'] as string | undefined,
+      previsaoTempoAtiva: Boolean(item['previsaoTempoAtiva']),
       atualizadoEm: item['atualizadoEm'] as string | undefined
     };
   }

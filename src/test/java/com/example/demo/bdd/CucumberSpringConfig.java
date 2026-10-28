@@ -34,6 +34,9 @@ public class CucumberSpringConfig {
     @MockitoBean
     ServicoGoogleagenda servicoGoogleagenda;
 
+    @MockitoBean
+    com.example.demo.servico.previsao.ProvedorPrevisao provedorPrevisao;
+
     @MockitoSpyBean
     FactoryModulo factoryModulo;
 

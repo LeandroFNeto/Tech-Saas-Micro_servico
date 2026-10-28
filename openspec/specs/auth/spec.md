@@ -48,3 +48,29 @@ Cenário: senha nova inválida
 - Dado um JWT válido
 - Quando a senha nova não passa na validação
 - Então a API responde 400
+
+### AUTH-03 Página pública de apresentação
+
+O sistema deve exibir em `/` uma página pública que apresenta o gamb, sem consumir API, com o link Entrar que leva a `/login`. Quem já tem sessão válida vai direto ao painel do seu papel. Rota desconhecida abre a apresentação.
+
+Contrato: nenhum. Rota do front, sem rota de API.
+Prova: `frontend/src/app/features/apresentacao/apresentacao.component.spec.ts`
+
+Cenário: visitante sem sessão
+
+- Dado um visitante sem sessão
+- Quando abre `/`
+- Então vê a apresentação
+- E o link Entrar leva a `/login`
+
+Cenário: usuário com sessão válida
+
+- Dado um usuário com sessão válida
+- Quando abre `/`
+- Então é levado ao painel do seu papel
+
+Cenário: rota desconhecida
+
+- Dado qualquer visitante
+- Quando abre um endereço que não existe no painel
+- Então é levado à apresentação em `/`

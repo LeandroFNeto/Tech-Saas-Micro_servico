@@ -1,0 +1,60 @@
+type: object
+description: Previsão de um dia, cruzada com a ocupação da agenda da empresa. Datas e fuso America/Sao_Paulo.
+properties:
+  data:
+    type: string
+    format: date
+    description: Data do dia (yyyy-MM-dd)
+    example: 2026-10-30
+  diaSemana:
+    type: string
+    description: Nome do dia da semana em português
+    example: sexta-feira
+  reservado:
+    type: boolean
+    description: true quando a data está ocupada no Google Agenda da empresa. Sempre false sem agenda ou quando reservasDisponiveis é false.
+    example: false
+  resumo:
+    type: string
+    description: Descrição curta do tempo, em português
+    example: chuva moderada
+  codigoTempo:
+    type: integer
+    format: int32
+    description: Código de condição do provedor (weather.id). A faixa 200 a 299 é temporal.
+    example: 501
+  tempMax:
+    type: number
+    format: double
+    description: Temperatura máxima em graus Celsius
+    example: 31.4
+  tempMin:
+    type: number
+    format: double
+    description: Temperatura mínima em graus Celsius
+    example: 19.8
+  chanceChuva:
+    type: integer
+    format: int32
+    minimum: 0
+    maximum: 100
+    description: Chance de chuva em porcentagem, arredondada para inteiro
+    example: 72
+  chuvaMm:
+    type: number
+    format: double
+    minimum: 0
+    description: Chuva prevista em milímetros, com 1 casa decimal. Dia sem chuva informada vale 0.
+    example: 4.5
+  risco:
+    type: string
+    enum:
+      - BAIXO
+      - MEDIO
+      - ALTO
+    description: "Risco de desmarcação. ALTO: chance >= 70%, temporal ou chuva >= 10 mm. MEDIO: chance de 40% a 69% ou chuva de 2 mm a 9,9 mm. BAIXO: o resto."
+    example: ALTO
+  estimativa:
+    type: boolean
+    description: true do 6º ao 8º dia, previsão pouco confiável
+    example: false

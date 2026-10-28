@@ -47,6 +47,13 @@ public record EmpresaUpdateDTO(
         String regrasLocacao,
 
         @Schema(description = "Opções do menu do WhatsApp (Fotos, Localização, Preços, Regras, Reserva)")
-        List<ModuloMenuDTO> modulosMenu
+        List<ModuloMenuDTO> modulosMenu,
+
+        @Size(max = 100, message = "A cidade não pode exceder 100 caracteres")
+        @Schema(description = "Cidade do espaço para a previsão do tempo", example = "Atibaia", maxLength = 100)
+        String cidadePrevisao,
+
+        @Schema(description = "Interruptor Mostrar previsão do tempo", example = "false")
+        Boolean previsaoTempoAtiva
 ) {
 }

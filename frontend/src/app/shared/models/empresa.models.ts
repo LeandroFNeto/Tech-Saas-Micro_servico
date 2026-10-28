@@ -27,6 +27,8 @@ export interface EmpresaUpdateDTO {
   locacaoPorHora?: boolean;
   regrasLocacao?: string;
   modulosMenu?: ModuloMenuDTO[];
+  cidadePrevisao?: string;
+  previsaoTempoAtiva?: boolean;
 }
 
 /** Espelha EmpresaUpdateAdminDTO — painel master. */
@@ -54,6 +56,9 @@ export interface EmpresaResponseDTO {
   locacaoPorHora?: boolean;
   regrasLocacao?: string;
   modulosMenu?: ModuloMenuDTO[];
+  cidadePrevisao?: string;
+  cidadePrevisaoResolvida?: string;
+  previsaoTempoAtiva?: boolean;
   atualizadoEm: string;
 }
 
@@ -92,6 +97,9 @@ export interface EmpresaView {
   regrasLocacao?: string;
   modulosAtivos: string[];
   modulosMenu: ModuloMenuDTO[];
+  cidadePrevisao?: string;
+  cidadePrevisaoResolvida?: string;
+  previsaoTempoAtiva?: boolean;
   atualizadoEm?: string;
 }
 

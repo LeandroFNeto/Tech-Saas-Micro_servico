@@ -31,29 +31,28 @@ export class BannerAvisosComponent {
     return this.avisos.filter((aviso) => aviso.tipo !== 'MANUTENCAO');
   }
 
+  /** Só visual: fundo e borda do cartão lateral por tipo. */
   cardTipo(tipo: TipoAviso): string {
-    if (tipo === 'TUTORIAL') {
-      return 'border-brand-200 bg-brand-50';
-    }
     if (tipo === 'PRECO') {
       return 'border-accent-200 bg-accent-50';
     }
     if (tipo === 'MANUTENCAO') {
       return 'border-red-200 bg-red-50';
     }
-    return 'border-accent-100 bg-white';
+    return 'border-brand-200 bg-white';
   }
 
+  /** Só visual: cor do rótulo do tipo. */
   textoTipo(tipo: TipoAviso): string {
     if (tipo === 'TUTORIAL') {
       return 'text-brand-700';
     }
     if (tipo === 'PRECO') {
-      return 'text-accent-700';
+      return 'text-accent-800';
     }
     if (tipo === 'MANUTENCAO') {
       return 'text-red-700';
     }
-    return 'text-accent-600';
+    return 'text-brand-600';
   }
 }

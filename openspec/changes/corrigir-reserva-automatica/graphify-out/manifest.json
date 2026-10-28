@@ -1,0 +1,20 @@
+{
+  "design.md": {
+    "mtime": 1793152393.786044,
+    "seen": 1793152395.0978928,
+    "ast_hash": "ca7591bc40409ad8cce938bd613e203d",
+    "semantic_hash": ""
+  },
+  "proposal.md": {
+    "mtime": 1793152393.7841651,
+    "seen": 1793152395.0978987,
+    "ast_hash": "0e300eb90ac626a45f62041fe9071cdd",
+    "semantic_hash": ""
+  },
+  "tasks.md": {
+    "mtime": 1793152393.7896461,
+    "seen": 1793152395.0979016,
+    "ast_hash": "6efcb26356872339abbf36a745e1ee43",
+    "semantic_hash": ""
+  }
+}

@@ -1,0 +1,88 @@
+<div [class]="design.pagina">
+  <header [class]="design.cabecalho.fundo">
+    <div [class]="design.conteiner">
+      <div [class]="design.cabecalho.topo">
+        <div [class]="design.cabecalho.marca">
+          <img src="logo-gamb.png" [alt]="conteudo.marca.logoAlt" width="44" height="44" [class]="design.cabecalho.logo" />
+          <span [class]="design.cabecalho.nome">{{ conteudo.marca.nome }}</span>
+        </div>
+        <a routerLink="/login" [class]="design.cabecalho.botaoEntrar + ' ' + design.foco">{{ conteudo.topo.entrar }}</a>
+      </div>
+
+      <div [class]="design.hero.linha">
+        <div [class]="design.hero.texto">
+          <p [class]="design.hero.selo">{{ conteudo.hero.selo }}</p>
+          <h1 [class]="design.hero.titulo">
+            {{ conteudo.hero.titulo }}<br />
+            <span [class]="design.hero.destaque">{{ conteudo.hero.destaque }}</span>
+          </h1>
+          <p [class]="design.hero.descricao">{{ conteudo.hero.descricao }}</p>
+          <div [class]="design.hero.acoes">
+            <a href="#como" (click)="irParaComo($event, secaoComo)" [class]="design.hero.botaoComo + ' ' + design.foco">
+              {{ conteudo.hero.verComoFunciona }}
+            </a>
+          </div>
+        </div>
+
+        <figure [class]="design.celular.figura">
+          <div aria-hidden="true" [class]="design.celular.brilho"></div>
+          <div [class]="design.celular.moldura">
+            <div [class]="design.celular.tela">
+              <img src="conversa-whatsapp.jpg" [alt]="conteudo.conversa.alt" loading="lazy" [class]="design.celular.imagem" />
+            </div>
+          </div>
+          <figcaption [class]="design.celular.legenda">{{ conteudo.conversa.legenda }}</figcaption>
+        </figure>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section id="como" #secaoComo tabindex="-1" aria-labelledby="como-titulo" [class]="design.secao.como + ' outline-none'">
+      <div [class]="design.conteiner">
+        <p [class]="design.secao.rotulo">{{ conteudo.como.rotulo }}</p>
+        <h2 id="como-titulo" [class]="design.secao.titulo">{{ conteudo.como.titulo }}</h2>
+        <ol [class]="design.passos.lista">
+          @for (passo of conteudo.como.passos; track passo.numero) {
+            <li [class]="design.passos.item">
+              <span aria-hidden="true" [class]="design.passos.numero">{{ passo.numero }}</span>
+              <h3 [class]="design.passos.titulo">{{ passo.titulo }}</h3>
+              <p [class]="design.passos.texto">{{ passo.texto }}</p>
+            </li>
+          }
+        </ol>
+      </div>
+    </section>
+
+    <section aria-labelledby="beneficios-titulo" [class]="design.secao.beneficios">
+      <div [class]="design.conteiner">
+        <p [class]="design.secao.rotulo">{{ conteudo.beneficios.rotulo }}</p>
+        <h2 id="beneficios-titulo" [class]="design.secao.titulo">{{ conteudo.beneficios.titulo }}</h2>
+        <ul [class]="design.beneficios.lista">
+          @for (item of conteudo.beneficios.itens; track item.titulo) {
+            <li [class]="design.beneficios.item">
+              <h3 [class]="design.beneficios.titulo">{{ item.titulo }}</h3>
+              <p [class]="design.beneficios.texto">{{ item.texto }}</p>
+            </li>
+          }
+        </ul>
+      </div>
+    </section>
+
+    <section aria-labelledby="chamada-titulo" [class]="design.chamada.fundo">
+      <div [class]="design.chamada.linha">
+        <div [class]="design.chamada.texto">
+          <h2 id="chamada-titulo" [class]="design.chamada.titulo">{{ conteudo.chamada.titulo }}</h2>
+        </div>
+        <a routerLink="/login" [class]="design.chamada.botaoEntrar + ' ' + design.foco">{{ conteudo.chamada.entrar }}</a>
+      </div>
+    </section>
+  </main>
+
+  <footer [class]="design.rodape.fundo">
+    <div [class]="design.rodape.linha">
+      <span [class]="design.rodape.nome">{{ conteudo.marca.nome }}</span>
+      <span [class]="design.rodape.texto">{{ conteudo.rodape.texto }}</span>
+    </div>
+  </footer>
+</div>

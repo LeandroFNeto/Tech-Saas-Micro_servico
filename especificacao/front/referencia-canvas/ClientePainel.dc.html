@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>gamb · Painel do cliente</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#f6f0fb;font-family:Inter,ui-sans-serif,system-ui,sans-serif;color:#1A0B2E;-webkit-font-smoothing:antialiased}
+a{color:#4e2473}a:hover{color:#2E1A47}
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid #FF8C42;outline-offset:2px}
+h1,h2,h3,h4,p,ul,ol,dl,dd{margin:0}ul,ol{padding:0;list-style:none}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.app{display:flex;flex-direction:column;min-height:100vh}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#1A0B2E;padding:8px 16px;color:#fff}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:#fff}
+.brand img{width:40px;height:40px;object-fit:contain}
+.brand b{display:block;font-family:Cinzel,Georgia,serif;font-size:16px;line-height:20px;font-weight:600;text-transform:uppercase;letter-spacing:.18em;color:#e2a775;background:linear-gradient(90deg,#bc8561,#f48c52 55%,#e2b57f);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.brand small{display:block;font-size:12px;line-height:16px;color:#d4bce8}
+.sair{display:inline-flex;align-items:center;min-height:44px;padding:0 14px;border-radius:12px;border:1px solid rgba(255,255,255,.3);font-size:14px;font-weight:600;color:#fff;text-decoration:none;box-sizing:border-box}
+.side{display:none}
+.main{flex:1;min-width:0;padding:20px 16px 32px}
+.snav{display:flex;flex-direction:column;gap:4px}
+.snav a{display:flex;align-items:center;gap:10px;min-height:44px;padding:0 12px;border-radius:12px;font-size:14px;font-weight:500;color:#ebe0f5;text-decoration:none}
+.snav a.on{background:rgba(247,147,30,.2);color:#ffab70}
+.suser{margin-top:auto;padding-top:16px;border-top:1px solid rgba(255,255,255,.12)}
+.suser p{margin-bottom:10px;font-size:13px;line-height:18px;color:#d4bce8;word-break:break-all}
+.tabs{position:sticky;bottom:0;display:flex;border-top:1px solid #d4bce8;background:#fff}
+.tabs a{display:flex;flex:1;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:60px;font-size:12px;font-weight:600;color:#652d90;text-decoration:none}
+.tabs a.on{color:#9a4508;box-shadow:inset 0 3px 0 #F7931E}
+.ph{margin-bottom:20px}
+.ph h1{font-size:clamp(22px,4vw,28px);line-height:1.2;font-weight:700}
+.ph p{margin-top:4px;font-size:14px;line-height:20px;color:#652d90}
+.card{display:flex;flex-direction:column;gap:16px;border-radius:20px;border:1px solid #ebe0f5;background:#fff;padding:20px;box-shadow:0 1px 2px rgba(46,26,71,.05);box-sizing:border-box}
+.sec{font-size:17px;line-height:24px;font-weight:700}
+.sub{margin-top:4px;font-size:14px;line-height:20px;color:#652d90}
+.stack{display:flex;flex-direction:column;gap:16px}
+.row{display:flex;flex-wrap:wrap;gap:20px;align-items:stretch}
+.row > *{flex:1 1 320px;min-width:0}
+.head{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:12px}
+.lb{display:block;margin-bottom:6px;font-size:14px;line-height:20px;font-weight:600;color:#2E1A47}
+.hint{margin-top:6px;font-size:13px;line-height:18px;color:#652d90}
+.err{margin-top:6px;font-size:13px;line-height:18px;color:#b91c1c}
+.in{box-sizing:border-box;width:100%;min-height:48px;border-radius:12px;border:1px solid #d4bce8;background:#fff;padding:0 14px;font:inherit;font-size:16px;color:#1A0B2E}
+.in:focus{border-color:#FF8C42;box-shadow:0 0 0 3px #ffe4d1}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 20px;border-radius:12px;border:0;font:inherit;font-size:15px;font-weight:700;cursor:pointer;text-decoration:none;box-sizing:border-box}
+.btn-p{background:#F7931E;color:#1A0B2E}.btn-p:hover{background:#FF8C42;color:#1A0B2E}
+.btn-p[disabled]{opacity:.6;cursor:not-allowed}
+.btn-s{background:#fff;color:#2E1A47;border:1px solid #d4bce8}.btn-s:hover{background:#f6f0fb;color:#2E1A47}
+.btn-sm{min-height:44px;padding:0 14px;font-size:14px}
+.acoes{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:6px;border-radius:9999px;padding:4px 12px;font-size:12px;line-height:16px;font-weight:600;white-space:nowrap}
+.sw{position:relative;display:inline-block;width:48px;height:28px;flex:none}
+.sw input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer}
+.sw i{position:absolute;inset:0;border-radius:9999px;background:#d4bce8}
+.sw i::after{content:"";position:absolute;left:3px;top:3px;width:22px;height:22px;border-radius:9999px;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+.sw input:checked + i{background:#F7931E}
+.sw input:checked + i::after{transform:translateX(20px)}
+.sw input:focus-visible + i{outline:2px solid #FF8C42;outline-offset:2px}
+.opt{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;border-radius:14px;border:1px solid #ebe0f5;padding:14px 16px;cursor:pointer}
+.opt b{display:block;font-size:15px;line-height:22px;font-weight:600}
+.opt .d{display:block;margin-top:2px;font-size:13px;line-height:18px;color:#652d90}
+.aviso{border-radius:12px;padding:12px 16px;font-size:14px;line-height:20px}
+.aviso-erro{border:1px solid #fecaca;background:#fef2f2;color:#991b1b}
+.aviso-info{border:1px solid #d4bce8;background:#f6f0fb;color:#2E1A47}
+.aviso-ok{border:1px solid #ffc9a3;background:#fff4ec;color:#2E1A47}
+.dias{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.dia{position:relative;display:flex;flex-direction:column;gap:8px;border-radius:16px;border:1px solid #ebe0f5;background:#fff;padding:12px}
+.dia.res{border:2px solid #4e2473;background:#f6f0fb;padding:11px}
+.dtop{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px 8px}
+.dtop p{font-size:14px;line-height:20px}
+.dtop p span{color:#652d90}
+.selo-res{display:inline-flex;border-radius:9999px;background:#2E1A47;padding:2px 8px;font-size:11px;line-height:16px;font-weight:700;color:#fff}
+.tempo{display:flex;align-items:center;gap:8px;font-size:13px;line-height:18px;color:#4e2473}
+.tempo svg{flex:none;color:#652d90}
+.temps{display:flex;align-items:baseline;gap:8px}
+.temps .max{font-size:20px;line-height:24px;font-weight:700}
+.temps .min{font-size:14px;color:#652d90}
+.chuva{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:13px;line-height:18px}
+.chuva dt{color:#652d90}
+.chuva dd{font-weight:600}
+.risco{align-self:flex-start;display:inline-flex;align-items:center;border-radius:9999px;padding:3px 10px;font-size:12px;line-height:16px;font-weight:700;border:1px solid transparent}
+.r-baixo{background:#ecfdf5;color:#065f46;border-color:#a7f3d0}
+.r-medio{background:#fffbeb;color:#92400e;border-color:#fde68a}
+.r-alto{background:#fef2f2;color:#991b1b;border-color:#fecaca}
+.r-baixo.f{background:#047857;color:#fff;border-color:#047857}
+.r-medio.f{background:#b45309;color:#fff;border-color:#b45309}
+.r-alto.f{background:#b91c1c;color:#fff;border-color:#b91c1c}
+.est{font-size:12px;line-height:16px;font-style:italic;color:#652d90}
+.esq{height:176px;border-radius:16px;background:#ebe0f5}
+.rodape{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 16px;border-top:1px solid #ebe0f5;padding-top:12px;font-size:13px;line-height:18px;color:#652d90}
+.qr{display:flex;align-items:center;justify-content:center;width:160px;height:160px;margin:0 auto;border-radius:12px;border:1px dashed #b889d4;background:#f6f0fb;font-size:13px;color:#652d90}
+@media(min-width:768px){.dias{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(min-width:1024px){
+.app{flex-direction:row}
+.topbar,.tabs{display:none}
+.side{display:flex;flex-direction:column;gap:24px;flex:none;width:248px;box-sizing:border-box;padding:20px 12px;background:#1A0B2E;color:#fff}
+.main{padding:32px 40px}
+}
+</style>
+</helmet>
+<div class="app">
+
+<header class="topbar">
+<a class="brand" href="ClientePainel.dc.html"><img src="/_blob/2afaeee994f3399be9d349cc4eb1cf72" alt="Logo gamb"><span><b>gamb</b><small>Painel do Cliente</small></span></a>
+<a class="sair" href="Main.dc.html">Sair</a>
+</header>
+
+<aside class="side">
+<a class="brand" href="ClientePainel.dc.html"><img src="/_blob/2afaeee994f3399be9d349cc4eb1cf72" alt="Logo gamb"><span><b>gamb</b><small>Painel do Cliente</small></span></a>
+<nav class="snav" aria-label="Principal">
+<a class="on" href="ClientePainel.dc.html" aria-current="page"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"></path><path d="M5 10v10h14V10"></path></svg>Painel</a>
+<a href="ClienteChatbot.dc.html"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"></path><path d="M8 10h.01M12 10h.01M16 10h.01"></path></svg>Configuração do chatbot</a>
+</nav>
+<div class="suser"><p>sessao_recanto_01@gamb.com.br</p><a class="sair" href="Main.dc.html">Sair</a></div>
+</aside>
+
+<main class="main">
+<div class="ph"><h1>Painel</h1><p>Veja se o WhatsApp está conectado e como vem o tempo nos próximos dias.</p></div>
+
+<div class="stack" style="gap: 20px">
+<div class="row">
+
+<section class="card">
+<div class="head">
+<div><h2 class="sec">Conexão WhatsApp</h2><p style="margin-top: 2px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; color: #7c3aad">sessao_recanto_01</p></div>
+<sc-if value="{{zapConectado}}" hint-placeholder-val="{{ true }}">
+<span class="chip" style="background: #fff4ec; color: #9a4508"><span aria-hidden="true" style="width: 8px; height: 8px; border-radius: 9999px; background: #F7931E"></span>WhatsApp online</span>
+</sc-if>
+<sc-if value="{{zapAguardando}}" hint-placeholder-val="{{ false }}">
+<span class="chip" style="background: #fffbeb; color: #92400e">Aguardando leitura</span>
+</sc-if>
+<sc-if value="{{zapDesconectado}}" hint-placeholder-val="{{ false }}">
+<span class="chip" style="background: #ebe0f5; color: #4e2473">Desconectado</span>
+</sc-if>
+</div>
+<sc-if value="{{zapConectado}}" hint-placeholder-val="{{ true }}">
+<p style="font-size: 14px; line-height: 20px; color: #4e2473">O bot está conectado e pronto para receber mensagens.</p>
+</sc-if>
+<sc-if value="{{zapAguardando}}" hint-placeholder-val="{{ false }}">
+<div class="stack" style="gap: 8px"><div class="qr">QR Code</div><p style="text-align: center; font-size: 14px; line-height: 20px; color: #4e2473">Abra o WhatsApp no celular e escaneie o QR Code.</p></div>
+</sc-if>
+<sc-if value="{{zapDesconectado}}" hint-placeholder-val="{{ false }}">
+<button class="btn btn-p" type="button" style="align-self: flex-start">Conectar WhatsApp</button>
+</sc-if>
+</section>
+
+<section class="card">
+<div><h2 class="sec">Configuração do chatbot</h2><p class="sub">Mensagem de boas-vindas, fotos, preços, regras do robô e senha de acesso.</p></div>
+<a class="btn btn-p" href="ClienteChatbot.dc.html" style="align-self: flex-start">Configuração do chatbot</a>
+</section>
+
+</div>
+
+<section class="card" aria-labelledby="titulo-previsao">
+<div class="head">
+<div><h2 id="titulo-previsao" class="sec">Previsão dos próximos dias</h2>
+<sc-if value="{{temCidade}}" hint-placeholder-val="{{ true }}"><p class="sub">Atibaia, São Paulo, BR</p></sc-if>
+<p class="hint">Os dias reservados aparecem destacados, com o risco de desmarcação pela chuva.</p></div>
+<sc-if value="{{mostrarEditar}}" hint-placeholder-val="{{ true }}">
+<button class="btn btn-s btn-sm" type="button" onClick="{{abrirEdicao}}">Editar</button>
+</sc-if>
+</div>
+
+<sc-if value="{{formAberto}}" hint-placeholder-val="{{ false }}">
+<form class="stack" style="border-radius: 16px; border: 1px solid #ebe0f5; padding: 16px">
+<sc-if value="{{semCidade}}" hint-placeholder-val="{{ false }}"><p class="aviso aviso-info">Informe a cidade para ver a previsão.</p></sc-if>
+<div><label class="lb" for="cidade">Cidade do espaço</label><input id="cidade" class="in" value="{{cidadeValor}}" placeholder="Ex.: Atibaia" autocomplete="address-level2"><p class="hint">Usamos o centro da cidade. Bairro não entra.</p>
+<sc-if value="{{erroCidade}}" hint-placeholder-val="{{ false }}"><p class="err" role="alert">Cidade não encontrada. Confira o nome da cidade.</p></sc-if></div>
+<label class="opt"><span><b>Mostrar previsão do tempo</b><span class="d">Desligue se o espaço for coberto.</span></span><span class="sw"><input type="checkbox" checked="{{ true }}"><i></i></span></label>
+<div class="acoes"><button class="btn btn-p" type="button" disabled="{{salvando}}">{{textoSalvar}}</button><button class="btn btn-s" type="button" onClick="{{fecharEdicao}}">Cancelar</button></div>
+</form>
+</sc-if>
+
+<sc-if value="{{sucesso}}" hint-placeholder-val="{{ false }}"><p class="aviso aviso-ok" role="status">Cidade salva. A previsão foi atualizada.</p></sc-if>
+<sc-if value="{{reservasIndisponiveis}}" hint-placeholder-val="{{ false }}"><p class="aviso aviso-info" role="status">Reservas indisponíveis no momento. A previsão aparece sem a marcação de reservado.</p></sc-if>
+<sc-if value="{{erro}}" hint-placeholder-val="{{ false }}"><div class="aviso aviso-erro" role="alert"><b>Previsão indisponível no momento.</b> Tente de novo em alguns minutos.</div></sc-if>
+<sc-if value="{{vazio}}" hint-placeholder-val="{{ false }}"><p class="aviso aviso-info">Nenhum dia de previsão para mostrar agora.</p></sc-if>
+<sc-if value="{{desligada}}" hint-placeholder-val="{{ false }}"><p class="aviso aviso-info">A previsão do tempo está desligada. Toque em Editar para ligar.</p></sc-if>
+
+<sc-if value="{{carregando}}" hint-placeholder-val="{{ false }}">
+<div class="dias" role="status" aria-label="Carregando previsão"><div class="esq"></div><div class="esq"></div><div class="esq"></div><div class="esq"></div><div class="esq"></div><div class="esq"></div><div class="esq"></div><div class="esq"></div></div>
+</sc-if>
+
+<sc-if value="{{temDias}}" hint-placeholder-val="{{ true }}">
+<ul class="dias">
+<sc-for list="{{dias}}" as="dia" hint-placeholder-count="8">
+<li class="{{dia.classeCartao}}">
+<div class="dtop"><p><b>{{dia.semana}}</b> <span>{{dia.data}}</span></p>
+<sc-if value="{{dia.reservado}}" hint-placeholder-val="{{ false }}"><span class="selo-res">Reservado</span></sc-if></div>
+<div class="tempo">
+<sc-if value="{{dia.sol}}" hint-placeholder-val="{{ false }}"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg></sc-if>
+<sc-if value="{{dia.nuvem}}" hint-placeholder-val="{{ false }}"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 18h10a4 4 0 0 0 0-8 6 6 0 0 0-11.6 1.5A3.5 3.5 0 0 0 7 18z"></path></svg></sc-if>
+<sc-if value="{{dia.chuva}}" hint-placeholder-val="{{ false }}"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 14h10a4 4 0 0 0 0-8 6 6 0 0 0-11.6 1.5A3.5 3.5 0 0 0 7 14z"></path><path d="M8 17l-1 3M12 17l-1 3M16 17l-1 3"></path></svg></sc-if>
+<sc-if value="{{dia.temporal}}" hint-placeholder-val="{{ false }}"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 14h10a4 4 0 0 0 0-8 6 6 0 0 0-11.6 1.5A3.5 3.5 0 0 0 7 14z"></path><path d="m12 15-2 4h4l-2 4"></path></svg></sc-if>
+<span>{{dia.resumo}}</span></div>
+<p class="temps"><span class="max"><span class="sr">Máxima </span>{{dia.max}}°</span><span class="min"><span class="sr">Mínima </span>{{dia.min}}°</span></p>
+<dl class="chuva"><div><dt>Chance de chuva</dt><dd>{{dia.chance}}%</dd></div><div><dt>Chuva</dt><dd>{{dia.mm}} mm</dd></div></dl>
+<span class="{{dia.classeRisco}}">Risco {{dia.risco}}</span>
+<sc-if value="{{dia.estimativa}}" hint-placeholder-val="{{ false }}"><span class="est">estimativa</span></sc-if>
+</li>
+</sc-for>
+</ul>
+<div class="rodape"><span>Atualizado às 14:05</span><a href="https://openweathermap.org/" target="_blank" rel="noopener">Dados meteorológicos: OpenWeather</a></div>
+</sc-if>
+</section>
+</div>
+</main>
+
+<nav class="tabs" aria-label="Principal">
+<a class="on" href="ClientePainel.dc.html" aria-current="page"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"></path><path d="M5 10v10h14V10"></path></svg>Painel</a>
+<a href="ClienteChatbot.dc.html"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"></path><path d="M8 10h.01M12 10h.01M16 10h.01"></path></svg>Chatbot</a>
+</nav>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"estado":{"editor":"enum","options":["normal","carregando","vazio","semCidade","desligada","erro","salvando","sucesso","erroCidade"],"default":"normal"},"whatsapp":{"editor":"enum","options":["conectado","aguardando","desconectado"],"default":"conectado"},"reservasIndisponiveis":{"editor":"boolean","default":false},"$preview":{"width":1280,"height":1500}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { editando: false };
+  }
+  renderVals() {
+    const estado = this.props.estado ?? 'normal';
+    const zap = this.props.whatsapp ?? 'conectado';
+    const semReservas = this.props.reservasIndisponiveis ?? false;
+    const semCidade = estado === 'semCidade';
+    const formPorEstado = semCidade || estado === 'salvando' || estado === 'erroCidade';
+    const formAberto = formPorEstado || this.state.editando;
+    const comDias = ['normal', 'sucesso', 'salvando', 'erroCidade'].includes(estado);
+    const nomes = { BAIXO: 'baixo', MEDIO: 'médio', ALTO: 'alto' };
+    const base = [
+      { semana: 'Ter', data: '27/10', reservado: false, tempo: 'sol', resumo: 'Ensolarado', max: 29, min: 17, chance: 10, mm: '0,0', risco: 'BAIXO', estimativa: false },
+      { semana: 'Qua', data: '28/10', reservado: false, tempo: 'nuvem', resumo: 'Nublado', max: 26, min: 18, chance: 35, mm: '0,8', risco: 'BAIXO', estimativa: false },
+      { semana: 'Qui', data: '29/10', reservado: false, tempo: 'chuva', resumo: 'Chuva fraca', max: 23, min: 17, chance: 60, mm: '4,2', risco: 'MEDIO', estimativa: false },
+      { semana: 'Sex', data: '30/10', reservado: true, tempo: 'temporal', resumo: 'Temporal', max: 24, min: 18, chance: 85, mm: '14,6', risco: 'ALTO', estimativa: false },
+      { semana: 'Sáb', data: '31/10', reservado: true, tempo: 'chuva', resumo: 'Chuva fraca', max: 22, min: 16, chance: 45, mm: '2,4', risco: 'MEDIO', estimativa: false },
+      { semana: 'Dom', data: '01/11', reservado: true, tempo: 'sol', resumo: 'Ensolarado', max: 28, min: 16, chance: 5, mm: '0,0', risco: 'BAIXO', estimativa: true },
+      { semana: 'Seg', data: '02/11', reservado: false, tempo: 'nuvem', resumo: 'Nublado', max: 27, min: 17, chance: 20, mm: '0,0', risco: 'BAIXO', estimativa: true },
+      { semana: 'Ter', data: '03/11', reservado: false, tempo: 'chuva', resumo: 'Chuva', max: 25, min: 18, chance: 70, mm: '9,1', risco: 'ALTO', estimativa: true }
+    ];
+    const dias = base.map((d) => {
+      const reservado = d.reservado && !semReservas;
+      const cor = 'r-' + d.risco.toLowerCase();
+      return {
+        ...d,
+        reservado,
+        risco: nomes[d.risco],
+        sol: d.tempo === 'sol',
+        nuvem: d.tempo === 'nuvem',
+        chuva: d.tempo === 'chuva',
+        temporal: d.tempo === 'temporal',
+        classeCartao: reservado ? 'dia res' : 'dia',
+        classeRisco: reservado ? 'risco ' + cor + ' f' : 'risco ' + cor
+      };
+    });
+    return {
+      zapConectado: zap === 'conectado',
+      zapAguardando: zap === 'aguardando',
+      zapDesconectado: zap === 'desconectado',
+      temCidade: !semCidade,
+      semCidade,
+      mostrarEditar: !formAberto,
+      formAberto,
+      cidadeValor: semCidade ? '' : (estado === 'erroCidade' ? 'Atibaiaa' : 'Atibaia'),
+      erroCidade: estado === 'erroCidade',
+      salvando: estado === 'salvando',
+      textoSalvar: estado === 'salvando' ? 'Salvando...' : 'Salvar',
+      sucesso: estado === 'sucesso',
+      reservasIndisponiveis: semReservas && comDias,
+      erro: estado === 'erro',
+      vazio: estado === 'vazio',
+      desligada: estado === 'desligada',
+      carregando: estado === 'carregando',
+      temDias: comDias,
+      dias,
+      abrirEdicao: () => this.setState({ editando: true }),
+      fecharEdicao: () => this.setState({ editando: false })
+    };
+  }
+}
+</script>
+</body>
+</html>

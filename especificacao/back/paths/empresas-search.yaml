@@ -3,7 +3,7 @@ get:
   - Gerenciamento de Empresas
   - empresa-search-controller
   summary: Buscar empresa pela sessão WhatsApp
-  description: Usado pelo painel admin e pelo perfil do cliente. Aceita x-admin-token ou x-cliente-token.
+  description: Usado pelo painel admin e pelo perfil do cliente. Admin lê qualquer empresa e recebe googleCalendarId. Cliente (JWT) lê só a própria empresa e googleCalendarId vem nulo.
   operationId: executeSearch-empresa-get
   parameters:
   - name: x-admin-token
@@ -34,5 +34,7 @@ get:
             $ref: "#/components/schemas/EntityModelEmpresa"
     "401":
       description: Token administrativo ou de cliente inválido
+    "403":
+      description: Cliente de outra empresa, token legado x-cliente-token ou sessão inexistente para quem não é admin
     "404":
-      description: Not Found
+      description: Empresa não encontrada para a sessão informada (só para o admin)
