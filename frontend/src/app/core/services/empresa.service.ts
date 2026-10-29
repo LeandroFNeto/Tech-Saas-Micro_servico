@@ -8,6 +8,7 @@ import {
   EmpresaUpdateAdminDTO,
   EmpresaUpdateDTO,
   EmpresaView,
+  LembreteConfirmacaoDTO,
   ModuloEmpresa,
   ModuloMenuDTO
 } from '../../shared/models/empresa.models';
@@ -84,6 +85,7 @@ export class EmpresaService {
       cidadePrevisao: item['cidadePrevisao'] as string | undefined,
       cidadePrevisaoResolvida: item['cidadePrevisaoResolvida'] as string | undefined,
       previsaoTempoAtiva: Boolean(item['previsaoTempoAtiva']),
+      lembrete: item['lembrete'] as LembreteConfirmacaoDTO | undefined,
       atualizadoEm: item['atualizadoEm'] as string | undefined
     };
   }

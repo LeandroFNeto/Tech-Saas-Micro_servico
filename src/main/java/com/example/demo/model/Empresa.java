@@ -32,7 +32,6 @@ public class Empresa {
     @Column(name = "regras_locacao", columnDefinition = "TEXT")
     private String regrasLocacao;
 
-    // A Empresa tem uma lista de dias de reserva
     @OneToMany(mappedBy = "empresa", cascade = CascadeType.ALL)
     private List<DiaReserva> diasDeReserva;
 
@@ -119,6 +118,20 @@ public class Empresa {
 
     @Column(name = "previsao_tempo_ativa")
     private Boolean previsaoTempoAtiva;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "lembrete_modo", length = 32)
+    private ModoLembrete lembreteModo = ModoLembrete.DESLIGADO;
+
+    @Column(name = "lembrete_dias_antes")
+    private Integer lembreteDiasAntes = 1;
+
+    @Column(name = "lembrete_horario_envio", length = 8)
+    private String lembreteHorarioEnvio = "10:00";
+
+    @Column(name = "lembrete_texto", columnDefinition = "TEXT")
+    private String lembreteTexto;
+
 
     @OneToMany(mappedBy = "empresa", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("ordemExibicao ASC")
@@ -211,7 +224,6 @@ public class Empresa {
         this.usuarios = usuarios;
     }
 
-    // Não se esqueça de adicionar os Getters e Setters no final do ficheiro!
     public String getGoogleCalendarId() {
         return googleCalendarId;
     }
@@ -329,5 +341,38 @@ public class Empresa {
                 .map(String::trim)
                 .limit(5)
                 .forEach(this.urlsGaleria::add);
+    }
+
+
+    public ModoLembrete getLembreteModo() {
+        return lembreteModo == null ? ModoLembrete.DESLIGADO : lembreteModo;
+    }
+
+    public void setLembreteModo(ModoLembrete lembreteModo) {
+        this.lembreteModo = lembreteModo;
+    }
+
+    public Integer getLembreteDiasAntes() {
+        return lembreteDiasAntes == null ? 1 : lembreteDiasAntes;
+    }
+
+    public void setLembreteDiasAntes(Integer lembreteDiasAntes) {
+        this.lembreteDiasAntes = lembreteDiasAntes;
+    }
+
+    public String getLembreteHorarioEnvio() {
+        return lembreteHorarioEnvio == null ? "10:00" : lembreteHorarioEnvio;
+    }
+
+    public void setLembreteHorarioEnvio(String lembreteHorarioEnvio) {
+        this.lembreteHorarioEnvio = lembreteHorarioEnvio;
+    }
+
+    public String getLembreteTexto() {
+        return lembreteTexto;
+    }
+
+    public void setLembreteTexto(String lembreteTexto) {
+        this.lembreteTexto = lembreteTexto;
     }
 }

@@ -155,3 +155,28 @@ Cenário: todos os horários ocupados
 - Dado um evento das 08:00 às 10:00 na mesma janela
 - Quando o status do dia é calculado
 - Então o dia é "Lotado"
+
+
+### AGD-05 Sincronizar reservas da Google Agenda para confirmação
+
+O sistema deve consultar periodicamente (a cada hora) os eventos dos próximos 30 dias na agenda Google das empresas que possuem lembretes ativados, criando ou atualizando reservas locais e vinculando ao contato do cliente correspondente quando identificado no título ou na descrição.
+
+Contrato: `especificacao/back/paths/empresas-reservas.yaml`
+Prova: `src/test/java/com/example/demo/servico/ServicoSincronizacaoAgendaTest.java`
+
+Cenário: evento ativo cria reserva
+- Dado uma empresa com lembretes ativados e evento na Google Agenda
+- Quando a rotina de sincronização é executada
+- Então a reserva é persistida localmente com os dados do evento
+
+### AGD-06 Gravar reserva do bot e vincular contato
+
+O sistema deve, ao confirmar uma reserva automática pelo chatbot ou por locação, registrar a reserva localmente com o identificador do evento no Google Agenda e vincular ao contato identificado pelo WhatsApp.
+
+Contrato: `especificacao/back/paths/empresas-reservas.yaml`
+Prova: `src/test/java/com/example/demo/servico/observador/ObservadorGoogleAgendaTest.java`
+
+Cenário: reserva do bot registrada
+- Dado um pedido de reserva confirmado pelo cliente
+- Quando o evento de confirmação é processado pelo observador
+- Então a reserva é gravada vinculada ao contato correspondente

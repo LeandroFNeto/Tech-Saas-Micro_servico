@@ -55,6 +55,9 @@ public record EmpresaResponseDTO(
         @Schema(description = "Interruptor Mostrar previsão do tempo", example = "false")
         Boolean previsaoTempoAtiva,
 
+        @Schema(description = "Configuração do lembrete de confirmação de reservas")
+        LembreteConfirmacaoDTO lembreteConfirmacao,
+
         @Schema(description = "Data e hora da última modificação retornada pela API", example = "2026-09-03T14:30:00")
         LocalDateTime atualizadoEm
 ) {

@@ -1,0 +1,16 @@
+package com.example.demo.model;
+
+public enum SituacaoReserva {
+    SEM_CONTATO,
+    AGUARDANDO_LEMBRETE,
+    PRONTA_PARA_AVISAR,
+    ENVIANDO,
+    LEMBRETE_ENVIADO,
+    SEM_RESPOSTA,
+    CONFIRMADA_PELO_CLIENTE,
+    CANCELAMENTO_SOLICITADO,
+    CANCELADA_NA_AGENDA,
+    ENCERRADA,
+    FALHA_ENVIO,
+    FALHA_AGENDA
+}

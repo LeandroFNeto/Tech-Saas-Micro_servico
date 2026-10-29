@@ -43,6 +43,24 @@ public class ServicoMensagem {
         }
     }
 
+    public boolean tentarEnviarMensagemWPP(Empresa empresa, String numeroDestino, String texto) {
+        String sessao = empresa.getSessaoWhatsapp();
+        try {
+            Map<String, Object> body = new HashMap<>();
+            preencherDestino(body, numeroDestino);
+            body.put("message", texto);
+            postWpp(sessao, "/send-message", body);
+            observador.logSucesso(sessao, numeroDestino, "[RESPOSTA ENVIADA]: " + texto);
+            return true;
+        } catch (Exception e) {
+            observador.logErro(sessao, numeroDestino, "ServicoMensagem (Tentativa Envio)", e);
+            if (e.getMessage() != null && e.getMessage().contains("401")) {
+                wppConnectService.invalidarToken();
+            }
+            return false;
+        }
+    }
+
     public void enviarImagemWPP(Empresa empresa, String numeroDestino, String urlImagem, String caption) {
         if (urlImagem == null || urlImagem.isBlank()) {
             return;

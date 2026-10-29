@@ -1,6 +1,7 @@
 package com.example.demo.dto.empresa;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Size;
 
 import java.util.List;
@@ -54,6 +55,10 @@ public record EmpresaUpdateDTO(
         String cidadePrevisao,
 
         @Schema(description = "Interruptor Mostrar previsão do tempo", example = "false")
-        Boolean previsaoTempoAtiva
+        Boolean previsaoTempoAtiva,
+
+        @Valid
+        @Schema(description = "Configuração do lembrete de confirmação de reservas")
+        LembreteConfirmacaoDTO lembreteConfirmacao
 ) {
 }

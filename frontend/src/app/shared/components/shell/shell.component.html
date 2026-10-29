@@ -22,6 +22,12 @@
     <path d="M5 10v10h14V10" />
   </svg>
 </ng-template>
+<ng-template #iconeAutomacao>
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 7v5l3 3" />
+  </svg>
+</ng-template>
 <ng-template #iconeChatbot>
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
     <path d="M4 5h16v11H9l-5 4z" />
@@ -105,6 +111,15 @@
           {{ conteudo.menuCliente.painel }}
         </a>
         <a
+          routerLink="/cliente/automacao"
+          routerLinkActive="!bg-accent-500/20 !text-accent-300"
+          ariaCurrentWhenActive="page"
+          [class]="linkLateral"
+        >
+          <ng-container [ngTemplateOutlet]="iconeAutomacao" />
+          {{ conteudo.menuCliente.automacao }}
+        </a>
+        <a
           routerLink="/cliente/chatbot"
           routerLinkActive="!bg-accent-500/20 !text-accent-300"
           ariaCurrentWhenActive="page"
@@ -175,6 +190,15 @@
       >
         <ng-container [ngTemplateOutlet]="iconePainel" />
         {{ conteudo.menuCliente.painel }}
+      </a>
+      <a
+        routerLink="/cliente/automacao"
+        routerLinkActive="!text-accent-800 shadow-[inset_0_3px_0_#F7931E]"
+        ariaCurrentWhenActive="page"
+        [class]="abaInferior"
+      >
+        <ng-container [ngTemplateOutlet]="iconeAutomacao" />
+        {{ conteudo.menuCliente.automacao }}
       </a>
       <a
         routerLink="/cliente/chatbot"

@@ -7,6 +7,8 @@ import com.example.demo.model.EstadoUsuario;
 import com.example.demo.repository.EmpresaRepository;
 import com.example.demo.servico.GerenciadorSessao;
 import com.example.demo.servico.ServicoAcessoEmpresa;
+import com.example.demo.servico.ServicoContato;
+import com.example.demo.servico.ServicoRespostaLembrete;
 import com.example.demo.servico.ServicoWppConnect;
 import com.example.demo.servico.observador.Observadorwhatsapp;
 import com.example.demo.strategy.FactoryModulo;
@@ -44,6 +46,8 @@ public class ControllerWhatsapp {
     @Autowired private Observadorwhatsapp observador;
     @Autowired private ServicoWppConnect servicoWppConnect;
     @Autowired private ServicoAcessoEmpresa servicoAcessoEmpresa;
+    @Autowired private ServicoContato servicoContato;
+    @Autowired private ServicoRespostaLembrete servicoRespostaLembrete;
 
     @PostMapping("/webhook/whatsapp")
     @Tag(name = "Webhook WhatsApp", description = "Recepção tipada de eventos do WPPConnect")
@@ -89,9 +93,17 @@ public class ControllerWhatsapp {
                 return ResponseEntity.ok().build();
             }
 
+            servicoContato.registrarOuAtualizarContato(empresa, rawFrom);
+
             EstadoUsuario estadoAtual = gerenciadorSessao.getEstado(chaveEstado);
             if (estadoAtual == null) {
                 estadoAtual = EstadoUsuario.INICIO;
+            }
+
+            boolean tratouLembrete = servicoRespostaLembrete.processarPossivelResposta(empresa, rawFrom, textoRecebido, estadoAtual);
+            if (tratouLembrete) {
+                observador.logSucesso(sessao, rawFrom, textoRecebido);
+                return ResponseEntity.ok().build();
             }
 
             ModuloAtendimentoStrategy estrategia = moduloFactory.obterEstrategia(empresa.getRamoDeAtuacao());

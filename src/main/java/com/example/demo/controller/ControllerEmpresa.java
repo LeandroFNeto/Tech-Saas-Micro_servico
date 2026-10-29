@@ -4,6 +4,9 @@ import com.example.demo.dto.empresa.ColecaoEmpresaHalDTO;
 import com.example.demo.dto.empresa.EmpresaCreateDTO;
 import com.example.demo.dto.empresa.EmpresaPainelDTO;
 import com.example.demo.dto.empresa.EmpresaResponseDTO;
+import com.example.demo.dto.empresa.LembreteConfirmacaoDTO;
+import com.example.demo.model.ModoLembrete;
+import com.example.demo.util.CriptografiaCampo;
 import com.example.demo.dto.empresa.EmpresaUpdateAdminDTO;
 import com.example.demo.dto.empresa.EmpresaUpdateDTO;
 import com.example.demo.dto.empresa.ModuloMenuDTO;
@@ -234,6 +237,35 @@ public class ControllerEmpresa {
             }
         }
 
+        if (dto.lembreteConfirmacao() != null) {
+            var lembrete = dto.lembreteConfirmacao();
+            if (lembrete.modo() != null && lembrete.modo() != ModoLembrete.DESLIGADO && !CriptografiaCampo.isConfigurado()) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Chaves de criptografia nao configuradas.");
+            }
+            if (lembrete.modo() != null) {
+                empresa.setLembreteModo(lembrete.modo());
+            }
+            if (lembrete.diasAntes() != null) {
+                if (lembrete.diasAntes() < 1 || lembrete.diasAntes() > 3) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Dias antes deve ser entre 1 e 3");
+                }
+                empresa.setLembreteDiasAntes(lembrete.diasAntes());
+            }
+            if (lembrete.horarioEnvio() != null && !lembrete.horarioEnvio().isBlank()) {
+                String horario = lembrete.horarioEnvio().trim();
+                if (!horario.matches("^([01]\\d|2[0-3]):[0-5]\\d$")) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Horario de envio invalido");
+                }
+                empresa.setLembreteHorarioEnvio(horario);
+            }
+            if (lembrete.texto() != null) {
+                if (lembrete.texto().length() > 1000) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Texto do lembrete excede 1000 caracteres");
+                }
+                empresa.setLembreteTexto(lembrete.texto().isBlank() ? null : lembrete.texto().trim());
+            }
+        }
+
         return ResponseEntity.ok(paraResposta(empresaRepository.save(empresa)));
     }
 
@@ -369,6 +401,13 @@ public class ControllerEmpresa {
                         modulo.getOrdemExibicao()))
                 .toList();
 
+        LembreteConfirmacaoDTO lembreteDTO = new LembreteConfirmacaoDTO(
+                empresa.getLembreteModo(),
+                empresa.getLembreteDiasAntes(),
+                empresa.getLembreteHorarioEnvio(),
+                empresa.getLembreteTexto()
+        );
+
         return new EmpresaResponseDTO(
                 empresa.getId(),
                 empresa.getNome(),
@@ -385,6 +424,7 @@ public class ControllerEmpresa {
                 empresa.getCidadePrevisao(),
                 empresa.getCidadePrevisaoResolvida(),
                 Boolean.TRUE.equals(empresa.getPrevisaoTempoAtiva()),
+                lembreteDTO,
                 LocalDateTime.now()
         );
     }

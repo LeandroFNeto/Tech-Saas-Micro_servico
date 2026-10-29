@@ -1,4 +1,10 @@
-/** Espelha EmpresaCreateDTO do contrato OpenAPI. */
+export interface LembreteConfirmacaoDTO {
+  modo?: 'DESLIGADO' | 'SUGERIDO' | 'AUTOMATICO';
+  diasAntes?: number;
+  horarioEnvio?: string;
+  texto?: string;
+}
+
 export interface EmpresaCreateDTO {
   nome: string;
   sessaoWhatsapp: string;
@@ -14,7 +20,6 @@ export interface EmpresaCreateDTO {
   modulosIniciais?: string[];
 }
 
-/** Espelha EmpresaUpdateDTO — painel do cliente. */
 export interface EmpresaUpdateDTO {
   nome?: string;
   mensagemSaudacao?: string;
@@ -29,9 +34,9 @@ export interface EmpresaUpdateDTO {
   modulosMenu?: ModuloMenuDTO[];
   cidadePrevisao?: string;
   previsaoTempoAtiva?: boolean;
+  lembrete?: LembreteConfirmacaoDTO;
 }
 
-/** Espelha EmpresaUpdateAdminDTO — painel master. */
 export interface EmpresaUpdateAdminDTO {
   sessaoWhatsapp?: string;
   locacaoPorHora?: boolean;
@@ -43,7 +48,6 @@ export interface EmpresaUpdateAdminDTO {
   modulosAtivos?: string[];
 }
 
-/** Espelha EmpresaResponseDTO. */
 export interface EmpresaResponseDTO {
   id: number;
   nome: string;
@@ -60,6 +64,7 @@ export interface EmpresaResponseDTO {
   cidadePrevisao?: string;
   cidadePrevisaoResolvida?: string;
   previsaoTempoAtiva?: boolean;
+  lembrete?: LembreteConfirmacaoDTO;
   atualizadoEm: string;
 }
 
@@ -78,7 +83,6 @@ export interface ModuloEmpresa {
   ativo?: boolean;
 }
 
-/** Visão unificada para as telas (HAL + DTO de resposta). */
 export interface EmpresaView {
   id?: number;
   nome: string;
@@ -101,6 +105,7 @@ export interface EmpresaView {
   cidadePrevisao?: string;
   cidadePrevisaoResolvida?: string;
   previsaoTempoAtiva?: boolean;
+  lembrete?: LembreteConfirmacaoDTO;
   atualizadoEm?: string;
 }
 
@@ -139,43 +144,34 @@ export const MODULOS_MENU_BOT: CatalogoMenuBot[] = [
     textoPadrao: 'Ver preços'
   },
   {
-    codigo: 'VER_REGRAS',
-    label: 'Regras',
-    descricao: 'Mostra as regras do local e o cancelamento',
-    textoPadrao: 'Ver regras e cancelamento'
-  },
-  {
-    codigo: 'SOLICITAR_RESERVA',
+    codigo: 'RESERVAR',
     label: 'Reserva',
-    descricao: 'Opção de solicitar reserva no WhatsApp',
-    textoPadrao: 'Solicitar uma reserva'
+    descricao: 'Agenda uma visita ou locação pelo bot',
+    textoPadrao: 'Fazer reserva'
   }
 ];
 
-export const MODULOS_DISPONIVEIS: CatalogoModulo[] = [
-  {
-    codigo: 'IA_GEMINI',
-    label: 'Módulo de IA',
-    descricao: 'Atendimento com Gemini quando o cliente sai do menu padrão'
-  },
-  {
-    codigo: 'GOOGLE_CALENDAR',
-    label: 'Módulo de Agenda',
-    descricao: 'Consulta e bloqueio de horários no Google Agenda'
-  },
+export const CATALOGO_MODULOS: CatalogoModulo[] = [
   {
     codigo: 'VER_FOTOS',
-    label: 'Galeria de fotos',
-    descricao: 'Envia fotos do espaço pelo WhatsApp'
+    label: 'Fotos do espaço',
+    descricao: 'Envia até 5 fotos cadastradas quando o cliente pedir'
   },
   {
-    codigo: 'PESQUISAR_DATA',
-    label: 'Pesquisa de datas',
-    descricao: 'Fluxo de disponibilidade e reserva'
+    codigo: 'VER_LOCALIZACAO',
+    label: 'Localização no mapa',
+    descricao: 'Envia o link do Google Maps configurado'
   },
   {
     codigo: 'MENU_CARDAPIO',
-    label: 'Preços',
-    descricao: 'Envia a tabela de preços cadastrada pelo WhatsApp'
+    label: 'Tabela de preços',
+    descricao: 'Mostra o texto de preços cadastrado'
+  },
+  {
+    codigo: 'RESERVAR',
+    label: 'Agendamento / Reserva',
+    descricao: 'Permite ao cliente consultar disponibilidade e agendar'
   }
 ];
+
+export const MODULOS_DISPONIVEIS = CATALOGO_MODULOS;

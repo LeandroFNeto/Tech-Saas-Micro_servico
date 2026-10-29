@@ -291,3 +291,28 @@ Cenário: pesquisar data lotada ou fechada
 
 - Quando o cliente pesquisa uma data sem horário livre, ou uma data fechada por feriado
 - Então o bot responde que está tudo reservado, ou informa que não abre e o motivo
+
+
+### WPP-10 Envio de lembretes automáticos e sugeridos
+
+O sistema deve disparar lembretes de confirmação de reservas futuras aos clientes nos modos AUTOMATICO e SUGERIDO, respeitando o horário de Brasília (entre 08:00 e 20:00), limites diários e intervalos de segurança anti-bloqueio.
+
+Contrato: `especificacao/back/paths/empresas-reservas-lembrete.yaml`
+Prova: `src/test/java/com/example/demo/servico/ServicoLembreteReservaTest.java`
+
+Cenário: disparo agendado
+- Dado uma reserva aguardando lembrete no horário e janela configurados
+- Quando o ciclo de envio é executado
+- Então a mensagem é enviada ao cliente e a reserva passa a LEMBRETE_ENVIADO
+
+### WPP-11 Interpretar respostas ao lembrete
+
+O sistema deve, quando o cliente responder a um lembrete no estado INICIO, interpretar a mensagem com palavras-chave e emojis para confirmar a reserva, solicitar remarcação/cancelamento ou registrar solicitação de não contatar (opt-out).
+
+Contrato: nenhum (fluxo do webhook do WhatsApp)
+Prova: `src/test/java/com/example/demo/servico/InterpretadorPorPalavrasTest.java`, `src/test/java/com/example/demo/servico/ServicoRespostaLembreteTest.java`
+
+Cenário: cliente confirma reserva
+- Dado um cliente com reserva em LEMBRETE_ENVIADO respondendo "Sim, confirmo"
+- Quando o webhook processa a mensagem
+- Então a reserva passa a CONFIRMADA_PELO_CLIENTE e o cliente recebe mensagem de confirmação

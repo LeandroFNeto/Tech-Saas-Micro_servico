@@ -18,6 +18,16 @@
         <a routerLink="/cliente/chatbot" [class]="design.botaoChatbot">{{ conteudo.chatbot.botao }}</a>
       </div>
     </section>
+
+    <section [class]="design.pagina.itemLinha" aria-labelledby="painel-titulo-automacao">
+      <div [class]="design.cartao">
+        <div>
+          <h2 id="painel-titulo-automacao" [class]="design.secao.titulo">{{ conteudo.automacao.titulo }}</h2>
+          <p [class]="design.secao.descricao">{{ conteudo.automacao.descricao }}</p>
+        </div>
+        <a routerLink="/cliente/automacao" [class]="design.botaoChatbot">{{ conteudo.automacao.botao }}</a>
+      </div>
+    </section>
   </div>
 
   <section [class]="design.cartao" aria-labelledby="painel-titulo-previsao">
