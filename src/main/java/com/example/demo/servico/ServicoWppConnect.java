@@ -68,6 +68,19 @@ public class ServicoWppConnect {
         log.info("Tokens WPPConnect invalidados");
     }
 
+        public void desconectar(String sessao) {
+        if (sessao == null || sessao.isBlank()) {
+            return;
+        }
+        invalidarToken(sessao);
+        qrcodesPorSessao.remove(sessao);
+        try {
+            chamarWpp(sessao, "/close-session", HttpMethod.POST, null, Map.class);
+        } catch (Exception e) {
+            log.warn("Falha ao fechar sessao WPPConnect {}: {}", sessao, e.getClass().getSimpleName());
+        }
+    }
+
     public void invalidarToken(String sessao) {
         tokensPorSessao.remove(sessao);
     }

@@ -36,6 +36,9 @@ public record EmpresaResponseDTO(
         @Schema(description = "Quando true, o bot exibe a opção de reserva automática no WhatsApp", example = "false")
         Boolean permiteReservaAutomatica,
 
+        @Schema(description = "Indica se o administrador liberou o recurso de previsão do tempo para a empresa", example = "true")
+        Boolean permitePrevisaoTempo,
+
         @Schema(description = "Define se o local é alugado por hora (true) ou por diária (false)", example = "false")
         Boolean locacaoPorHora,
 
@@ -54,6 +57,9 @@ public record EmpresaResponseDTO(
 
         @Schema(description = "Interruptor Mostrar previsão do tempo", example = "false")
         Boolean previsaoTempoAtiva,
+
+        @Schema(description = "Status de ativação da empresa (false se foi excluída/desativada)", example = "true")
+        Boolean ativo,
 
         @Schema(description = "Configuração do lembrete de confirmação de reservas")
         LembreteConfirmacaoDTO lembreteConfirmacao,

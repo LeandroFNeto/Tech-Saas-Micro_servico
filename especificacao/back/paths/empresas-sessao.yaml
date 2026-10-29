@@ -1,0 +1,36 @@
+delete:
+  tags:
+  - Gerenciamento de Empresas
+  summary: Desativar/excluir empresa (Soft Delete)
+  description: "Desativa logicamente a empresa, marca como inativa e encerra a sessão WhatsApp correspondente. Mantém integridade de histórico e auditoria. Uso restrito ao administrador do SaaS."
+  operationId: excluirEmpresa
+  parameters:
+  - name: x-admin-token
+    in: header
+    description: Token administrativo do SaaS
+    required: false
+    schema:
+      type: string
+    example: sua-chave-admin
+  - name: sessao
+    in: path
+    description: Identificador da sessão WhatsApp da empresa
+    required: true
+    schema:
+      type: string
+    example: sessao_recanto_01
+  responses:
+    "204":
+      description: Empresa desativada com sucesso
+    "401":
+      description: Token administrativo inválido
+      content:
+        application/hal+json:
+          schema:
+            $ref: "#/components/schemas/EmpresaResponseDTO"
+    "404":
+      description: Empresa não encontrada para a sessão informada
+      content:
+        application/hal+json:
+          schema:
+            $ref: "#/components/schemas/EmpresaResponseDTO"

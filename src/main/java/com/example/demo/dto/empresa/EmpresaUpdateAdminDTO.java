@@ -20,6 +20,9 @@ public record EmpresaUpdateAdminDTO(
         @Schema(description = "Liga ou desliga a reserva automática. Ligar exige googleCalendarId cadastrado", example = "false")
         Boolean permiteReservaAutomatica,
 
+        @Schema(description = "Libera ou revoga a permissão da empresa utilizar a previsão do tempo", example = "true")
+        Boolean permitePrevisaoTempo,
+
         @Schema(description = "URL pública da foto principal (Hero Image) hospedada no Cloudinary",
                 example = "https://res.cloudinary.com/demo/image/upload/v1/hero_image.jpg")
         String linkFotoPrincipal,

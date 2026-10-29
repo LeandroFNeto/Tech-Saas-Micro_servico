@@ -18,6 +18,7 @@ import com.example.demo.repository.EmpresaRepository;
 import com.example.demo.servico.CatalogoModulos;
 import com.example.demo.servico.ServicoAcessoEmpresa;
 import com.example.demo.servico.ServicoAuth;
+import com.example.demo.servico.ServicoWppConnect;
 import com.example.demo.servico.previsao.ProvedorIndisponivelException;
 import com.example.demo.servico.previsao.ProvedorPrevisao;
 import com.example.demo.servico.previsao.ServicoPrevisaoTempo;
@@ -51,6 +52,7 @@ public class ControllerEmpresa {
     @Autowired private ServicoAuth servicoAuth;
     @Autowired private ServicoPrevisaoTempo servicoPrevisaoTempo;
     @Autowired private ServicoAcessoEmpresa servicoAcessoEmpresa;
+    @Autowired(required = false) private ServicoWppConnect servicoWppConnect;
     @Value("${admin.api.key}") private String adminApiKey;
 
     private boolean possuiPapel(String papel) {
@@ -157,6 +159,9 @@ public class ControllerEmpresa {
         if (dto.linkGaleria() != null) {
             empresa.setLinkGaleria(dto.linkGaleria().isBlank() ? null : dto.linkGaleria().trim());
         }
+        if (dto.permitePrevisaoTempo() != null) {
+            empresa.setPermitePrevisaoTempo(dto.permitePrevisaoTempo());
+        }
         CatalogoModulos.aplicar(empresa, dto.modulosIniciais());
 
         Empresa salva = empresaRepository.save(empresa);
@@ -213,6 +218,10 @@ public class ControllerEmpresa {
             empresa.setLongitude(novaLocalizacao.longitude());
         }
         if (dto.previsaoTempoAtiva() != null) {
+            if (Boolean.TRUE.equals(dto.previsaoTempoAtiva()) && !Boolean.TRUE.equals(empresa.getPermitePrevisaoTempo())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "A previsão do tempo precisa ser liberada pelo administrador.");
+            }
             empresa.setPrevisaoTempoAtiva(dto.previsaoTempoAtiva());
         }
 
@@ -332,6 +341,7 @@ public class ControllerEmpresa {
         if (dto.linkGaleria() != null) {
             empresa.setLinkGaleria(dto.linkGaleria().isBlank() ? null : dto.linkGaleria().trim());
         }
+        if (dto.permitePrevisaoTempo() != null) empresa.setPermitePrevisaoTempo(dto.permitePrevisaoTempo());
         CatalogoModulos.aplicar(empresa, dto.modulosAtivos());
 
         return ResponseEntity.ok(paraResposta(empresaRepository.save(empresa)));
@@ -418,12 +428,14 @@ public class ControllerEmpresa {
                 List.copyOf(empresa.getUrlsGaleria()),
                 empresa.getLinkGaleria(),
                 Boolean.TRUE.equals(empresa.getPermiteReservaAutomatica()),
+                Boolean.TRUE.equals(empresa.getPermitePrevisaoTempo()),
                 Boolean.TRUE.equals(empresa.getLocacaoPorHora()),
                 empresa.getRegrasLocacao(),
                 menu,
                 empresa.getCidadePrevisao(),
                 empresa.getCidadePrevisaoResolvida(),
                 Boolean.TRUE.equals(empresa.getPrevisaoTempoAtiva()),
+                Boolean.TRUE.equals(empresa.getAtivo()),
                 lembreteDTO,
                 LocalDateTime.now()
         );
@@ -464,5 +476,43 @@ public class ControllerEmpresa {
                 Boolean.TRUE.equals(empresa.getPrevisaoTempoAtiva()),
                 LocalDateTime.now()
         );
+    }
+
+    @DeleteMapping("/{sessao}")
+    @Operation(summary = "Desativar/excluir empresa (Soft Delete)",
+            description = "Desativa logicamente a empresa e encerra a sessão WhatsApp correspondente. Exige x-admin-token ou ROLE_ADMIN.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Empresa desativada com sucesso"),
+            @ApiResponse(responseCode = "401", description = "Token administrativo inválido"),
+            @ApiResponse(responseCode = "404", description = "Empresa não encontrada para a sessão informada")
+    })
+    public ResponseEntity<Void> excluirEmpresa(
+            @Parameter(description = "Token administrativo do SaaS", example = "sua-chave-admin")
+            @RequestHeader(value = "x-admin-token", required = false) String token,
+            @Parameter(description = "Identificador da sessão WhatsApp da empresa", example = "sessao_recanto_01")
+            @PathVariable String sessao) {
+
+        if (isAcessoNegado(token)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Acesso negado");
+        }
+
+        Empresa empresa = empresaRepository.buscarPorSessaoComModulos(sessao);
+        if (empresa == null) {
+            empresa = empresaRepository.findBySessaoWhatsapp(sessao);
+        }
+        if (empresa == null || Boolean.FALSE.equals(empresa.getAtivo())) {
+            return ResponseEntity.notFound().build();
+        }
+
+        empresa.setAtivo(false);
+        empresa.setDataExclusao(LocalDateTime.now());
+        empresaRepository.save(empresa);
+
+        try {
+            servicoWppConnect.desconectar(sessao);
+        } catch (Exception ignorada) {
+        }
+
+        return ResponseEntity.noContent().build();
     }
 }

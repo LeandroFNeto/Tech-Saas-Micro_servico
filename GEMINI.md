@@ -23,3 +23,9 @@ Este arquivo define as regras e convenções essenciais do repositório para o G
 - `/horadoshow`: Fluxo orquestrado da equipe de agentes ([.agents/skills/horadoshow/SKILL.md](file:///c:/Projeto-futuro-junior/Tech-Saas-Micro_servico/.agents/skills/horadoshow/SKILL.md)).
 - `/painel`: Gerar e visualizar o painel web da situação do projeto ([.agents/skills/painel/SKILL.md](file:///c:/Projeto-futuro-junior/Tech-Saas-Micro_servico/.agents/skills/painel/SKILL.md)).
 - `/diasabatico`: Foco visual no front Angular ([.agents/skills/diasabatico/SKILL.md](file:///c:/Projeto-futuro-junior/Tech-Saas-Micro_servico/.agents/skills/diasabatico/SKILL.md)).
+- `/ponytail`: Modo senior minimalista, auditoria e revisão de código enxuto (`/ponytail`, `/ponytail-review`, `/ponytail-audit`).
+
+## 5. Central de Ajuda e Comandos (AJUDA.md)
+- O arquivo [AJUDA.md](file:///c:/Projeto-futuro-junior/Tech-Saas-Micro_servico/AJUDA.md) é a referência rápida e central de todos os comandos do Tech-SaaS.
+- Deve ser mantido e atualizado sempre que um novo comando ou skill for criado/alterado.
+- Detalhes em: [.agents/rules/ajuda-comandos.md](file:///c:/Projeto-futuro-junior/Tech-Saas-Micro_servico/.agents/rules/ajuda-comandos.md).

@@ -34,6 +34,7 @@
       },
       "estados": {
         "semCidade": "Informe a cidade para ver a previsão.",
+        "bloqueadaAdmin": "A previsão do tempo precisa ser liberada pelo administrador do sistema.",
         "carregando": "Carregando previsão...",
         "vazio": "Nenhum dia de previsão para mostrar agora.",
         "desligada": "A previsão do tempo está desligada. Toque em Editar para ligar.",

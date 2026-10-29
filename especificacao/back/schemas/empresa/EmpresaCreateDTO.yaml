@@ -27,6 +27,11 @@ properties:
     description: Quando true, liga a reserva automática no WhatsApp e exige googleCalendarId preenchido (400 sem agenda). Ausente ou false, a empresa nasce com a reserva automática desligada
     default: false
     example: false
+  permitePrevisaoTempo:
+    type: boolean
+    description: Quando true, libera o recurso de previsão do tempo para a empresa poder configurar no perfil. Ausente ou false, a empresa nasce com o recurso desligado
+    default: false
+    example: false
   linkFotoPrincipal:
     type: string
     description: URL pública da foto principal (Hero Image) hospedada no Cloudinary

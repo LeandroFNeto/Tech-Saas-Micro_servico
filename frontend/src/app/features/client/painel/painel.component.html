@@ -70,10 +70,16 @@
         <label [class]="design.opcao.linha">
           <span>
             <span [class]="design.opcao.rotulo">{{ conteudo.previsao.interruptor.rotulo }}</span>
-            <span [class]="design.opcao.dica">{{ conteudo.previsao.interruptor.dica }}</span>
+            <span [class]="design.opcao.dica">
+              @if (!permitePrevisaoTempo()) {
+                {{ conteudo.previsao.estados.bloqueadaAdmin }}
+              } @else {
+                {{ conteudo.previsao.interruptor.dica }}
+              }
+            </span>
           </span>
           <span class="switch">
-            <input type="checkbox" [checked]="previsaoAtiva()" (change)="alternarPrevisao()" />
+            <input type="checkbox" [checked]="previsaoAtiva()" [disabled]="!permitePrevisaoTempo()" (change)="alternarPrevisao()" />
             <span aria-hidden="true"></span>
           </span>
         </label>

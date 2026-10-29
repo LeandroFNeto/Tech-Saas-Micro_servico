@@ -344,3 +344,42 @@ Cenário: revelação de telefone dentro do limite
 - Dado um cliente autenticado solicitando o número de um contato
 - Quando o limite de 10 consultas por hora não foi atingido
 - Então o número decifrado é retornado com HTTP 200
+
+
+### EMP-12 Controle administrativo da previsão do tempo
+
+O sistema deve permitir que o administrador controle se a empresa tem permissão para utilizar o módulo de previsão do tempo (`permitePrevisaoTempo`), configurável na criação (`EmpresaCreateDTO`) e na edição administrativa (`EmpresaUpdateAdminDTO`). Se `permitePrevisaoTempo` for falso ou nulo, o cliente não pode ativar a previsão no perfil (o PUT `/empresas/{sessao}/cliente` com ativação é rejeitado com 400), a interface do painel do cliente exibe o controle desabilitado com aviso explicativo, e qualquer consulta a `GET /empresas/{sessao}/previsao` retorna imediatamente indisponível sem consumir a API externa. Empresas legadas mantêm a previsão permitida caso já a tivessem ativa.
+
+Contrato: `especificacao/back/paths/empresas.yaml`, `especificacao/back/paths/empresas-admin.yaml`, `especificacao/back/paths/empresas-cliente.yaml`, `especificacao/back/paths/empresas-previsao.yaml`
+Prova: `src/test/resources/features/empresas.feature`, `src/test/java/com/example/demo/controller/ControllerEmpresaTest.java`, `src/test/java/com/example/demo/servico/previsao/ServicoPrevisaoTempoTest.java`, `frontend/src/app/features/client/painel/painel.component.spec.ts`
+
+Cenário: admin desativa permissão e cliente tenta ativar
+- Dado uma empresa sem permissão de previsão do tempo concedida pelo admin
+- Quando o cliente envia PUT `/empresas/{sessao}/cliente` tentando ativar a previsão
+- Então a API responde 400 com "A previsão do tempo não está liberada para esta empresa pelo administrador."
+- E nenhuma chamada externa é disparada
+
+Cenário: consulta de previsão em empresa sem permissão
+- Dado uma empresa com permissão de previsão revogada ou não concedida
+- Quando é requisitado GET `/empresas/{sessao}/previsao`
+- Então a resposta retorna status 200 com flag indicando indisponibilidade sem acionar o provedor externo
+
+### EMP-13 Exclusão e desativação lógica da empresa pelo admin
+
+O sistema deve permitir que o administrador desative logicamente uma empresa via DELETE `/empresas/{sessao}`. O registro não é excluído fisicamente para manter a integridade dos agendamentos e dos registros de auditoria (LGPD). A empresa é marcada como inativa (`ativo = false`, `dataExclusao`), tem sua sessão do WhatsApp desconectada imediatamente no serviço WPPConnect, e passa a ser omitida das listagens administrativas padrão e do acesso do cliente.
+
+Contrato: `especificacao/back/paths/empresas-sessao.yaml`
+Prova: `src/test/resources/features/empresas.feature`, `src/test/java/com/example/demo/controller/ControllerEmpresaTest.java`, `frontend/src/app/features/admin/dashboard/dashboard.component.spec.ts`
+
+Cenário: admin exclui empresa com sucesso
+- Dado o token de administrador válido e uma empresa ativa com sessão WhatsApp conectada
+- Quando o admin envia DELETE `/empresas/{sessao}`
+- Então a API responde 204 No Content
+- E a empresa é marcada com ativo falso e data de exclusão
+- E o serviço WPPConnect desconecta a sessão WhatsApp
+- E a empresa não é mais listada nas consultas padrão de empresas ativas
+
+Cenário: exclusão de empresa inexistente
+- Dado o token de administrador válido
+- Quando o admin envia DELETE `/empresas/{sessao-inexistente}`
+- Então a API responde 404 Not Found

@@ -288,10 +288,11 @@ Funcionalidade: Contratos de empresa do SaaS
     E o provedor de previsão reconhece qualquer cidade
     E o provedor de previsão ainda não foi consultado
     Quando eu envio POST /empresas com o EmpresaCreateDTO:
-      | nome           | Espaço Alvo Put     |
-      | sessaoWhatsapp | sessao_put_alvo     |
-      | ramoDeAtuacao  | LOCACAO             |
-      | email          | alvoput@recanto.com |
+      | nome                 | Espaço Alvo Put     |
+      | sessaoWhatsapp       | sessao_put_alvo     |
+      | ramoDeAtuacao        | LOCACAO             |
+      | permitePrevisaoTempo | true                |
+      | email                | alvoput@recanto.com |
       | senha          | SenhaCliente123     |
     E eu envio POST /empresas com o EmpresaCreateDTO:
       | nome           | Espaço Intruso Put     |
@@ -532,3 +533,47 @@ Funcionalidade: Contratos de empresa do SaaS
       | senha | SenhaCliente123                 |
     E eu envio GET /empresas/sessao_func_alvo/funcionamento com o JWT do login
     Então o status HTTP deve ser 403
+
+
+  Cenário: DELETE /empresas/{sessao} desativa empresa com soft delete
+    Dado uma empresa persistida com sessão "sessao_excluir_01" e ramo "LOCACAO"
+    E o token administrativo "sua-chave-admin"
+    Quando eu envio DELETE /empresas/sessao_excluir_01
+    Então o status HTTP deve ser 204
+    Quando eu envio DELETE /empresas/sessao_excluir_01
+    Então o status HTTP deve ser 404
+
+  Cenário: DELETE /empresas/{sessao} sem token administrativo retorna 401
+    Dado uma empresa persistida com sessão "sessao_excluir_401" e ramo "LOCACAO"
+    Dado o token administrativo "token-invalido"
+    Quando eu envio DELETE /empresas/sessao_excluir_401
+    Então o status HTTP deve ser 401
+
+  Cenário: POST /empresas cria empresa com controle de previsão do tempo
+    Dado o token administrativo "sua-chave-admin"
+    Quando eu envio POST /empresas com o EmpresaCreateDTO:
+      | nome                 | Empresa Previsao Liberada |
+      | sessaoWhatsapp       | sessao_prev_liberada      |
+      | ramoDeAtuacao        | LOCACAO                   |
+      | permitePrevisaoTempo | true                      |
+      | email                | prevlib@recanto.com       |
+      | senha                | SenhaCliente123           |
+    Então o status HTTP deve ser 201
+    E o corpo deve seguir o schema EmpresaResponseDTO
+    E o campo booleano "permitePrevisaoTempo" deve ser true
+    E o campo booleano "previsaoTempoAtiva" deve ser false
+
+
+  Cenário: PUT /empresas/{sessao}/cliente rejeita ligar previsão quando admin não liberou
+    Dado o token administrativo "sua-chave-admin"
+    Quando eu envio POST /empresas com o EmpresaCreateDTO:
+      | nome                 | Empresa Previsao Bloqueada |
+      | sessaoWhatsapp       | sessao_prev_bloqueada      |
+      | ramoDeAtuacao        | LOCACAO                    |
+      | permitePrevisaoTempo | false                      |
+      | email                | prevbloq@recanto.com       |
+      | senha                | SenhaCliente123            |
+    Então o status HTTP deve ser 201
+    Quando eu envio PUT /empresas/sessao_prev_bloqueada/cliente com o EmpresaUpdateDTO:
+      | previsaoTempoAtiva  | true |
+    Então o status HTTP deve ser 400

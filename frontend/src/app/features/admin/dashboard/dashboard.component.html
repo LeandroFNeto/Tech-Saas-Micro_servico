@@ -62,16 +62,44 @@
           <span class="mb-0.5 block text-[11px] font-semibold uppercase leading-4 tracking-[0.06em] text-brand-600 min-[1100px]:hidden">Atualizado</span>
           <span class="text-sm text-brand-700">{{ empresa.atualizadoEm | date: 'short' }}</span>
         </div>
-        <div class="col-span-2 min-[1100px]:col-span-1">
+        <div class="col-span-2 flex items-center gap-2 min-[1100px]:col-span-1">
           <a
-            class="btn-secondary w-full px-3.5 min-[1100px]:w-auto"
+            class="btn-secondary flex-1 px-3.5 text-center min-[1100px]:flex-initial min-[1100px]:w-auto"
             [routerLink]="['/admin/empresas', empresa.sessaoWhatsapp]"
             [attr.aria-label]="'Editar ' + (empresa.nome || empresa.sessaoWhatsapp)"
           >
             Editar
           </a>
+          <button
+            type="button"
+            class="btn-secondary flex-1 px-3 text-red-600 hover:border-red-300 hover:bg-red-50 hover:text-red-700 min-[1100px]:flex-initial min-[1100px]:w-auto"
+            (click)="abrirConfirmacaoExclusao(empresa)"
+            [attr.aria-label]="'Excluir ' + (empresa.nome || empresa.sessaoWhatsapp)"
+          >
+            Excluir
+          </button>
         </div>
       </li>
     }
   </ul>
+}
+
+@if (confirmacaoAberta() && empresaExcluindo(); as empresa) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" role="dialog" aria-modal="true" aria-labelledby="modal-excluir-titulo">
+    <div class="w-full max-w-md rounded-2xl border border-brand-100 bg-white p-6 shadow-xl">
+      <h2 id="modal-excluir-titulo" class="text-lg font-bold text-brand-900">Excluir empresa</h2>
+      <p class="mt-2 text-sm text-brand-600">
+        Tem certeza que deseja excluir a empresa <strong>{{ empresa.nome || empresa.sessaoWhatsapp }}</strong>?
+        Esta ação desativará o acesso e desconectará o WhatsApp.
+      </p>
+      <div class="mt-6 flex justify-end gap-3">
+        <button type="button" class="btn-secondary px-4 py-2" [disabled]="excluindo()" (click)="cancelarExclusao()">
+          Cancelar
+        </button>
+        <button type="button" class="btn-primary bg-red-600 hover:bg-red-700 px-4 py-2 text-white border-none" [disabled]="excluindo()" (click)="confirmarExclusao()">
+          {{ excluindo() ? 'Excluindo...' : 'Confirmar exclusão' }}
+        </button>
+      </div>
+    </div>
+  </div>
 }

@@ -28,6 +28,7 @@ Caso algum modelo não esteja disponível diretamente na conta/sessão, utiliza-
 
 ## Regras de trabalho
 
+- **Ponytail ativo desde o início**: Sempre que a IA iniciar qualquer etapa, aplica de imediato o modo Ponytail (lazy senior dev). O melhor código é o que nunca foi escrito: resolver com o menor diff possível, sem abstrações ou arquivos não solicitados, priorizando stdlib e padrões já existentes no projeto.
 - **Sem comentários no código**. O comportamento está na spec (`openspec/`), não no código. Vale para código novo e para trechos alterados; comentário existente só sai quando o arquivo for mexido.
 - **Explicação para a pessoa**: concisa e direta.
 - **Pesquisa no código pelo Graphify**. Para achar arquivo, símbolo ou dependência, use `graphify query "<pergunta>"`, `graphify path "<A>" "<B>"` ou `graphify explain "<conceito>"` antes de busca cega. Depois de criar ou alterar arquivo, rode `graphify update .` uma vez no fim do turno ou da etapa.

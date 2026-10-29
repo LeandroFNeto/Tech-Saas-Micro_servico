@@ -122,12 +122,14 @@ class EconomiaTokenAuditoriaTest {
                 List.copyOf(empresa.getUrlsGaleria()),
                 empresa.getLinkGaleria(),
                 empresa.getPermiteReservaAutomatica(),
+                empresa.getPermitePrevisaoTempo(),
                 empresa.getLocacaoPorHora(),
                 empresa.getRegrasLocacao(),
                 menu,
                 empresa.getCidadePrevisao(),
                 empresa.getCidadePrevisaoResolvida(),
                 Boolean.TRUE.equals(empresa.getPrevisaoTempoAtiva()),
+                empresa.getAtivo(),
                 null,
                 LocalDateTime.of(2026, 10, 22, 14, 30));
     }

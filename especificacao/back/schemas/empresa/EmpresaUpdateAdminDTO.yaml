@@ -17,6 +17,10 @@ properties:
     type: boolean
     description: Liga ou desliga a reserva automática. Ligar exige googleCalendarId cadastrado (400 caso contrário). Só o admin altera.
     example: false
+  permitePrevisaoTempo:
+    type: boolean
+    description: Libera ou revoga a permissão da empresa utilizar a previsão do tempo.
+    example: true
   linkFotoPrincipal:
     type: string
     description: URL pública da foto principal (Hero Image) hospedada no Cloudinary
