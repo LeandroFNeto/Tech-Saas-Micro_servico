@@ -1,7 +1,20 @@
 package com.example.demo.servico.observador;
 
 import com.example.demo.evento.EventoReservaConfirmada;
+import com.example.demo.model.Contato;
+import com.example.demo.model.Empresa;
 import com.example.demo.model.DadosReservaSessao;
+import com.example.demo.model.ModoLembrete;
+import com.example.demo.model.OrigemContato;
+import com.example.demo.model.OrigemReserva;
+import com.example.demo.model.Reserva;
+import com.example.demo.model.SituacaoReserva;
+import com.example.demo.repository.ContatoRepository;
+import com.example.demo.repository.ReservaRepository;
+import com.example.demo.util.CriptografiaCampo;
+import com.example.demo.util.WhatsappUtil;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import com.example.demo.model.EstadoUsuario;
 import com.example.demo.servico.AgendaNaoConfiguradaException;
 import com.example.demo.servico.GerenciadorSessao;
@@ -72,6 +85,12 @@ public class ObservadorGoogleAgenda {
     @Autowired
     private ServicoFuncionamento servicoFuncionamento;
 
+    @Autowired
+    private ContatoRepository contatoRepository;
+
+    @Autowired
+    private ReservaRepository reservaRepository;
+
     @Async
     @EventListener
     public void registarNoGoogle(EventoReservaConfirmada evento) {
@@ -91,6 +110,7 @@ public class ObservadorGoogleAgenda {
                     desfecho.resultado() == Resultado.DATA_OCUPADA
                             ? EstadoUsuario.RESERVA_ESPERANDO_DATA
                             : EstadoUsuario.INICIO);
+            gravarReservaBot(evento, desfecho);
         }
 
         try {
@@ -346,5 +366,100 @@ public class ObservadorGoogleAgenda {
                     + "por exemplo 16-09-2026.";
             case FALHA -> MENSAGEM_FALHA;
         };
+    }
+
+    private void gravarReservaBot(EventoReservaConfirmada evento, Desfecho desfecho) {
+        if (desfecho.resultado() == Resultado.DATA_OCUPADA) {
+            return;
+        }
+        try {
+            if (!CriptografiaCampo.isConfigurado()) {
+                CriptografiaCampo.avisarChavesNaoConfiguradasSeNecessario();
+                return;
+            }
+            Empresa empresa = evento.getEmpresa();
+            String numeroChave = WhatsappUtil.normalizarParaChaveEstado(evento.getNumeroWhatsapp());
+            String numeroIndice = CriptografiaCampo.calcularIndice(numeroChave);
+            String digitos = WhatsappUtil.extrairApenasNumeros(evento.getNumeroWhatsapp());
+            String finalTelefone = (digitos != null && digitos.length() >= 4)
+                    ? digitos.substring(digitos.length() - 4)
+                    : null;
+
+            Contato contato = contatoRepository.findByEmpresaIdAndNumeroIndice(empresa.getId(), numeroIndice)
+                    .orElseGet(() -> {
+                        Contato novo = new Contato();
+                        novo.setEmpresa(empresa);
+                        novo.setWhatsappId(evento.getNumeroWhatsapp());
+                        novo.setNumeroIndice(numeroIndice);
+                        novo.setFinalTelefone(finalTelefone);
+                        novo.setPrimeiraConversaEm(LocalDateTime.now());
+                        novo.setUltimaConversaEm(LocalDateTime.now());
+                        novo.setOrigem(OrigemContato.CONVERSA);
+                        return novo;
+                    });
+            if (evento.getNomeCliente() != null && !evento.getNomeCliente().isBlank()) {
+                contato.setNome(evento.getNomeCliente());
+            }
+            contato.setUltimaConversaEm(LocalDateTime.now());
+            contatoRepository.save(contato);
+
+            String googleEventId = desfecho.resultado() == Resultado.SUCESSO
+                    ? ServicoReserva.idEventoDoPedido(evento.getIdPedido())
+                    : null;
+
+            SituacaoReserva situacao = desfecho.resultado() == Resultado.SUCESSO
+                    ? SituacaoReserva.AGUARDANDO_LEMBRETE
+                    : SituacaoReserva.FALHA_AGENDA;
+
+            LocalDate data = evento.getDataReserva() != null
+                    ? LocalDate.parse(evento.getDataReserva(), FORMATO_DATA)
+                    : (evento.getDatas() != null && !evento.getDatas().isEmpty()
+                    ? LocalDate.parse(evento.getDatas().get(0), FORMATO_DATA)
+                    : LocalDate.now());
+
+            String horario = evento.getHorario() != null && !evento.getHorario().isBlank()
+                    ? evento.getHorario()
+                    : "Diária Completa";
+
+            Reserva reserva = null;
+            if (googleEventId != null) {
+                reserva = reservaRepository.findByEmpresaIdAndGoogleEventId(empresa.getId(), googleEventId).orElse(null);
+            }
+            if (reserva == null) {
+                reserva = new Reserva();
+                reserva.setEmpresa(empresa);
+                reserva.setGoogleEventId(googleEventId);
+                reserva.setOrigem(OrigemReserva.BOT);
+                reserva.setData(data);
+                reserva.setHorario(horario);
+            }
+            reserva.setContato(contato);
+            reserva.setTitulo("Reserva - " + (evento.getNomeCliente() != null ? evento.getNomeCliente() : ""));
+            reserva.setSituacao(situacao);
+            reserva.setAtualizadaEm(LocalDateTime.now());
+
+            if (situacao == SituacaoReserva.AGUARDANDO_LEMBRETE) {
+                reserva.setLembreteEnviarEm(calcularLembreteEnviarEm(empresa, data));
+            }
+
+            reservaRepository.save(reserva);
+        } catch (Exception e) {
+            log.error("Erro ao gravar reserva do bot (empresa {}, pedido {}): {}",
+                    evento.getEmpresa().getId(), evento.getIdPedido(), e.getClass().getSimpleName());
+        }
+    }
+
+    private LocalDateTime calcularLembreteEnviarEm(Empresa empresa, LocalDate dataReserva) {
+        int diasAntes = empresa.getLembreteDiasAntes();
+        String horarioStr = empresa.getLembreteHorarioEnvio();
+        LocalTime horario = LocalTime.parse(horarioStr);
+        LocalDate diaEnvio = dataReserva.minusDays(diasAntes);
+        LocalDateTime momento = diaEnvio.atTime(horario);
+        ZoneId fuso = ZoneId.of("America/Sao_Paulo");
+        LocalDateTime agora = LocalDateTime.now(fuso);
+        if (momento.isBefore(agora)) {
+            return null;
+        }
+        return momento;
     }
 }

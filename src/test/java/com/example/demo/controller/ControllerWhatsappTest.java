@@ -67,6 +67,8 @@ class ControllerWhatsappTest {
     @MockitoBean private ServicoReserva servicoReserva;
     @MockitoBean private ServicoWppConnect servicoWppConnect;
     @MockitoBean private com.example.demo.servico.ServicoFuncionamento servicoFuncionamento;
+    @MockitoBean private com.example.demo.servico.ServicoContato servicoContato;
+    @MockitoBean private com.example.demo.servico.ServicoRespostaLembrete servicoRespostaLembrete;
 
     @AfterEach
     void limparContexto() {

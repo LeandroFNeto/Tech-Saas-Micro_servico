@@ -13,6 +13,10 @@ export const CLIENT_ROUTES: Routes = [
       {
         path: 'chatbot',
         loadComponent: () => import('./perfil/perfil.component').then((m) => m.PerfilComponent)
+      },
+      {
+        path: 'automacao',
+        loadComponent: () => import('./automacao/automacao.component').then((m) => m.AutomacaoComponent)
       }
     ]
   }

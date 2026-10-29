@@ -128,6 +128,7 @@ class EconomiaTokenAuditoriaTest {
                 empresa.getCidadePrevisao(),
                 empresa.getCidadePrevisaoResolvida(),
                 Boolean.TRUE.equals(empresa.getPrevisaoTempoAtiva()),
+                null,
                 LocalDateTime.of(2026, 10, 22, 14, 30));
     }
 

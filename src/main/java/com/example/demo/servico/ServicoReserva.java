@@ -126,7 +126,72 @@ public class ServicoReserva {
         }
     }
 
-    static String idEventoDoPedido(String idPedido) {
+    public record EventoAgendaDTO(
+            String id,
+            String titulo,
+            String descricao,
+            LocalDate data,
+            String horario,
+            String status
+    ) {}
+
+    public List<EventoAgendaDTO> listarEventosProximos(Empresa empresa, int dias) throws Exception {
+        String calendarId = empresa.getGoogleCalendarId();
+        if (calendarId == null || calendarId.isBlank()) {
+            return Collections.emptyList();
+        }
+        com.google.api.services.calendar.Calendar servicoGoogle = agendaService.conectarAgenda();
+        ZoneId fuso = ZoneId.of("America/Sao_Paulo");
+        LocalDate hoje = LocalDate.now(fuso);
+        LocalDate fim = hoje.plusDays(dias);
+
+        DateTime timeMin = new DateTime(hoje.atStartOfDay(fuso).toInstant().toEpochMilli());
+        DateTime timeMax = new DateTime(fim.plusDays(1).atStartOfDay(fuso).toInstant().toEpochMilli());
+
+        Events eventos = servicoGoogle.events().list(calendarId)
+                .setTimeMin(timeMin)
+                .setTimeMax(timeMax)
+                .setSingleEvents(true)
+                .setShowDeleted(true)
+                .execute();
+
+        if (eventos.getItems() == null) {
+            return Collections.emptyList();
+        }
+
+        List<EventoAgendaDTO> resultado = new ArrayList<>();
+        for (Event item : eventos.getItems()) {
+            String status = item.getStatus();
+            LocalDate dataEvento = null;
+            String horario = "Diária Completa";
+
+            if (item.getStart() != null) {
+                if (item.getStart().getDate() != null) {
+                    dataEvento = LocalDate.parse(item.getStart().getDate().toStringRfc3339().substring(0, 10));
+                    horario = "Diária Completa";
+                } else if (item.getStart().getDateTime() != null) {
+                    ZonedDateTime zdt = ZonedDateTime.ofInstant(
+                            java.time.Instant.ofEpochMilli(item.getStart().getDateTime().getValue()), fuso);
+                    dataEvento = zdt.toLocalDate();
+                    horario = zdt.toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm"));
+                }
+            }
+
+            if (dataEvento != null) {
+                resultado.add(new EventoAgendaDTO(
+                        item.getId(),
+                        item.getSummary(),
+                        item.getDescription(),
+                        dataEvento,
+                        horario,
+                        status
+                ));
+            }
+        }
+        return resultado;
+    }
+
+    public static String idEventoDoPedido(String idPedido) {
         try {
             byte[] hash = MessageDigest.getInstance("SHA-256").digest(idPedido.getBytes(StandardCharsets.UTF_8));
             StringBuilder id = new StringBuilder();

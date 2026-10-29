@@ -307,3 +307,40 @@ Cenário: dia especial de outra empresa
 ## Superfície HTTP ainda sem requisito
 
 GET `/empresas` (coleção HAL, token admin) e o item Spring Data REST em `especificacao/back/paths/empresas-id.yaml` existem no contrato. Eles ficam de fora destes requisitos até uma change dizer o que o painel deve observar ali. O comportamento de produto desta spec é o das rotas com DTO nomeado.
+
+
+### EMP-09 Configurar lembretes de confirmação pelo cliente
+
+A empresa autenticada pode configurar o modo de lembrete (DESLIGADO, SUGERIDO ou AUTOMATICO), dias de antecedência, horário de envio em horário de Brasília e o texto personalizado com suporte a variáveis `{nome}`, `{data}` e `{horario}`.
+
+Contrato: `especificacao/back/paths/empresas-cliente.yaml`
+Prova: `src/test/java/com/example/demo/controller/ControllerEmpresaTest.java`
+
+Cenário: atualização de configuração do lembrete
+- Dado um cliente autenticado na sua empresa
+- Quando envia PUT em `/empresas/{sessao}/cliente` com dados do lembrete
+- Então os parâmetros são salvos e retornados com sucesso
+
+### EMP-10 Gestão de reservas e envio manual de lembrete
+
+A empresa autenticada pode consultar suas reservas dos próximos 30 dias com indicadores visuais de situação, destacar reservas de risco alto (SEM_RESPOSTA), acionar envio manual de lembrete e vincular contatos a reservas sem contato associado.
+
+Contrato: `especificacao/back/paths/empresas-reservas.yaml`, `especificacao/back/paths/empresas-reservas-lembrete.yaml`, `especificacao/back/paths/empresas-reservas-contato.yaml`
+Prova: `src/test/java/com/example/demo/controller/ControllerClienteAutomacaoTest.java`
+
+Cenário: listagem e aviso manual
+- Dado um cliente autenticado visualizando a aba de reservas
+- Quando aciona o botão para avisar agora uma reserva pronta
+- Então o lembrete é disparado via WhatsApp e o status é atualizado
+
+### EMP-11 Gestão de contatos e revelação controlada de telefone
+
+A empresa autenticada pode visualizar os contatos registrados com telefones mascarados. O número completo pode ser consultado individualmente, sujeito a um limite estrito de 10 consultas por hora para proteger contra raspagem de dados. Administradores não possuem acesso a esta listagem.
+
+Contrato: `especificacao/back/paths/empresas-contatos.yaml`, `especificacao/back/paths/empresas-contatos-numero.yaml`
+Prova: `src/test/java/com/example/demo/util/CriptografiaCampoTest.java`
+
+Cenário: revelação de telefone dentro do limite
+- Dado um cliente autenticado solicitando o número de um contato
+- Quando o limite de 10 consultas por hora não foi atingido
+- Então o número decifrado é retornado com HTTP 200

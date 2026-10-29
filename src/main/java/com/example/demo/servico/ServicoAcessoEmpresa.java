@@ -96,4 +96,21 @@ public class ServicoAcessoEmpresa {
         }
         return empresa;
     }
+
+    public Empresa validarAcessoExclusivoCliente(Authentication autenticacao, String adminToken, String sessao) {
+        if (isAdmin(autenticacao, adminToken)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Admin nao tem acesso aos dados de reservas e contatos dos clientes");
+        }
+        if (!isCliente(autenticacao) || !(autenticacao.getPrincipal() instanceof Usuario usuario)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token Invalido");
+        }
+        Empresa empresa = buscarEmpresa(sessao);
+        if (empresa == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Empresa nao encontrada para a sessao informada");
+        }
+        if (usuario.getEmpresa() == null || !sessao.equals(usuario.getEmpresa().getSessaoWhatsapp())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acesso negado a esta empresa");
+        }
+        return empresa;
+    }
 }
