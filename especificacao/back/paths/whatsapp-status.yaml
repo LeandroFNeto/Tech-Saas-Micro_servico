@@ -12,12 +12,6 @@ get:
     schema:
       type: string
     example: sua-chave-admin
-  - name: x-cliente-token
-    in: header
-    description: Token do painel do cliente
-    required: false
-    schema:
-      type: string
   - name: sessao
     in: path
     description: Identificador da sessão WhatsApp da empresa
@@ -38,8 +32,14 @@ get:
         application/json:
           schema:
             $ref: "#/components/schemas/SessaoStatusResponseDTO"
+    "403":
+      description: Cliente tentando acessar sessão de outra empresa ou inexistente
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/SessaoStatusResponseDTO"
     "404":
-      description: Empresa não encontrada para a sessão informada
+      description: Empresa não encontrada para a sessão informada (só para o admin)
       content:
         application/json:
           schema:

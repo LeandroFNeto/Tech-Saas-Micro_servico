@@ -13,12 +13,6 @@ get:
     schema:
       type: string
     example: sua-chave-admin
-  - name: x-cliente-token
-    in: header
-    description: Token do painel do cliente
-    required: false
-    schema:
-      type: string
   - name: sessaoWhatsapp
     in: query
     required: true
@@ -34,7 +28,11 @@ get:
             $ref: "#/components/schemas/EntityModelEmpresa"
     "401":
       description: Token administrativo ou de cliente inválido
+      content:
+        application/hal+json:
+          schema:
+            $ref: "#/components/schemas/EntityModelEmpresa"
     "403":
-      description: Cliente de outra empresa, token legado x-cliente-token ou sessão inexistente para quem não é admin
+      description: Cliente de outra empresa ou sessão inexistente para quem não é admin
     "404":
       description: Empresa não encontrada para a sessão informada (só para o admin)

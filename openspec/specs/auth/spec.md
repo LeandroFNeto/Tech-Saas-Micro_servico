@@ -74,3 +74,31 @@ Cenário: rota desconhecida
 - Dado qualquer visitante
 - Quando abre um endereço que não existe no painel
 - Então é levado à apresentação em `/`
+
+
+### AUTH-04 Acesso do cliente restrito à própria empresa
+
+O sistema deve rejeitar requisições com o cabeçalho legado `x-cliente-token` com 401 em rotas protegidas. Para rotas por sessão (empresa e WhatsApp), o usuário com papel `CLIENTE` autenticado por JWT só pode ler ou alterar dados da sessão pertencente à sua própria empresa. Se o cliente tentar acessar sessão de outra empresa ou uma sessão inexistente, a API responde 403 sem revelar se a sessão existe. O usuário `ADMIN` pode acessar qualquer sessão (e recebe 404 se a sessão não existir).
+
+Contrato: `especificacao/back/paths/whatsapp-status.yaml`, `especificacao/back/paths/whatsapp-iniciar.yaml`, `especificacao/back/paths/empresas-cliente.yaml`, `especificacao/back/paths/empresas-previsao.yaml`, `especificacao/back/paths/empresas-search.yaml`
+Prova: `src/test/java/com/example/demo/security/JwtAuthenticationFilterTest.java`, `src/test/java/com/example/demo/controller/ControllerWhatsappTest.java`, `src/test/java/com/example/demo/controller/ControllerEmpresaTest.java`, `src/test/resources/features/whatsapp.feature`, `src/test/resources/features/empresas.feature`
+
+Cenário: token legado rejeitado
+- Dado uma requisição enviando o cabeçalho `x-cliente-token`
+- Quando a rota protegida é chamada
+- Então a API responde 401
+
+Cenário: cliente na própria sessão
+- Dado um usuário `CLIENTE` autenticado via JWT pertencente à empresa da sessão
+- Quando ele acessa rotas de status ou iniciar do WhatsApp, ou dados da sua empresa
+- Então a API responde 200
+
+Cenário: cliente em sessão de outra empresa ou inexistente
+- Dado um usuário `CLIENTE` autenticado via JWT
+- Quando ele tenta acessar rotas de sessão de outra empresa ou uma sessão inexistente
+- Então a API responde 403
+
+Cenário: admin em sessão inexistente
+- Dado um usuário `ADMIN` autenticado
+- Quando ele tenta acessar rotas de uma sessão que não existe
+- Então a API responde 404

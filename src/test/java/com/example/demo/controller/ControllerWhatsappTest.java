@@ -3,8 +3,11 @@ package com.example.demo.controller;
 import com.example.demo.dto.whatsapp.SessaoStatusResponseDTO;
 import com.example.demo.model.Empresa;
 import com.example.demo.model.EstadoUsuario;
+import com.example.demo.model.Role;
+import com.example.demo.model.Usuario;
 import com.example.demo.repository.EmpresaRepository;
 import com.example.demo.servico.GerenciadorSessao;
+import com.example.demo.servico.ServicoAcessoEmpresa;
 import com.example.demo.servico.ServicoGoogleagenda;
 import com.example.demo.servico.ServicoIA;
 import com.example.demo.servico.ServicoMensagem;
@@ -14,6 +17,7 @@ import com.example.demo.servico.ServicoWppConnect;
 import com.example.demo.servico.observador.Observadorwhatsapp;
 import com.example.demo.strategy.FactoryModulo;
 import com.example.demo.strategy.LocacaoStrategy;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,8 +25,13 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -38,7 +47,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(ControllerWhatsapp.class)
 @AutoConfigureMockMvc(addFilters = false)
-@Import(LocacaoStrategy.class)
+@Import({LocacaoStrategy.class, ServicoAcessoEmpresa.class})
 class ControllerWhatsappTest {
 
     @Autowired
@@ -47,19 +56,35 @@ class ControllerWhatsappTest {
     @Autowired
     private LocacaoStrategy locacaoStrategy;
 
-    // @WebMvcTest sobe só a fatia web: os colaboradores viram dublês para
-    // testar o comportamento do webhook sem banco, Google, IA ou WPPConnect.
     @MockitoBean private GerenciadorSessao gerenciadorSessao;
     @MockitoBean private EmpresaRepository empresaRepository;
     @MockitoBean private FactoryModulo moduloFactory;
     @MockitoBean private Observadorwhatsapp observador;
-    // Evita a necessidade do arquivo crendecial.json neste slice de MVC.
     @MockitoBean private ServicoGoogleagenda servicoGoogleagenda;
     @MockitoBean private ServicoIA servicoIA;
     @MockitoBean private ServicoMensagem servicoMensagem;
     @MockitoBean private ServicoMenu servicoMenu;
     @MockitoBean private ServicoReserva servicoReserva;
     @MockitoBean private ServicoWppConnect servicoWppConnect;
+    @MockitoBean private com.example.demo.servico.ServicoFuncionamento servicoFuncionamento;
+
+    @AfterEach
+    void limparContexto() {
+        SecurityContextHolder.clearContext();
+    }
+
+    private void autenticarComoClienteDe(Empresa empresa) {
+        Usuario usuario = new Usuario();
+        usuario.setRole(Role.CLIENTE);
+        usuario.setEmpresa(empresa);
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(usuario, null, usuario.getAuthorities()));
+    }
+
+    private void autenticarComoAdmin() {
+        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(
+                "admin-api-key", null, List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))));
+    }
 
     @Test
     @DisplayName("Deve ignorar mensagem quando for enviada pelo dono (Anti-X9)")
@@ -384,27 +409,137 @@ class ControllerWhatsappTest {
     }
 
     @Test
-    @DisplayName("POST /whatsapp/{sessao}/iniciar dispara start-session com token de cliente")
-    void deveIniciarSessaoComTokenCliente() throws Exception {
+    @DisplayName("GET e POST no WhatsApp com JWT de cliente na própria sessão retornam 200")
+    void devePermitirAcessoComJwtClienteNaPropriaSessao() throws Exception {
         Empresa empresa = new Empresa();
         empresa.setSessaoWhatsapp("sessao_recanto_01");
+        autenticarComoClienteDe(empresa);
         when(empresaRepository.findBySessaoWhatsapp("sessao_recanto_01")).thenReturn(empresa);
+        when(servicoWppConnect.consultarStatus("sessao_recanto_01"))
+                .thenReturn(new SessaoStatusResponseDTO("sessao_recanto_01", "CONNECTED", null));
         when(servicoWppConnect.iniciarSessao("sessao_recanto_01"))
-                .thenReturn(new SessaoStatusResponseDTO("sessao_recanto_01", "DISCONNECTED", null));
+                .thenReturn(new SessaoStatusResponseDTO("sessao_recanto_01", "CONNECTED", null));
 
-        mockMvc.perform(post("/whatsapp/sessao_recanto_01/iniciar")
-                        .header("x-cliente-token", "token-painel"))
+        mockMvc.perform(get("/whatsapp/sessao_recanto_01/status"))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("CONNECTED"));
+
+        mockMvc.perform(post("/whatsapp/sessao_recanto_01/iniciar"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("CONNECTED"));
+
+        verify(servicoWppConnect).consultarStatus("sessao_recanto_01");
+        verify(servicoWppConnect).iniciarSessao("sessao_recanto_01");
+    }
+
+    @Test
+    @DisplayName("GET e POST no WhatsApp com x-cliente-token sozinho retornam 401")
+    void deveRecusarXClienteTokenSozinho() throws Exception {
+        mockMvc.perform(get("/whatsapp/sessao_recanto_01/status")
+                        .header("x-cliente-token", "token-legado"))
+                .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.status").value("DISCONNECTED"));
 
-        verify(servicoWppConnect).iniciarSessao("sessao_recanto_01");
+        mockMvc.perform(post("/whatsapp/sessao_recanto_01/iniciar")
+                        .header("x-cliente-token", "token-legado"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status").value("DISCONNECTED"));
+
+        verifyNoInteractions(servicoWppConnect);
+    }
+
+    @Test
+    @DisplayName("GET e POST no WhatsApp de cliente em sessão de outra empresa retornam 403")
+    void deveRecusarClienteEmSessaoDeOutraEmpresa() throws Exception {
+        Empresa propria = new Empresa();
+        propria.setSessaoWhatsapp("sessao_propria");
+        Empresa outra = new Empresa();
+        outra.setSessaoWhatsapp("sessao_outra");
+
+        autenticarComoClienteDe(propria);
+        when(empresaRepository.findBySessaoWhatsapp("sessao_outra")).thenReturn(outra);
+
+        mockMvc.perform(get("/whatsapp/sessao_outra/status"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.sessao").value("sessao_outra"))
+                .andExpect(jsonPath("$.status").value("DISCONNECTED"));
+
+        mockMvc.perform(post("/whatsapp/sessao_outra/iniciar"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.sessao").value("sessao_outra"))
+                .andExpect(jsonPath("$.status").value("DISCONNECTED"));
+
+        verifyNoInteractions(servicoWppConnect);
+    }
+
+    @Test
+    @DisplayName("GET e POST no WhatsApp de cliente em sessão inexistente retornam 403")
+    void deveRetornar403ParaClienteEmSessaoInexistente() throws Exception {
+        Empresa propria = new Empresa();
+        propria.setSessaoWhatsapp("sessao_propria");
+        autenticarComoClienteDe(propria);
+
+        when(empresaRepository.findBySessaoWhatsapp("inexistente")).thenReturn(null);
+
+        mockMvc.perform(get("/whatsapp/inexistente/status"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.sessao").value("inexistente"))
+                .andExpect(jsonPath("$.status").value("DISCONNECTED"));
+
+        mockMvc.perform(post("/whatsapp/inexistente/iniciar"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.sessao").value("inexistente"))
+                .andExpect(jsonPath("$.status").value("DISCONNECTED"));
+
+        verifyNoInteractions(servicoWppConnect);
+    }
+
+    @Test
+    @DisplayName("GET e POST no WhatsApp de admin em sessão inexistente retornam 404")
+    void deveRetornar404ParaAdminEmSessaoInexistente() throws Exception {
+        when(empresaRepository.findBySessaoWhatsapp("inexistente")).thenReturn(null);
+
+        mockMvc.perform(get("/whatsapp/inexistente/status")
+                        .header("x-admin-token", "sua-chave-admin"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.sessao").value("inexistente"))
+                .andExpect(jsonPath("$.status").value("DISCONNECTED"));
+
+        mockMvc.perform(post("/whatsapp/inexistente/iniciar")
+                        .header("x-admin-token", "sua-chave-admin"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.sessao").value("inexistente"))
+                .andExpect(jsonPath("$.status").value("DISCONNECTED"));
+
+        verifyNoInteractions(servicoWppConnect);
+    }
+
+    @Test
+    @DisplayName("Admin passa em todas as sessões existentes")
+    void devePermitirAdminEmQualquerSessaoExistente() throws Exception {
+        Empresa empresa = new Empresa();
+        empresa.setSessaoWhatsapp("qualquer_sessao");
+        when(empresaRepository.findBySessaoWhatsapp("qualquer_sessao")).thenReturn(empresa);
+        when(servicoWppConnect.iniciarSessao("qualquer_sessao"))
+                .thenReturn(new SessaoStatusResponseDTO("qualquer_sessao", "CONNECTED", null));
+
+        autenticarComoAdmin();
+        mockMvc.perform(post("/whatsapp/qualquer_sessao/iniciar"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("CONNECTED"));
+
+        verify(servicoWppConnect).iniciarSessao("qualquer_sessao");
     }
 
     @Test
     @DisplayName("GET /whatsapp/{sessao}/iniciar não é suportado (o painel deve usar POST)")
     void deveRecusarGetEmIniciar() throws Exception {
-        mockMvc.perform(get("/whatsapp/sessao_recanto_01/iniciar")
-                        .header("x-cliente-token", "token-painel"))
+        Empresa empresa = new Empresa();
+        empresa.setSessaoWhatsapp("sessao_recanto_01");
+        autenticarComoClienteDe(empresa);
+        when(empresaRepository.findBySessaoWhatsapp("sessao_recanto_01")).thenReturn(empresa);
+
+        mockMvc.perform(get("/whatsapp/sessao_recanto_01/iniciar"))
                 .andExpect(status().isMethodNotAllowed());
         verifyNoInteractions(servicoWppConnect);
     }
@@ -415,20 +550,6 @@ class ControllerWhatsappTest {
         mockMvc.perform(get("/whatsapp/sessao_recanto_01/status"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.status").value("DISCONNECTED"));
-        verifyNoInteractions(servicoWppConnect);
-    }
-
-    @Test
-    @DisplayName("GET /whatsapp/{sessao}/status devolve 404 quando a empresa não existe")
-    void deveRetornar404QuandoEmpresaNaoExiste() throws Exception {
-        when(empresaRepository.findBySessaoWhatsapp("inexistente")).thenReturn(null);
-
-        mockMvc.perform(get("/whatsapp/inexistente/status")
-                        .header("x-cliente-token", "token-painel"))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.sessao").value("inexistente"))
-                .andExpect(jsonPath("$.status").value("DISCONNECTED"));
-
         verifyNoInteractions(servicoWppConnect);
     }
 }

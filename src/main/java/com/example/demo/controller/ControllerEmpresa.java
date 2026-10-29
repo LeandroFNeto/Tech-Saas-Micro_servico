@@ -11,10 +11,9 @@ import com.example.demo.dto.empresa.ResetSenhaAdminDTO;
 import com.example.demo.dto.previsao.PrevisaoTempoResponseDTO;
 import com.example.demo.model.Empresa;
 import com.example.demo.model.ModuloEmpresa;
-import com.example.demo.model.Role;
-import com.example.demo.model.Usuario;
 import com.example.demo.repository.EmpresaRepository;
 import com.example.demo.servico.CatalogoModulos;
+import com.example.demo.servico.ServicoAcessoEmpresa;
 import com.example.demo.servico.ServicoAuth;
 import com.example.demo.servico.previsao.ProvedorIndisponivelException;
 import com.example.demo.servico.previsao.ProvedorPrevisao;
@@ -48,6 +47,7 @@ public class ControllerEmpresa {
     @Autowired private EmpresaRepository empresaRepository;
     @Autowired private ServicoAuth servicoAuth;
     @Autowired private ServicoPrevisaoTempo servicoPrevisaoTempo;
+    @Autowired private ServicoAcessoEmpresa servicoAcessoEmpresa;
     @Value("${admin.api.key}") private String adminApiKey;
 
     private boolean possuiPapel(String papel) {
@@ -65,13 +65,6 @@ public class ControllerEmpresa {
             return false;
         }
         return token == null || !token.equals(adminApiKey);
-    }
-
-    private boolean isClienteSemToken(String token) {
-        if (possuiPapel("ROLE_CLIENTE") || possuiPapel("ROLE_ADMIN")) {
-            return false;
-        }
-        return token == null || token.isBlank();
     }
 
     @GetMapping
@@ -100,31 +93,17 @@ public class ControllerEmpresa {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Empresa encontrada"),
             @ApiResponse(responseCode = "401", description = "Token administrativo ou de cliente inválido"),
-            @ApiResponse(responseCode = "403", description = "Cliente de outra empresa, token legado ou sessão inexistente para quem não é admin"),
+            @ApiResponse(responseCode = "403", description = "Cliente de outra empresa ou sessão inexistente para quem não é admin"),
             @ApiResponse(responseCode = "404", description = "Empresa não encontrada para a sessão informada (admin)")
     })
     public ResponseEntity<EmpresaPainelDTO> buscarPorSessao(
             @Parameter(description = "Token administrativo do SaaS", example = "sua-chave-admin")
             @RequestHeader(value = "x-admin-token", required = false) String adminToken,
-            @Parameter(description = "Token do painel do cliente")
-            @RequestHeader(value = "x-cliente-token", required = false) String clienteToken,
             @RequestParam String sessaoWhatsapp) {
 
-        if (isAcessoNegado(adminToken) && isClienteSemToken(clienteToken)) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token Inválido");
-        }
-
-        boolean admin = !isAcessoNegado(adminToken);
-        Empresa empresa = empresaRepository.buscarPorSessaoComModulos(sessaoWhatsapp);
-        if (empresa == null) {
-            if (admin) {
-                return ResponseEntity.notFound().build();
-            }
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acesso negado a esta empresa");
-        }
-        if (!admin && !isClienteDaEmpresa(empresa)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acesso negado a esta empresa");
-        }
+        Authentication autenticacao = SecurityContextHolder.getContext().getAuthentication();
+        Empresa empresa = servicoAcessoEmpresa.validarAcessoSessao(autenticacao, adminToken, sessaoWhatsapp);
+        boolean admin = servicoAcessoEmpresa.isAdmin(autenticacao, adminToken);
         return ResponseEntity.ok(paraPainel(empresa, admin));
     }
 
@@ -188,29 +167,18 @@ public class ControllerEmpresa {
             @ApiResponse(responseCode = "200", description = "Perfil do cliente atualizado",
                     content = @Content(schema = @Schema(implementation = EmpresaResponseDTO.class))),
             @ApiResponse(responseCode = "400", description = "Cidade não encontrada ou tentativa de alterar a reserva automática, liberada só pelo administrador"),
-            @ApiResponse(responseCode = "403", description = "Cliente de outra empresa, token legado ou sessão inexistente para quem não é admin"),
+            @ApiResponse(responseCode = "403", description = "Cliente de outra empresa ou sessão inexistente para quem não é admin"),
             @ApiResponse(responseCode = "404", description = "Empresa não encontrada para a sessão informada (admin)"),
             @ApiResponse(responseCode = "429", description = "Limite de 5 trocas de cidade por dia atingido"),
             @ApiResponse(responseCode = "503", description = "Provedor de previsão indisponível")
     })
     public ResponseEntity<EmpresaResponseDTO> atualizarPeloCliente(
-            @Parameter(description = "Token do painel do cliente")
-            @RequestHeader(value = "x-cliente-token", required = false) String token,
             @Parameter(description = "Identificador da sessão WhatsApp da empresa", example = "sessao_recanto_01")
             @PathVariable String sessao,
             @Valid @RequestBody EmpresaUpdateDTO dto) {
 
-        boolean admin = possuiPapel("ROLE_ADMIN");
-        Empresa empresa = empresaRepository.buscarPorSessaoComModulos(sessao);
-        if (empresa == null) {
-            if (admin) {
-                return ResponseEntity.notFound().build();
-            }
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acesso negado a esta empresa");
-        }
-        if (!admin && !isClienteDaEmpresa(empresa)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acesso negado a esta empresa");
-        }
+        Authentication autenticacao = SecurityContextHolder.getContext().getAuthentication();
+        Empresa empresa = servicoAcessoEmpresa.validarAcessoSessao(autenticacao, null, sessao);
 
         if (dto.permiteReservaAutomatica() != null
                 && !dto.permiteReservaAutomatica().equals(Boolean.TRUE.equals(empresa.getPermiteReservaAutomatica()))) {
@@ -276,34 +244,17 @@ public class ControllerEmpresa {
             @ApiResponse(responseCode = "200", description = "Previsão, ou disponivel=false",
                     content = @Content(schema = @Schema(implementation = PrevisaoTempoResponseDTO.class))),
             @ApiResponse(responseCode = "401", description = "Sem token"),
-            @ApiResponse(responseCode = "403", description = "Cliente de outra empresa, token legado ou sessão inexistente para quem não é admin"),
+            @ApiResponse(responseCode = "403", description = "Cliente de outra empresa ou sessão inexistente para quem não é admin"),
             @ApiResponse(responseCode = "404", description = "Empresa não encontrada para a sessão informada (admin)")
     })
     public ResponseEntity<PrevisaoTempoResponseDTO> buscarPrevisao(
             @Parameter(description = "Token administrativo do SaaS", example = "sua-chave-admin")
             @RequestHeader(value = "x-admin-token", required = false) String adminToken,
-            @Parameter(description = "Token do painel do cliente")
-            @RequestHeader(value = "x-cliente-token", required = false) String clienteToken,
             @Parameter(description = "Identificador da sessão WhatsApp da empresa", example = "sessao_recanto_01")
             @PathVariable String sessao) {
 
-        boolean admin = !isAcessoNegado(adminToken);
-        if (!admin && isClienteSemToken(clienteToken)) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token Inválido");
-        }
-
-        Empresa empresa = empresaRepository.findBySessaoWhatsapp(sessao);
-        if (empresa == null) {
-            if (admin) {
-                return ResponseEntity.notFound().build();
-            }
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acesso negado a esta empresa");
-        }
-
-        if (!admin && !isClienteDaEmpresa(empresa)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acesso negado a esta empresa");
-        }
-
+        Authentication autenticacao = SecurityContextHolder.getContext().getAuthentication();
+        Empresa empresa = servicoAcessoEmpresa.validarAcessoSessao(autenticacao, adminToken, sessao);
         return ResponseEntity.ok(servicoPrevisaoTempo.consultar(empresa));
     }
 
@@ -387,17 +338,6 @@ public class ControllerEmpresa {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "Cadastre a agenda do Google antes de ligar a reserva automática.");
         }
-    }
-
-    private boolean isClienteDaEmpresa(Empresa empresa) {
-        Authentication autenticacao = SecurityContextHolder.getContext().getAuthentication();
-        if (autenticacao == null || !(autenticacao.getPrincipal() instanceof Usuario usuario)) {
-            return false;
-        }
-        return usuario.getRole() == Role.CLIENTE
-                && usuario.getEmpresa() != null
-                && empresa.getId() != null
-                && empresa.getId().equals(usuario.getEmpresa().getId());
     }
 
     private ProvedorPrevisao.Localizacao geocodificarCidade(Empresa empresa, String cidade) {

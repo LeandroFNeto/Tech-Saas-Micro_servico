@@ -1,0 +1,43 @@
+put:
+  tags:
+  - Gerenciamento de Reservas
+  summary: Vincular contato a uma reserva
+  description: Vincula um contato existente ou cria e vincula um novo contato à reserva. A situação passa a AGUARDANDO_LEMBRETE.
+  operationId: vincularContatoReserva
+  parameters:
+  - name: sessao
+    in: path
+    description: Identificador da sessão WhatsApp da empresa
+    required: true
+    schema:
+      type: string
+    example: sessao_recanto_01
+  - name: id
+    in: path
+    description: Identificador da reserva
+    required: true
+    schema:
+      type: integer
+      format: int64
+    example: 1
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: "#/components/schemas/VincularContatoDTO"
+  responses:
+    "200":
+      description: Contato vinculado com sucesso à reserva
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ReservaResumoDTO"
+    "400":
+      description: Dados inválidos (telefone inválido ou nenhum parâmetro informado)
+    "401":
+      description: Sem token de autenticação
+    "403":
+      description: Acesso negado (admin ou cliente de outra empresa)
+    "404":
+      description: Empresa, reserva ou contato não encontrado

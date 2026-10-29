@@ -71,6 +71,8 @@ properties:
     description: Interruptor "Mostrar previsão do tempo"
     default: false
     example: false
+  lembreteConfirmacao:
+    $ref: ./LembreteConfirmacaoDTO.yaml
   atualizadoEm:
     type: string
     format: date-time

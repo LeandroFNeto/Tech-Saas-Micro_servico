@@ -2,6 +2,7 @@
   "shell": {
     "menuCliente": {
       "painel": "Painel",
+      "automacao": "Automação",
       "chatbot": "Configuração do chatbot"
     },
     "sair": "Sair"

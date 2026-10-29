@@ -5,12 +5,6 @@ put:
   description: "Aplica EmpresaUpdateDTO: textos, links, aparência, cidade da previsão e interruptor da previsão. Não altera cobrança nem infraestrutura."
   operationId: atualizarPeloCliente
   parameters:
-  - name: x-cliente-token
-    in: header
-    description: Token do painel do cliente
-    required: false
-    schema:
-      type: string
   - name: sessao
     in: path
     description: Identificador da sessão WhatsApp da empresa
@@ -34,7 +28,7 @@ put:
     "400":
       description: Cidade não encontrada. Confira o nome da cidade. Também responde 400 com "A reserva automática é liberada pelo administrador." quando permiteReservaAutomatica vem com valor diferente do atual; nada é gravado.
     "403":
-      description: Só o admin ou o cliente da própria empresa. Cliente de outra empresa, token legado x-cliente-token e sessão inexistente (para quem não é admin) recebem 403 antes de qualquer escrita ou consumo de cota.
+      description: Só o admin ou o cliente da própria empresa. Cliente de outra empresa e sessão inexistente (para quem não é admin) recebem 403 antes de qualquer escrita ou consumo de cota.
     "429":
       description: Muitas alterações de cidade hoje. Tente amanhã. (limite de 5 trocas por empresa por dia)
     "503":

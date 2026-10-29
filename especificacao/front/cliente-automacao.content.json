@@ -1,0 +1,109 @@
+{
+  "clienteAutomacao": {
+    "cabecalho": {
+      "titulo": "Automação",
+      "descricao": "Lembretes de confirmação, reservas lidas da agenda e contatos da sua empresa."
+    },
+    "abas": {
+      "lembrete": "Lembrete",
+      "reservas": "Reservas",
+      "contatos": "Contatos"
+    },
+    "lembrete": {
+      "titulo": "Lembrete de confirmação",
+      "descricao": "Envie mensagens automáticas ou sugeridas para confirmar reservas futuras com seus clientes.",
+      "modo": {
+        "rotulo": "Modo de envio",
+        "desligado": "Desligado",
+        "sugerido": "Sugerido (aviso na tela para você enviar com 1 clique)",
+        "automatico": "Automático (sistema envia sozinho no horário configurado)"
+      },
+      "diasAntes": {
+        "rotulo": "Antecedência de envio",
+        "umDia": "1 dia antes",
+        "doisDias": "2 dias antes",
+        "tresDias": "3 dias antes"
+      },
+      "horarioEnvio": {
+        "rotulo": "Horário de envio (horário de Brasília)",
+        "placeholder": "10:00"
+      },
+      "texto": {
+        "rotulo": "Texto do lembrete",
+        "placeholder": "Olá, {nome}! Tudo bem? Gostaria de confirmar sua reserva para {data} às {horario}. Podemos confirmar?",
+        "dica": "Você pode usar as variáveis {nome}, {data} e {horario} no texto. Máximo de 1000 caracteres."
+      },
+      "botoes": {
+        "salvar": "Salvar configurações",
+        "salvando": "Salvando...",
+        "sucesso": "Configuração do lembrete salva com sucesso.",
+        "erro": "Não foi possível salvar a configuração do lembrete."
+      }
+    },
+    "reservas": {
+      "titulo": "Reservas e confirmações",
+      "descricao": "Acompanhe as reservas dos próximos 30 dias sincronizadas com a sua agenda e o status dos lembretes.",
+      "tabela": {
+        "colunas": {
+          "data": "Data",
+          "horario": "Horário",
+          "cliente": "Cliente / Título",
+          "telefone": "Telefone",
+          "situacao": "Situação",
+          "acoes": "Ações"
+        },
+        "vazio": "Nenhuma reserva encontrada para os próximos 30 dias.",
+        "carregando": "Carregando reservas...",
+        "erro": "Agenda indisponível no momento. Mostrando dados locais salvos."
+      },
+      "situacoes": {
+        "SEM_CONTATO": "Sem contato",
+        "AGUARDANDO_LEMBRETE": "Aguardando lembrete",
+        "PRONTA_PARA_AVISAR": "Pronta para avisar",
+        "ENVIANDO": "Enviando...",
+        "LEMBRETE_ENVIADO": "Lembrete enviado",
+        "SEM_RESPOSTA": "Sem resposta (risco alto)",
+        "CONFIRMADA_PELO_CLIENTE": "Confirmada pelo cliente",
+        "CANCELAMENTO_SOLICITADO": "Pediu para remarcar/cancelar",
+        "CANCELADA_NA_AGENDA": "Cancelada na agenda",
+        "ENCERRADA": "Encerrada",
+        "FALHA_ENVIO": "Falha no envio",
+        "FALHA_AGENDA": "Precisa de atenção (falha na agenda)"
+      },
+      "acoes": {
+        "avisar": "Avisar agora",
+        "avisando": "Enviando...",
+        "ligarContato": "Ligar contato"
+      },
+      "modalContato": {
+        "titulo": "Vincular contato à reserva",
+        "descricao": "Escolha um contato existente ou informe o número do WhatsApp.",
+        "escolherExistente": "Selecionar contato existente",
+        "novoTelefone": "Ou digite o WhatsApp (DDD + número)",
+        "salvar": "Vincular",
+        "cancelar": "Cancelar"
+      }
+    },
+    "contatos": {
+      "titulo": "Contatos da empresa",
+      "descricao": "Pessoas que conversaram com o bot ou foram vinculadas a reservas. Dados protegidos por criptografia.",
+      "tabela": {
+        "colunas": {
+          "nome": "Nome",
+          "telefone": "Telefone",
+          "primeiraConversa": "Primeira conversa",
+          "ultimaConversa": "Última conversa",
+          "origem": "Origem",
+          "acoes": "Ações"
+        },
+        "vazio": "Nenhum contato registrado ainda.",
+        "carregando": "Carregando contatos..."
+      },
+      "acoes": {
+        "verNumero": "Ver número",
+        "revelando": "Carregando..."
+      },
+      "avisoLimite": "Limite de 10 consultas por hora atingido."
+    }
+  }
+}

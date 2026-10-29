@@ -20,14 +20,15 @@ A reserva do dono já está na agenda dele. O sistema pode ler essa agenda, suge
   - Em qualquer modo ligado, o dono também pode enviar "agora" para uma reserva futura com contato.
 - Configuração do lembrete: modo, antecedência em dias (1, 2 ou 3; padrão 1), horário (HH:MM, fuso `America/Sao_Paulo`; padrão 10:00) e texto editável (até 1000 caracteres, com `{nome}`, `{data}` e `{horario}`; texto padrão quando vazio).
 - **Resposta em linguagem natural.** O cliente final responde com suas palavras ("pode ser", "confirmo", "preciso mudar a data", "não vou poder"), sem número obrigatório. O sistema entende confirmação, pedido de remarcar ou cancelar e pedido para parar de receber avisos. O que não entende segue o atendimento normal e não muda nada. A resposta só vale quando o cliente não está no meio de outra conversa. O entendimento fica atrás de uma interface, para trocar por IA mais tarde sem mexer no resto.
-- **Tela "Reservas" do cliente**, com a tabela do dia (hoje, amanhã e próximos 30 dias) e a situação de cada reserva:
+- **Tela própria "Automação" do cliente** (rota `/cliente/automacao`), com três abas: "Lembrete" (a configuração), "Reservas" e "Contatos". O lembrete não entra na configuração do chatbot. A aba Reservas traz a tabela do dia (hoje, amanhã e próximos 30 dias) e a situação de cada reserva:
   - confirmada pelo cliente;
   - lembrete enviado, aguardando;
   - **sem resposta: risco alto de perda**, em destaque;
   - pediu para remarcar ou cancelar;
   - falha no envio ou na agenda, que precisa de atenção;
   - sem contato (com a ação "ligar contato").
-- Tela "Contatos" com a lista de interessados da empresa.
+- Aba "Contatos" com a lista de interessados da empresa.
+- **Entradas para a tela de Automação**: um botão "Automação" no painel inicial do cliente (`/cliente`, criado em `exibir-previsao-tempo-reservas`) e um item "Automação" no menu lateral.
 - **Proteção dos dados dos contatos:**
   - número e nome gravados criptografados;
   - telefone sempre mascarado na tela e na API;
@@ -38,9 +39,10 @@ A reserva do dono já está na agenda dele. O sistema pode ler essa agenda, suge
 
 ### Altera
 
-- `EMP-02`: `EmpresaUpdateDTO` e `EmpresaResponseDTO` ganham o bloco de lembrete.
+- `EMP-02`: `EmpresaUpdateDTO` e `EmpresaResponseDTO` ganham o bloco de lembrete. A regra vigente da reserva automática não muda: `permiteReservaAutomatica` nasce `false`, só o admin altera, ligar exige `googleCalendarId`, e o PUT do cliente rejeita mudança desse campo com 400. O bloco de lembrete é independente dela: o cliente configura o lembrete sem mexer na reserva automática, e o PUT que traz o lembrete não toca nesse campo.
+- Navegação do cliente: o painel inicial ganha o botão "Automação" e o menu lateral ganha o item "Automação". A configuração do chatbot (`/cliente/chatbot`) não muda.
 - Webhook do WhatsApp: antes de chamar o módulo da empresa, registra o contato e trata a resposta do lembrete.
-- Fluxo de locação: o `ObservadorGoogleAgenda` (change `corrigir-reserva-automatica`) grava a `Reserva` do bot quando o Google responde, com sucesso ou falha.
+- Fluxo de locação: o `ObservadorGoogleAgenda`, que já registra no Google com o resultado real (AGD-02), passa a também gravar a `Reserva` do bot quando o resultado é sucesso ou falha. Data ocupada não grava reserva.
 - `ServicoMensagem` ganha um envio que informa se deu certo, para o lembrete não marcar "enviado" quando o WhatsApp está fora.
 
 ### Sai
@@ -49,18 +51,24 @@ Nada.
 
 ## Fora de escopo
 
-- Reserva automática funcionando de verdade (evento no Google, tratamento de erro, conflito de data): change `corrigir-reserva-automatica`, pré-requisito desta. Quem escolhe a reserva manual não depende dela.
+- Reserva automática funcionando de verdade (evento no Google, tratamento de erro, conflito de data): já entregue pela change `corrigir-reserva-automatica` (AGD-02 e WPP-07 nos specs). Esta change só acrescenta a gravação da `Reserva` em cima do resultado que o observador já produz. Quem escolhe a reserva manual não depende disso.
+- Reserva por hora: a change `reserva-por-hora` ainda não existe como código. Hoje a empresa com locação por hora atende como reserva manual, e o lembrete só alcança a reserva por hora que vier da agenda do dono (evento com hora) ou depois que `reserva-por-hora` entregar. O lembrete usa só a data.
 - Apagar ou mover o evento no Google Agenda quando o cliente pede para remarcar. O dono decide e faz.
 - Conversa com IA sobre o lembrete (explicar, negociar nova data). A interface de entendimento da resposta deixa o gancho.
 - Lembrete por e-mail ou SMS.
 - Campanhas ou mensagens de marketing para os contatos. Esta change só avisa sobre reserva que já existe.
-- Máscara de número e texto nos logs que o sistema já imprime: change `proteger-dados-nos-logs`, que vem antes. Os logs novos desta change usam a mesma máscara e não registram esses dados.
-- Aviso de chuva com pergunta "quer remarcar?" para o cliente que reservou. Fica para a change `avisar-risco-chuva-reserva`, que reaproveita o envio e a interpretação de resposta desta, junto com `exibir-previsao-tempo-reservas`.
+- Máscara de número e texto nos logs que o sistema já imprime: já entregue por `proteger-dados-nos-logs` (WPP-06, `MascaraLog`). Os logs novos desta change usam a mesma máscara e não registram esses dados.
+- Aviso de chuva com pergunta "quer remarcar?" para o cliente que reservou. Fica para a change `avisar-risco-chuva-reserva`, que reaproveita o envio e a interpretação de resposta desta, junto com a previsão já entregue (`exibir-previsao-tempo-reservas`, EMP-05 e EMP-06).
 
 ## Domínios
 
-- spec: `openspec/specs/agenda/spec.md` (AGD-03 sincronizar a agenda em reservas, AGD-04 enviar lembrete)
-- spec: `openspec/specs/whatsapp/spec.md` (WPP-07 registrar contato, WPP-08 tratar resposta do lembrete)
-- spec: `openspec/specs/empresa/spec.md` (EMP-07 configurar lembrete, EMP-08 listar reservas e ligar contato, EMP-09 listar contatos e ver o número completo)
+- spec: `openspec/specs/agenda/spec.md` (AGD-03 sincronizar a agenda em reservas, AGD-04 enviar lembrete; AGD-01 e AGD-02 já existem)
+- spec: `openspec/specs/whatsapp/spec.md` (WPP-08 registrar contato, WPP-09 tratar resposta do lembrete; WPP-07 já é a confirmação da reserva automática)
+- spec: `openspec/specs/empresa/spec.md` (EMP-07 configurar lembrete, EMP-08 listar reservas e ligar contato, EMP-09 listar contatos e ver o número completo; EMP-01 a EMP-06 já existem)
 
-Vem depois de `proteger-dados-nos-logs`, `corrigir-reserva-automatica` e `exibir-previsao-tempo-reservas`: as quatro mudam `ControllerEmpresa`, os DTOs de empresa, o perfil do cliente, `swagger.yaml` e partes do fluxo de reserva. A tela de reservas pode reaproveitar o selo de risco da previsão.
+Os três pré-requisitos (`proteger-dados-nos-logs`, `corrigir-reserva-automatica` e `exibir-previsao-tempo-reservas`) já estão no ar e arquivados; os IDs acima são os próximos livres em cada `spec.md`. Falta só `remover-x-cliente-token`, que está sendo trabalhada no Antigravity e mexe em `ControllerEmpresa`, `ControllerWhatsapp` e `JwtAuthenticationFilter`: esta change só começa a programação depois que ela entrar, para as duas não editarem os mesmos arquivos, e as rotas novas daqui já exigem o token da própria empresa. A tela de reservas pode reaproveitar o selo de risco da previsão.
+
+## Em aberto para decisão
+
+- Lembrete de reserva por hora: ficar fora até `reserva-por-hora` entregar, ou aceitar já o evento com hora vindo da agenda do dono.
+- Quando a sessão por número virar sessão por empresa e quando o mapa de bloqueios do observador ganha limpeza: antes desta change ou depois, já que esta passa a gravar `Reserva` no mesmo caminho.

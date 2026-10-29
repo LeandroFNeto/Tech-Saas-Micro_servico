@@ -9,6 +9,11 @@
       "descricao": "Mensagem de boas-vindas, fotos, preços, regras do robô e senha de acesso.",
       "botao": "Configuração do chatbot"
     },
+    "automacao": {
+      "titulo": "Automação e Lembretes",
+      "descricao": "Lembretes de confirmação, reservas lidas da agenda e contatos da empresa.",
+      "botao": "Automação"
+    },
     "previsao": {
       "titulo": "Previsão dos próximos dias",
       "dica": "Os dias reservados aparecem destacados, com o risco de desmarcação pela chuva.",

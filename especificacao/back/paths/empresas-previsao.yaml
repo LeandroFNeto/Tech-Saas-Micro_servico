@@ -11,12 +11,6 @@ get:
     required: false
     schema:
       type: string
-  - name: x-cliente-token
-    in: header
-    description: Token do painel do cliente
-    required: false
-    schema:
-      type: string
   - name: sessao
     in: path
     description: Identificador da sessão WhatsApp da empresa
@@ -34,6 +28,6 @@ get:
     "401":
       description: Sem token
     "403":
-      description: Cliente de outra empresa, token legado ou sessão inexistente para quem não é admin (mesma resposta, sem enumerar sessões)
+      description: Cliente de outra empresa ou sessão inexistente para quem não é admin (mesma resposta, sem enumerar sessões)
     "404":
       description: Empresa não encontrada para a sessão informada (só para o admin)

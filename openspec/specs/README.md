@@ -5,7 +5,7 @@ Esta pasta é a fonte da verdade do que o sistema faz. Cada domínio fica numa s
 | Domínio | Spec | Prova principal |
 |---|---|---|
 | Stack e fronteiras | `00-architecture.md` | — |
-| Login e senha | `auth/spec.md` | `src/test/resources/features/auth.feature`, `apresentacao.component.spec.ts` |
+| Login e senha | `auth/spec.md` | `src/test/resources/features/auth.feature`, `apresentacao.component.spec.ts`, `JwtAuthenticationFilterTest`, `whatsapp.feature` |
 | Cadastro e perfil | `empresa/spec.md` | `src/test/resources/features/empresas.feature`, `ControllerEmpresaTest`, `perfil.component.spec.ts`, `empresa-form.component.spec.ts`, `CalculadoraRiscoDesmarcacaoTest`, `ServicoPrevisaoTempoTest`, `painel.component.spec.ts`, `previsao.service.spec.ts`, `ControllerFuncionamentoTest`, `ServicoFuncionamentoTest`, `CalendarioFeriadosTest`, `funcionamento.component.spec.ts` |
 | Webhook, sessão e bot | `whatsapp/spec.md` | `webhook.feature`, `roteamento-strategy.feature`, `LocacaoStrategyTest`, `MascaraLogTest`, `ObservadorwhatsappTest`, `ObservadorGoogleAgendaTest`, `WhatsappWebhookDTORaioXTest`, `ServicoWppConnectLogTest`, `LocacaoStrategyLogTest` |
 | Google Agenda | `agenda/spec.md` | `observer-agenda.feature`, `ServicoReservaAgendarTest`, `ObservadorGoogleAgendaTest`, `ObservadorGoogleAgendaPorHoraTest`, `ServicoGoogleagendaSobreposicaoTest`, `GerenciadorSessaoTest` |

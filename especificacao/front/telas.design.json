@@ -25,14 +25,65 @@
         "800": "#9a4508"
       },
       "risco": {
-        "baixo": { "fundo": "#ecfdf5", "texto": "#065f46", "borda": "#a7f3d0", "forte": "#047857" },
-        "medio": { "fundo": "#fffbeb", "texto": "#92400e", "borda": "#fde68a", "forte": "#b45309" },
-        "alto": { "fundo": "#fef2f2", "texto": "#991b1b", "borda": "#fecaca", "forte": "#b91c1c" }
+        "baixo": {
+          "fundo": "#ecfdf5",
+          "texto": "#065f46",
+          "borda": "#a7f3d0",
+          "forte": "#047857"
+        },
+        "medio": {
+          "fundo": "#fffbeb",
+          "texto": "#92400e",
+          "borda": "#fde68a",
+          "forte": "#b45309"
+        },
+        "alto": {
+          "fundo": "#fef2f2",
+          "texto": "#991b1b",
+          "borda": "#fecaca",
+          "forte": "#b91c1c"
+        }
+      },
+      "situacaoReserva": {
+        "confirmada": {
+          "fundo": "#ecfdf5",
+          "texto": "#065f46",
+          "borda": "#a7f3d0"
+        },
+        "aguardando": {
+          "fundo": "#eff6ff",
+          "texto": "#1e40af",
+          "borda": "#bfdbfe"
+        },
+        "semRespostaRiscoAlto": {
+          "fundo": "#fef2f2",
+          "texto": "#991b1b",
+          "borda": "#fecaca"
+        },
+        "remarcar": {
+          "fundo": "#fffbeb",
+          "texto": "#92400e",
+          "borda": "#fde68a"
+        },
+        "precisaAtencao": {
+          "fundo": "#fff1f2",
+          "texto": "#be123c",
+          "borda": "#fecdd3"
+        }
       }
     },
     "fontes": {
-      "sans": ["Inter", "ui-sans-serif", "system-ui", "sans-serif"],
-      "display": ["Cinzel", "Georgia", "serif"]
+      "sans": [
+        "Inter",
+        "ui-sans-serif",
+        "system-ui",
+        "sans-serif"
+      ],
+      "display": [
+        "Cinzel",
+        "Georgia",
+        "serif"
+      ]
     },
     "componentes": {
       "campo": "block",

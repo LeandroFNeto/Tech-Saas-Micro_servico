@@ -84,16 +84,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     null,
                     List.of(new SimpleGrantedAuthority("ROLE_ADMIN")));
             SecurityContextHolder.getContext().setAuthentication(autenticacao);
-            return;
-        }
-
-        String clienteToken = request.getHeader("x-cliente-token");
-        if (clienteToken != null && !clienteToken.isBlank()) {
-            var autenticacao = new UsernamePasswordAuthenticationToken(
-                    "cliente-token",
-                    null,
-                    List.of(new SimpleGrantedAuthority("ROLE_CLIENTE")));
-            SecurityContextHolder.getContext().setAuthentication(autenticacao);
         }
     }
 }

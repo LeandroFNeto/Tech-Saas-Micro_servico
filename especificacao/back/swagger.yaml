@@ -26,6 +26,16 @@ paths:
     $ref: ./paths/empresas-dias-especiais.yaml
   /empresas/{sessao}/dias-especiais/{id}:
     $ref: ./paths/empresas-dias-especiais-id.yaml
+  /empresas/{sessao}/reservas:
+    $ref: ./paths/empresas-reservas.yaml
+  /empresas/{sessao}/reservas/{id}/lembrete:
+    $ref: ./paths/empresas-reservas-lembrete.yaml
+  /empresas/{sessao}/reservas/{id}/contato:
+    $ref: ./paths/empresas-reservas-contato.yaml
+  /empresas/{sessao}/contatos:
+    $ref: ./paths/empresas-contatos.yaml
+  /empresas/{sessao}/contatos/{id}/numero:
+    $ref: ./paths/empresas-contatos-numero.yaml
   /empresas/search/findBySessaoWhatsapp:
     $ref: ./paths/empresas-search.yaml
   /profile:
@@ -75,6 +85,16 @@ components:
       $ref: ./schemas/empresa/ResetSenhaAdminDTO.yaml
     EmpresaResponseDTO:
       $ref: ./schemas/empresa/EmpresaResponseDTO.yaml
+    LembreteConfirmacaoDTO:
+      $ref: ./schemas/empresa/LembreteConfirmacaoDTO.yaml
+    ReservaResumoDTO:
+      $ref: ./schemas/reserva/ReservaResumoDTO.yaml
+    VincularContatoDTO:
+      $ref: ./schemas/reserva/VincularContatoDTO.yaml
+    ContatoResumoDTO:
+      $ref: ./schemas/contato/ContatoResumoDTO.yaml
+    NumeroContatoDTO:
+      $ref: ./schemas/contato/NumeroContatoDTO.yaml
     ModuloMenuDTO:
       $ref: ./schemas/empresa/ModuloMenuDTO.yaml
     HorarioFuncionamentoDTO:
