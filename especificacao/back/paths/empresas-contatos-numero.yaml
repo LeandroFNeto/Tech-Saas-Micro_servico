@@ -1,0 +1,37 @@
+post:
+  tags:
+  - Gerenciamento de Contatos
+  summary: Visualizar número completo de um contato
+  description: Retorna o número completo descriptografado do contato. Limite de 10 consultas por hora por empresa. Cada acesso gera um registro de auditoria. Apenas o cliente da própria empresa pode acessar.
+  operationId: obterNumeroCompletoContato
+  parameters:
+  - name: sessao
+    in: path
+    description: Identificador da sessão WhatsApp da empresa
+    required: true
+    schema:
+      type: string
+    example: sessao_recanto_01
+  - name: id
+    in: path
+    description: Identificador do contato
+    required: true
+    schema:
+      type: integer
+      format: int64
+    example: 1
+  responses:
+    "200":
+      description: Número completo do contato retornado com sucesso
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/NumeroContatoDTO"
+    "401":
+      description: Sem token de autenticação
+    "403":
+      description: Acesso negado (admin ou cliente de outra empresa)
+    "404":
+      description: Empresa ou contato não encontrado
+    "429":
+      description: Limite de visualização de números excedido (máximo 10 por hora)

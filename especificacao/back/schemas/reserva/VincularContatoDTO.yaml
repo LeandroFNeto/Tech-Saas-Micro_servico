@@ -1,0 +1,14 @@
+type: object
+description: Dados para vincular um contato existente ou novo a uma reserva.
+properties:
+  contatoId:
+    type: integer
+    format: int64
+    nullable: true
+    description: ID de um contato já existente
+    example: 10
+  telefone:
+    type: string
+    nullable: true
+    description: Número de telefone brasileiro para criar e vincular novo contato
+    example: "11987654321"

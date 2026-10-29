@@ -264,22 +264,22 @@ Funcionalidade: Contratos de empresa do SaaS
     E eu envio GET /empresas/sessao_prev_alvo/previsao com o JWT do login
     Então o status HTTP deve ser 403
 
-  Cenário: GET /empresas/{sessao}/previsao com o token legado de cliente retorna 403
+  Cenário: GET /empresas/{sessao}/previsao com o token legado de cliente retorna 401
     Dado uma empresa persistida com sessão "sessao_prev_legado" e ramo "LOCACAO"
     Quando eu envio GET /empresas/sessao_prev_legado/previsao com o token legado de cliente
-    Então o status HTTP deve ser 403
+    Então o status HTTP deve ser 401
 
   Cenário: GET /empresas/{sessao}/previsao de sessão inexistente retorna 404
     Dado o token administrativo "sua-chave-admin"
     Quando eu envio GET /empresas/sessao_prev_ausente/previsao com o token administrativo
     Então o status HTTP deve ser 404
 
-  Cenário: PUT /empresas/{sessao}/cliente com o token legado retorna 403 sem consultar o provedor
+  Cenário: PUT /empresas/{sessao}/cliente com o token legado retorna 401 sem consultar o provedor
     Dado uma empresa persistida com sessão "sessao_put_legado" e ramo "LOCACAO"
     E o provedor de previsão reconhece qualquer cidade
     E o provedor de previsão ainda não foi consultado
     Quando eu envio PUT /empresas/sessao_put_legado/cliente com a cidade "Atibaia" e o token legado de cliente
-    Então o status HTTP deve ser 403
+    Então o status HTTP deve ser 401
     E o provedor de previsão não deve ter sido consultado
     E a empresa "sessao_put_legado" não deve ter cidade de previsão gravada
 

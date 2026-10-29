@@ -1,0 +1,73 @@
+type: object
+description: Resumo da reserva para exibição na aba Reservas do cliente.
+properties:
+  id:
+    type: integer
+    format: int64
+    description: Identificador único da reserva
+    example: 1
+  data:
+    type: string
+    format: date
+    description: Data da reserva (YYYY-MM-DD)
+    example: "2026-11-15"
+  horario:
+    type: string
+    description: Horário da reserva ou 'Diária Completa'
+    example: "Diária Completa"
+  titulo:
+    type: string
+    description: Título da reserva ou evento
+    example: "Reserva - João Silva"
+  nomeCliente:
+    type: string
+    nullable: true
+    description: Nome do cliente associado à reserva
+    example: "João Silva"
+  situacao:
+    type: string
+    description: Situação da reserva e do lembrete
+    enum:
+      - SEM_CONTATO
+      - AGUARDANDO_LEMBRETE
+      - PRONTA_PARA_AVISAR
+      - ENVIANDO
+      - LEMBRETE_ENVIADO
+      - SEM_RESPOSTA
+      - CONFIRMADA_PELO_CLIENTE
+      - CANCELAMENTO_SOLICITADO
+      - CANCELADA_NA_AGENDA
+      - ENCERRADA
+      - FALHA_ENVIO
+      - FALHA_AGENDA
+    example: AGUARDANDO_LEMBRETE
+  riscoPerda:
+    type: boolean
+    description: Indica se a reserva está em risco alto de perda (situação SEM_RESPOSTA)
+    example: false
+  precisaAtencao:
+    type: boolean
+    description: Indica se a reserva requer atenção imediata (falhas ou pendências)
+    example: false
+  origem:
+    type: string
+    description: Origem da reserva (AGENDA ou BOT)
+    enum:
+      - AGENDA
+      - BOT
+    example: AGENDA
+  contatoId:
+    type: integer
+    format: int64
+    nullable: true
+    description: Identificador do contato vinculado
+    example: 10
+  telefoneMascarado:
+    type: string
+    nullable: true
+    description: Telefone mascarado para exibição segura
+    example: "(11) *****-1234"
+  podeAvisar:
+    type: boolean
+    description: Se o lembrete pode ser enviado manualmente agora
+    example: true

@@ -1,0 +1,7 @@
+type: object
+description: Número completo do contato descriptografado, retornado mediante auditoria.
+properties:
+  numero:
+    type: string
+    description: Número completo do WhatsApp/telefone
+    example: "5511987654321"

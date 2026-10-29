@@ -1,0 +1,29 @@
+get:
+  tags:
+  - Gerenciamento de Contatos
+  summary: Listar contatos da empresa
+  description: Lista os contatos da empresa com telefone sempre mascarado. Apenas o cliente da própria empresa pode acessar.
+  operationId: listarContatos
+  parameters:
+  - name: sessao
+    in: path
+    description: Identificador da sessão WhatsApp da empresa
+    required: true
+    schema:
+      type: string
+    example: sessao_recanto_01
+  responses:
+    "200":
+      description: Lista de contatos retornada com sucesso
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/ContatoResumoDTO"
+    "401":
+      description: Sem token de autenticação
+    "403":
+      description: Acesso negado (admin ou cliente de outra empresa)
+    "404":
+      description: Empresa não encontrada para a sessão informada

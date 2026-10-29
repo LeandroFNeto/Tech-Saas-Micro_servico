@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>gamb · Automação do cliente</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#f6f0fb;font-family:Inter,ui-sans-serif,system-ui,sans-serif;color:#1A0B2E;-webkit-font-smoothing:antialiased}
+a{color:#4e2473}a:hover{color:#2E1A47}
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid #FF8C42;outline-offset:2px}
+h1,h2,h3,h4,p,ul,ol,dl,dd{margin:0}ul,ol{padding:0;list-style:none}
+.app{display:flex;flex-direction:column;min-height:100vh}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#1A0B2E;padding:8px 16px;color:#fff}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:#fff}
+.brand img{width:40px;height:40px;object-fit:contain}
+.brand b{display:block;font-family:Cinzel,Georgia,serif;font-size:16px;line-height:20px;font-weight:600;text-transform:uppercase;letter-spacing:.18em;color:#e2a775;background:linear-gradient(90deg,#bc8561,#f48c52 55%,#e2b57f);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.brand small{display:block;font-size:12px;line-height:16px;color:#d4bce8}
+.sair{display:inline-flex;align-items:center;min-height:44px;padding:0 14px;border-radius:12px;border:1px solid rgba(255,255,255,.3);font-size:14px;font-weight:600;color:#fff;text-decoration:none;box-sizing:border-box}
+.side{display:none}
+.main{flex:1;min-width:0;padding:20px 16px 32px}
+.snav{display:flex;flex-direction:column;gap:4px}
+.snav a{display:flex;align-items:center;gap:10px;min-height:44px;padding:0 12px;border-radius:12px;font-size:14px;font-weight:500;color:#ebe0f5;text-decoration:none}
+.snav a.on{background:rgba(247,147,30,.2);color:#ffab70}
+.suser{margin-top:auto;padding-top:16px;border-top:1px solid rgba(255,255,255,.12)}
+.suser p{margin-bottom:10px;font-size:13px;line-height:18px;color:#d4bce8;word-break:break-all}
+.ph{margin-bottom:20px}
+.ph h1{font-size:clamp(22px,4vw,28px);line-height:1.2;font-weight:700}
+.ph p{margin-top:4px;font-size:14px;line-height:20px;color:#652d90}
+.tab-nav{display:flex;gap:8px;border-bottom:1px solid #d4bce8;margin-bottom:24px}
+.tab-btn{background:none;border:none;border-bottom:3px solid transparent;padding:10px 16px;font-size:15px;font-weight:600;color:#652d90;cursor:pointer}
+.tab-btn.on{border-color:#F7931E;color:#9a4508}
+.card{display:flex;flex-direction:column;gap:16px;border-radius:20px;border:1px solid #ebe0f5;background:#fff;padding:20px;box-shadow:0 1px 2px rgba(46,26,71,.05);box-sizing:border-box}
+.sec{font-size:17px;line-height:24px;font-weight:700}
+.sub{margin-top:4px;font-size:14px;line-height:20px;color:#652d90}
+.stack{display:flex;flex-direction:column;gap:16px}
+.in{box-sizing:border-box;width:100%;min-height:48px;border-radius:12px;border:1px solid #d4bce8;background:#fff;padding:0 14px;font:inherit;font-size:16px;color:#1A0B2E}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 20px;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;text-decoration:none;border:none}
+.btn-p{background:#F7931E;color:#1A0B2E}.btn-p:hover{background:#FF8C42}
+.btn-s{background:#f6f0fb;color:#4e2473;border:1px solid #d4bce8}
+.table{width:100%;border-collapse:collapse;font-size:14px}
+.table th,.table td{padding:12px 14px;border-bottom:1px solid #ebe0f5;text-align:left}
+.table th{background:#f6f0fb;color:#2E1A47;font-weight:600}
+.badge{display:inline-flex;padding:4px 8px;border-radius:9999px;font-size:12px;font-weight:600;border:1px solid transparent}
+.badge-ok{background:#ecfdf5;color:#065f46;border-color:#a7f3d0}
+.badge-wait{background:#eff6ff;color:#1e40af;border-color:#bfdbfe}
+.badge-danger{background:#fef2f2;color:#991b1b;border-color:#fecaca}
+.badge-warn{background:#fffbeb;color:#92400e;border-color:#fde68a}
+.badge-alert{background:#fff1f2;color:#be123c;border-color:#fecdd3}
+@media(min-width:1024px){
+.app{flex-direction:row}
+.topbar{display:none}
+.side{display:flex;flex-direction:column;gap:24px;flex:none;width:248px;box-sizing:border-box;padding:20px 12px;background:#1A0B2E;color:#fff}
+.main{padding:32px 40px}
+}
+</style>
+</helmet>
+<div class="app">
+<header class="topbar">
+<a class="brand" href="ClientePainel.dc.html"><img src="/_blob/2afaeee994f3399be9d349cc4eb1cf72" alt="Logo gamb"><span><b>gamb</b><small>Painel do Cliente</small></span></a>
+<a class="sair" href="Main.dc.html">Sair</a>
+</header>
+<aside class="side">
+<a class="brand" href="ClientePainel.dc.html"><img src="/_blob/2afaeee994f3399be9d349cc4eb1cf72" alt="Logo gamb"><span><b>gamb</b><small>Painel do Cliente</small></span></a>
+<nav class="snav" aria-label="Principal">
+<a href="ClientePainel.dc.html">Painel</a>
+<a class="on" href="ClienteAutomacao.dc.html" aria-current="page">Automação</a>
+<a href="ClienteChatbot.dc.html">Configuração do chatbot</a>
+</nav>
+<div class="suser"><p>sessao_recanto_01@gamb.com.br</p><a class="sair" href="Main.dc.html">Sair</a></div>
+</aside>
+<main class="main">
+<div class="ph"><h1>Automação</h1><p>Lembretes de confirmação, reservas lidas da agenda e contatos da sua empresa.</p></div>
+<div class="tab-nav">
+<button class="tab-btn on">Lembrete</button>
+<button class="tab-btn">Reservas</button>
+<button class="tab-btn">Contatos</button>
+</div>
+<section class="card">
+<h2 class="sec">Configurações de Lembrete</h2>
+<p class="sub">Envie avisos automáticos ou sugeridos para confirmar reservas futuras.</p>
+</section>
+</main>
+</div>
+</x-dc>
+</body>
+</html>

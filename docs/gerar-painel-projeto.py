@@ -285,11 +285,20 @@ def html_quadro(quadro: dict[str, dict], abertas: list[dict]) -> str:
     return "".join(linhas)
 
 
+def achatar_tons(tons: dict):
+    for tom, valor in tons.items():
+        if isinstance(valor, dict):
+            for sub, hexa in valor.items():
+                yield f"{tom}-{sub}", hexa
+        else:
+            yield tom, valor
+
+
 def html_paleta(cores: dict) -> str:
     blocos = []
     for familia, tons in cores.items():
         amostras = []
-        for tom, hexa in tons.items():
+        for tom, hexa in achatar_tons(tons):
             uso = USO_CORES.get((familia, tom), "")
             amostras.append(
                 f'<li class="amostra"><span class="cor" style="background:{hexa};color:{contraste(hexa)}">{tom}</span>'

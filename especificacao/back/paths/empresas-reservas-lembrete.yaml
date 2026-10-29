@@ -1,0 +1,39 @@
+post:
+  tags:
+  - Gerenciamento de Reservas
+  summary: Enviar lembrete de confirmação de reserva agora
+  description: Envia o lembrete de confirmação imediatamente para o contato da reserva. Apenas o cliente da própria empresa pode executar. Retorna 409 se a reserva não tiver contato, se o contato estiver marcado como naoContatar ou se a reserva já tiver passado. Retorna 502 se o envio pelo WhatsApp falhar.
+  operationId: enviarLembreteReserva
+  parameters:
+  - name: sessao
+    in: path
+    description: Identificador da sessão WhatsApp da empresa
+    required: true
+    schema:
+      type: string
+    example: sessao_recanto_01
+  - name: id
+    in: path
+    description: Identificador da reserva
+    required: true
+    schema:
+      type: integer
+      format: int64
+    example: 1
+  responses:
+    "200":
+      description: Lembrete enviado com sucesso
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ReservaResumoDTO"
+    "401":
+      description: Sem token de autenticação
+    "403":
+      description: Acesso negado (admin ou cliente de outra empresa)
+    "404":
+      description: Empresa ou reserva não encontrada
+    "409":
+      description: Reserva sem contato, contato não deseja mensagens ou reserva em data passada
+    "502":
+      description: Falha no envio da mensagem via WhatsApp

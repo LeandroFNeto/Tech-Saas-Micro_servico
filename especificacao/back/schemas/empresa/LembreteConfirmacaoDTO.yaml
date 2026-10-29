@@ -1,0 +1,31 @@
+type: object
+description: Configuração do lembrete de confirmação de reservas da empresa.
+properties:
+  modo:
+    type: string
+    description: Modo de envio do lembrete (DESLIGADO, SUGERIDO ou AUTOMATICO).
+    enum:
+      - DESLIGADO
+      - SUGERIDO
+      - AUTOMATICO
+    default: DESLIGADO
+    example: DESLIGADO
+  diasAntes:
+    type: integer
+    description: Quantidade de dias de antecedência para enviar o lembrete (1 a 3).
+    minimum: 1
+    maximum: 3
+    default: 1
+    example: 1
+  horarioEnvio:
+    type: string
+    description: Horário de envio no fuso de Brasília (HH:MM).
+    pattern: '^([01]\d|2[0-3]):[0-5]\d$'
+    default: "10:00"
+    example: "10:00"
+  texto:
+    type: string
+    description: Texto do lembrete com variáveis {nome}, {data} e {horario}. Máximo de 1000 caracteres.
+    maxLength: 1000
+    nullable: true
+    example: "Olá, {nome}! Tudo bem? Gostaria de confirmar sua reserva para {data} às {horario}. Podemos confirmar?"

@@ -37,6 +37,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(ControllerEmpresa.class)
 @AutoConfigureMockMvc(addFilters = false)
+@org.springframework.context.annotation.Import(com.example.demo.servico.ServicoAcessoEmpresa.class)
 class ControllerEmpresaTest {
 
     @Autowired private MockMvc mockMvc;
@@ -181,8 +182,7 @@ class ControllerEmpresaTest {
         when(empresaRepository.buscarPorSessaoComModulos("sessao_recanto_01")).thenReturn(empresa);
 
         mockMvc.perform(put("/empresas/sessao_recanto_01/cliente")
-                        .header("x-cliente-token", "token-cliente")
-                        .contentType(MediaType.APPLICATION_JSON)
+                                                .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                             {
                               "nome": "Recanto Vista Alegre",
@@ -209,8 +209,7 @@ class ControllerEmpresaTest {
         when(empresaRepository.save(any(Empresa.class))).thenAnswer(invocacao -> invocacao.getArgument(0));
 
         mockMvc.perform(put("/empresas/sessao_recanto_01/cliente")
-                        .header("x-cliente-token", "token-cliente")
-                        .contentType(MediaType.APPLICATION_JSON)
+                                                .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                             {
                               "nome": "Recanto Vista Alegre",
@@ -236,8 +235,7 @@ class ControllerEmpresaTest {
         when(empresaRepository.save(any(Empresa.class))).thenAnswer(invocacao -> invocacao.getArgument(0));
 
         mockMvc.perform(put("/empresas/sessao_recanto_01/cliente")
-                        .header("x-cliente-token", "token-cliente")
-                        .contentType(MediaType.APPLICATION_JSON)
+                                                .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                             {
                               "nome": "Recanto Vista Alegre"
@@ -574,8 +572,7 @@ class ControllerEmpresaTest {
         when(empresaRepository.save(any(Empresa.class))).thenAnswer(invocacao -> invocacao.getArgument(0));
 
         mockMvc.perform(put("/empresas/sessao_recanto_01/cliente")
-                        .header("x-cliente-token", "token-cliente")
-                        .contentType(MediaType.APPLICATION_JSON)
+                                                .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                             {
                               "nome": "Recanto Vista Alegre",
@@ -626,8 +623,7 @@ class ControllerEmpresaTest {
         when(empresaRepository.save(any(Empresa.class))).thenAnswer(invocacao -> invocacao.getArgument(0));
 
         mockMvc.perform(put("/empresas/sessao_recanto_01/cliente")
-                        .header("x-cliente-token", "token-cliente")
-                        .contentType(MediaType.APPLICATION_JSON)
+                                                .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                             {
                               "nome": "Recanto Vista Alegre",
@@ -714,13 +710,11 @@ class ControllerEmpresaTest {
     void deveRecusarPutDoClienteComTokenLegado() throws Exception {
         Empresa alvo = empresaDe(10L, "sessao_alvo");
         when(empresaRepository.buscarPorSessaoComModulos("sessao_alvo")).thenReturn(alvo);
-        autenticarComTokenLegado();
-
         mockMvc.perform(put("/empresas/sessao_alvo/cliente")
                         .header("x-cliente-token", "x")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(CORPO_CIDADE))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
 
         verify(servicoPrevisaoTempo, never()).consumirTrocaDeCidade(anyLong());
         verify(servicoPrevisaoTempo, never()).geocodificar(anyString());
@@ -750,7 +744,8 @@ class ControllerEmpresaTest {
     void deveEsconderSessaoInexistenteNoPutDoCliente() throws Exception {
         when(empresaRepository.buscarPorSessaoComModulos("sessao_ausente")).thenReturn(null);
 
-        autenticarComTokenLegado();
+        Empresa intruso = empresaDe(20L, "sessao_intruso");
+        autenticarComoClienteDe(intruso);
         mockMvc.perform(put("/empresas/sessao_ausente/cliente")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(CORPO_CIDADE))
@@ -799,11 +794,11 @@ class ControllerEmpresaTest {
         mockMvc.perform(get("/empresas/search/findBySessaoWhatsapp").param("sessaoWhatsapp", "sessao_alvo"))
                 .andExpect(status().isForbidden());
 
-        autenticarComTokenLegado();
+        SecurityContextHolder.clearContext();
         mockMvc.perform(get("/empresas/search/findBySessaoWhatsapp")
                         .param("sessaoWhatsapp", "sessao_alvo")
                         .header("x-cliente-token", "x"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -831,10 +826,10 @@ class ControllerEmpresaTest {
     void deveEsconderSessaoInexistenteNaBusca() throws Exception {
         when(empresaRepository.buscarPorSessaoComModulos("sessao_ausente")).thenReturn(null);
 
-        autenticarComTokenLegado();
+        Empresa intruso = empresaDe(20L, "sessao_intruso");
+        autenticarComoClienteDe(intruso);
         mockMvc.perform(get("/empresas/search/findBySessaoWhatsapp")
-                        .param("sessaoWhatsapp", "sessao_ausente")
-                        .header("x-cliente-token", "x"))
+                        .param("sessaoWhatsapp", "sessao_ausente"))
                 .andExpect(status().isForbidden());
 
         mockMvc.perform(get("/empresas/search/findBySessaoWhatsapp")
@@ -863,5 +858,13 @@ class ControllerEmpresaTest {
         autenticarComoAdmin();
         mockMvc.perform(get("/empresas/sessao_ausente/previsao")).andExpect(status().isNotFound());
         verify(servicoPrevisaoTempo, never()).consultar(any(Empresa.class));
+    }
+
+    @Test
+    @DisplayName("GET /empresas/{sessao}/previsao com x-cliente-token sozinho retorna 401")
+    void deveRecusarPrevisaoComXClienteTokenSozinho() throws Exception {
+        mockMvc.perform(get("/empresas/sessao_recanto_01/previsao")
+                        .header("x-cliente-token", "x"))
+                .andExpect(status().isUnauthorized());
     }
 }
