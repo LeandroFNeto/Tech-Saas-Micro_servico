@@ -5,6 +5,7 @@ import com.example.demo.model.DadosReservaSessao;
 import com.example.demo.model.Empresa;
 import com.example.demo.model.EstadoUsuario;
 import com.example.demo.servico.GerenciadorSessao;
+import com.example.demo.servico.ServicoFuncionamento;
 import com.example.demo.servico.ServicoGoogleagenda;
 import com.example.demo.servico.ServicoMensagem;
 import com.example.demo.servico.ServicoMenu;
@@ -21,9 +22,11 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.format.TextStyle;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
 
 @Service
 public class LocacaoStrategy implements ModuloAtendimentoStrategy {
@@ -48,6 +51,7 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
     @Autowired private GerenciadorSessao gerenciadorSessao;
     @Autowired private ServicoMenu servicoMenu;
     @Autowired private ServicoGoogleagenda servicoGoogleagenda;
+    @Autowired private ServicoFuncionamento servicoFuncionamento;
     @Autowired private ApplicationEventPublisher publicadorEventos;
 
     @Override
@@ -80,6 +84,7 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
             case ESPERANDO_RESPOSTA_GALERIA -> tratarRespostaGaleria(empresa, numeroCliente, texto);
             case RESERVA_ESPERANDO_DATA -> tratarReservaData(empresa, numeroCliente, texto);
             case RESERVA_ESPERANDO_HORARIO -> tratarReservaHorario(empresa, numeroCliente, texto);
+            case RESERVA_MAIS_DATAS -> tratarMaisDatas(empresa, numeroCliente, texto);
             case RESERVA_ESPERANDO_NOME -> tratarReservaNome(empresa, numeroCliente, texto);
             case RESERVA_CONFIRMACAO -> tratarReservaConfirmacao(empresa, numeroCliente, texto);
             case RESERVA_REGISTRANDO -> servicoMensagem.enviarMensagemWPP(empresa, numeroCliente, MENSAGEM_AINDA_REGISTRANDO);
@@ -214,7 +219,7 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
     }
 
     private void tratarSolicitacaoReserva(Empresa empresa, String numeroCliente) {
-        if (!Boolean.TRUE.equals(empresa.getPermiteReservaAutomatica()) || empresa.isLocacaoPorHora()) {
+        if (!Boolean.TRUE.equals(empresa.getPermiteReservaAutomatica())) {
             servicoMensagem.enviarMensagemWPP(empresa, numeroCliente, MENSAGEM_RESERVA_MANUAL);
             return;
         }
@@ -238,22 +243,135 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
         if (recusarDataPassada(empresa, numeroCliente, data)) {
             return;
         }
+        if (empresa.isLocacaoPorHora()) {
+            tratarReservaDataPorHora(empresa, numeroCliente, data);
+            return;
+        }
         if (!dataEstaLivreParaReserva(empresa, numeroCliente, data, texto)) {
             return;
         }
 
         DadosReservaSessao reserva = gerenciadorSessao.getOuCriarReserva(numeroCliente);
         reserva.setData(data);
+        reserva.setHorario(DadosReservaSessao.HORARIO_DIARIA);
+        pedirNome(empresa, numeroCliente);
+    }
 
-        if (empresa.isLocacaoPorHora()) {
-            servicoMensagem.enviarMensagemWPP(
-                    empresa, numeroCliente, "Perfeito. Qual horário você deseja? Envie no formato HH:MM, por exemplo 14:00.");
-            gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.RESERVA_ESPERANDO_HORARIO);
+    private void tratarReservaDataPorHora(Empresa empresa, String numeroCliente, LocalDate data) {
+        DadosReservaSessao reserva = gerenciadorSessao.getOuCriarReserva(numeroCliente);
+        LocalDate hoje = LocalDate.now(FUSO_BRASILIA);
+        if (data.isAfter(hoje.plusDays(ServicoFuncionamento.DIAS_MAXIMOS_A_FRENTE))) {
+            servicoMensagem.enviarMensagemWPP(empresa, numeroCliente,
+                    "Só aceitamos reservas até " + ServicoFuncionamento.DIAS_MAXIMOS_A_FRENTE
+                            + " dias à frente. Envie uma data mais próxima.");
+            return;
+        }
+        if (reserva.getDatas().contains(data)) {
+            servicoMensagem.enviarMensagemWPP(empresa, numeroCliente, "Essa data já está no seu pedido.");
+            perguntarMaisDatas(empresa, numeroCliente, reserva);
             return;
         }
 
-        reserva.setHorario(DadosReservaSessao.HORARIO_DIARIA);
-        pedirNome(empresa, numeroCliente);
+        ServicoFuncionamento.Janela janela = servicoFuncionamento.janelaDa(empresa, data);
+        if (!janela.aberto()) {
+            informarDataFechada(empresa, numeroCliente, data, janela);
+            return;
+        }
+
+        if (!reserva.getDatas().isEmpty() && reserva.getHorario() != null) {
+            LocalTime hora = LocalTime.parse(reserva.getHorario());
+            String problema = problemaDoHorario(empresa, data, janela, hora);
+            if (problema != null) {
+                servicoMensagem.enviarMensagemWPP(empresa, numeroCliente,
+                        problema + "\nEnvie outra data, no formato DD-MM-AAAA.");
+                return;
+            }
+            reserva.adicionarData(data);
+            perguntarMaisDatas(empresa, numeroCliente, reserva);
+            return;
+        }
+
+        List<LocalTime> livres;
+        try {
+            livres = horariosLivresDoDia(empresa, data, janela);
+        } catch (Exception e) {
+            Log.warn("Falha ao consultar Google Agenda na reserva por hora: {}", e.getClass().getSimpleName());
+            servicoMensagem.enviarMensagemWPP(empresa, numeroCliente,
+                    "Não consegui consultar a agenda agora. Tente novamente em instantes.");
+            return;
+        }
+        if (livres.isEmpty()) {
+            servicoMensagem.enviarMensagemWPP(empresa, numeroCliente,
+                    "❌ Não há horários livres em " + data.format(FORMATO_DATA)
+                            + ". Envie outra data, no formato DD-MM-AAAA.");
+            return;
+        }
+        reserva.setData(data);
+        servicoMensagem.enviarMensagemWPP(empresa, numeroCliente,
+                "Horários livres em " + data.format(FORMATO_DATA) + ":\n" + formatarHorarios(livres)
+                        + "\n\nQual horário você deseja? Envie no formato HH:MM, por exemplo "
+                        + livres.get(0).format(DateTimeFormatter.ofPattern("HH:mm")) + ".");
+        gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.RESERVA_ESPERANDO_HORARIO);
+    }
+
+    private void informarDataFechada(Empresa empresa, String numeroCliente, LocalDate data,
+                                     ServicoFuncionamento.Janela janela) {
+        StringBuilder mensagem = new StringBuilder("Não abrimos em " + data.format(FORMATO_DATA));
+        if (janela.motivo() != null && !janela.motivo().isBlank()) {
+            mensagem.append(" (").append(janela.motivo()).append(")");
+        }
+        mensagem.append(".");
+        List<LocalDate> proximas = servicoFuncionamento.proximasDatasAbertas(empresa, data.plusDays(1), 3);
+        if (proximas != null && !proximas.isEmpty()) {
+            mensagem.append(" Próximas datas abertas: ")
+                    .append(proximas.stream().map(d -> d.format(FORMATO_DATA)).collect(Collectors.joining(", ")))
+                    .append(".");
+        }
+        mensagem.append(" Envie outra data, no formato DD-MM-AAAA.");
+        servicoMensagem.enviarMensagemWPP(empresa, numeroCliente, mensagem.toString());
+    }
+
+    private List<LocalTime> horariosLivresDoDia(Empresa empresa, LocalDate data, ServicoFuncionamento.Janela janela)
+            throws Exception {
+        LocalTime aPartirDe = data.equals(LocalDate.now(FUSO_BRASILIA)) ? LocalTime.now(FUSO_BRASILIA) : null;
+        return servicoGoogleagenda.horariosLivres(
+                empresa.getGoogleCalendarId(),
+                data,
+                ServicoFuncionamento.iniciosPossiveis(janela),
+                janela.duracaoMinutos(),
+                empresa.intervaloEfetivoMinutos(),
+                aPartirDe);
+    }
+
+    private String problemaDoHorario(Empresa empresa, LocalDate data, ServicoFuncionamento.Janela janela, LocalTime hora) {
+        if (!janela.aberto()) {
+            return "Não abrimos em " + data.format(FORMATO_DATA) + ".";
+        }
+        if (data.equals(LocalDate.now(FUSO_BRASILIA)) && hora.isBefore(LocalTime.now(FUSO_BRASILIA))) {
+            return MENSAGEM_HORARIO_PASSADO;
+        }
+        List<LocalTime> inicios = ServicoFuncionamento.iniciosPossiveis(janela);
+        if (!inicios.contains(hora)) {
+            return "Esse horário não está disponível em " + data.format(FORMATO_DATA) + ". Horários de início: "
+                    + formatarHorarios(inicios) + ".";
+        }
+        try {
+            boolean livre = servicoGoogleagenda.horarioEstaLivre(
+                    empresa.getGoogleCalendarId(), data, hora, hora.plusMinutes(janela.duracaoMinutos()),
+                    empresa.intervaloEfetivoMinutos());
+            if (!livre) {
+                return "❌ Esse horário já está reservado em " + data.format(FORMATO_DATA) + ".";
+            }
+        } catch (Exception e) {
+            Log.warn("Falha ao consultar Google Agenda na reserva por hora: {}", e.getClass().getSimpleName());
+            return "Não consegui consultar a agenda agora. Tente novamente em instantes.";
+        }
+        return null;
+    }
+
+    private String formatarHorarios(List<LocalTime> horarios) {
+        DateTimeFormatter formato = DateTimeFormatter.ofPattern("HH:mm");
+        return horarios.stream().map(h -> h.format(formato)).collect(Collectors.joining(", "));
     }
 
     private void tratarReservaHorario(Empresa empresa, String numeroCliente, String texto) {
@@ -272,8 +390,85 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
             servicoMensagem.enviarMensagemWPP(empresa, numeroCliente, MENSAGEM_HORARIO_PASSADO);
             return;
         }
+        if (dataReserva == null) {
+            gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.RESERVA_ESPERANDO_DATA);
+            servicoMensagem.enviarMensagemWPP(empresa, numeroCliente, "Por favor, me diga qual data você deseja reservar.");
+            return;
+        }
+        ServicoFuncionamento.Janela janela = servicoFuncionamento.janelaDa(empresa, dataReserva);
+        String problema = problemaDoHorario(empresa, dataReserva, janela, hora);
+        if (problema != null) {
+            servicoMensagem.enviarMensagemWPP(empresa, numeroCliente, problema);
+            return;
+        }
         reserva.setHorario(hora.format(DateTimeFormatter.ofPattern("HH:mm")));
-        pedirNome(empresa, numeroCliente);
+        reserva.adicionarData(dataReserva);
+        perguntarMaisDatas(empresa, numeroCliente, reserva);
+    }
+
+    private void perguntarMaisDatas(Empresa empresa, String numeroCliente, DadosReservaSessao reserva) {
+        if (reserva.atingiuLimiteDeDatas()) {
+            servicoMensagem.enviarMensagemWPP(empresa, numeroCliente,
+                    "Chegamos ao limite de " + DadosReservaSessao.MAXIMO_DATAS + " datas por pedido.");
+            pedirNome(empresa, numeroCliente);
+            return;
+        }
+        servicoMensagem.enviarMensagemWPP(empresa, numeroCliente,
+                "✅ Anotado: " + listarDatas(reserva) + " às " + reserva.getHorario() + ".\n\n"
+                        + "Quer reservar mais alguma data no mesmo horário? Responda *SIM* ou *NÃO*.\n"
+                        + "Para tirar uma data, envie *TIRAR DD-MM-AAAA*.");
+        gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.RESERVA_MAIS_DATAS);
+    }
+
+    private void tratarMaisDatas(Empresa empresa, String numeroCliente, String texto) {
+        DadosReservaSessao reserva = gerenciadorSessao.getOuCriarReserva(numeroCliente);
+        String resposta = texto.toLowerCase(Locale.of("pt", "BR"));
+        if (respostaAfirmativa(resposta)) {
+            servicoMensagem.enviarMensagemWPP(empresa, numeroCliente,
+                    "Qual a próxima data? Envie no formato DD-MM-AAAA, por exemplo 16-09-2026.");
+            gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.RESERVA_ESPERANDO_DATA);
+            return;
+        }
+        if (respostaNegativa(resposta)) {
+            pedirNome(empresa, numeroCliente);
+            return;
+        }
+        if (tentarTirarData(empresa, numeroCliente, reserva, resposta)) {
+            return;
+        }
+        servicoMensagem.enviarMensagemWPP(empresa, numeroCliente,
+                "Digite SIM para incluir outra data, NÃO para seguir ou TIRAR DD-MM-AAAA para remover uma data.");
+    }
+
+    private boolean tentarTirarData(Empresa empresa, String numeroCliente, DadosReservaSessao reserva, String resposta) {
+        if (!resposta.startsWith("tirar")) {
+            return false;
+        }
+        LocalDate alvo;
+        try {
+            alvo = LocalDate.parse(resposta.substring(5).trim().replace("/", "-"), FORMATO_DATA);
+        } catch (DateTimeParseException e) {
+            servicoMensagem.enviarMensagemWPP(empresa, numeroCliente,
+                    "Não entendi qual data tirar. Envie TIRAR DD-MM-AAAA.");
+            return true;
+        }
+        if (!reserva.removerData(alvo)) {
+            servicoMensagem.enviarMensagemWPP(empresa, numeroCliente, "Essa data não está no seu pedido.");
+            return true;
+        }
+        if (reserva.getDatas().isEmpty()) {
+            reserva.setHorario(null);
+            servicoMensagem.enviarMensagemWPP(empresa, numeroCliente,
+                    "Sem datas no pedido. Envie uma data, no formato DD-MM-AAAA.");
+            gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.RESERVA_ESPERANDO_DATA);
+            return true;
+        }
+        perguntarMaisDatas(empresa, numeroCliente, reserva);
+        return true;
+    }
+
+    private String listarDatas(DadosReservaSessao reserva) {
+        return reserva.getDatas().stream().map(d -> d.format(FORMATO_DATA)).collect(Collectors.joining(", "));
     }
 
     private boolean recusarDataPassada(Empresa empresa, String numeroCliente, LocalDate data) {
@@ -297,7 +492,8 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
             return;
         }
         DadosReservaSessao reserva = gerenciadorSessao.getOuCriarReserva(numeroCliente);
-        reserva.setNomeCliente(texto);
+        String nome = texto.replaceAll("\\s+", " ").trim();
+        reserva.setNomeCliente(nome.length() > 80 ? nome.substring(0, 80) : nome);
         enviarRegrasEPedirConfirmacao(empresa, numeroCliente, reserva);
     }
 
@@ -309,16 +505,25 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
 
     private void tratarReservaConfirmacao(Empresa empresa, String numeroCliente, String texto) {
         String resposta = texto.toLowerCase(Locale.of("pt", "BR"));
+        if (resposta.startsWith("tirar") && empresa.isLocacaoPorHora()
+                && tentarTirarData(empresa, numeroCliente, gerenciadorSessao.getOuCriarReserva(numeroCliente), resposta)) {
+            return;
+        }
         if (resposta.matches("sim|s|confirmar|1")) {
             DadosReservaSessao reserva = gerenciadorSessao.getOuCriarReserva(numeroCliente);
-            String data = formatarData(reserva.getData());
+            boolean porHora = empresa.isLocacaoPorHora() && !reserva.getDatas().isEmpty();
+            String data = porHora ? listarDatas(reserva) : formatarData(reserva.getData());
+            List<String> datasEvento = porHora
+                    ? reserva.getDatas().stream().map(d -> d.format(FORMATO_DATA)).toList()
+                    : List.of(data);
             EventoReservaConfirmada evento = new EventoReservaConfirmada(
                     empresa,
-                    data,
+                    datasEvento,
                     reserva.getHorario(),
                     reserva.getNomeCliente(),
                     numeroCliente,
-                    UUID.randomUUID().toString());
+                    UUID.randomUUID().toString(),
+                    porHora);
             gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.RESERVA_REGISTRANDO);
             servicoMensagem.enviarMensagemWPP(
                     empresa,
@@ -345,8 +550,11 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
     }
 
     private String montarResumoConfirmacao(DadosReservaSessao reserva) {
+        String linhaData = reserva.getDatas().size() > 1
+                ? "📅 Datas: " + listarDatas(reserva)
+                : "📅 Data: " + formatarData(reserva.getData());
         return "Confira os dados da reserva:\n"
-                + "📅 Data: " + formatarData(reserva.getData()) + "\n"
+                + linhaData + "\n"
                 + "⏰ Horário: " + valorOuTraco(reserva.getHorario()) + "\n"
                 + "👤 Nome: " + valorOuTraco(reserva.getNomeCliente())
                 + "\n\nDigite SIM para confirmar ou NÃO para cancelar.";
@@ -413,9 +621,23 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
 
         try {
             LocalDate hoje = LocalDate.now(FUSO_BRASILIA);
+            if (empresa.isLocacaoPorHora()) {
+                List<ServicoGoogleagenda.Intervalo> ocupados = servicoGoogleagenda.ocupacoesDoPeriodo(
+                        calendarId, hoje, hoje.plusDays(DIAS_AGENDA));
+                servicoMensagem.enviarMensagemWPP(empresa, numeroCliente, montarListaProximosDias(hoje, dia -> {
+                    ServicoFuncionamento.Janela janela = servicoFuncionamento.janelaDa(empresa, dia);
+                    return switch (servicoFuncionamento.situacaoDoDia(empresa, dia, janela, ocupados)) {
+                        case FECHADO -> "🚫 Fechado";
+                        case LOTADO -> "❌ Lotado";
+                        case LIVRE -> "✅ Livre";
+                    };
+                }));
+                return;
+            }
             Set<LocalDate> ocupadas = servicoGoogleagenda.datasOcupadas(
                     calendarId, hoje, hoje.plusDays(DIAS_AGENDA));
-            servicoMensagem.enviarMensagemWPP(empresa, numeroCliente, montarListaProximosDias(hoje, ocupadas));
+            servicoMensagem.enviarMensagemWPP(empresa, numeroCliente, montarListaProximosDias(hoje,
+                    dia -> ocupadas.contains(dia) ? "❌ Alugado" : "✅ Livre"));
         } catch (Exception e) {
             Log.warn("Falha ao listar agenda dos próximos {} dias: {}", DIAS_AGENDA, e.getClass().getSimpleName());
             servicoMensagem.enviarMensagemWPP(
@@ -425,13 +647,13 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
         }
     }
 
-    private String montarListaProximosDias(LocalDate hoje, Set<LocalDate> ocupadas) {
+    private String montarListaProximosDias(LocalDate hoje, Function<LocalDate, String> statusDoDia) {
         Locale idiomaBrasil = Locale.of("pt", "BR");
         StringBuilder lista = new StringBuilder("📅 Agenda dos próximos 15 dias:\n");
         for (int i = 0; i < DIAS_AGENDA; i++) {
             LocalDate dia = hoje.plusDays(i);
             String nomeDia = dia.getDayOfWeek().getDisplayName(TextStyle.FULL, idiomaBrasil);
-            String status = ocupadas.contains(dia) ? "❌ Alugado" : "✅ Livre";
+            String status = statusDoDia.apply(dia);
             lista.append("\n")
                     .append(dia.format(FORMATO_DATA))
                     .append(" (")
@@ -440,6 +662,20 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
                     .append(status);
         }
         return lista.toString();
+    }
+
+    private String respostaDaDataPorHora(Empresa empresa, String calendarId, LocalDate data) throws Exception {
+        ServicoFuncionamento.Janela janela = servicoFuncionamento.janelaDa(empresa, data);
+        if (!janela.aberto()) {
+            return "🚫 Não abrimos nesta data (" + janela.motivo() + ").";
+        }
+        List<ServicoGoogleagenda.Intervalo> ocupados = servicoGoogleagenda.ocupacoesDoDia(calendarId, data);
+        List<LocalTime> livres = servicoFuncionamento.iniciosLivres(empresa, data, janela, ocupados);
+        if (livres.isEmpty()) {
+            return "❌ Todos os horários desta data já estão reservados.";
+        }
+        return "✅ Há horários livres nesta data: " + livres.stream()
+                .map(h -> h.format(FORMATO_HORA)).collect(Collectors.joining(", "));
     }
 
     private void tratarDataInformada(Empresa empresa, String numeroCliente, String texto) {
@@ -463,10 +699,14 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
         }
 
         try {
-            boolean livre = servicoGoogleagenda.dataEstaLivre(calendarId, data);
-            String resposta = livre
-                    ? "✅ Esta data está livre para locação!"
-                    : "❌ Infelizmente esta data já está reservada.";
+            String resposta;
+            if (empresa.isLocacaoPorHora()) {
+                resposta = respostaDaDataPorHora(empresa, calendarId, data);
+            } else {
+                resposta = servicoGoogleagenda.dataEstaLivre(calendarId, data)
+                        ? "✅ Esta data está livre para locação!"
+                        : "❌ Infelizmente esta data já está reservada.";
+            }
             servicoMensagem.enviarMensagemWPP(empresa, numeroCliente, resposta);
         } catch (Exception e) {
             Log.warn("Falha ao consultar Google Agenda: {}", e.getClass().getSimpleName());

@@ -11,16 +11,17 @@ import { EmpresaService } from '../../../core/services/empresa.service';
 
 declare var cloudinary: any;
 import { BannerAvisosComponent } from '../../../shared/components/banner-avisos/banner-avisos.component';
+import { FuncionamentoComponent } from '../funcionamento/funcionamento.component';
 import { AvisoDTO } from '../../../shared/models/aviso.models';
 import { EmpresaView, MAX_URLS_GALERIA, MODULOS_MENU_BOT, ModuloMenuDTO } from '../../../shared/models/empresa.models';
 import contentData from '../../../../../../especificacao/front/cliente-perfil.content.json';
 import designData from '../../../../../../especificacao/front/telas.design.json';
 
-type AbaPerfil = 'dados' | 'robo' | 'configuracao';
+type AbaPerfil = 'dados' | 'robo' | 'funcionamento' | 'configuracao';
 
 @Component({
   selector: 'app-perfil',
-  imports: [ReactiveFormsModule, RouterLink, TextFieldModule, BannerAvisosComponent],
+  imports: [ReactiveFormsModule, RouterLink, TextFieldModule, BannerAvisosComponent, FuncionamentoComponent],
   templateUrl: './perfil.component.html'
 })
 export class PerfilComponent implements OnInit {

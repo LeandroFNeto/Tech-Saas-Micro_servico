@@ -62,6 +62,49 @@ public class Empresa {
     @Column(name = "permite_reserva_automatica")
     private Boolean permiteReservaAutomatica = false;
 
+    public static final int DURACAO_PADRAO_MINUTOS = 60;
+
+    @Column(name = "duracao_atendimento_minutos")
+    private Integer duracaoAtendimentoMinutos;
+
+    @Column(name = "intervalo_atendimentos_minutos")
+    private Integer intervaloEntreAtendimentosMinutos;
+
+    @Column(name = "uf", length = 2)
+    private String uf;
+
+    public Integer getDuracaoAtendimentoMinutos() {
+        return duracaoAtendimentoMinutos;
+    }
+
+    public void setDuracaoAtendimentoMinutos(Integer duracaoAtendimentoMinutos) {
+        this.duracaoAtendimentoMinutos = duracaoAtendimentoMinutos;
+    }
+
+    public int duracaoEfetivaMinutos() {
+        return duracaoAtendimentoMinutos == null ? DURACAO_PADRAO_MINUTOS : duracaoAtendimentoMinutos;
+    }
+
+    public Integer getIntervaloEntreAtendimentosMinutos() {
+        return intervaloEntreAtendimentosMinutos;
+    }
+
+    public void setIntervaloEntreAtendimentosMinutos(Integer intervaloEntreAtendimentosMinutos) {
+        this.intervaloEntreAtendimentosMinutos = intervaloEntreAtendimentosMinutos;
+    }
+
+    public int intervaloEfetivoMinutos() {
+        return intervaloEntreAtendimentosMinutos == null ? 0 : intervaloEntreAtendimentosMinutos;
+    }
+
+    public String getUf() {
+        return uf;
+    }
+
+    public void setUf(String uf) {
+        this.uf = uf;
+    }
+
     @Column(name = "cidade_previsao")
     private String cidadePrevisao;
 

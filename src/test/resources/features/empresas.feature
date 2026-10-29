@@ -369,3 +369,166 @@ Funcionalidade: Contratos de empresa do SaaS
     Dado o provedor de previsão reconhece qualquer cidade
     Quando a empresa "sessao_conta_400" troca a cidade da previsão para "Atibaia"
     Então o status HTTP deve ser 429
+
+  Cenário: GET /empresas/{sessao}/funcionamento de empresa sem configuração devolve os padrões
+    Dado uma empresa persistida com sessão "sessao_func_padrao" e ramo "LOCACAO"
+    E o token administrativo "sua-chave-admin"
+    Quando eu envio GET /empresas/sessao_func_padrao/funcionamento com o token administrativo
+    Então o status HTTP deve ser 200
+    E o corpo deve conter "\"duracaoAtendimentoMinutos\":60"
+    E o corpo deve conter "\"intervaloEntreAtendimentosMinutos\":0"
+    E o corpo deve conter "\"horarios\":[]"
+    E o corpo deve conter "\"diasEspeciais\":[]"
+
+  Cenário: PUT /empresas/{sessao}/funcionamento grava duração, intervalo, UF e horários por perfil
+    Dado uma empresa persistida com sessão "sessao_func_grava" e ramo "LOCACAO"
+    E o token administrativo "sua-chave-admin"
+    Quando eu envio PUT /empresas/sessao_func_grava/funcionamento com o corpo:
+      """
+      {"duracaoAtendimentoMinutos":90,"intervaloEntreAtendimentosMinutos":15,"uf":"sp",
+       "horarios":[{"perfil":"SABADO","fechado":false,"abre":"10:00","fecha":"20:00"},
+                   {"perfil":"DOMINGO","fechado":true}]}
+      """
+    Então o status HTTP deve ser 200
+    Quando eu envio GET /empresas/sessao_func_grava/funcionamento com o token administrativo
+    Então o status HTTP deve ser 200
+    E o corpo deve conter "\"duracaoAtendimentoMinutos\":90"
+    E o corpo deve conter "\"intervaloEntreAtendimentosMinutos\":15"
+    E o corpo deve conter "\"uf\":\"SP\""
+    E o corpo deve conter "\"perfil\":\"SABADO\""
+    E o corpo deve conter "\"perfil\":\"DOMINGO\""
+
+  Cenário: PUT /empresas/{sessao}/funcionamento rejeita duração que não é múltiplo de 30
+    Dado uma empresa persistida com sessão "sessao_func_dur" e ramo "LOCACAO"
+    E o token administrativo "sua-chave-admin"
+    Quando eu envio PUT /empresas/sessao_func_dur/funcionamento com o corpo:
+      """
+      {"duracaoAtendimentoMinutos":45}
+      """
+    Então o status HTTP deve ser 400
+
+  Cenário: PUT /empresas/{sessao}/funcionamento rejeita intervalo acima de 120 minutos
+    Dado uma empresa persistida com sessão "sessao_func_int" e ramo "LOCACAO"
+    E o token administrativo "sua-chave-admin"
+    Quando eu envio PUT /empresas/sessao_func_int/funcionamento com o corpo:
+      """
+      {"intervaloEntreAtendimentosMinutos":121}
+      """
+    Então o status HTTP deve ser 400
+
+  Cenário: PUT /empresas/{sessao}/funcionamento rejeita UF inexistente
+    Dado uma empresa persistida com sessão "sessao_func_uf" e ramo "LOCACAO"
+    E o token administrativo "sua-chave-admin"
+    Quando eu envio PUT /empresas/sessao_func_uf/funcionamento com o corpo:
+      """
+      {"uf":"XX"}
+      """
+    Então o status HTTP deve ser 400
+
+  Cenário: PUT /empresas/{sessao}/funcionamento rejeita abertura depois do fechamento
+    Dado uma empresa persistida com sessão "sessao_func_ordem" e ramo "LOCACAO"
+    E o token administrativo "sua-chave-admin"
+    Quando eu envio PUT /empresas/sessao_func_ordem/funcionamento com o corpo:
+      """
+      {"horarios":[{"perfil":"SEGUNDA","fechado":false,"abre":"18:00","fecha":"09:00"}]}
+      """
+    Então o status HTTP deve ser 400
+
+  Cenário: PUT /empresas/{sessao}/funcionamento rejeita janela menor que a duração do atendimento
+    Dado uma empresa persistida com sessão "sessao_func_curta" e ramo "LOCACAO"
+    E o token administrativo "sua-chave-admin"
+    Quando eu envio PUT /empresas/sessao_func_curta/funcionamento com o corpo:
+      """
+      {"duracaoAtendimentoMinutos":60,
+       "horarios":[{"perfil":"SEGUNDA","fechado":false,"abre":"08:00","fecha":"08:30"}]}
+      """
+    Então o status HTTP deve ser 400
+
+  Cenário: PUT /empresas/{sessao}/funcionamento rejeita perfil repetido
+    Dado uma empresa persistida com sessão "sessao_func_dup" e ramo "LOCACAO"
+    E o token administrativo "sua-chave-admin"
+    Quando eu envio PUT /empresas/sessao_func_dup/funcionamento com o corpo:
+      """
+      {"horarios":[{"perfil":"SEXTA","fechado":true},{"perfil":"SEXTA","fechado":true}]}
+      """
+    Então o status HTTP deve ser 400
+
+  Cenário: POST /empresas/{sessao}/dias-especiais fechando uma data com reservas avisa e não cancela
+    Dado uma empresa persistida com sessão "sessao_func_aviso" e ramo "LOCACAO"
+    E a empresa persistida tem a agenda Google "agenda-func-aviso@group.calendar.google.com"
+    E a agenda tem o evento "14:00 às 15:00 - Reserva - Maria" em qualquer data
+    E o token administrativo "sua-chave-admin"
+    Quando eu cadastro em sessao_func_aviso o dia especial fechado daqui a 30 dias com o motivo "Feriado municipal"
+    Então o status HTTP deve ser 201
+    E o corpo deve conter "\"fechado\":true"
+    E o corpo deve conter "\"motivo\":\"Feriado municipal\""
+    E o corpo deve conter "Reserva - Maria"
+    Quando eu envio GET /empresas/sessao_func_aviso/funcionamento com o token administrativo
+    Então o corpo deve conter "Feriado municipal"
+
+  Cenário: POST /empresas/{sessao}/dias-especiais com horário próprio é aceito
+    Dado uma empresa persistida com sessão "sessao_func_horario" e ramo "LOCACAO"
+    E o token administrativo "sua-chave-admin"
+    Quando eu cadastro em sessao_func_horario o dia especial daqui a 20 dias das "10:00" às "16:00"
+    Então o status HTTP deve ser 201
+    E o corpo deve conter "\"abre\":\"10:00\""
+    E o corpo deve conter "\"fecha\":\"16:00\""
+    E o corpo deve conter "\"reservasNaData\":[]"
+
+  Cenário: POST /empresas/{sessao}/dias-especiais rejeita data além de 180 dias
+    Dado uma empresa persistida com sessão "sessao_func_longe" e ramo "LOCACAO"
+    E o token administrativo "sua-chave-admin"
+    Quando eu cadastro em sessao_func_longe o dia especial fechado daqui a 200 dias com o motivo "Longe demais"
+    Então o status HTTP deve ser 400
+
+  Cenário: POST /empresas/{sessao}/dias-especiais rejeita data que já tem dia especial
+    Dado uma empresa persistida com sessão "sessao_func_repete" e ramo "LOCACAO"
+    E o token administrativo "sua-chave-admin"
+    Quando eu cadastro em sessao_func_repete o dia especial fechado daqui a 10 dias com o motivo "Primeiro"
+    Então o status HTTP deve ser 201
+    Quando eu cadastro em sessao_func_repete o dia especial fechado daqui a 10 dias com o motivo "Segundo"
+    Então o status HTTP deve ser 400
+
+  Cenário: DELETE /empresas/{sessao}/dias-especiais/{id} remove o dia especial
+    Dado uma empresa persistida com sessão "sessao_func_remove" e ramo "LOCACAO"
+    E o token administrativo "sua-chave-admin"
+    Quando eu cadastro em sessao_func_remove o dia especial fechado daqui a 15 dias com o motivo "Folga"
+    E eu removo em sessao_func_remove o dia especial guardado
+    Então o status HTTP deve ser 204
+    Quando eu envio GET /empresas/sessao_func_remove/funcionamento com o token administrativo
+    Então o corpo não deve conter "Folga"
+
+  Cenário: DELETE de dia especial de outra empresa retorna 404 e não apaga
+    Dado uma empresa persistida com sessão "sessao_func_dona" e ramo "LOCACAO"
+    E uma empresa persistida com sessão "sessao_func_outra" e ramo "LOCACAO"
+    E o token administrativo "sua-chave-admin"
+    Quando eu cadastro em sessao_func_dona o dia especial fechado daqui a 12 dias com o motivo "Só da dona"
+    E eu removo em sessao_func_outra o dia especial guardado
+    Então o status HTTP deve ser 404
+    Quando eu envio GET /empresas/sessao_func_dona/funcionamento com o token administrativo
+    Então o corpo deve conter "Só da dona"
+
+  Cenário: GET /empresas/{sessao}/funcionamento sem token retorna 401
+    Dado uma empresa persistida com sessão "sessao_func_401" e ramo "LOCACAO"
+    Quando eu envio GET /empresas/sessao_func_401/funcionamento sem token
+    Então o status HTTP deve ser 401
+
+  Cenário: GET /empresas/{sessao}/funcionamento de cliente de outra empresa retorna 403
+    Dado o token administrativo "sua-chave-admin"
+    Quando eu envio POST /empresas com o EmpresaCreateDTO:
+      | nome           | Espaço Alvo Func     |
+      | sessaoWhatsapp | sessao_func_alvo     |
+      | ramoDeAtuacao  | LOCACAO              |
+      | email          | alvofunc@recanto.com |
+      | senha          | SenhaCliente123      |
+    E eu envio POST /empresas com o EmpresaCreateDTO:
+      | nome           | Espaço Intruso Func     |
+      | sessaoWhatsapp | sessao_func_intruso     |
+      | ramoDeAtuacao  | LOCACAO                 |
+      | email          | intrusofunc@recanto.com |
+      | senha          | SenhaCliente123         |
+    E eu envio POST /auth/login com o LoginRequestDTO:
+      | email | sessao_func_intruso@gamb.com.br |
+      | senha | SenhaCliente123                 |
+    E eu envio GET /empresas/sessao_func_alvo/funcionamento com o JWT do login
+    Então o status HTTP deve ser 403

@@ -128,3 +128,38 @@ Funcionalidade: Observer assíncrono da Google Agenda
     Quando duas confirmações da mesma data "25-12-2026" são publicadas
     Então uma só confirmação e um só aviso de data ocupada são enviados
     E o Google recebe 1 tentativa de inserção
+
+  Cenário: reserva por hora com várias datas cria um evento com hora para cada data
+    Dado uma empresa persistida com sessão "sessao_agenda_hora" e ramo "LOCACAO"
+    E a empresa persistida tem a agenda Google "agenda-hora@group.calendar.google.com"
+    E a agenda aceita o horário em todas as datas
+    Quando o evento por hora é publicado para as datas "10-11-2026,17-11-2026" às "14:00"
+    Então o cliente recebe a mensagem que contém "Reserva confirmada"
+    E o cliente recebe a mensagem que contém "10-11-2026, 17-11-2026"
+    E o cliente recebe a mensagem que contém "14:00"
+    E o Google recebe 2 inserções por hora
+    E a conversa do cliente deve estar em "INICIO"
+
+  Cenário: uma data ocupada na reserva por hora derruba o pedido inteiro sem criar nada
+    Dado uma empresa persistida com sessão "sessao_agenda_hora_ocupada" e ramo "LOCACAO"
+    E a empresa persistida tem a agenda Google "agenda-hora-ocupada@group.calendar.google.com"
+    E a agenda aceita o horário em todas as datas
+    E o horário está ocupado em "17-11-2026"
+    Quando o evento por hora é publicado para as datas "10-11-2026,17-11-2026" às "14:00"
+    Então o cliente recebe a mensagem que contém "Nada foi reservado"
+    E o cliente recebe a mensagem que contém "17-11-2026"
+    E o Google recebe 0 inserções por hora
+    E o cliente não recebe a mensagem que contém "Reserva confirmada"
+    E a conversa do cliente deve estar em "RESERVA_ESPERANDO_DATA"
+
+  Cenário: falha 5xx na reserva por hora tenta 3 vezes, desfaz o pedido e avisa o cliente
+    Dado uma empresa persistida com sessão "sessao_agenda_hora_5xx" e ramo "LOCACAO"
+    E a empresa persistida tem a agenda Google "agenda-hora-5xx@group.calendar.google.com"
+    E a agenda aceita o horário em todas as datas
+    E o Google falha sempre com o status 503 ao inserir o evento por hora
+    Quando o evento por hora é publicado para as datas "10-11-2026,17-11-2026" às "14:00"
+    Então o cliente recebe a mensagem que contém "Não consegui registrar sua reserva agora"
+    E o Google recebe 3 inserções por hora
+    E o Google remove 2 eventos do pedido por hora
+    E o cliente não recebe a mensagem que contém "Reserva confirmada"
+    E a conversa do cliente deve estar em "INICIO"

@@ -228,6 +228,82 @@ Cenário: agenda Google oculta ao cliente
 - Então o ID da agenda Google vem vazio
 - E o admin, na mesma leitura, recebe o ID
 
+### EMP-07 Empresa define duração, intervalo, estado e horários de funcionamento
+
+O sistema deve permitir que o admin ou o cliente da própria empresa leia (GET) e atualize (PUT) o funcionamento da reserva por hora em `/empresas/{sessao}/funcionamento`: duração do atendimento (múltiplo de 30, de 30 a 720 minutos; padrão 60), intervalo entre atendimentos (0 a 120; padrão 0), `uf` (uma das 27 siglas; vazio remove) e os horários por perfil. Os perfis são `SEGUNDA` a `DOMINGO` e `FERIADO`; cada perfil tem aberto ou fechado, abre e fecha (`HH:mm`) e uma duração própria opcional, que vazia herda a da empresa. Campo nulo no PUT não altera; a lista de horários enviada substitui a anterior, e a gravação é uma transação só.
+
+O PUT responde 400 quando a duração ou o intervalo saem da faixa, quando a `uf` não existe, quando abre não é antes de fecha, quando um perfil se repete ou quando a janela não comporta ao menos um atendimento da duração aplicada. Sem configuração valem todos os dias das 08:00 às 22:00 e `FERIADO` igual a `DOMINGO`. Empresa que já tinha locação por hora recebe os padrões sem migração e segue em reserva manual até o admin ligar a reserva automática. Mudar a duração não mexe em reservas já criadas.
+
+Qual janela vale numa data: o dia especial da empresa (EMP-08); depois feriado nacional ou do estado da `uf` (perfil `FERIADO`, ou `DOMINGO` se `FERIADO` não existe); depois o dia da semana. Os feriados nacionais são calculados pelo sistema (fixos mais Carnaval, Sexta-feira Santa, Páscoa e Corpus Christi, e Consciência Negra a partir de 2024); os estaduais vêm de uma tabela fixa por UF que precisa de conferência com fonte oficial a cada virada de ano; empresa sem `uf` só segue os nacionais. Feriado municipal é dia especial lançado pela empresa.
+
+A tela é a aba "Funcionamento" de `/cliente/chatbot`, com modo simples (um horário e a duração) e "Personalizar" (perfis, intervalo, UF e dias especiais).
+
+Contrato: `especificacao/back/paths/empresas-funcionamento.yaml` (`FuncionamentoDTO`, `HorarioFuncionamentoDTO`, `FuncionamentoUpdateDTO`)
+Conteúdo da tela: `especificacao/front/cliente-perfil.content.json`
+Prova: `src/test/resources/features/empresas.feature`, `src/test/java/com/example/demo/controller/ControllerFuncionamentoTest.java`, `src/test/java/com/example/demo/servico/ServicoFuncionamentoTest.java`, `src/test/java/com/example/demo/servico/CalendarioFeriadosTest.java`, `frontend/src/app/features/client/funcionamento/funcionamento.component.spec.ts` e `frontend/src/app/core/services/funcionamento.service.spec.ts`
+
+Cenário: empresa sem configuração
+
+- Dado uma empresa sem funcionamento salvo
+- Quando o admin ou o cliente da empresa faz GET em `/empresas/{sessao}/funcionamento`
+- Então a API responde 200 com duração 60, intervalo 0 e listas vazias
+
+Cenário: gravar o funcionamento
+
+- Quando o PUT envia duração 90, intervalo 15, `uf` "sp" e horários de `SABADO` e `DOMINGO`
+- Então a API responde 200
+- E o GET seguinte devolve esses valores com a `uf` "SP"
+
+Cenário: valores inválidos
+
+- Quando o PUT envia duração 45, intervalo 121, `uf` "XX", abre depois de fecha, janela menor que a duração ou perfil repetido
+- Então a API responde 400 em cada caso
+
+Cenário: sem token ou cliente de outra empresa
+
+- Quando o GET chega sem token
+- Então a API responde 401
+- E, com o JWT de um cliente de outra empresa, responde 403
+
+### EMP-08 Empresa cadastra dias especiais
+
+O sistema deve permitir que o admin ou o cliente da própria empresa cadastre (POST `/empresas/{sessao}/dias-especiais`) e remova (DELETE `/empresas/{sessao}/dias-especiais/{id}`) dias especiais: feriado municipal, folga ou horário próprio, com motivo opcional de até 120 caracteres que o cliente final vê. A data vai de hoje a 180 dias à frente, no fuso `America/Sao_Paulo`, e só um dia especial por data; data fora da faixa, repetida (inclusive em cadastros simultâneos) ou horário inválido responde 400. O dia especial vale mais que feriado e que o dia da semana.
+
+Fechar uma data não cancela reservas. A resposta do POST traz em `reservasNaData` os eventos que já existem na agenda naquela data (hora e título, que podem incluir eventos manuais do dono), e a tela mostra o aviso "Há reservas nesta data". Falha ao ler a agenda não impede o cadastro: a lista vem vazia. O DELETE só remove dia especial da empresa da sessão; id de outra empresa responde 404.
+
+Contrato: `especificacao/back/paths/empresas-dias-especiais.yaml` e `especificacao/back/paths/empresas-dias-especiais-id.yaml` (`DataEspecialCreateDTO`, `DataEspecialDTO`)
+Conteúdo da tela: `especificacao/front/cliente-perfil.content.json`
+Prova: `src/test/resources/features/empresas.feature`, `src/test/java/com/example/demo/controller/ControllerFuncionamentoTest.java`, `frontend/src/app/features/client/funcionamento/funcionamento.component.spec.ts`
+
+Cenário: fechar uma data com reservas
+
+- Dado uma empresa com agenda e um evento na data
+- Quando o POST cadastra a data como fechada com o motivo "Feriado municipal"
+- Então a API responde 201 com `reservasNaData` contendo o evento
+- E o evento continua na agenda
+- E o GET do funcionamento lista o dia especial
+
+Cenário: horário próprio
+
+- Quando o POST cadastra uma data daqui a 20 dias das "10:00" às "16:00"
+- Então a API responde 201 com `abre` "10:00", `fecha` "16:00" e `reservasNaData` vazio
+
+Cenário: data inválida
+
+- Quando o POST cadastra uma data daqui a 200 dias, ou uma data que já tem dia especial
+- Então a API responde 400
+
+Cenário: remover
+
+- Quando o DELETE remove o dia especial cadastrado
+- Então a API responde 204 e o GET não lista mais o dia
+
+Cenário: dia especial de outra empresa
+
+- Dado um dia especial da empresa A
+- Quando o DELETE usa a sessão da empresa B com o id dele
+- Então a API responde 404 e o dia da empresa A continua listado
+
 ## Superfície HTTP ainda sem requisito
 
 GET `/empresas` (coleção HAL, token admin) e o item Spring Data REST em `especificacao/back/paths/empresas-id.yaml` existem no contrato. Eles ficam de fora destes requisitos até uma change dizer o que o painel deve observar ali. O comportamento de produto desta spec é o das rotas com DTO nomeado.

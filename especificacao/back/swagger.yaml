@@ -20,6 +20,12 @@ paths:
     $ref: ./paths/empresas-cliente.yaml
   /empresas/{sessao}/previsao:
     $ref: ./paths/empresas-previsao.yaml
+  /empresas/{sessao}/funcionamento:
+    $ref: ./paths/empresas-funcionamento.yaml
+  /empresas/{sessao}/dias-especiais:
+    $ref: ./paths/empresas-dias-especiais.yaml
+  /empresas/{sessao}/dias-especiais/{id}:
+    $ref: ./paths/empresas-dias-especiais-id.yaml
   /empresas/search/findBySessaoWhatsapp:
     $ref: ./paths/empresas-search.yaml
   /profile:
@@ -71,6 +77,16 @@ components:
       $ref: ./schemas/empresa/EmpresaResponseDTO.yaml
     ModuloMenuDTO:
       $ref: ./schemas/empresa/ModuloMenuDTO.yaml
+    HorarioFuncionamentoDTO:
+      $ref: ./schemas/empresa/HorarioFuncionamentoDTO.yaml
+    FuncionamentoUpdateDTO:
+      $ref: ./schemas/empresa/FuncionamentoUpdateDTO.yaml
+    FuncionamentoDTO:
+      $ref: ./schemas/empresa/FuncionamentoDTO.yaml
+    DataEspecialCreateDTO:
+      $ref: ./schemas/empresa/DataEspecialCreateDTO.yaml
+    DataEspecialDTO:
+      $ref: ./schemas/empresa/DataEspecialDTO.yaml
     PrevisaoTempoResponseDTO:
       $ref: ./schemas/previsao/PrevisaoTempoResponseDTO.yaml
     PrevisaoDiaDTO:

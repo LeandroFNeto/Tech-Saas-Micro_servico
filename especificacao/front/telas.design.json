@@ -315,6 +315,67 @@
       },
       "lateral": {
         "titulo": "text-[13px] font-bold uppercase leading-5 tracking-[0.06em] text-brand-600"
+      },
+      "funcionamento": {
+        "pilha": "flex flex-col gap-4",
+        "formulario": "flex flex-col gap-4",
+        "personalizar": "flex flex-col gap-6 border-t border-brand-100 pt-6",
+        "bloco": "flex flex-col gap-3",
+        "subtitulo": "text-[15px] font-bold leading-[22px] text-brand-900",
+        "trio": "grid grid-cols-1 gap-3 sm:grid-cols-3",
+        "duo": "grid grid-cols-[repeat(auto-fit,minmax(min(100%,220px),1fr))] gap-3",
+        "duoFixo": "grid grid-cols-2 gap-3",
+        "campo": "min-w-0",
+        "entrada": "input-field shadow-none disabled:cursor-not-allowed disabled:bg-brand-50 disabled:text-brand-500",
+        "entradaDia": "input-field min-w-0 px-2 shadow-none disabled:cursor-not-allowed disabled:bg-brand-50 disabled:text-brand-500",
+        "entradaInvalida": "border-red-500 focus:border-red-500 focus:ring-red-100",
+        "botaoPersonalizar": "btn-secondary min-h-12 self-start px-5 text-[15px] font-bold",
+        "botaoAdicionar": "btn-secondary min-h-12 self-start px-5 text-[15px] font-bold disabled:cursor-not-allowed disabled:bg-brand-100 disabled:text-brand-600",
+        "botaoPequeno": "btn-secondary min-h-11 shrink-0 px-3.5",
+        "botaoSalvar": "btn-primary min-h-12 px-5 text-[15px] font-bold disabled:bg-brand-100 disabled:text-brand-600 disabled:opacity-100 disabled:shadow-none",
+        "barra": "flex flex-wrap items-center justify-between gap-3 border-t border-brand-100 pt-4",
+        "contador": "mt-1 text-right text-xs text-brand-600",
+        "dia": {
+          "lista": "flex flex-col gap-2",
+          "linha": "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2.5 rounded-[14px] border border-brand-100 bg-white px-3.5 py-3 sm:grid-cols-[120px_minmax(0,1fr)_auto]",
+          "linhaFechada": "bg-brand-50",
+          "nome": "block text-[15px] font-semibold leading-[22px] text-brand-900",
+          "status": "block text-[13px] leading-[18px] text-brand-600",
+          "chave": "switch sm:order-3",
+          "campos": "col-span-full grid grid-cols-3 gap-2 sm:col-span-1",
+          "erro": "col-span-full block text-[13px] leading-[18px] text-red-700 sm:order-4"
+        },
+        "especial": {
+          "lista": "flex flex-col gap-2",
+          "item": "flex flex-wrap items-center justify-between gap-x-4 gap-y-2.5 rounded-[14px] border border-brand-100 px-3.5 py-3",
+          "topo": "flex flex-wrap items-center gap-2",
+          "data": "text-[15px] font-bold leading-[22px] text-brand-900",
+          "motivo": "mt-0.5 block text-[13px] leading-[18px] text-brand-600",
+          "seloBase": "inline-flex items-center whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold leading-4",
+          "seloFechado": "bg-brand-100 text-brand-700",
+          "seloHorario": "bg-accent-100 text-accent-800",
+          "vazio": "rounded-[14px] border border-dashed border-brand-200 p-4 text-center text-sm leading-5 text-brand-600"
+        },
+        "novo": "flex flex-col gap-3 rounded-[14px] border border-brand-100 px-4 py-3.5",
+        "alerta": {
+          "vazio": "rounded-xl bg-brand-50 px-4 py-3 text-sm leading-5 text-brand-700",
+          "sucesso": "rounded-xl border border-accent-200 bg-accent-50 px-4 py-3 text-sm leading-5 text-brand-800",
+          "aviso": "rounded-[14px] border border-accent-300 bg-accent-50 px-4 py-3.5 text-brand-800",
+          "avisoTitulo": "block text-[15px] font-bold leading-[22px]",
+          "avisoTexto": "mt-0.5 text-sm leading-5",
+          "avisoLista": "mt-2 flex list-disc flex-col gap-1 pl-5",
+          "avisoItem": "text-sm font-semibold leading-5",
+          "erro": "flex flex-col items-start gap-2.5 rounded-[14px] border border-red-300 bg-red-50 px-4 py-3.5 text-red-900",
+          "erroTitulo": "block text-[15px] font-bold leading-[22px]",
+          "erroTexto": "mt-0.5 text-sm leading-5"
+        },
+        "carregando": {
+          "pilha": "flex flex-col gap-4",
+          "texto": "text-[13px] leading-[18px] text-brand-600",
+          "grade": "grid grid-cols-1 gap-3 sm:grid-cols-3",
+          "bloco": "h-12 animate-pulse rounded-xl bg-brand-100",
+          "botao": "h-12 w-40 animate-pulse rounded-xl bg-brand-100"
+        }
       }
     },
     "v0Dashboard": {

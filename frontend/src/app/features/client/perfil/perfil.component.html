@@ -45,6 +45,17 @@
           {{ conteudo.abas.robo }}
         </button>
         <button
+          id="aba-funcionamento"
+          type="button"
+          role="tab"
+          aria-controls="painel-perfil"
+          [attr.aria-selected]="aba() === 'funcionamento'"
+          [class]="classesAba(aba() === 'funcionamento')"
+          (click)="aba.set('funcionamento')"
+        >
+          {{ conteudo.abas.funcionamento }}
+        </button>
+        <button
           id="aba-configuracao"
           type="button"
           role="tab"
@@ -58,7 +69,7 @@
       </div>
 
       <div id="painel-perfil" role="tabpanel" [attr.aria-labelledby]="'aba-' + aba()">
-        @if (aba() !== 'configuracao') {
+        @if (aba() === 'dados' || aba() === 'robo') {
           <form [class]="design.formulario" [formGroup]="form" (ngSubmit)="salvar()">
             @if (aba() === 'dados') {
               <div>
@@ -356,6 +367,10 @@
               {{ salvando() ? conteudo.botoes.salvando : conteudo.botoes.atualizarPerfil }}
             </button>
           </form>
+        }
+
+        @if (aba() === 'funcionamento') {
+          <app-funcionamento />
         }
 
         @if (aba() === 'configuracao') {

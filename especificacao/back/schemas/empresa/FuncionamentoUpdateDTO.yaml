@@ -1,0 +1,26 @@
+type: object
+description: Configuração de funcionamento da reserva por hora. Campos nulos não são alterados.
+properties:
+  duracaoAtendimentoMinutos:
+    type: integer
+    format: int32
+    minimum: 30
+    maximum: 720
+    description: Duração do atendimento, múltiplo de 30
+    example: 60
+  intervaloEntreAtendimentosMinutos:
+    type: integer
+    format: int32
+    minimum: 0
+    maximum: 120
+    description: Intervalo entre atendimentos
+    example: 15
+  uf:
+    type: string
+    description: Sigla do estado da empresa, que liga os feriados estaduais. Vazio remove
+    example: SP
+  horarios:
+    type: array
+    description: Horários por perfil. A lista enviada substitui a anterior
+    items:
+      $ref: "#/components/schemas/HorarioFuncionamentoDTO"

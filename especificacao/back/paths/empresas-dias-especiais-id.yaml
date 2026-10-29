@@ -1,0 +1,35 @@
+delete:
+  tags:
+  - Funcionamento da reserva por hora
+  summary: Remover um dia especial
+  operationId: removerDiaEspecial
+  parameters:
+  - name: x-admin-token
+    in: header
+    description: Token administrativo do SaaS
+    required: false
+    schema:
+      type: string
+  - name: sessao
+    in: path
+    description: Identificador da sessão WhatsApp da empresa
+    required: true
+    schema:
+      type: string
+    example: sessao_recanto_01
+  - name: id
+    in: path
+    description: Identificador do dia especial
+    required: true
+    schema:
+      type: integer
+      format: int64
+  responses:
+    "204":
+      description: Dia especial removido
+    "401":
+      description: Sem token
+    "403":
+      description: Cliente de outra empresa ou sessão inexistente para quem não é admin
+    "404":
+      description: Dia especial não encontrado nesta empresa

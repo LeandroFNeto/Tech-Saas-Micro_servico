@@ -1,0 +1,351 @@
+<div [class]="visual.pilha">
+  <div>
+    <h2 [class]="design.secao.titulo">{{ conteudo.titulo }}</h2>
+    <p [class]="design.secao.descricao">{{ conteudo.descricao }}</p>
+  </div>
+
+  @if (carregando()) {
+    <div [class]="visual.carregando.pilha" aria-busy="true">
+      <p [class]="visual.carregando.texto" role="status">{{ conteudo.carregando }}</p>
+      <div [class]="visual.carregando.grade">
+        <div [class]="visual.carregando.bloco"></div>
+        <div [class]="visual.carregando.bloco"></div>
+        <div [class]="visual.carregando.bloco"></div>
+      </div>
+      <div [class]="visual.carregando.botao"></div>
+    </div>
+  }
+
+  @if (comErro()) {
+    <div [class]="visual.alerta.erro" role="alert">
+      <div>
+        <strong [class]="visual.alerta.erroTitulo">{{ conteudo.erro.titulo }}</strong>
+        <p [class]="visual.alerta.erroTexto">{{ mensagemErro() ?? conteudo.erro.texto }}</p>
+      </div>
+      <button type="button" [class]="visual.botaoPequeno" (click)="carregar()">{{ conteudo.erro.tentar }}</button>
+    </div>
+  }
+
+  @if (pronto()) {
+    <form [class]="visual.formulario" novalidate (submit)="salvar($event)">
+      @if (erroAcao(); as falha) {
+        <div [class]="visual.alerta.erro" role="alert">
+          <div>
+            <strong [class]="visual.alerta.erroTitulo">{{ falha.titulo }}</strong>
+            <p [class]="visual.alerta.erroTexto">{{ falha.texto }}</p>
+          </div>
+        </div>
+      }
+      @if (sucesso()) {
+        <p [class]="visual.alerta.sucesso" role="status">{{ conteudo.sucesso }}</p>
+      }
+      @if (vazio()) {
+        <p [class]="visual.alerta.vazio">{{ conteudo.vazio }}</p>
+      }
+
+      <div [class]="visual.trio">
+        <div [class]="visual.campo">
+          <label [class]="design.campo.rotulo" for="func-abre">{{ conteudo.simples.abre }}</label>
+          <input
+            id="func-abre"
+            type="time"
+            [class]="classesEntrada(visual.entrada, horarioInvalido())"
+            [value]="abre()"
+            (input)="abre.set(valor($event))"
+          />
+        </div>
+        <div [class]="visual.campo">
+          <label [class]="design.campo.rotulo" for="func-fecha">{{ conteudo.simples.fecha }}</label>
+          <input
+            id="func-fecha"
+            type="time"
+            [class]="classesEntrada(visual.entrada, horarioInvalido())"
+            [value]="fecha()"
+            [attr.aria-invalid]="horarioInvalido()"
+            [attr.aria-describedby]="horarioInvalido() ? 'func-fecha-erro' : null"
+            (input)="fecha.set(valor($event))"
+          />
+        </div>
+        <div [class]="visual.campo">
+          <label [class]="design.campo.rotulo" for="func-duracao">{{ conteudo.simples.duracao }}</label>
+          <select id="func-duracao" [class]="visual.entrada" (change)="duracao.set(+valor($event))">
+            @for (minutos of duracoes; track minutos) {
+              <option [value]="minutos" [selected]="minutos === duracao()">{{ rotuloDuracao(minutos) }}</option>
+            }
+          </select>
+        </div>
+      </div>
+      @if (horarioInvalido()) {
+        <p id="func-fecha-erro" [class]="design.campo.erro" role="alert">{{ conteudo.simples.erroHorario }}</p>
+      }
+      <p [class]="design.campo.dica">{{ conteudo.simples.dica }}</p>
+
+      <button
+        type="button"
+        [class]="visual.botaoPersonalizar"
+        aria-controls="func-personalizar"
+        [attr.aria-expanded]="personalizarAberto()"
+        (click)="alternarPersonalizar()"
+      >
+        {{ personalizarAberto() ? conteudo.personalizar.fechar : conteudo.personalizar.abrir }}
+      </button>
+
+      @if (personalizarAberto()) {
+        <div id="func-personalizar" [class]="visual.personalizar">
+          <div [class]="visual.bloco">
+            <div>
+              <h3 [class]="visual.subtitulo">{{ conteudo.porDia.titulo }}</h3>
+              <p [class]="design.campo.dica">{{ conteudo.porDia.dica }}</p>
+            </div>
+            <div [class]="visual.dia.lista">
+              @for (dia of horarios(); track dia.codigo) {
+                <div [class]="classesDia(dia)">
+                  <div>
+                    <span [class]="visual.dia.nome">{{ nomeDia(dia.codigo) }}</span>
+                    <span [class]="visual.dia.status">{{ statusDia(dia) }}</span>
+                  </div>
+                  <span [class]="visual.dia.chave">
+                    <input
+                      type="checkbox"
+                      [checked]="dia.aberto"
+                      [attr.aria-label]="conteudo.porDia.chave + ' ' + nomeDia(dia.codigo)"
+                      (change)="atualizarDia(dia.codigo, { aberto: marcado($event) })"
+                    />
+                    <span aria-hidden="true"></span>
+                  </span>
+                  <div [class]="visual.dia.campos">
+                    <div [class]="visual.campo">
+                      <label [class]="design.campo.rotuloPequeno" [attr.for]="'func-abre-' + dia.codigo">{{ conteudo.porDia.abre }}</label>
+                      <input
+                        [id]="'func-abre-' + dia.codigo"
+                        type="time"
+                        [class]="classesEntrada(visual.entradaDia, diaInvalido(dia))"
+                        [value]="dia.abre"
+                        [disabled]="!dia.aberto"
+                        (input)="atualizarDia(dia.codigo, { abre: valor($event) })"
+                      />
+                    </div>
+                    <div [class]="visual.campo">
+                      <label [class]="design.campo.rotuloPequeno" [attr.for]="'func-fecha-' + dia.codigo">{{ conteudo.porDia.fecha }}</label>
+                      <input
+                        [id]="'func-fecha-' + dia.codigo"
+                        type="time"
+                        [class]="classesEntrada(visual.entradaDia, diaInvalido(dia))"
+                        [value]="dia.fecha"
+                        [disabled]="!dia.aberto"
+                        [attr.aria-invalid]="diaInvalido(dia)"
+                        [attr.aria-describedby]="diaInvalido(dia) ? 'func-erro-' + dia.codigo : null"
+                        (input)="atualizarDia(dia.codigo, { fecha: valor($event) })"
+                      />
+                    </div>
+                    <div [class]="visual.campo">
+                      <label [class]="design.campo.rotuloPequeno" [attr.for]="'func-duracao-' + dia.codigo">{{ conteudo.porDia.duracao }}</label>
+                      <select
+                        [id]="'func-duracao-' + dia.codigo"
+                        [class]="visual.entradaDia"
+                        [disabled]="!dia.aberto"
+                        (change)="atualizarDia(dia.codigo, { duracao: duracaoDoTexto(valor($event)) })"
+                      >
+                        <option value="" [selected]="dia.duracao === null">{{ conteudo.porDia.usarGeral }}</option>
+                        @for (minutos of duracoes; track minutos) {
+                          <option [value]="minutos" [selected]="minutos === dia.duracao">{{ rotuloDuracao(minutos) }}</option>
+                        }
+                      </select>
+                    </div>
+                  </div>
+                  @if (diaInvalido(dia)) {
+                    <p [id]="'func-erro-' + dia.codigo" [class]="visual.dia.erro" role="alert">{{ conteudo.porDia.erroHorario }}</p>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+
+          <div [class]="visual.duo">
+            <div [class]="visual.campo">
+              <label [class]="design.campo.rotulo" for="func-intervalo">{{ conteudo.intervalo.rotulo }}</label>
+              <input
+                id="func-intervalo"
+                type="number"
+                inputmode="numeric"
+                min="0"
+                [max]="maxIntervalo"
+                step="5"
+                [class]="classesEntrada(visual.entrada, intervaloInvalido())"
+                [value]="intervalo() ?? ''"
+                [attr.aria-invalid]="intervaloInvalido()"
+                aria-describedby="func-intervalo-dica"
+                (input)="definirIntervalo(valor($event))"
+              />
+              <p id="func-intervalo-dica" [class]="design.campo.dica">{{ conteudo.intervalo.dica }}</p>
+              @if (intervaloInvalido()) {
+                <p [class]="design.campo.erro" role="alert">{{ conteudo.intervalo.erro }}</p>
+              }
+            </div>
+            <div [class]="visual.campo">
+              <label [class]="design.campo.rotulo" for="func-uf">{{ conteudo.uf.rotulo }}</label>
+              <select
+                id="func-uf"
+                [class]="classesEntrada(visual.entrada, ufInvalida())"
+                [attr.aria-invalid]="ufInvalida()"
+                aria-describedby="func-uf-dica"
+                (change)="uf.set(valor($event))"
+              >
+                <option value="" [selected]="uf() === ''">{{ conteudo.uf.selecione }}</option>
+                @for (sigla of ufs; track sigla) {
+                  <option [value]="sigla" [selected]="sigla === uf()">{{ sigla }}</option>
+                }
+              </select>
+              <p id="func-uf-dica" [class]="design.campo.dica">{{ conteudo.uf.dica }}</p>
+              @if (ufInvalida()) {
+                <p [class]="design.campo.erro" role="alert">{{ conteudo.uf.erro }}</p>
+              }
+            </div>
+          </div>
+
+          <div [class]="visual.bloco">
+            <div>
+              <h3 [class]="visual.subtitulo">{{ conteudo.especiais.titulo }}</h3>
+              <p [class]="design.campo.dica">{{ conteudo.especiais.dica }}</p>
+            </div>
+
+            @if (especiais().length === 0) {
+              <p [class]="visual.especial.vazio">{{ conteudo.especiais.vazio }}</p>
+            } @else {
+              <ul [class]="visual.especial.lista">
+                @for (dia of especiais(); track dia.id) {
+                  <li [class]="visual.especial.item">
+                    <div>
+                      <div [class]="visual.especial.topo">
+                        <span [class]="visual.especial.data">{{ dataLegivel(dia.data) }}</span>
+                        <span [class]="classesSelo(dia)">{{ seloEspecial(dia) }}</span>
+                      </div>
+                      @if (dia.motivo) {
+                        <span [class]="visual.especial.motivo">{{ dia.motivo }}</span>
+                      }
+                    </div>
+                    <button
+                      type="button"
+                      [class]="visual.botaoPequeno"
+                      [attr.aria-label]="conteudo.especiais.removerRotulo + ' ' + dataCurta(dia.data)"
+                      [disabled]="salvando()"
+                      (click)="removerEspecial(dia.id)"
+                    >
+                      {{ conteudo.especiais.remover }}
+                    </button>
+                  </li>
+                }
+              </ul>
+            }
+
+            @if (aviso(); as avisoAtual) {
+              <div [class]="visual.alerta.aviso" role="alert">
+                <strong [class]="visual.alerta.avisoTitulo">{{ conteudo.aviso.titulo }}</strong>
+                <p [class]="visual.alerta.avisoTexto">{{ conteudo.aviso.inicio }} {{ dataCurta(avisoAtual.data) }} {{ conteudo.aviso.fim }}</p>
+                <ul [class]="visual.alerta.avisoLista">
+                  @for (evento of avisoAtual.eventos; track $index) {
+                    <li [class]="visual.alerta.avisoItem">{{ evento }}</li>
+                  }
+                </ul>
+              </div>
+            }
+
+            <div [class]="visual.novo">
+              <h4 [class]="visual.subtitulo">{{ conteudo.novo.titulo }}</h4>
+              <div [class]="visual.duo">
+                <div [class]="visual.campo">
+                  <label [class]="design.campo.rotulo" for="func-nova-data">{{ conteudo.novo.data }}</label>
+                  <input
+                    id="func-nova-data"
+                    type="date"
+                    [min]="dataMinima"
+                    [max]="dataMaxima"
+                    [class]="classesEntrada(visual.entrada, dataInvalida())"
+                    [value]="novaData()"
+                    [attr.aria-invalid]="dataInvalida()"
+                    aria-describedby="func-nova-data-dica"
+                    (input)="novaData.set(valor($event))"
+                  />
+                  <p id="func-nova-data-dica" [class]="design.campo.dica">{{ conteudo.novo.dataDica }}</p>
+                  @if (dataInvalida()) {
+                    <p id="func-nova-data-erro" [class]="design.campo.erro" role="alert">{{ conteudo.novo.dataErro }}</p>
+                  }
+                </div>
+                <div [class]="visual.campo">
+                  <label [class]="design.campo.rotulo" for="func-novo-motivo">{{ conteudo.novo.motivo }}</label>
+                  <input
+                    id="func-novo-motivo"
+                    type="text"
+                    [attr.maxlength]="maxMotivo"
+                    [class]="classesEntrada(visual.entrada, motivoInvalido())"
+                    [placeholder]="conteudo.novo.motivoPlaceholder"
+                    [value]="novoMotivo()"
+                    [attr.aria-invalid]="motivoInvalido()"
+                    aria-describedby="func-novo-motivo-dica"
+                    (input)="novoMotivo.set(valor($event))"
+                  />
+                  <p [class]="visual.contador">{{ novoMotivo().length }} / {{ maxMotivo }}</p>
+                  <p id="func-novo-motivo-dica" [class]="design.campo.dica">{{ conteudo.novo.motivoDica }}</p>
+                  @if (motivoInvalido()) {
+                    <p [class]="design.campo.erro" role="alert">{{ conteudo.novo.motivoErro }}</p>
+                  }
+                </div>
+              </div>
+
+              <label [class]="design.opcao.linha">
+                <span>
+                  <span [class]="design.opcao.rotulo">{{ conteudo.novo.fechado }}</span>
+                  <span [class]="design.opcao.dica">{{ conteudo.novo.fechadoDica }}</span>
+                </span>
+                <span class="switch">
+                  <input type="checkbox" [checked]="novoFechado()" (change)="novoFechado.set(marcado($event))" />
+                  <span aria-hidden="true"></span>
+                </span>
+              </label>
+
+              <div [class]="visual.duoFixo">
+                <div [class]="visual.campo">
+                  <label [class]="design.campo.rotuloPequeno" for="func-novo-abre">{{ conteudo.novo.abre }}</label>
+                  <input
+                    id="func-novo-abre"
+                    type="time"
+                    [class]="classesEntrada(visual.entrada, novoHorarioInvalido())"
+                    [value]="novoAbre()"
+                    [disabled]="novoFechado()"
+                    (input)="novoAbre.set(valor($event))"
+                  />
+                </div>
+                <div [class]="visual.campo">
+                  <label [class]="design.campo.rotuloPequeno" for="func-novo-fecha">{{ conteudo.novo.fecha }}</label>
+                  <input
+                    id="func-novo-fecha"
+                    type="time"
+                    [class]="classesEntrada(visual.entrada, novoHorarioInvalido())"
+                    [value]="novoFecha()"
+                    [disabled]="novoFechado()"
+                    [attr.aria-invalid]="novoHorarioInvalido()"
+                    (input)="novoFecha.set(valor($event))"
+                  />
+                </div>
+              </div>
+              @if (novoHorarioInvalido() && novoAbre() && novoFecha()) {
+                <p [class]="design.campo.erro" role="alert">{{ conteudo.novo.erroHorario }}</p>
+              }
+
+              <button type="button" [class]="visual.botaoAdicionar" [disabled]="adicionarDesabilitado()" (click)="adicionarEspecial()">
+                {{ conteudo.novo.adicionar }}
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+
+      <div [class]="visual.barra">
+        <button type="submit" [class]="visual.botaoSalvar" [disabled]="salvarDesabilitado()">{{ conteudo.salvar }}</button>
+        @if (salvarDesabilitado() && !salvando()) {
+          <p [class]="design.campo.dica">{{ conteudo.salvarDica }}</p>
+        }
+      </div>
+    </form>
+  }
+</div>

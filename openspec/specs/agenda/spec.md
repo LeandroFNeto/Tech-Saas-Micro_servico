@@ -25,7 +25,7 @@ O sistema deve criar no Google Agenda da empresa, para cada `EventoReservaConfir
 
 Antes de inserir, o observador consulta de novo a disponibilidade da data sob um bloqueio por empresa e data, que cobre só a reconsulta e a inserção. Data ocupada não insere. Em falha transitória (5xx, 429, falha de rede e 403 com motivo `rateLimitExceeded` ou `userRateLimitExceeded`) faz 3 tentativas no total, com espera de 2 e 5 segundos fora do bloqueio; da segunda tentativa em diante, procura antes o evento pelo id do pedido e, se ele existir e não estiver cancelado, conta como sucesso. Falham na hora, sem repetir: 400, 401, 404, 403 de permissão, credencial ausente e agenda não configurada (`AgendaNaoConfiguradaException`).
 
-Ao terminar, sempre chama `GerenciadorSessao.concluirRegistro`, que só troca o estado se a conversa ainda estiver em `RESERVA_REGISTRANDO`: sucesso e falha voltam a `INICIO`; data ocupada volta a `RESERVA_ESPERANDO_DATA`, mantendo o nome já informado. Isso vale mesmo se o envio da mensagem falhar. A falha final grava `log.error` com o id da empresa, o `idPedido` e a classe da exceção, sem número, nome ou texto do cliente. Só reserva de diária entra; empresa com locação por hora segue como reserva manual (WPP-07).
+Ao terminar, sempre chama `GerenciadorSessao.concluirRegistro`, que só troca o estado se a conversa ainda estiver em `RESERVA_REGISTRANDO`: sucesso e falha voltam a `INICIO`; data ocupada volta a `RESERVA_ESPERANDO_DATA`, mantendo o nome já informado. Isso vale mesmo se o envio da mensagem falhar. A falha final grava `log.error` com o id da empresa, o `idPedido` e a classe da exceção, sem número, nome ou texto do cliente. Este fluxo é o da reserva de diária; a reserva por hora tem o fluxo de AGD-03.
 
 Contrato: nenhum (não há rota nem DTO de API novo)
 Prova: `src/test/resources/features/observer-agenda.feature`, `src/test/java/com/example/demo/servico/ServicoReservaAgendarTest.java`, `src/test/java/com/example/demo/servico/observador/ObservadorGoogleAgendaTest.java`, `src/test/java/com/example/demo/servico/GerenciadorSessaoTest.java`
@@ -98,3 +98,60 @@ Cenário: falha no envio da mensagem
 - Dado o envio da mensagem ao WhatsApp falhando
 - Quando o registro termina
 - Então a conversa sai de `RESERVA_REGISTRANDO` mesmo assim
+
+### AGD-03 Registrar a reserva por hora sem conflito, de uma ou de várias datas
+
+O sistema deve, para empresa com locação por hora e reserva automática, criar no Google Agenda um evento com hora (início e fim com fuso `America/Sao_Paulo`) para cada data do pedido, com título "Reserva - <nome>" e a mesma descrição de AGD-02. O fim é o início mais a duração do atendimento da data. O id de cada evento deriva de `idPedido#posição`, então repetir o pedido não duplica e o 409 conta como sucesso.
+
+Um horário conflita com qualquer evento que o cruze; terminar exatamente quando outro começa não conflita; evento de dia inteiro conflita com tudo no dia. O intervalo entre atendimentos da empresa (EMP-07) é somado antes e depois do atendimento pedido, mas o evento no Google guarda só o atendimento. Agenda com mais de 500 eventos no período consultado pode esconder conflito.
+
+Antes de inserir, o observador pega o bloqueio de cada data (empresa e data) em ordem crescente de data, reconsulta a janela de funcionamento (EMP-07) e a disponibilidade de cada data, e só então insere. O resultado é tudo ou nada: se uma data está fechada, ocupada ou fora da janela, nada é criado, o cliente recebe "Nada foi reservado" com as datas que caíram, só elas saem do pedido e a conversa volta a `RESERVA_ESPERANDO_DATA`. As tentativas e o `concluirRegistro` seguem como em AGD-02, e a nova tentativa pula os eventos que já existem.
+
+Se a inserção falha de vez no meio do pedido, o observador apaga os eventos já criados dele (404 e 410 contam como apagado) e avisa o cliente como em AGD-02. Se apagar também falha, grava `log.error` com o id da empresa, o `idPedido` e a classe da exceção, sem dado pessoal. Agenda não configurada não aciona a compensação. A compensação só roda depois da falha final, nunca entre tentativas, porque o Google não deixa reusar o id de um evento apagado.
+
+Contrato: nenhum (não há rota nem DTO de API novo)
+Prova: `src/test/resources/features/observer-agenda.feature`, `src/test/java/com/example/demo/servico/observador/ObservadorGoogleAgendaPorHoraTest.java`, `src/test/java/com/example/demo/servico/ServicoGoogleagendaSobreposicaoTest.java`
+
+Cenário: várias datas criam um evento com hora para cada data
+
+- Dado uma empresa por hora com agenda Google e o horário livre em todas as datas
+- Quando `EventoReservaConfirmada` é publicado para "10-11-2026" e "17-11-2026" às "14:00"
+- Então o Google recebe 2 inserções com hora
+- E o cliente final recebe "Reserva confirmada" com as duas datas e o horário
+- E a conversa volta a `INICIO`
+
+Cenário: uma data ocupada derruba o pedido inteiro
+
+- Dado o horário ocupado em "17-11-2026"
+- Quando o evento é publicado para as duas datas
+- Então o Google recebe 0 inserções
+- E o cliente final recebe "Nada foi reservado" e a data "17-11-2026"
+- E a conversa volta a `RESERVA_ESPERANDO_DATA`
+
+Cenário: falha 5xx desfaz o pedido
+
+- Dado o Google respondendo 503 em toda inserção
+- Quando o evento é publicado para duas datas
+- Então o Google recebe 3 tentativas de inserção
+- E o Google remove os 2 eventos do pedido
+- E o cliente final recebe a mensagem de falha
+- E a conversa volta a `INICIO`
+
+### AGD-04 Mostrar a disponibilidade por hora na agenda e na pesquisa de data
+
+O sistema deve, para empresa com locação por hora, calcular o status de cada dia pelos horários livres da janela de funcionamento (EMP-07) menos as ocupações do Google, e não pelo dia inteiro: o dia é "Lotado" quando nenhum início cabe, "Fechado" quando a janela está fechada e "Livre" quando sobra ao menos um início. O painel de reservas e a previsão do tempo (EMP-06) marcam "Alugado" quando o dia está lotado ou fechado e "Disponível" quando está livre. A agenda dos próximos 15 dias do bot (WPP-09) e o painel dos 30 dias usam uma só consulta ao Google para o período.
+
+Contrato: `especificacao/back/paths/empresas-previsao.yaml` (o campo de status por dia não muda de formato)
+Prova: `src/test/java/com/example/demo/servico/ServicoFuncionamentoTest.java`, `src/test/java/com/example/demo/strategy/LocacaoStrategyTest.java`. Não há teste de `listarReservas` com empresa por hora.
+
+Cenário: dia com uma reserva ainda tem vaga
+
+- Dado uma empresa por hora com janela das 08:00 às 10:00 e duração de 60 minutos, e um evento das 08:00 às 09:00
+- Quando o status do dia é calculado
+- Então o dia é "Livre"
+
+Cenário: todos os horários ocupados
+
+- Dado um evento das 08:00 às 10:00 na mesma janela
+- Quando o status do dia é calculado
+- Então o dia é "Lotado"
