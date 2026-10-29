@@ -1,0 +1,41 @@
+post:
+  tags:
+  - Funcionamento da reserva por hora
+  summary: Cadastrar um dia especial
+  description: "Feriado municipal, folga, evento privado ou horário próprio. Vale mais que o perfil da semana e que o feriado. Fechar uma data que já tem eventos na agenda não cancela nada: a resposta lista os eventos em reservasNaData."
+  operationId: cadastrarDiaEspecial
+  parameters:
+  - name: x-admin-token
+    in: header
+    description: Token administrativo do SaaS
+    required: false
+    schema:
+      type: string
+  - name: sessao
+    in: path
+    description: Identificador da sessão WhatsApp da empresa
+    required: true
+    schema:
+      type: string
+    example: sessao_recanto_01
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: "#/components/schemas/DataEspecialCreateDTO"
+  responses:
+    "201":
+      description: Dia especial cadastrado
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/DataEspecialDTO"
+    "400":
+      description: Data fora do período de hoje até 180 dias à frente, data repetida, formato inválido ou horário próprio incompleto
+    "401":
+      description: Sem token
+    "403":
+      description: Cliente de outra empresa ou sessão inexistente para quem não é admin
+    "404":
+      description: Empresa não encontrada para a sessão informada (só para o admin)

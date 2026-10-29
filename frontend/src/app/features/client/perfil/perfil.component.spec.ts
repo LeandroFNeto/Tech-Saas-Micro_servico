@@ -4,6 +4,7 @@ import { of } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
 import { AvisoService } from '../../../core/services/aviso.service';
 import { EmpresaService } from '../../../core/services/empresa.service';
+import { FuncionamentoService } from '../../../core/services/funcionamento.service';
 import { camposAbaixoDoMinimo, garantirTailwindCarregado, medirCampos } from '../../../testing/campos-fonte.testing';
 import { EmpresaView } from '../../../shared/models/empresa.models';
 import { PerfilComponent } from './perfil.component';
@@ -27,7 +28,20 @@ describe('PerfilComponent regressao visual', () => {
           useValue: { sessao: () => ({ sessaoWhatsapp: 'quadra', sub: 'quadra@gamb.com.br', papel: 'CLIENTE' }) }
         },
         { provide: EmpresaService, useValue: { buscarPorSessao: () => of(empresa) } },
-        { provide: AvisoService, useValue: { listarAtivos: () => of([]) } }
+        { provide: AvisoService, useValue: { listarAtivos: () => of([]) } },
+        {
+          provide: FuncionamentoService,
+          useValue: {
+            ler: () =>
+              of({
+                duracaoAtendimentoMinutos: 60,
+                intervaloEntreAtendimentosMinutos: 0,
+                uf: null,
+                horarios: [],
+                diasEspeciais: []
+              })
+          }
+        }
       ]
     });
     const fixture = TestBed.createComponent(PerfilComponent);
@@ -36,7 +50,7 @@ describe('PerfilComponent regressao visual', () => {
     return fixture;
   }
 
-  for (const aba of ['dados', 'robo', 'configuracao'] as const) {
+  for (const aba of ['dados', 'robo', 'funcionamento', 'configuracao'] as const) {
     it(`aba ${aba}: todo campo tem fonte computada de pelo menos 16px`, () => {
       const fixture = montar();
       fixture.componentInstance.aba.set(aba);

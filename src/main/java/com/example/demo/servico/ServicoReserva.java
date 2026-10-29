@@ -16,6 +16,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -31,6 +32,9 @@ public class ServicoReserva {
 
     @Autowired
     private ServicoGoogleagenda agendaService;
+
+    @Autowired
+    private ServicoFuncionamento servicoFuncionamento;
 
     public String agendarNoGoogle(Empresa empresa, String dataReserva, String nomeCliente, String whatsappId, String idPedido) throws Exception {
         String calendarId = empresa.getGoogleCalendarId();
@@ -52,6 +56,57 @@ public class ServicoReserva {
         Event criado = servicoAgenda.events().insert(calendarId, evento).execute();
         log.info("Reserva salva na agenda da empresa {}", empresa.getId());
         return criado.getId();
+    }
+
+    public String agendarPorHora(Empresa empresa, LocalDate dia, LocalTime inicio, LocalTime fim, String nomeCliente,
+                                 String whatsappId, String idPedido, int posicao) throws Exception {
+        String calendarId = empresa.getGoogleCalendarId();
+        if (calendarId == null || calendarId.isBlank()) {
+            log.warn("Empresa {} sem agenda cadastrada", empresa.getId());
+            throw new AgendaNaoConfiguradaException(empresa.getId());
+        }
+
+        com.google.api.services.calendar.Calendar servicoAgenda = agendaService.conectarAgenda();
+        ZoneId fuso = ZoneId.of("America/Sao_Paulo");
+        String fusoTexto = fuso.getId();
+
+        Event evento = new Event()
+                .setId(idEventoDoPedido(idDaPosicao(idPedido, posicao)))
+                .setSummary("Reserva - " + nomeCliente)
+                .setDescription("Reserva feita pelo bot. WhatsApp: " + whatsappId)
+                .setStart(new EventDateTime()
+                        .setDateTime(new DateTime(dia.atTime(inicio).atZone(fuso).toInstant().toEpochMilli()))
+                        .setTimeZone(fusoTexto))
+                .setEnd(new EventDateTime()
+                        .setDateTime(new DateTime(dia.atTime(fim).atZone(fuso).toInstant().toEpochMilli()))
+                        .setTimeZone(fusoTexto));
+
+        Event criado = servicoAgenda.events().insert(calendarId, evento).execute();
+        log.info("Reserva por hora salva na agenda da empresa {}", empresa.getId());
+        return criado.getId();
+    }
+
+    public void removerEventoPorHora(Empresa empresa, String idPedido, int posicao) throws Exception {
+        String calendarId = empresa.getGoogleCalendarId();
+        if (calendarId == null || calendarId.isBlank()) {
+            throw new AgendaNaoConfiguradaException(empresa.getId());
+        }
+        com.google.api.services.calendar.Calendar servicoAgenda = agendaService.conectarAgenda();
+        try {
+            servicoAgenda.events().delete(calendarId, idEventoDoPedido(idDaPosicao(idPedido, posicao))).execute();
+        } catch (GoogleJsonResponseException e) {
+            if (e.getStatusCode() != 404 && e.getStatusCode() != 410) {
+                throw e;
+            }
+        }
+    }
+
+    public boolean eventoPorHoraExiste(Empresa empresa, String idPedido, int posicao) throws Exception {
+        return eventoDoPedidoExiste(empresa, idDaPosicao(idPedido, posicao));
+    }
+
+    static String idDaPosicao(String idPedido, int posicao) {
+        return idPedido + "#" + posicao;
     }
 
     public boolean eventoDoPedidoExiste(Empresa empresa, String idPedido) throws Exception {
@@ -103,6 +158,10 @@ public class ServicoReserva {
             String calendarId = empresa.getGoogleCalendarId();
             if(calendarId == null) return null;
 
+            if (empresa.isLocacaoPorHora()) {
+                return listarReservasPorHora(empresa, calendarId);
+            }
+
             Events eventos = servicoGoogle.events().list(calendarId)
                     .setMaxResults(100)
                     .setTimeMin(agora)
@@ -149,6 +208,24 @@ public class ServicoReserva {
             log.error("Erro no Google Calendar ao listar (empresa {}): {}", empresa.getId(), e.getClass().getSimpleName());
             return null;
         }
+    }
+
+    private List<DiaReservaDTO> listarReservasPorHora(Empresa empresa, String calendarId) throws Exception {
+        LocalDate hoje = LocalDate.now(ZoneId.of("America/Sao_Paulo"));
+        List<ServicoGoogleagenda.Intervalo> ocupados = agendaService.ocupacoesDoPeriodo(calendarId, hoje, hoje.plusDays(30));
+        DateTimeFormatter formatadorDia = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        Locale idiomaBrasil = new Locale("pt", "BR");
+        List<DiaReservaDTO> dias = new ArrayList<>();
+        for (int i = 0; i < 30; i++) {
+            LocalDate dia = hoje.plusDays(i);
+            ServicoFuncionamento.Janela janela = servicoFuncionamento.janelaDa(empresa, dia);
+            boolean disponivel = servicoFuncionamento.situacaoDoDia(empresa, dia, janela, ocupados)
+                    == ServicoFuncionamento.Situacao.LIVRE;
+            dias.add(new DiaReservaDTO(dia.format(formatadorDia),
+                    dia.getDayOfWeek().getDisplayName(TextStyle.FULL, idiomaBrasil),
+                    disponivel ? "Disponível" : "Alugado"));
+        }
+        return dias;
     }
 
     public DiaReservaDTO pesquisarData(Empresa empresa, String dataRecebida) {

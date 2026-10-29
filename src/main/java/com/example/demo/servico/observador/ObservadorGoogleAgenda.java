@@ -1,9 +1,11 @@
 package com.example.demo.servico.observador;
 
 import com.example.demo.evento.EventoReservaConfirmada;
+import com.example.demo.model.DadosReservaSessao;
 import com.example.demo.model.EstadoUsuario;
 import com.example.demo.servico.AgendaNaoConfiguradaException;
 import com.example.demo.servico.GerenciadorSessao;
+import com.example.demo.servico.ServicoFuncionamento;
 import com.example.demo.servico.ServicoGoogleagenda;
 import com.example.demo.servico.ServicoMensagem;
 import com.example.demo.servico.ServicoReserva;
@@ -18,8 +20,13 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -37,6 +44,17 @@ public class ObservadorGoogleAgenda {
 
     private enum Resultado { SUCESSO, DATA_OCUPADA, FALHA }
 
+    private record Desfecho(Resultado resultado, List<String> problemas) {
+        static Desfecho de(Resultado resultado) {
+            return new Desfecho(resultado, List.of());
+        }
+    }
+
+    @FunctionalInterface
+    private interface Tentativa {
+        Desfecho executar(int numero) throws Exception;
+    }
+
     private final Map<String, ReentrantLock> bloqueios = new ConcurrentHashMap<>();
 
     @Autowired
@@ -51,24 +69,32 @@ public class ObservadorGoogleAgenda {
     @Autowired
     private GerenciadorSessao gerenciadorSessao;
 
+    @Autowired
+    private ServicoFuncionamento servicoFuncionamento;
+
     @Async
     @EventListener
     public void registarNoGoogle(EventoReservaConfirmada evento) {
         log.info("Reserva confirmada recebida; agendando no Google (empresa {})", evento.getEmpresa().getId());
 
-        Resultado resultado = Resultado.FALHA;
+        Desfecho desfecho = Desfecho.de(Resultado.FALHA);
         try {
-            resultado = registrar(evento);
+            desfecho = evento.isPorHora() ? registrarPorHora(evento) : registrar(evento);
         } catch (RuntimeException e) {
             registrarFalha(evento, e);
         } finally {
+            if (desfecho.resultado() == Resultado.DATA_OCUPADA) {
+                descartarDatasComProblema(evento, desfecho.problemas());
+            }
             gerenciadorSessao.concluirRegistro(
                     evento.getNumeroWhatsapp(),
-                    resultado == Resultado.DATA_OCUPADA ? EstadoUsuario.RESERVA_ESPERANDO_DATA : EstadoUsuario.INICIO);
+                    desfecho.resultado() == Resultado.DATA_OCUPADA
+                            ? EstadoUsuario.RESERVA_ESPERANDO_DATA
+                            : EstadoUsuario.INICIO);
         }
 
         try {
-            servicoMensagem.enviarMensagemWPP(evento.getEmpresa(), evento.getNumeroWhatsapp(), mensagem(evento, resultado));
+            servicoMensagem.enviarMensagemWPP(evento.getEmpresa(), evento.getNumeroWhatsapp(), mensagem(evento, desfecho));
         } catch (RuntimeException e) {
             log.error("Erro ao enviar o resultado da reserva (empresa {}, pedido {}): {}",
                     evento.getEmpresa().getId(), evento.getIdPedido(), e.getClass().getSimpleName());
@@ -79,47 +105,57 @@ public class ObservadorGoogleAgenda {
         Thread.sleep(milissegundos);
     }
 
-    private Resultado registrar(EventoReservaConfirmada evento) {
+    private Desfecho registrar(EventoReservaConfirmada evento) {
         LocalDate data = LocalDate.parse(evento.getDataReserva(), FORMATO_DATA);
+        return comTentativas(evento, numero -> tentar(evento, data, numero));
+    }
 
-        for (int tentativa = 1; tentativa <= MAXIMO_TENTATIVAS; tentativa++) {
+    private Desfecho registrarPorHora(EventoReservaConfirmada evento) {
+        Desfecho desfecho = comTentativas(evento, numero -> tentarPorHora(evento, numero));
+        if (desfecho.resultado() == Resultado.FALHA) {
+            compensar(evento);
+        }
+        return desfecho;
+    }
+
+    private Desfecho comTentativas(EventoReservaConfirmada evento, Tentativa tentativa) {
+        for (int numero = 1; numero <= MAXIMO_TENTATIVAS; numero++) {
             try {
-                return tentar(evento, data, tentativa);
+                return tentativa.executar(numero);
             } catch (Exception e) {
-                boolean ultima = tentativa == MAXIMO_TENTATIVAS;
+                boolean ultima = numero == MAXIMO_TENTATIVAS;
                 if (!ehTransitoria(e) || ultima) {
                     registrarFalha(evento, e);
-                    return Resultado.FALHA;
+                    return Desfecho.de(Resultado.FALHA);
                 }
                 log.warn("Falha transitória ao registrar a reserva (empresa {}, pedido {}, tentativa {}): {}",
-                        evento.getEmpresa().getId(), evento.getIdPedido(), tentativa, e.getClass().getSimpleName());
+                        evento.getEmpresa().getId(), evento.getIdPedido(), numero, e.getClass().getSimpleName());
                 try {
-                    esperar(ESPERA_MS[tentativa - 1]);
+                    esperar(ESPERA_MS[numero - 1]);
                 } catch (InterruptedException interrompida) {
                     Thread.currentThread().interrupt();
                     registrarFalha(evento, interrompida);
-                    return Resultado.FALHA;
+                    return Desfecho.de(Resultado.FALHA);
                 }
             }
         }
-        return Resultado.FALHA;
+        return Desfecho.de(Resultado.FALHA);
     }
 
-    private Resultado tentar(EventoReservaConfirmada evento, LocalDate data, int tentativa) throws Exception {
+    private Desfecho tentar(EventoReservaConfirmada evento, LocalDate data, int tentativa) throws Exception {
         String calendarId = evento.getEmpresa().getGoogleCalendarId();
         if (calendarId == null || calendarId.isBlank()) {
             throw new AgendaNaoConfiguradaException(evento.getEmpresa().getId());
         }
 
-        ReentrantLock bloqueio = bloqueios.computeIfAbsent(
-                evento.getEmpresa().getId() + "|" + data, ignorado -> new ReentrantLock());
+        ReentrantLock bloqueio = bloqueioDoDia(evento, data);
         bloqueio.lock();
         try {
             if (tentativa > 1 && servicoReserva.eventoDoPedidoExiste(evento.getEmpresa(), evento.getIdPedido())) {
-                return Resultado.SUCESSO;
+                return Desfecho.de(Resultado.SUCESSO);
             }
             if (!servicoGoogleagenda.dataEstaLivre(calendarId, data)) {
-                return Resultado.DATA_OCUPADA;
+                return Desfecho.de(Resultado.DATA_OCUPADA);
             }
             servicoReserva.agendarNoGoogle(
                     evento.getEmpresa(),
@@ -127,15 +163,131 @@ public class ObservadorGoogleAgenda {
                     evento.getNomeCliente(),
                     evento.getNumeroWhatsapp(),
                     evento.getIdPedido());
-            return Resultado.SUCESSO;
+            return Desfecho.de(Resultado.SUCESSO);
         } catch (GoogleJsonResponseException e) {
             if (e.getStatusCode() == 409) {
-                return Resultado.SUCESSO;
+                return Desfecho.de(Resultado.SUCESSO);
             }
             throw e;
         } finally {
             bloqueio.unlock();
         }
+    }
+
+    private Desfecho tentarPorHora(EventoReservaConfirmada evento, int tentativa) throws Exception {
+        String calendarId = evento.getEmpresa().getGoogleCalendarId();
+        if (calendarId == null || calendarId.isBlank()) {
+            throw new AgendaNaoConfiguradaException(evento.getEmpresa().getId());
+        }
+
+        List<LocalDate> datas = evento.getDatas().stream()
+                .map(texto -> LocalDate.parse(texto, FORMATO_DATA))
+                .sorted()
+                .toList();
+        LocalTime inicio = LocalTime.parse(evento.getHorario());
+        int intervalo = evento.getEmpresa().intervaloEfetivoMinutos();
+
+        List<ReentrantLock> travados = new ArrayList<>();
+        try {
+            for (LocalDate data : datas) {
+                ReentrantLock bloqueio = bloqueioDoDia(evento, data);
+                bloqueio.lock();
+                travados.add(bloqueio);
+            }
+
+            Set<Integer> existentes = new HashSet<>();
+            if (tentativa > 1) {
+                for (int posicao = 0; posicao < datas.size(); posicao++) {
+                    if (servicoReserva.eventoPorHoraExiste(evento.getEmpresa(), evento.getIdPedido(), posicao)) {
+                        existentes.add(posicao);
+                    }
+                }
+                if (existentes.size() == datas.size()) {
+                    return Desfecho.de(Resultado.SUCESSO);
+                }
+            }
+
+            List<String> problemas = new ArrayList<>();
+            List<ServicoFuncionamento.Janela> janelas = new ArrayList<>();
+            for (int posicao = 0; posicao < datas.size(); posicao++) {
+                LocalDate data = datas.get(posicao);
+                ServicoFuncionamento.Janela janela = servicoFuncionamento.janelaDa(evento.getEmpresa(), data);
+                janelas.add(janela);
+                if (existentes.contains(posicao)) {
+                    continue;
+                }
+                if (!janela.comporta(inicio)) {
+                    problemas.add(data.format(FORMATO_DATA));
+                    continue;
+                }
+                LocalTime fim = inicio.plusMinutes(janela.duracaoMinutos());
+                if (!servicoGoogleagenda.horarioEstaLivre(calendarId, data, inicio, fim, intervalo)) {
+                    problemas.add(data.format(FORMATO_DATA));
+                }
+            }
+            if (!problemas.isEmpty()) {
+                for (int posicao : existentes) {
+                    servicoReserva.removerEventoPorHora(evento.getEmpresa(), evento.getIdPedido(), posicao);
+                }
+                return new Desfecho(Resultado.DATA_OCUPADA, problemas);
+            }
+
+            for (int posicao = 0; posicao < datas.size(); posicao++) {
+                if (existentes.contains(posicao)) {
+                    continue;
+                }
+                LocalDate data = datas.get(posicao);
+                LocalTime fim = inicio.plusMinutes(janelas.get(posicao).duracaoMinutos());
+                try {
+                    servicoReserva.agendarPorHora(
+                            evento.getEmpresa(), data, inicio, fim, evento.getNomeCliente(),
+                            evento.getNumeroWhatsapp(), evento.getIdPedido(), posicao);
+                } catch (GoogleJsonResponseException e) {
+                    if (e.getStatusCode() != 409) {
+                        throw e;
+                    }
+                }
+            }
+            return Desfecho.de(Resultado.SUCESSO);
+        } finally {
+            for (int i = travados.size() - 1; i >= 0; i--) {
+                travados.get(i).unlock();
+            }
+        }
+    }
+
+    private void compensar(EventoReservaConfirmada evento) {
+        String classeDaFalha = null;
+        for (int posicao = 0; posicao < evento.getDatas().size(); posicao++) {
+            try {
+                servicoReserva.removerEventoPorHora(evento.getEmpresa(), evento.getIdPedido(), posicao);
+            } catch (AgendaNaoConfiguradaException e) {
+                return;
+            } catch (Exception e) {
+                classeDaFalha = e.getClass().getSimpleName();
+            }
+        }
+        if (classeDaFalha != null) {
+            log.error("Não foi possível desfazer eventos do pedido {} na agenda da empresa {} ({}); conferir a agenda",
+                    evento.getIdPedido(), evento.getEmpresa().getId(), classeDaFalha);
+        }
+    }
+
+    private void descartarDatasComProblema(EventoReservaConfirmada evento, List<String> problemas) {
+        if (!evento.isPorHora() || problemas.isEmpty()) {
+            return;
+        }
+        DadosReservaSessao reserva = gerenciadorSessao.getReserva(evento.getNumeroWhatsapp());
+        if (reserva == null) {
+            return;
+        }
+        for (String texto : problemas) {
+            reserva.removerData(LocalDate.parse(texto, FORMATO_DATA));
+        }
+    }
+
+    private ReentrantLock bloqueioDoDia(EventoReservaConfirmada evento, LocalDate data) {
+        return bloqueios.computeIfAbsent(evento.getEmpresa().getId() + "|" + data, ignorado -> new ReentrantLock());
     }
 
     private boolean ehTransitoria(Exception e) {
@@ -166,13 +318,32 @@ public class ObservadorGoogleAgenda {
                 evento.getEmpresa().getId(), evento.getIdPedido(), e.getClass().getSimpleName());
     }
 
-    private String mensagem(EventoReservaConfirmada evento, Resultado resultado) {
-        return switch (resultado) {
+    private String mensagem(EventoReservaConfirmada evento, Desfecho desfecho) {
+        if (evento.isPorHora()) {
+            return mensagemPorHora(evento, desfecho);
+        }
+        return switch (desfecho.resultado()) {
             case SUCESSO -> "✅ *Reserva confirmada!*\n\n"
                     + "📅 Data: " + evento.getDataReserva() + "\n"
                     + "📍 Sua reserva está registrada na nossa agenda.\n\n"
                     + "Agradecemos a preferência!";
             case DATA_OCUPADA -> MENSAGEM_DATA_OCUPADA;
+            case FALHA -> MENSAGEM_FALHA;
+        };
+    }
+
+    private String mensagemPorHora(EventoReservaConfirmada evento, Desfecho desfecho) {
+        return switch (desfecho.resultado()) {
+            case SUCESSO -> "✅ *Reserva confirmada!*\n\n"
+                    + (evento.getDatas().size() > 1 ? "📅 Datas: " : "📅 Data: ")
+                    + String.join(", ", evento.getDatas()) + "\n"
+                    + "⏰ Horário: " + evento.getHorario() + "\n"
+                    + "📍 Sua reserva está registrada na nossa agenda.\n\n"
+                    + "Agradecemos a preferência!";
+            case DATA_OCUPADA -> "❌ Não consegui reservar este horário em: "
+                    + String.join(", ", desfecho.problemas())
+                    + ". Nada foi reservado. Envie outra data para substituir, no formato DD-MM-AAAA, "
+                    + "por exemplo 16-09-2026.";
             case FALHA -> MENSAGEM_FALHA;
         };
     }

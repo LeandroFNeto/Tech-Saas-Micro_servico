@@ -27,6 +27,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.awaitility.Awaitility.await;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
@@ -183,6 +184,46 @@ public class ObserverSteps {
     public void conversaEm(String estado) {
         await().atMost(Duration.ofSeconds(20)).untilAsserted(() ->
                 org.assertj.core.api.Assertions.assertThat(gerenciadorSessao.getEstado(NUMERO).name()).isEqualTo(estado));
+    }
+
+    @E("a agenda aceita o horário em todas as datas")
+    public void horarioLivreEmTodasAsDatas() throws Exception {
+        when(servicoGoogleagenda.horarioEstaLivre(anyString(), any(), any(), any(), anyInt())).thenReturn(true);
+    }
+
+    @E("o horário está ocupado em {string}")
+    public void horarioOcupadoEm(String data) throws Exception {
+        when(servicoGoogleagenda.horarioEstaLivre(
+                anyString(), eq(java.time.LocalDate.parse(data, java.time.format.DateTimeFormatter.ofPattern("dd-MM-yyyy"))),
+                any(), any(), anyInt())).thenReturn(false);
+    }
+
+    @E("o Google falha sempre com o status {int} ao inserir o evento por hora")
+    public void googleFalhaSempreNaInsercaoPorHora(int status) throws Exception {
+        doThrow(erroGoogle(status, null)).when(servicoReserva)
+                .agendarPorHora(any(), any(), any(), any(), any(), any(), any(), anyInt());
+    }
+
+    @Quando("o evento por hora é publicado para as datas {string} às {string}")
+    public void publicaEventoPorHora(String datas, String horario) {
+        Empresa empresa = empresaRepository.findBySessaoWhatsapp(ctx.sessao);
+        gerenciadorSessao.setEstado(NUMERO, EstadoUsuario.RESERVA_REGISTRANDO);
+        long inicio = System.nanoTime();
+        publisher.publishEvent(new EventoReservaConfirmada(
+                empresa, List.of(datas.split(",")), horario, "Maria Silva", NUMERO, "pedido-hora", true));
+        ctx.status = (int) Duration.ofNanos(System.nanoTime() - inicio).toMillis();
+    }
+
+    @E("o Google recebe {int} inserção/inserções por hora")
+    public void insercoesPorHora(int quantidade) throws Exception {
+        verify(servicoReserva, timeout(ESPERA_MAXIMA_MS).times(quantidade))
+                .agendarPorHora(any(), any(), any(), any(), any(), any(), any(), anyInt());
+    }
+
+    @E("o Google remove {int} evento(s) do pedido por hora")
+    public void remocoesPorHora(int quantidade) throws Exception {
+        verify(servicoReserva, timeout(ESPERA_MAXIMA_MS).times(quantidade))
+                .removerEventoPorHora(any(), any(), anyInt());
     }
 
     private void assertPublicacaoNaoBloqueou() {

@@ -1,0 +1,74 @@
+get:
+  tags:
+  - Funcionamento da reserva por hora
+  summary: Ler o funcionamento da reserva por hora
+  description: "Devolve FuncionamentoDTO com a duração, o intervalo, a UF, os horários por perfil e os dias especiais futuros. Empresa que nunca configurou recebe os padrões (60 minutos, intervalo 0, nenhum horário cadastrado, que vale 08:00 às 22:00). Aceita o admin ou o cliente da própria empresa."
+  operationId: lerFuncionamento
+  parameters:
+  - name: x-admin-token
+    in: header
+    description: Token administrativo do SaaS
+    required: false
+    schema:
+      type: string
+  - name: sessao
+    in: path
+    description: Identificador da sessão WhatsApp da empresa
+    required: true
+    schema:
+      type: string
+    example: sessao_recanto_01
+  responses:
+    "200":
+      description: Funcionamento atual
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/FuncionamentoDTO"
+    "401":
+      description: Sem token
+    "403":
+      description: Cliente de outra empresa ou sessão inexistente para quem não é admin
+    "404":
+      description: Empresa não encontrada para a sessão informada (só para o admin)
+put:
+  tags:
+  - Funcionamento da reserva por hora
+  summary: Atualizar o funcionamento da reserva por hora
+  description: "Aplica FuncionamentoUpdateDTO. Campo nulo não altera. A lista de horários enviada substitui a anterior. Mudar a duração não mexe em reservas já criadas."
+  operationId: atualizarFuncionamento
+  parameters:
+  - name: x-admin-token
+    in: header
+    description: Token administrativo do SaaS
+    required: false
+    schema:
+      type: string
+  - name: sessao
+    in: path
+    description: Identificador da sessão WhatsApp da empresa
+    required: true
+    schema:
+      type: string
+    example: sessao_recanto_01
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: "#/components/schemas/FuncionamentoUpdateDTO"
+  responses:
+    "200":
+      description: Funcionamento atualizado
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/FuncionamentoDTO"
+    "400":
+      description: Duração fora de 30 a 720 em passos de 30, intervalo fora de 0 a 120, UF inexistente, abertura depois do fechamento ou perfil repetido
+    "401":
+      description: Sem token
+    "403":
+      description: Cliente de outra empresa ou sessão inexistente para quem não é admin
+    "404":
+      description: Empresa não encontrada para a sessão informada (só para o admin)

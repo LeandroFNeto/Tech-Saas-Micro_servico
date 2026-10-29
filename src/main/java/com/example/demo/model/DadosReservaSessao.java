@@ -1,15 +1,18 @@
 package com.example.demo.model;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
-/** Rascunho da reserva em andamento, guardado em memória por conversa. */
 public class DadosReservaSessao {
 
     public static final String HORARIO_DIARIA = "Diária Completa";
+    public static final int MAXIMO_DATAS = 10;
 
     private LocalDate data;
     private String horario;
     private String nomeCliente;
+    private final List<LocalDate> datas = new ArrayList<>();
 
     public LocalDate getData() {
         return data;
@@ -33,5 +36,29 @@ public class DadosReservaSessao {
 
     public void setNomeCliente(String nomeCliente) {
         this.nomeCliente = nomeCliente;
+    }
+
+    public List<LocalDate> getDatas() {
+        return List.copyOf(datas);
+    }
+
+    public boolean adicionarData(LocalDate nova) {
+        if (nova == null || datas.contains(nova)) {
+            return false;
+        }
+        datas.add(nova);
+        datas.sort(LocalDate::compareTo);
+        data = datas.get(0);
+        return true;
+    }
+
+    public boolean removerData(LocalDate alvo) {
+        boolean removeu = datas.remove(alvo);
+        data = datas.isEmpty() ? null : datas.get(0);
+        return removeu;
+    }
+
+    public boolean atingiuLimiteDeDatas() {
+        return datas.size() >= MAXIMO_DATAS;
     }
 }

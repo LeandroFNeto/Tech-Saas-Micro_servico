@@ -19,7 +19,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -99,6 +102,126 @@ public class ServicoGoogleagenda {
             }
         }
         return ocupadas;
+    }
+
+    public record Intervalo(LocalDateTime inicio, LocalDateTime fim) {
+    }
+
+    public static boolean conflita(List<Intervalo> ocupados, LocalDateTime inicio, LocalDateTime fim, int intervaloMinutos) {
+        LocalDateTime inicioComFolga = inicio.minusMinutes(intervaloMinutos);
+        LocalDateTime fimComFolga = fim.plusMinutes(intervaloMinutos);
+        for (Intervalo ocupado : ocupados) {
+            if (ocupado.inicio().isBefore(fimComFolga) && ocupado.fim().isAfter(inicioComFolga)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public List<Intervalo> ocupacoesDoDia(String calendarId, LocalDate data) throws IOException {
+        return ocupacoesDoPeriodo(calendarId, data, data.plusDays(1));
+    }
+
+    public List<Intervalo> ocupacoesDoPeriodo(String calendarId, LocalDate inicio, LocalDate fimExclusivo) throws IOException {
+        Calendar servico = conectarAgenda();
+        ZoneId fuso = ZoneId.of("America/Sao_Paulo");
+        DateTime tempoMinimo = new DateTime(inicio.atStartOfDay(fuso).toInstant().toEpochMilli());
+        DateTime tempoMaximo = new DateTime(fimExclusivo.atStartOfDay(fuso).toInstant().toEpochMilli());
+
+        Events eventos = servico.events().list(calendarId)
+                .setTimeMin(tempoMinimo)
+                .setTimeMax(tempoMaximo)
+                .setSingleEvents(true)
+                .setMaxResults(500)
+                .execute();
+
+        List<Intervalo> ocupados = new ArrayList<>();
+        List<Event> itens = eventos.getItems();
+        if (itens == null) {
+            return ocupados;
+        }
+        for (Event evento : itens) {
+            if ("cancelled".equals(evento.getStatus())) {
+                continue;
+            }
+            Intervalo intervalo = paraIntervalo(evento, fuso);
+            if (intervalo != null) {
+                ocupados.add(intervalo);
+            }
+        }
+        return ocupados;
+    }
+
+    public List<String> resumosDoDia(String calendarId, LocalDate data) throws IOException {
+        Calendar servico = conectarAgenda();
+        ZoneId fuso = ZoneId.of("America/Sao_Paulo");
+        Events eventos = servico.events().list(calendarId)
+                .setTimeMin(new DateTime(data.atStartOfDay(fuso).toInstant().toEpochMilli()))
+                .setTimeMax(new DateTime(data.plusDays(1).atStartOfDay(fuso).toInstant().toEpochMilli()))
+                .setSingleEvents(true)
+                .setMaxResults(50)
+                .execute();
+        List<String> resumos = new ArrayList<>();
+        if (eventos.getItems() == null) {
+            return resumos;
+        }
+        for (Event evento : eventos.getItems()) {
+            if ("cancelled".equals(evento.getStatus())) {
+                continue;
+            }
+            Intervalo intervalo = paraIntervalo(evento, fuso);
+            String titulo = evento.getSummary() == null ? "Evento" : evento.getSummary();
+            if (intervalo == null || evento.getStart().getDate() != null) {
+                resumos.add("Dia inteiro - " + titulo);
+            } else {
+                resumos.add(intervalo.inicio().toLocalTime() + " às " + intervalo.fim().toLocalTime() + " - " + titulo);
+            }
+        }
+        return resumos;
+    }
+
+    public boolean horarioEstaLivre(String calendarId, LocalDate data, LocalTime inicio, LocalTime fim, int intervaloMinutos)
+            throws IOException {
+        return !conflita(ocupacoesDoDia(calendarId, data), data.atTime(inicio), data.atTime(fim), intervaloMinutos);
+    }
+
+    public List<LocalTime> horariosLivres(String calendarId, LocalDate data, List<LocalTime> iniciosPossiveis,
+                                          int duracaoMinutos, int intervaloMinutos, LocalTime aPartirDe) throws IOException {
+        List<Intervalo> ocupados = ocupacoesDoDia(calendarId, data);
+        List<LocalTime> livres = new ArrayList<>();
+        for (LocalTime inicio : iniciosPossiveis) {
+            if (aPartirDe != null && inicio.isBefore(aPartirDe)) {
+                continue;
+            }
+            LocalDateTime comeco = data.atTime(inicio);
+            if (!conflita(ocupados, comeco, comeco.plusMinutes(duracaoMinutos), intervaloMinutos)) {
+                livres.add(inicio);
+            }
+        }
+        return livres;
+    }
+
+    private Intervalo paraIntervalo(Event evento, ZoneId fuso) {
+        EventDateTime inicio = evento.getStart();
+        EventDateTime fim = evento.getEnd();
+        if (inicio == null) {
+            return null;
+        }
+        if (inicio.getDate() != null) {
+            LocalDate dia = LocalDate.parse(inicio.getDate().toStringRfc3339().substring(0, 10));
+            LocalDate ultimo = fim != null && fim.getDate() != null
+                    ? LocalDate.parse(fim.getDate().toStringRfc3339().substring(0, 10))
+                    : dia.plusDays(1);
+            return new Intervalo(dia.atStartOfDay(), ultimo.atStartOfDay());
+        }
+        if (inicio.getDateTime() == null) {
+            return null;
+        }
+        LocalDateTime comeco = Instant.ofEpochMilli(inicio.getDateTime().getValue()).atZone(fuso).toLocalDateTime();
+        LocalDateTime termino = fim != null && fim.getDateTime() != null
+                ? Instant.ofEpochMilli(fim.getDateTime().getValue()).atZone(fuso).toLocalDateTime()
+                : comeco.plusHours(1);
+        return new Intervalo(comeco, termino);
     }
 
     private LocalDate extrairData(EventDateTime inicio) {

@@ -1,0 +1,27 @@
+type: object
+description: Dia especial cadastrado, com o aviso das reservas que já existem na data.
+properties:
+  id:
+    type: integer
+    format: int64
+  data:
+    type: string
+    example: "2026-12-08"
+  fechado:
+    type: boolean
+  abre:
+    type: string
+    nullable: true
+    example: "10:00"
+  fecha:
+    type: string
+    nullable: true
+    example: "16:00"
+  motivo:
+    type: string
+    nullable: true
+  reservasNaData:
+    type: array
+    description: Eventos que já existem na agenda quando a data é fechada. Nada é cancelado
+    items:
+      type: string

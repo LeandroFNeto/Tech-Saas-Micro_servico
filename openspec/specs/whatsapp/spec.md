@@ -191,7 +191,7 @@ Cenário: erro HTTP do WPPConnect
 
 O sistema deve, na conversa de locação com reserva automática, tratar o "sim" da confirmação (`sim`, `s`, `confirmar` ou `1` em `RESERVA_CONFIRMACAO`) como pedido, não como reserva feita: muda o estado para `RESERVA_REGISTRANDO` antes de publicar `EventoReservaConfirmada`, responde "Anotei seu pedido para <data>. Estou registrando na agenda e já confirmo." e deixa a confirmação final para o resultado da agenda (AGD-02). Em `RESERVA_REGISTRANDO`, qualquer mensagem, inclusive `0`, `menu`, `voltar` e um segundo "sim", recebe "Ainda estou registrando sua reserva, já te respondo.", sem publicar outro evento e sem sair do estado.
 
-Na solicitação de reserva, a empresa é atendida como reserva manual ("Recebemos sua mensagem. Logo um atendente vai te responder.") quando a reserva automática está desligada, quando a locação é por hora (até a change `reserva-por-hora`) ou quando a reserva automática está ligada sem `googleCalendarId`; neste último caso o log registra o id da empresa e o motivo.
+Na solicitação de reserva, a empresa é atendida como reserva manual ("Recebemos sua mensagem. Logo um atendente vai te responder.") quando a reserva automática está desligada ou quando a reserva automática está ligada sem `googleCalendarId`; neste último caso o log registra o id da empresa e o motivo.
 
 Contrato: `especificacao/back/paths/webhook-whatsapp.yaml`
 Prova: `src/test/java/com/example/demo/strategy/LocacaoStrategyTest.java`
@@ -213,9 +213,81 @@ Cenário: mensagem durante o registro
 - E nenhum evento novo é publicado
 - E o estado continua `RESERVA_REGISTRANDO`
 
-Cenário: locação por hora ou empresa sem agenda
+Cenário: empresa sem agenda
 
-- Dado uma empresa com reserva automática ligada e locação por hora, ou sem `googleCalendarId` (ausente ou em branco)
+- Dado uma empresa com reserva automática ligada e sem `googleCalendarId` (ausente ou em branco)
 - Quando o cliente pede a reserva
 - Então o bot responde "Recebemos sua mensagem. Logo um atendente vai te responder."
 - E não pede data nem nome
+
+### WPP-08 Reservar por hora, em uma ou várias datas, na conversa
+
+O sistema deve, na conversa de locação por hora com reserva automática e agenda, guiar a reserva assim: o cliente informa a data (até 180 dias à frente, sem repetir data); se a data está aberta, o bot lista os horários livres (inícios possíveis da janela de EMP-07, menos as ocupações do Google) e o estado passa a `RESERVA_ESPERANDO_HORARIO`; o cliente escolhe um horário; o bot pergunta "Quer reservar mais alguma data?" (`RESERVA_MAIS_DATAS`). As datas seguintes usam o mesmo horário e o mesmo nome. Cada data nova é validada contra a janela do horário fixo e a agenda; se não comporta, só ela cai, com o motivo. Em `RESERVA_MAIS_DATAS` o cliente responde SIM, NÃO ou "TIRAR dd-MM-yyyy", e pode tirar uma data também na confirmação. O pedido tem no máximo 10 datas.
+
+Data fechada (dia especial, feriado ou dia da semana fechado) recebe o motivo e as próximas 3 datas abertas. Horário fora do passo da janela ou fora dela é recusado com a lista de inícios válidos. Data sem horário livre avisa que não há horário. Na confirmação, o bot mostra "📅 Datas:" quando há mais de uma e publica um só `EventoReservaConfirmada` com todas as datas, o horário e a marca de reserva por hora, que o observador registra como em AGD-03. O nome do cliente tem no máximo 80 caracteres, sem quebra de linha.
+
+O bot atende como reserva manual quando a reserva automática está desligada ou quando está ligada sem `googleCalendarId` (WPP-07); locação por hora com a reserva automática ligada e agenda não é mais reserva manual.
+
+Contrato: `especificacao/back/paths/webhook-whatsapp.yaml`
+Prova: `src/test/java/com/example/demo/strategy/LocacaoStrategyTest.java`, `src/test/java/com/example/demo/servico/ServicoFuncionamentoTest.java`
+
+Cenário: data aberta lista os horários livres
+
+- Dado uma empresa por hora com reserva automática e agenda
+- Quando o cliente informa uma data aberta daqui a 10 dias
+- Então o bot lista os horários livres
+- E o estado passa a `RESERVA_ESPERANDO_HORARIO`
+
+Cenário: data fechada
+
+- Dado a data como dia especial fechado ou feriado fechado
+- Quando o cliente informa essa data
+- Então o bot informa o motivo e sugere as próximas 3 datas abertas
+
+Cenário: mais uma data
+
+- Dado o cliente com uma data e o horário "14:00" escolhidos
+- Quando ele responde SIM e informa outra data aberta que comporta o horário
+- Então a data entra no pedido, ordenada, e o bot pergunta de novo
+
+Cenário: tirar uma data
+
+- Dado o pedido com duas datas
+- Quando o cliente envia "tirar" com uma delas
+- Então ela sai do pedido e o estado continua `RESERVA_MAIS_DATAS`
+
+Cenário: limites
+
+- Quando o cliente informa uma data além de 180 dias, uma data repetida ou a 11ª data
+- Então o bot recusa e explica o limite
+
+Cenário: confirmação publica um só evento
+
+- Dado o pedido com duas datas, o horário e o nome
+- Quando o cliente envia "sim" em `RESERVA_CONFIRMACAO`
+- Então um só `EventoReservaConfirmada` sai com as duas datas e a marca de reserva por hora
+
+### WPP-09 Consultar a agenda e pesquisar data de empresa por hora
+
+O sistema deve, para empresa com locação por hora, responder "Agenda dos próximos dias" com um status por dia (`✅ Livre`, `❌ Lotado` ou `🚫 Fechado`, conforme AGD-04) e responder "Pesquisar data" com os horários livres da data, com "Todos os horários desta data já estão reservados" quando não sobra nenhum ou com "Não abrimos nesta data" e o motivo quando a janela está fechada. A empresa de diária segue com "Livre" e "Alugado" por dia inteiro.
+
+Contrato: `especificacao/back/paths/webhook-whatsapp.yaml`
+Prova: `src/test/java/com/example/demo/strategy/LocacaoStrategyTest.java`
+
+Cenário: agenda dos próximos dias
+
+- Dado uma empresa por hora com um dia lotado, um fechado e um livre
+- Quando o cliente escolhe "Agenda dos próximos dias"
+- Então a lista traz "❌ Lotado", "🚫 Fechado" e "✅ Livre"
+- E a agenda não usa a consulta de dias ocupados da diária
+
+Cenário: pesquisar data com horários livres
+
+- Dado uma data aberta com os horários 14:00 e 15:00 livres
+- Quando o cliente pesquisa essa data
+- Então o bot responde com "14:00, 15:00"
+
+Cenário: pesquisar data lotada ou fechada
+
+- Quando o cliente pesquisa uma data sem horário livre, ou uma data fechada por feriado
+- Então o bot responde que está tudo reservado, ou informa que não abre e o motivo

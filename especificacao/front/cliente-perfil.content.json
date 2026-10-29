@@ -8,6 +8,7 @@
     "abas": {
       "dados": "Dados do perfil",
       "robo": "Configurações do Robô",
+      "funcionamento": "Funcionamento",
       "configuracao": "Configuração",
       "rotulo": "Seções do perfil"
     },
@@ -83,6 +84,101 @@
         "descricao": "Ative cada opção e edite o texto que o cliente vê no bot.",
         "textoMenu": "Texto do menu no WhatsApp",
         "ativar": "Ativar"
+      }
+    },
+    "funcionamento": {
+      "titulo": "Funcionamento",
+      "descricao": "Horário em que o robô oferece reserva por hora no WhatsApp.",
+      "carregando": "Carregando o funcionamento...",
+      "erro": {
+        "titulo": "Não foi possível carregar o funcionamento.",
+        "texto": "Confira a internet e tente de novo.",
+        "tentar": "Tentar de novo",
+        "salvarTitulo": "Não foi possível salvar o funcionamento.",
+        "diaTitulo": "Não foi possível alterar o dia especial."
+      },
+      "sucesso": "Funcionamento salvo. O robô já usa os novos horários.",
+      "vazio": "Você ainda não configurou o funcionamento. Até salvar, o robô usa 08:00 às 22:00 com atendimento de 1 hora.",
+      "simples": {
+        "abre": "Abre às",
+        "fecha": "Fecha às",
+        "duracao": "Duração do atendimento",
+        "dica": "Vale para todos os dias. Para mudar um dia ou uma data, use Personalizar.",
+        "erroHorario": "O horário de fechar precisa ser depois do horário de abrir."
+      },
+      "personalizar": {
+        "abrir": "Personalizar",
+        "fechar": "Fechar personalização"
+      },
+      "porDia": {
+        "titulo": "Horário por dia",
+        "dica": "Desligue o dia em que o local não abre. Duração em branco usa a duração geral.",
+        "aberto": "Aberto",
+        "fechado": "Fechado",
+        "chave": "Aberto:",
+        "abre": "Abre",
+        "fecha": "Fecha",
+        "duracao": "Duração",
+        "usarGeral": "Usar a geral",
+        "erroHorario": "Fechar precisa ser depois de abrir."
+      },
+      "dias": {
+        "SEGUNDA": "Segunda",
+        "TERCA": "Terça",
+        "QUARTA": "Quarta",
+        "QUINTA": "Quinta",
+        "SEXTA": "Sexta",
+        "SABADO": "Sábado",
+        "DOMINGO": "Domingo",
+        "FERIADO": "Feriado"
+      },
+      "intervalo": {
+        "rotulo": "Intervalo entre atendimentos",
+        "dica": "Em minutos, de 0 a 120. Folga para limpar e arrumar o espaço.",
+        "erro": "Use um número inteiro de 0 a 120."
+      },
+      "uf": {
+        "rotulo": "Estado (UF)",
+        "selecione": "Selecione",
+        "dica": "Usado para saber os feriados do seu estado.",
+        "erro": "Escolha uma das 27 siglas."
+      },
+      "especiais": {
+        "titulo": "Dias especiais",
+        "dica": "Folga, feriado da cidade ou horário diferente numa data. Vale mais que o horário do dia.",
+        "vazio": "Nenhum dia especial cadastrado.",
+        "fechado": "Fechado",
+        "remover": "Remover",
+        "removerRotulo": "Remover o dia"
+      },
+      "aviso": {
+        "titulo": "Há reservas nesta data",
+        "inicio": "A data",
+        "fim": "foi fechada, mas nada foi cancelado. Avise quem reservou:"
+      },
+      "novo": {
+        "titulo": "Novo dia especial",
+        "data": "Data",
+        "dataDica": "De hoje até 180 dias à frente.",
+        "dataErro": "Escolha uma data de hoje até 180 dias à frente.",
+        "motivo": "Motivo (opcional)",
+        "motivoPlaceholder": "Feriado municipal",
+        "motivoDica": "O cliente vê este motivo no WhatsApp.",
+        "motivoErro": "Use até 120 letras.",
+        "fechado": "Fechado o dia todo",
+        "fechadoDica": "Desligado = abre com o horário abaixo.",
+        "abre": "Abre",
+        "fecha": "Fecha",
+        "erroHorario": "Fechar precisa ser depois de abrir.",
+        "adicionar": "Adicionar dia especial"
+      },
+      "salvar": "Salvar funcionamento",
+      "salvarDica": "Corrija o horário marcado para salvar.",
+      "unidades": {
+        "minutos": "min",
+        "horas": "h",
+        "ligacao": "às",
+        "separador": "·"
       }
     },
     "senha": {

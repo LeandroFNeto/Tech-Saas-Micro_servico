@@ -1,0 +1,26 @@
+type: object
+description: Dia especial da empresa, como feriado municipal, folga, evento privado ou horário estendido.
+required:
+- data
+properties:
+  data:
+    type: string
+    description: Data no formato AAAA-MM-DD, de hoje até 180 dias à frente
+    example: "2026-12-08"
+  fechado:
+    type: boolean
+    description: Se a empresa fecha neste dia
+    example: true
+  abre:
+    type: string
+    description: Hora de abertura, HH:mm. Obrigatória quando não fecha
+    example: "10:00"
+  fecha:
+    type: string
+    description: Hora de fechamento, HH:mm. Obrigatória quando não fecha
+    example: "16:00"
+  motivo:
+    type: string
+    maxLength: 120
+    description: Motivo mostrado ao cliente final
+    example: Feriado municipal

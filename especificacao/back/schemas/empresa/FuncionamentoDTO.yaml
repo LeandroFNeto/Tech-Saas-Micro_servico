@@ -1,0 +1,24 @@
+type: object
+description: Funcionamento da reserva por hora de uma empresa.
+properties:
+  duracaoAtendimentoMinutos:
+    type: integer
+    format: int32
+    example: 60
+  intervaloEntreAtendimentosMinutos:
+    type: integer
+    format: int32
+    example: 0
+  uf:
+    type: string
+    nullable: true
+    example: SP
+  horarios:
+    type: array
+    items:
+      $ref: "#/components/schemas/HorarioFuncionamentoDTO"
+  diasEspeciais:
+    type: array
+    description: Dias especiais de hoje em diante
+    items:
+      $ref: "#/components/schemas/DataEspecialDTO"
