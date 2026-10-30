@@ -89,6 +89,21 @@ Utilitário de navegação inteligente do código baseado em AST para evitar bus
 
 ---
 
+## 7. Testes de Caixa Branca & Robustez (`/kirito`)
+
+Especialista em teste de caixa branca e blindagem de código (Dual Wielding: Back-end Java e Front-end Angular).
+
+| Comando | Descrição |
+|---|---|
+| `/kirito` | Inicia o caçador de bugs de caixa branca para mapear branches, condições de borda e lacunas de teste. |
+| `/kirito <classe-ou-arquivo>` | Forja testes de caixa branca específicos cobrindo branches, limites numéricos/temporais e falhas simuladas. |
+| `/kirito full` | Executa auditoria e prova completa de robustez no backend (`mvn test`) e frontend (`npm test`). |
+
+- **Foco Estrito:** Cobertura de branches, valores limítrofes (`24:00`, `23:59`, `null`), resiliência a falhas externas e transições de estado.
+- **Modelos:** Roda no `Claude Sonnet 5.5 Medium` / subagente `pro` no Antigravity ou `claude-sonnet-5-5` no Cursor/Claude.
+
+---
+
 ## Manutenção deste Arquivo
 
 Conforme definido na regra do repositório em `.agents/rules/ajuda-comandos.md`:

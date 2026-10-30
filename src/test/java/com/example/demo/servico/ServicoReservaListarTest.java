@@ -35,6 +35,7 @@ import static org.mockito.Mockito.when;
 class ServicoReservaListarTest {
 
     @Mock private ServicoGoogleagenda agendaService;
+    @Mock private ServicoFuncionamento servicoFuncionamento;
     @InjectMocks private ServicoReserva servicoReserva;
 
     private Calendar calendar;
@@ -98,5 +99,23 @@ class ServicoReservaListarTest {
     @DisplayName("Empresa sem googleCalendarId devolve nulo")
     void semCalendarIdDevolveNulo() {
         assertThat(servicoReserva.listarReservas(new Empresa())).isNull();
+    }
+    @Test
+    @DisplayName("Por hora: dia livre fica Disponível e dia lotado/fechado fica Alugado")
+    void porHoraCalculaSituacaoPorDia() throws Exception {
+        Empresa empresa = empresaComAgenda();
+        empresa.setLocacaoPorHora(true);
+
+        LocalDate hoje = LocalDate.now(ZoneId.of("America/Sao_Paulo"));
+        when(agendaService.ocupacoesDoPeriodo(anyString(), any(), any())).thenReturn(List.of());
+
+        ServicoFuncionamento.Janela janelaAberta = new ServicoFuncionamento.Janela(true, java.time.LocalTime.of(8, 0), java.time.LocalTime.of(18, 0), 60, null);
+        when(servicoFuncionamento.janelaDa(any(), any())).thenReturn(janelaAberta);
+        when(servicoFuncionamento.situacaoDoDia(any(), any(), any(), any())).thenReturn(ServicoFuncionamento.Situacao.LIVRE);
+
+        List<DiaReservaDTO> dias = servicoReserva.listarReservas(empresa);
+
+        assertThat(dias).hasSize(30);
+        assertThat(dias).allMatch(d -> "Disponível".equals(d.status()));
     }
 }

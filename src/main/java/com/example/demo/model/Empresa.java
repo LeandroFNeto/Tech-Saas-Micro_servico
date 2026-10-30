@@ -33,9 +33,6 @@ public class Empresa {
     @Column(name = "regras_locacao", columnDefinition = "TEXT")
     private String regrasLocacao;
 
-    @OneToMany(mappedBy = "empresa", cascade = CascadeType.ALL)
-    private List<DiaReserva> diasDeReserva;
-
     @Column(columnDefinition = "TEXT")
     private String linkGoogleMaps;
 
@@ -282,10 +279,6 @@ public class Empresa {
         this.ramoDeAtuacao = ramoDeAtuacao;
     }
 
-    public List<DiaReserva> getDiasDeReserva() {
-        return diasDeReserva;
-    }
-
     public String getTabelaDePrecos() {
         return tabelaDePrecos;
     }
@@ -300,10 +293,6 @@ public class Empresa {
 
     public void setRegrasLocacao(String regrasLocacao) {
         this.regrasLocacao = regrasLocacao;
-    }
-
-    public void setDiasDeReserva(List<DiaReserva> diasDeReserva) {
-        this.diasDeReserva = diasDeReserva;
     }
 
     public String getLinkGoogleMaps() {

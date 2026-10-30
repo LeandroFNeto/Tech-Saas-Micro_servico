@@ -17,7 +17,7 @@ properties:
     example: "10:00"
   fecha:
     type: string
-    description: Hora de fechamento, HH:mm. Obrigatória quando não fecha
+    description: Hora de fechamento, HH:mm. Aceita "24:00" para indicar meia-noite. Obrigatória quando não fecha
     example: "16:00"
   motivo:
     type: string

@@ -251,4 +251,27 @@ class ControllerFuncionamentoTest {
         mockMvc.perform(delete(BASE + "/dias-especiais/99")).andExpect(status().isNotFound());
         verify(dataEspecialRepository, never()).delete(any());
     }
+    @Test
+    @DisplayName("PUT /funcionamento aceita fecha 24:00 e recusa abre 24:00")
+    void deveTratar24HorasNoFuncionamento() throws Exception {
+        mockMvc.perform(put(BASE + "/funcionamento").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"horarios\":[{\"perfil\":\"SABADO\",\"fechado\":false,\"abre\":\"18:00\",\"fecha\":\"24:00\"}]}"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(put(BASE + "/funcionamento").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"horarios\":[{\"perfil\":\"SABADO\",\"fechado\":false,\"abre\":\"24:00\",\"fecha\":\"24:00\"}]}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("POST /dias-especiais aceita fecha 24:00")
+    void deveAceitarFecha24HorasNoDiaEspecial() throws Exception {
+        when(dataEspecialRepository.findByEmpresaIdAndData(eq(7L), any())).thenReturn(Optional.empty());
+        when(dataEspecialRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        mockMvc.perform(post(BASE + "/dias-especiais").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"data\":\"" + hoje(3) + "\",\"fechado\":false,\"abre\":\"18:00\",\"fecha\":\"24:00\"}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.fecha").value("24:00"));
+    }
 }

@@ -30,33 +30,33 @@ class CalendarioFeriadosTest {
     @Test
     @DisplayName("Feriados nacionais fixos valem para qualquer estado e sem UF")
     void deveReconhecerFeriadosNacionaisFixos() {
-        assertThat(CalendarioFeriados.ehFeriado(null, LocalDate.of(2026, 12, 25))).isTrue();
-        assertThat(CalendarioFeriados.ehFeriado("SP", LocalDate.of(2026, 9, 7))).isTrue();
-        assertThat(CalendarioFeriados.ehFeriado(null, LocalDate.of(2026, 5, 1))).isTrue();
+        assertThat(CalendarioFeriados.nomeDoFeriado(null, LocalDate.of(2026, 12, 25)).isPresent()).isTrue();
+        assertThat(CalendarioFeriados.nomeDoFeriado("SP", LocalDate.of(2026, 9, 7)).isPresent()).isTrue();
+        assertThat(CalendarioFeriados.nomeDoFeriado(null, LocalDate.of(2026, 5, 1)).isPresent()).isTrue();
     }
 
     @Test
     @DisplayName("Consciência Negra é nacional a partir de 2024")
     void deveTratarConscienciaNegraComoNacionalSoDe2024() {
-        assertThat(CalendarioFeriados.ehFeriado(null, LocalDate.of(2026, 11, 20))).isTrue();
-        assertThat(CalendarioFeriados.ehFeriado(null, LocalDate.of(2023, 11, 20))).isFalse();
+        assertThat(CalendarioFeriados.nomeDoFeriado(null, LocalDate.of(2026, 11, 20)).isPresent()).isTrue();
+        assertThat(CalendarioFeriados.nomeDoFeriado(null, LocalDate.of(2023, 11, 20)).isPresent()).isFalse();
     }
 
     @Test
     @DisplayName("Feriado estadual só vale para a UF dele")
     void deveAplicarFeriadoEstadualSoNaUf() {
         LocalDate nove = LocalDate.of(2026, 7, 9);
-        assertThat(CalendarioFeriados.ehFeriado("SP", nove)).isTrue();
-        assertThat(CalendarioFeriados.ehFeriado("sp", nove)).isTrue();
-        assertThat(CalendarioFeriados.ehFeriado("RJ", nove)).isFalse();
-        assertThat(CalendarioFeriados.ehFeriado(null, nove)).isFalse();
-        assertThat(CalendarioFeriados.ehFeriado("RS", LocalDate.of(2026, 9, 20))).isTrue();
+        assertThat(CalendarioFeriados.nomeDoFeriado("SP", nove).isPresent()).isTrue();
+        assertThat(CalendarioFeriados.nomeDoFeriado("sp", nove).isPresent()).isTrue();
+        assertThat(CalendarioFeriados.nomeDoFeriado("RJ", nove).isPresent()).isFalse();
+        assertThat(CalendarioFeriados.nomeDoFeriado(null, nove).isPresent()).isFalse();
+        assertThat(CalendarioFeriados.nomeDoFeriado("RS", LocalDate.of(2026, 9, 20)).isPresent()).isTrue();
     }
 
     @Test
     @DisplayName("Dia comum não é feriado")
     void naoDeveMarcarDiaComum() {
-        assertThat(CalendarioFeriados.ehFeriado("SP", LocalDate.of(2026, 3, 10))).isFalse();
+        assertThat(CalendarioFeriados.nomeDoFeriado("SP", LocalDate.of(2026, 3, 10)).isPresent()).isFalse();
     }
 
     @Test

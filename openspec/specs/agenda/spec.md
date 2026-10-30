@@ -142,7 +142,7 @@ Cenário: falha 5xx desfaz o pedido
 O sistema deve, para empresa com locação por hora, calcular o status de cada dia pelos horários livres da janela de funcionamento (EMP-07) menos as ocupações do Google, e não pelo dia inteiro: o dia é "Lotado" quando nenhum início cabe, "Fechado" quando a janela está fechada e "Livre" quando sobra ao menos um início. O painel de reservas e a previsão do tempo (EMP-06) marcam "Alugado" quando o dia está lotado ou fechado e "Disponível" quando está livre. A agenda dos próximos 15 dias do bot (WPP-09) e o painel dos 30 dias usam uma só consulta ao Google para o período.
 
 Contrato: `especificacao/back/paths/empresas-previsao.yaml` (o campo de status por dia não muda de formato)
-Prova: `src/test/java/com/example/demo/servico/ServicoFuncionamentoTest.java`, `src/test/java/com/example/demo/strategy/LocacaoStrategyTest.java`. Não há teste de `listarReservas` com empresa por hora.
+Prova: `src/test/java/com/example/demo/servico/ServicoFuncionamentoTest.java`, `src/test/java/com/example/demo/strategy/LocacaoStrategyTest.java`, `src/test/java/com/example/demo/servico/ServicoReservaListarTest.java`.
 
 Cenário: dia com uma reserva ainda tem vaga
 

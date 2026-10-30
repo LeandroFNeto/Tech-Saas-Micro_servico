@@ -2,7 +2,6 @@ package com.example.demo.graphql;
 
 import com.example.demo.dto.empresa.EmpresaResponseDTO;
 import com.example.demo.dto.empresa.ModuloMenuDTO;
-import com.example.demo.model.DiaReserva;
 import com.example.demo.model.Empresa;
 import com.example.demo.model.ModuloEmpresa;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -164,12 +163,6 @@ class EconomiaTokenAuditoriaTest {
                 modulo("MENU_CARDAPIO", "Ver tabela de preços", 3),
                 modulo("VER_REGRAS", "Ver regras do espaço", 4),
                 modulo("SOLICITAR_RESERVA", "Solicitar reserva", 5)));
-
-        DiaReserva dia = new DiaReserva();
-        dia.setId(10L);
-        dia.setData("25-12-2026");
-        dia.setEmpresa(empresa);
-        empresa.setDiasDeReserva(List.of(dia));
         return empresa;
     }
 

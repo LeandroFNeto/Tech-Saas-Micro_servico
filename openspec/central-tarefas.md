@@ -13,6 +13,8 @@ Arquivo em comum da equipe. Cada agente atualiza a própria linha ao começar e 
 | [remover-x-cliente-token](archive/remover-x-cliente-token/) | deploy | `claude-haiku-5-5` | `openspec/archive/remover-x-cliente-token/` | 0 | aprovado |
 | [lembrar-confirmacao-reserva](archive/lembrar-confirmacao-reserva/) | deploy | `claude-haiku-5-5` | `openspec/archive/lembrar-confirmacao-reserva/` | 0 | aprovado |
 | [aprimorar-painel-admin](archive/aprimorar-painel-admin/) | deploy | `antigravity` | `openspec/archive/aprimorar-painel-admin/` | 0 | aprovado |
+| [fechar-pendencias-reserva-por-hora](archive/fechar-pendencias-reserva-por-hora/) | deploy | `gemini-3.8-flash` | `openspec/archive/fechar-pendencias-reserva-por-hora/` | 0 | aprovado |
+| [definir-niveis-admin](changes/definir-niveis-admin/) | proposta | `claude-sonnet-5-5-medium` | `openspec/changes/definir-niveis-admin/` | 0 | aguardando aprovado |
 
 Estado: `em andamento`, `aprovado`, `reprovado`, `erro`, `aguardando aprovado`.
 

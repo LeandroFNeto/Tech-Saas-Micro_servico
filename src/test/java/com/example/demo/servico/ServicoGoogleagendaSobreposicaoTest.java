@@ -57,4 +57,11 @@ class ServicoGoogleagendaSobreposicaoTest {
     void naoDeveConflitarSemEventos() {
         assertThat(ServicoGoogleagenda.conflita(List.of(), hora(10, 0), hora(11, 0), 30)).isFalse();
     }
+
+    @Test
+    @DisplayName("Horário terminando à meia-noite (24:00) conflita com evento na faixa das 22h às 24h")
+    void deveConflitarComTerminoNaMeiaNoite() {
+        List<Intervalo> ocupadoNoite = List.of(new Intervalo(hora(22, 30), hora(23, 30)));
+        assertThat(ServicoGoogleagenda.conflita(ocupadoNoite, hora(22, 0), DIA.plusDays(1).atStartOfDay(), 0)).isTrue();
+    }
 }

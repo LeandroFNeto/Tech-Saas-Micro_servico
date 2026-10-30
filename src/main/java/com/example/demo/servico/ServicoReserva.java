@@ -78,7 +78,7 @@ public class ServicoReserva {
                         .setDateTime(new DateTime(dia.atTime(inicio).atZone(fuso).toInstant().toEpochMilli()))
                         .setTimeZone(fusoTexto))
                 .setEnd(new EventDateTime()
-                        .setDateTime(new DateTime(dia.atTime(fim).atZone(fuso).toInstant().toEpochMilli()))
+                        .setDateTime(new DateTime((fim.equals(LocalTime.MIDNIGHT) ? dia.plusDays(1).atStartOfDay() : dia.atTime(fim)).atZone(fuso).toInstant().toEpochMilli()))
                         .setTimeZone(fusoTexto));
 
         Event criado = servicoAgenda.events().insert(calendarId, evento).execute();
@@ -291,51 +291,5 @@ public class ServicoReserva {
                     disponivel ? "Disponível" : "Alugado"));
         }
         return dias;
-    }
-
-    public DiaReservaDTO pesquisarData(Empresa empresa, String dataRecebida) {
-        try {
-            DateTimeFormatter formatadorEntrada = DateTimeFormatter.ofPattern("dd-MM-yyyy");
-            LocalDate dataAlvo = LocalDate.parse(dataRecebida, formatadorEntrada);
-
-            if (dataAlvo.isBefore(LocalDate.now())) {
-                throw new IllegalArgumentException("Não é possível consultar datas que já passaram.");
-            }
-
-            ZoneId fusoBrasilia = ZoneId.of("America/Sao_Paulo");
-            Locale idiomaBrasil = new Locale("pt", "BR");
-            String nomeDiaSemana = dataAlvo.getDayOfWeek().getDisplayName(TextStyle.FULL, idiomaBrasil);
-
-            ZonedDateTime inicioDoDia = dataAlvo.atStartOfDay(fusoBrasilia);
-            ZonedDateTime fimDoDia = dataAlvo.atTime(23, 59, 59).atZone(fusoBrasilia);
-
-            DateTime tempoMinimo = new DateTime(inicioDoDia.toInstant().toEpochMilli());
-            DateTime tempoMaximo = new DateTime(fimDoDia.toInstant().toEpochMilli());
-
-            com.google.api.services.calendar.Calendar servicoGoogle = agendaService.conectarAgenda();
-
-            String calendarId = empresa.getGoogleCalendarId();
-            if(calendarId == null) throw new RuntimeException("Empresa sem calendário configurado.");
-
-            Events eventos = servicoGoogle.events().list(calendarId)
-                    .setTimeMin(tempoMinimo)
-                    .setTimeMax(tempoMaximo)
-                    .setSingleEvents(true)
-                    .execute();
-
-            List<Event> itens = eventos.getItems();
-
-            if (itens == null || itens.isEmpty()) {
-                return new DiaReservaDTO(dataRecebida, nomeDiaSemana, "Disponível");
-            } else {
-                return new DiaReservaDTO(dataRecebida, nomeDiaSemana, "Alugado");
-            }
-
-        } catch (IllegalArgumentException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("Erro no Google Calendar ao pesquisar (empresa {}): {}", empresa.getId(), e.getClass().getSimpleName());
-            throw new RuntimeException("Erro ao buscar data", e);
-        }
     }
 }

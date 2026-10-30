@@ -182,7 +182,8 @@ public class ServicoGoogleagenda {
 
     public boolean horarioEstaLivre(String calendarId, LocalDate data, LocalTime inicio, LocalTime fim, int intervaloMinutos)
             throws IOException {
-        return !conflita(ocupacoesDoDia(calendarId, data), data.atTime(inicio), data.atTime(fim), intervaloMinutos);
+        LocalDateTime termino = fim.equals(LocalTime.MIDNIGHT) ? data.plusDays(1).atStartOfDay() : data.atTime(fim);
+        return !conflita(ocupacoesDoDia(calendarId, data), data.atTime(inicio), termino, intervaloMinutos);
     }
 
     public List<LocalTime> horariosLivres(String calendarId, LocalDate data, List<LocalTime> iniciosPossiveis,

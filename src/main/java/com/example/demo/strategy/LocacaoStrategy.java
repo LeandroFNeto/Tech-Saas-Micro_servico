@@ -15,12 +15,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
+import java.time.DayOfWeek;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.format.TextStyle;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.Locale;
@@ -31,7 +34,7 @@ import java.util.function.Function;
 @Service
 public class LocacaoStrategy implements ModuloAtendimentoStrategy {
 
-    private static final Logger Log = LoggerFactory.getLogger(LocacaoStrategy.class);
+    private static final Logger log = LoggerFactory.getLogger(LocacaoStrategy.class);
     private static final DateTimeFormatter FORMATO_DATA = DateTimeFormatter.ofPattern("dd-MM-yyyy");
     private static final DateTimeFormatter FORMATO_HORA = DateTimeFormatter.ofPattern("H:mm");
     private static final ZoneId FUSO_BRASILIA = ZoneId.of("America/Sao_Paulo");
@@ -224,7 +227,7 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
             return;
         }
         if (empresa.getGoogleCalendarId() == null || empresa.getGoogleCalendarId().isBlank()) {
-            Log.warn("Empresa {} com reserva automática ligada e sem agenda; atendendo como reserva manual", empresa.getId());
+            log.warn("Empresa {} com reserva automática ligada e sem agenda; atendendo como reserva manual", empresa.getId());
             servicoMensagem.enviarMensagemWPP(empresa, numeroCliente, MENSAGEM_RESERVA_MANUAL);
             return;
         }
@@ -295,15 +298,21 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
         try {
             livres = horariosLivresDoDia(empresa, data, janela);
         } catch (Exception e) {
-            Log.warn("Falha ao consultar Google Agenda na reserva por hora: {}", e.getClass().getSimpleName());
+            log.warn("Falha ao consultar Google Agenda na reserva por hora: {}", e.getClass().getSimpleName());
             servicoMensagem.enviarMensagemWPP(empresa, numeroCliente,
                     "Não consegui consultar a agenda agora. Tente novamente em instantes.");
             return;
         }
         if (livres.isEmpty()) {
-            servicoMensagem.enviarMensagemWPP(empresa, numeroCliente,
-                    "❌ Não há horários livres em " + data.format(FORMATO_DATA)
-                            + ". Envie outra data, no formato DD-MM-AAAA.");
+            StringBuilder mensagem = new StringBuilder("❌ Não há horários livres em " + data.format(FORMATO_DATA) + ".");
+            List<LocalDate> proximas = sugerirDatasContextuais(empresa, data);
+            if (proximas != null && !proximas.isEmpty()) {
+                mensagem.append(" Próximas datas abertas: ")
+                        .append(proximas.stream().map(d -> d.format(FORMATO_DATA)).collect(Collectors.joining(", ")))
+                        .append(".");
+            }
+            mensagem.append(" Envie outra data, no formato DD-MM-AAAA.");
+            servicoMensagem.enviarMensagemWPP(empresa, numeroCliente, mensagem.toString());
             return;
         }
         reserva.setData(data);
@@ -321,7 +330,7 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
             mensagem.append(" (").append(janela.motivo()).append(")");
         }
         mensagem.append(".");
-        List<LocalDate> proximas = servicoFuncionamento.proximasDatasAbertas(empresa, data.plusDays(1), 3);
+        List<LocalDate> proximas = sugerirDatasContextuais(empresa, data);
         if (proximas != null && !proximas.isEmpty()) {
             mensagem.append(" Próximas datas abertas: ")
                     .append(proximas.stream().map(d -> d.format(FORMATO_DATA)).collect(Collectors.joining(", ")))
@@ -352,8 +361,12 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
         }
         List<LocalTime> inicios = ServicoFuncionamento.iniciosPossiveis(janela);
         if (!inicios.contains(hora)) {
-            return "Esse horário não está disponível em " + data.format(FORMATO_DATA) + ". Horários de início: "
-                    + formatarHorarios(inicios) + ".";
+            LocalTime maisProximo = inicioMaisProximo(inicios, hora);
+            String detalheProximo = maisProximo != null
+                    ? " O início mais próximo é " + maisProximo.format(DateTimeFormatter.ofPattern("HH:mm")) + "."
+                    : "";
+            return "Esse horário não está disponível em " + data.format(FORMATO_DATA) + "."
+                    + detalheProximo + " Horários de início: " + formatarHorarios(inicios) + ".";
         }
         try {
             boolean livre = servicoGoogleagenda.horarioEstaLivre(
@@ -363,10 +376,84 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
                 return "❌ Esse horário já está reservado em " + data.format(FORMATO_DATA) + ".";
             }
         } catch (Exception e) {
-            Log.warn("Falha ao consultar Google Agenda na reserva por hora: {}", e.getClass().getSimpleName());
+            log.warn("Falha ao consultar Google Agenda na reserva por hora: {}", e.getClass().getSimpleName());
             return "Não consegui consultar a agenda agora. Tente novamente em instantes.";
         }
         return null;
+    }
+
+    static LocalTime inicioMaisProximo(List<LocalTime> inicios, LocalTime hora) {
+        if (inicios == null || inicios.isEmpty() || hora == null) {
+            return null;
+        }
+        LocalTime maisProximo = null;
+        long menorDiferenca = Long.MAX_VALUE;
+        for (LocalTime inicio : inicios) {
+            long dif = Math.abs(Duration.between(inicio, hora).toMinutes());
+            if (dif < menorDiferenca) {
+                menorDiferenca = dif;
+                maisProximo = inicio;
+            }
+        }
+        return maisProximo;
+    }
+
+    List<LocalDate> sugerirDatasContextuais(Empresa empresa, LocalDate data) {
+        LocalDate hoje = LocalDate.now(FUSO_BRASILIA);
+        List<LocalDate> candidatas = new ArrayList<>();
+        DayOfWeek diaSemana = data.getDayOfWeek();
+        if (diaSemana == DayOfWeek.FRIDAY) {
+            candidatas.add(data.plusDays(1));
+            candidatas.add(data.plusDays(2));
+            candidatas.add(data.plusDays(7));
+        } else if (diaSemana == DayOfWeek.SATURDAY) {
+            candidatas.add(data.plusDays(1));
+            candidatas.add(data.plusDays(7));
+            candidatas.add(data.plusDays(6));
+        } else if (diaSemana == DayOfWeek.SUNDAY) {
+            candidatas.add(data.plusWeeks(1));
+            if (data.isAfter(hoje.plusWeeks(2))) {
+                LocalDate domingoAnterior = data.minusWeeks(1);
+                if (!domingoAnterior.isBefore(hoje)) {
+                    candidatas.add(domingoAnterior);
+                }
+            }
+            candidatas.add(data.plusWeeks(2));
+        } else {
+            candidatas.add(data.plusDays(1));
+            candidatas.add(data.plusDays(7));
+        }
+
+        List<LocalDate> resultado = new ArrayList<>();
+        LocalDate limiteMaximo = hoje.plusDays(ServicoFuncionamento.DIAS_MAXIMOS_A_FRENTE);
+        for (LocalDate d : candidatas) {
+            if (!d.isBefore(hoje) && !d.isAfter(limiteMaximo) && !resultado.contains(d)) {
+                try {
+                    ServicoFuncionamento.Janela j = servicoFuncionamento.janelaDa(empresa, d);
+                    if (j != null && j.aberto()) {
+                        resultado.add(d);
+                    }
+                } catch (Exception ignored) {
+                }
+            }
+            if (resultado.size() == 3) {
+                break;
+            }
+        }
+        if (resultado.size() < 3) {
+            List<LocalDate> fallback = servicoFuncionamento.proximasDatasAbertas(empresa, data.plusDays(1), 3);
+            if (fallback != null) {
+                for (LocalDate f : fallback) {
+                    if (!resultado.contains(f)) {
+                        resultado.add(f);
+                    }
+                    if (resultado.size() == 3) {
+                        break;
+                    }
+                }
+            }
+        }
+        return resultado;
     }
 
     private String formatarHorarios(List<LocalTime> horarios) {
@@ -602,7 +689,7 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
             }
             return true;
         } catch (Exception e) {
-            Log.warn("Falha ao consultar Google Agenda na reserva: {}", e.getClass().getSimpleName());
+            log.warn("Falha ao consultar Google Agenda na reserva: {}", e.getClass().getSimpleName());
             servicoMensagem.enviarMensagemWPP(
                     empresa, numeroCliente, "Não consegui consultar a agenda agora. Tente novamente em instantes.");
             return false;
@@ -639,7 +726,7 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
             servicoMensagem.enviarMensagemWPP(empresa, numeroCliente, montarListaProximosDias(hoje,
                     dia -> ocupadas.contains(dia) ? "❌ Alugado" : "✅ Livre"));
         } catch (Exception e) {
-            Log.warn("Falha ao listar agenda dos próximos {} dias: {}", DIAS_AGENDA, e.getClass().getSimpleName());
+            log.warn("Falha ao listar agenda dos próximos {} dias: {}", DIAS_AGENDA, e.getClass().getSimpleName());
             servicoMensagem.enviarMensagemWPP(
                     empresa,
                     numeroCliente,
@@ -679,7 +766,7 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
     }
 
     private void tratarDataInformada(Empresa empresa, String numeroCliente, String texto) {
-        Log.info("Buscando data informada pelo cliente.");
+        log.info("Buscando data informada pelo cliente.");
         String calendarId = empresa.getGoogleCalendarId();
         if (calendarId == null || calendarId.isBlank()) {
             servicoMensagem.enviarMensagemWPP(
@@ -709,7 +796,7 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
             }
             servicoMensagem.enviarMensagemWPP(empresa, numeroCliente, resposta);
         } catch (Exception e) {
-            Log.warn("Falha ao consultar Google Agenda: {}", e.getClass().getSimpleName());
+            log.warn("Falha ao consultar Google Agenda: {}", e.getClass().getSimpleName());
             servicoMensagem.enviarMensagemWPP(
                     empresa,
                     numeroCliente,
