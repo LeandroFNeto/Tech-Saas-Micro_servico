@@ -51,6 +51,8 @@
             type="time"
             [class]="classesEntrada(visual.entrada, horarioInvalido())"
             [value]="abre()"
+            [attr.aria-invalid]="horarioInvalido()"
+            [attr.aria-describedby]="horarioInvalido() ? 'func-fecha-erro' : null"
             (input)="abre.set(valor($event))"
           />
         </div>
@@ -122,6 +124,8 @@
                         [class]="classesEntrada(visual.entradaDia, diaInvalido(dia))"
                         [value]="dia.abre"
                         [disabled]="!dia.aberto"
+                        [attr.aria-invalid]="diaInvalido(dia)"
+                        [attr.aria-describedby]="diaInvalido(dia) ? 'func-erro-' + dia.codigo : null"
                         (input)="atualizarDia(dia.codigo, { abre: valor($event) })"
                       />
                     </div>
@@ -138,7 +142,7 @@
                         (input)="atualizarDia(dia.codigo, { fecha: valor($event) })"
                       />
                     </div>
-                    <div [class]="visual.campo">
+                    <div [class]="visual.campo + ' col-span-2 sm:col-span-1'">
                       <label [class]="design.campo.rotuloPequeno" [attr.for]="'func-duracao-' + dia.codigo">{{ conteudo.porDia.duracao }}</label>
                       <select
                         [id]="'func-duracao-' + dia.codigo"
@@ -170,7 +174,7 @@
                 inputmode="numeric"
                 min="0"
                 [max]="maxIntervalo"
-                step="5"
+                step="1"
                 [class]="classesEntrada(visual.entrada, intervaloInvalido())"
                 [value]="intervalo() ?? ''"
                 [attr.aria-invalid]="intervaloInvalido()"
@@ -312,6 +316,8 @@
                     [class]="classesEntrada(visual.entrada, novoHorarioInvalido())"
                     [value]="novoAbre()"
                     [disabled]="novoFechado()"
+                    [attr.aria-invalid]="novoHorarioInvalido()"
+                    [attr.aria-describedby]="novoHorarioInvalido() && novoAbre() && novoFecha() ? 'func-novo-horario-erro' : null"
                     (input)="novoAbre.set(valor($event))"
                   />
                 </div>
@@ -324,12 +330,13 @@
                     [value]="novoFecha()"
                     [disabled]="novoFechado()"
                     [attr.aria-invalid]="novoHorarioInvalido()"
+                    [attr.aria-describedby]="novoHorarioInvalido() && novoAbre() && novoFecha() ? 'func-novo-horario-erro' : null"
                     (input)="novoFecha.set(valor($event))"
                   />
                 </div>
               </div>
               @if (novoHorarioInvalido() && novoAbre() && novoFecha()) {
-                <p [class]="design.campo.erro" role="alert">{{ conteudo.novo.erroHorario }}</p>
+                <p id="func-novo-horario-erro" [class]="design.campo.erro" role="alert">{{ conteudo.novo.erroHorario }}</p>
               }
 
               <button type="button" [class]="visual.botaoAdicionar" [disabled]="adicionarDesabilitado()" (click)="adicionarEspecial()">

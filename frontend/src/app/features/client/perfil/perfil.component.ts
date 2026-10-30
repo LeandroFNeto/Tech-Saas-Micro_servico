@@ -2,7 +2,7 @@ import { Component, NgZone, OnInit, inject, signal } from '@angular/core';
 import { TextFieldModule } from '@angular/cdk/text-field';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { environment } from '../../../../environments/environment';
 import { mensagemHttp } from '../../../core/interceptors/auth.interceptor';
 import { AuthService } from '../../../core/services/auth.service';
@@ -25,6 +25,7 @@ type AbaPerfil = 'dados' | 'robo' | 'funcionamento' | 'configuracao';
   templateUrl: './perfil.component.html'
 })
 export class PerfilComponent implements OnInit {
+  private readonly route = inject(ActivatedRoute);
   private readonly fb = inject(FormBuilder);
   private readonly auth = inject(AuthService);
   private readonly empresasApi = inject(EmpresaService);
@@ -88,6 +89,10 @@ export class PerfilComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    const abaParam = this.route.snapshot.queryParamMap.get('aba');
+    if (abaParam === 'dados' || abaParam === 'robo' || abaParam === 'funcionamento' || abaParam === 'configuracao') {
+      this.aba.set(abaParam);
+    }
     this.avisosApi.listarAtivos().subscribe({
       next: (lista) => this.avisos.set(lista),
       error: (err) => this.erro.set(mensagemHttp(err))
