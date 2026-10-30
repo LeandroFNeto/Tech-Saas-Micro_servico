@@ -59,6 +59,10 @@ export class EmpresaService {
     return this.http.put<void>(`${this.base}/${sessao}/reset-senha`, { novaSenha });
   }
 
+  excluir(sessao: string): Observable<void> {
+    return this.http.delete<void>(`${this.base}/${sessao}`);
+  }
+
   paraView(bruto: unknown): EmpresaView {
     const item = (bruto ?? {}) as Record<string, unknown>;
     return {
@@ -85,6 +89,8 @@ export class EmpresaService {
       cidadePrevisao: item['cidadePrevisao'] as string | undefined,
       cidadePrevisaoResolvida: item['cidadePrevisaoResolvida'] as string | undefined,
       previsaoTempoAtiva: Boolean(item['previsaoTempoAtiva']),
+      permitePrevisaoTempo: item['permitePrevisaoTempo'] !== undefined ? Boolean(item['permitePrevisaoTempo']) : true,
+      ativo: item['ativo'] !== undefined ? Boolean(item['ativo']) : true,
       lembrete: item['lembrete'] as LembreteConfirmacaoDTO | undefined,
       atualizadoEm: item['atualizadoEm'] as string | undefined
     };

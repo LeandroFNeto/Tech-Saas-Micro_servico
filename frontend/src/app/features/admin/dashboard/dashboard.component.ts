@@ -22,6 +22,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
   readonly statusPorSessao = signal<Record<string, StatusSessaoWhatsapp>>({});
   readonly carregando = signal(true);
   readonly erro = signal('');
+  readonly empresaExcluindo = signal<EmpresaView | null>(null);
+  readonly confirmacaoAberta = signal(false);
+  readonly excluindo = signal(false);
 
   ngOnInit(): void {
     this.carregar();
@@ -60,6 +63,35 @@ export class DashboardComponent implements OnInit, OnDestroy {
           this.carregando.set(false);
         }
       });
+  }
+
+  abrirConfirmacaoExclusao(empresa: EmpresaView): void {
+    this.empresaExcluindo.set(empresa);
+    this.confirmacaoAberta.set(true);
+  }
+
+  cancelarExclusao(): void {
+    this.confirmacaoAberta.set(false);
+    this.empresaExcluindo.set(null);
+  }
+
+  confirmarExclusao(): void {
+    const empresa = this.empresaExcluindo();
+    if (!empresa) return;
+
+    this.excluindo.set(true);
+    this.empresasApi.excluir(empresa.sessaoWhatsapp).subscribe({
+      next: () => {
+        this.excluindo.set(false);
+        this.confirmacaoAberta.set(false);
+        this.empresaExcluindo.set(null);
+        this.carregar();
+      },
+      error: (err) => {
+        this.excluindo.set(false);
+        this.erro.set(mensagemHttp(err));
+      }
+    });
   }
 
   statusDe(sessao: string): StatusSessaoWhatsapp | null {

@@ -21,7 +21,7 @@
   <p class="rounded-[20px] border border-brand-100 bg-white px-4 py-8 text-sm text-brand-600">Nenhum cliente cadastrado ainda.</p>
 } @else {
   <div
-    class="hidden px-5 pb-3 text-xs font-semibold uppercase tracking-[0.06em] text-brand-600 min-[1100px]:grid min-[1100px]:grid-cols-[1.6fr_1.6fr_1fr_0.7fr_1.1fr_96px] min-[1100px]:items-center min-[1100px]:gap-4"
+    class="hidden px-5 pb-3 text-xs font-semibold uppercase tracking-[0.06em] text-brand-600 min-[1100px]:grid min-[1100px]:grid-cols-[1.5fr_1.4fr_1fr_0.7fr_1fr_auto] min-[1100px]:items-center min-[1100px]:gap-4"
     aria-hidden="true"
   >
     <span>Empresa</span><span>Sessão WhatsApp</span><span>Status</span><span>Módulos</span><span>Atualizado</span><span></span>
@@ -29,7 +29,7 @@
   <ul class="flex flex-col gap-3">
     @for (empresa of empresas(); track empresa.sessaoWhatsapp || empresa.id) {
       <li
-        class="grid grid-cols-2 items-center gap-x-4 gap-y-3 rounded-[20px] border border-brand-100 bg-white p-4 shadow-[0_1px_2px_rgba(46,26,71,0.05)] min-[1100px]:grid-cols-[1.6fr_1.6fr_1fr_0.7fr_1.1fr_96px] min-[1100px]:gap-4 min-[1100px]:px-5 min-[1100px]:py-3.5"
+        class="grid grid-cols-2 items-center gap-x-4 gap-y-3 rounded-[20px] border border-brand-100 bg-white p-4 shadow-[0_1px_2px_rgba(46,26,71,0.05)] min-[1100px]:grid-cols-[1.5fr_1.4fr_1fr_0.7fr_1fr_auto] min-[1100px]:gap-4 min-[1100px]:px-5 min-[1100px]:py-3.5"
       >
         <div class="col-span-2 min-w-0 min-[1100px]:col-span-1">
           <span class="mb-0.5 block text-[11px] font-semibold uppercase leading-4 tracking-[0.06em] text-brand-600 min-[1100px]:hidden">Empresa</span>
@@ -62,16 +62,44 @@
           <span class="mb-0.5 block text-[11px] font-semibold uppercase leading-4 tracking-[0.06em] text-brand-600 min-[1100px]:hidden">Atualizado</span>
           <span class="text-sm text-brand-700">{{ empresa.atualizadoEm | date: 'short' }}</span>
         </div>
-        <div class="col-span-2 min-[1100px]:col-span-1">
+        <div class="col-span-2 flex items-center justify-end gap-2 min-[1100px]:col-span-1">
           <a
-            class="btn-secondary w-full px-3.5 min-[1100px]:w-auto"
+            class="btn-secondary min-h-9 flex-1 px-3 py-1.5 text-center text-xs min-[1100px]:flex-initial min-[1100px]:w-auto"
             [routerLink]="['/admin/empresas', empresa.sessaoWhatsapp]"
             [attr.aria-label]="'Editar ' + (empresa.nome || empresa.sessaoWhatsapp)"
           >
             Editar
           </a>
+          <button
+            type="button"
+            class="btn-secondary min-h-9 flex-1 px-3 py-1.5 text-xs text-red-600 hover:border-red-300 hover:bg-red-50 hover:text-red-700 min-[1100px]:flex-initial min-[1100px]:w-auto"
+            (click)="abrirConfirmacaoExclusao(empresa)"
+            [attr.aria-label]="'Excluir ' + (empresa.nome || empresa.sessaoWhatsapp)"
+          >
+            Excluir
+          </button>
         </div>
       </li>
     }
   </ul>
+}
+
+@if (confirmacaoAberta() && empresaExcluindo(); as empresa) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" role="dialog" aria-modal="true" aria-labelledby="modal-excluir-titulo">
+    <div class="w-full max-w-md rounded-2xl border border-brand-100 bg-white p-6 shadow-xl">
+      <h2 id="modal-excluir-titulo" class="text-lg font-bold text-brand-900">Excluir empresa</h2>
+      <p class="mt-2 text-sm text-brand-600">
+        Tem certeza que deseja excluir a empresa <strong>{{ empresa.nome || empresa.sessaoWhatsapp }}</strong>?
+        Esta ação desativará o acesso e desconectará o WhatsApp.
+      </p>
+      <div class="mt-6 flex justify-end gap-3">
+        <button type="button" class="btn-secondary px-4 py-2" [disabled]="excluindo()" (click)="cancelarExclusao()">
+          Cancelar
+        </button>
+        <button type="button" class="btn-primary bg-red-600 hover:bg-red-700 px-4 py-2 text-white border-none" [disabled]="excluindo()" (click)="confirmarExclusao()">
+          {{ excluindo() ? 'Excluindo...' : 'Confirmar exclusão' }}
+        </button>
+      </div>
+    </div>
+  </div>
 }

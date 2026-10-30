@@ -30,6 +30,10 @@ public record EmpresaCreateDTO(
                 example = "false")
         Boolean permiteReservaAutomatica,
 
+        @Schema(description = "Quando true, libera o recurso de previsão do tempo para a empresa poder configurar no perfil. Ausente ou false, a empresa nasce com o recurso desligado",
+                example = "false")
+        Boolean permitePrevisaoTempo,
+
         @Schema(description = "URL pública da foto principal (Hero Image) hospedada no Cloudinary",
                 example = "https://res.cloudinary.com/demo/image/upload/v1/hero_image.jpg")
         String linkFotoPrincipal,

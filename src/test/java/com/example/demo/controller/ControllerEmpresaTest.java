@@ -32,6 +32,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -44,6 +45,7 @@ class ControllerEmpresaTest {
     @MockitoBean private EmpresaRepository empresaRepository;
     @MockitoBean private ServicoAuth servicoAuth;
     @MockitoBean private com.example.demo.servico.previsao.ServicoPrevisaoTempo servicoPrevisaoTempo;
+    @MockitoBean private com.example.demo.servico.ServicoWppConnect servicoWppConnect;
 
     @AfterEach
     void limparContexto() {
@@ -866,5 +868,94 @@ class ControllerEmpresaTest {
         mockMvc.perform(get("/empresas/sessao_recanto_01/previsao")
                         .header("x-cliente-token", "x"))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("DELETE /empresas/{sessao}: admin desativa empresa com soft delete e desconecta WhatsApp")
+    void deveDesativarEmpresaComSucesso() throws Exception {
+        Empresa empresa = empresaDe(1L, "sessao_recanto_01");
+        empresa.setAtivo(true);
+        when(empresaRepository.buscarPorSessaoComModulos("sessao_recanto_01")).thenReturn(empresa);
+        when(empresaRepository.findBySessaoWhatsapp("sessao_recanto_01")).thenReturn(empresa);
+        autenticarComoAdmin();
+
+        mockMvc.perform(delete("/empresas/sessao_recanto_01"))
+                .andExpect(status().isNoContent());
+
+        assertEquals(false, empresa.getAtivo());
+        assertTrue(empresa.getDataExclusao() != null);
+        verify(empresaRepository).save(empresa);
+        verify(servicoWppConnect).desconectar("sessao_recanto_01");
+    }
+
+    @Test
+    @DisplayName("DELETE /empresas/{sessao}: rejeita requisição sem credencial de admin")
+    void deveRecusarExclusaoSemAdmin() throws Exception {
+        mockMvc.perform(delete("/empresas/sessao_recanto_01"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("DELETE /empresas/{sessao}: retorna 404 para empresa inexistente ou já inativa")
+    void deveRetornar404ParaEmpresaInexistenteOuJaInativa() throws Exception {
+        when(empresaRepository.buscarPorSessaoComModulos("sessao_inexistente")).thenReturn(null);
+        when(empresaRepository.findBySessaoWhatsapp("sessao_inexistente")).thenReturn(null);
+        autenticarComoAdmin();
+
+        mockMvc.perform(delete("/empresas/sessao_inexistente"))
+                .andExpect(status().isNotFound());
+
+        Empresa inativa = empresaDe(2L, "sessao_inativa");
+        inativa.setAtivo(false);
+        when(empresaRepository.buscarPorSessaoComModulos("sessao_inativa")).thenReturn(inativa);
+        when(empresaRepository.findBySessaoWhatsapp("sessao_inativa")).thenReturn(inativa);
+
+        mockMvc.perform(delete("/empresas/sessao_inativa"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("PUT /empresas/{sessao}/cliente: rejeita ativar previsão quando admin não liberou")
+    void deveRejeitarAtivacaoPrevisaoSemPermissaoDoAdmin() throws Exception {
+        Empresa empresa = empresaDe(1L, "sessao_recanto_01");
+        empresa.setPermitePrevisaoTempo(false);
+        when(empresaRepository.findBySessaoWhatsapp("sessao_recanto_01")).thenReturn(empresa);
+        autenticarComoClienteDe(empresa);
+
+        String json = """
+                {
+                    "previsaoTempoAtiva": true
+                }
+                """;
+
+        mockMvc.perform(put("/empresas/sessao_recanto_01/cliente")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json))
+                .andExpect(status().isBadRequest())
+                .andExpect(status().reason("A previsão do tempo precisa ser liberada pelo administrador."));
+    }
+
+    @Test
+    @DisplayName("PUT /empresas/{sessao}/cliente: aceita ativar previsão quando admin liberou")
+    void deveAceitarAtivacaoPrevisaoQuandoAdminLiberou() throws Exception {
+        Empresa empresa = empresaDe(1L, "sessao_recanto_01");
+        empresa.setPermitePrevisaoTempo(true);
+        when(empresaRepository.findBySessaoWhatsapp("sessao_recanto_01")).thenReturn(empresa);
+        when(empresaRepository.save(any(Empresa.class))).thenAnswer(i -> i.getArgument(0));
+        autenticarComoClienteDe(empresa);
+
+        String json = """
+                {
+                    "previsaoTempoAtiva": true
+                }
+                """;
+
+        mockMvc.perform(put("/empresas/sessao_recanto_01/cliente")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.previsaoTempoAtiva").value(true))
+                .andExpect(jsonPath("$.permitePrevisaoTempo").value(true))
+                .andExpect(jsonPath("$.ativo").value(true));
     }
 }

@@ -44,6 +44,11 @@ properties:
     description: Quando true, o bot exibe a opção de reserva automática no WhatsApp
     default: false
     example: false
+  permitePrevisaoTempo:
+    type: boolean
+    description: Indica se o administrador liberou o recurso de previsão do tempo para a empresa
+    default: false
+    example: true
   locacaoPorHora:
     type: boolean
     description: Define se o local é alugado por hora (true) ou por diária (false)
@@ -71,6 +76,11 @@ properties:
     description: Interruptor "Mostrar previsão do tempo"
     default: false
     example: false
+  ativo:
+    type: boolean
+    description: Status de ativação da empresa (false se foi excluída/desativada)
+    default: true
+    example: true
   lembreteConfirmacao:
     $ref: ./LembreteConfirmacaoDTO.yaml
   atualizadoEm:

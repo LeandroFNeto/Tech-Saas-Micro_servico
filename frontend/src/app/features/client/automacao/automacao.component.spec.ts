@@ -17,9 +17,10 @@ describe('AutomacaoComponent', () => {
   beforeEach(async () => {
     authServiceSpy = jasmine.createSpyObj('AuthService', ['sessao']);
     authServiceSpy.sessao.and.returnValue({
-      login: 'empresa1',
+      sub: 'empresa1',
+      nome: 'Empresa 1',
       papel: 'CLIENTE',
-      sessao: 'sessao-empresa-1',
+      sessaoWhatsapp: 'sessao-empresa-1',
       exp: Date.now() + 3600000
     });
 

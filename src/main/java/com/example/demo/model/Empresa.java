@@ -2,6 +2,7 @@ package com.example.demo.model;
 
 
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -118,6 +119,15 @@ public class Empresa {
 
     @Column(name = "previsao_tempo_ativa")
     private Boolean previsaoTempoAtiva;
+
+    @Column(name = "permite_previsao_tempo")
+    private Boolean permitePrevisaoTempo;
+
+    @Column(name = "ativo")
+    private Boolean ativo = true;
+
+    @Column(name = "data_exclusao")
+    private LocalDateTime dataExclusao;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "lembrete_modo", length = 32)
@@ -374,5 +384,32 @@ public class Empresa {
 
     public void setLembreteTexto(String lembreteTexto) {
         this.lembreteTexto = lembreteTexto;
+    }
+
+    public Boolean getPermitePrevisaoTempo() {
+        if (permitePrevisaoTempo != null) {
+            return permitePrevisaoTempo;
+        }
+        return Boolean.TRUE.equals(previsaoTempoAtiva);
+    }
+
+    public void setPermitePrevisaoTempo(Boolean permitePrevisaoTempo) {
+        this.permitePrevisaoTempo = permitePrevisaoTempo;
+    }
+
+    public Boolean getAtivo() {
+        return ativo == null ? true : ativo;
+    }
+
+    public void setAtivo(Boolean ativo) {
+        this.ativo = ativo;
+    }
+
+    public LocalDateTime getDataExclusao() {
+        return dataExclusao;
+    }
+
+    public void setDataExclusao(LocalDateTime dataExclusao) {
+        this.dataExclusao = dataExclusao;
     }
 }

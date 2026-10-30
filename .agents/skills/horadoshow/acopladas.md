@@ -6,3 +6,4 @@ O `horadoshow` lê esta lista antes da programação. Uma linha nova entra aqui 
 |---|---|
 | proposta, change e spec | `.agents/skills/openspec/SKILL.md` |
 | tela, layout, estilo e navegação do front (elemento visual) | `.agents/skills/diasabatico/SKILL.md` |
+| código, implementação e engenharia enxuta | `ponytail` (modo lazy senior dev, ativo por padrão) |

@@ -332,6 +332,7 @@ class ServicoPrevisaoTempoTest {
         empresa.setLatitude(latitude);
         empresa.setLongitude(longitude);
         empresa.setPrevisaoTempoAtiva(true);
+        empresa.setPermitePrevisaoTempo(true);
         empresa.setGoogleCalendarId(calendarId);
         return empresa;
     }
@@ -381,5 +382,15 @@ class ServicoPrevisaoTempoTest {
         public Instant instant() {
             return agora;
         }
+    }
+
+    @Test
+    @DisplayName("Quando permitePrevisaoTempo é false, retorna indisponível sem chamar o provedor")
+    void recusaQuandoAdminNaoPermite() {
+        Empresa empresa = empresa(1L, -23.11, -46.55, null);
+        empresa.setPermitePrevisaoTempo(false);
+        PrevisaoTempoResponseDTO resposta = servico.consultar(empresa);
+        org.assertj.core.api.Assertions.assertThat(resposta.disponivel()).isFalse();
+        org.mockito.Mockito.verify(provedor, org.mockito.Mockito.never()).previsaoDiaria(org.mockito.ArgumentMatchers.anyDouble(), org.mockito.ArgumentMatchers.anyDouble());
     }
 }

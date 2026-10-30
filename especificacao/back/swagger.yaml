@@ -12,6 +12,8 @@ paths:
     $ref: ./paths/empresas.yaml
   /empresas/{id}:
     $ref: ./paths/empresas-id.yaml
+  /empresas/{sessao}:
+    $ref: ./paths/empresas-sessao.yaml
   /empresas/{sessao}/admin:
     $ref: ./paths/empresas-admin.yaml
   /empresas/{sessao}/reset-senha:

@@ -89,6 +89,26 @@
         }
       </div>
 
+      <div>
+        <label
+          class="flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-brand-100 bg-brand-50/50 p-4 transition-colors hover:bg-brand-50"
+        >
+          <span>
+            <span class="block text-[15px] font-semibold leading-[22px]">Liberar previsão do tempo</span>
+            <span class="mt-0.5 block text-[13px] leading-[18px] text-brand-600">
+              Permite que o cliente ative e visualize a previsão meteorológica e risco de chuva no painel dele.
+            </span>
+          </span>
+          <span class="switch">
+            <input
+              type="checkbox"
+              formControlName="permitePrevisaoTempo"
+            />
+            <span aria-hidden="true"></span>
+          </span>
+        </label>
+      </div>
+
       @if (!modoEdicao()) {
         <div>
           <label class="mb-1.5 block text-sm font-semibold text-brand-800" for="empresa-ramo">Ramo de atuação</label>

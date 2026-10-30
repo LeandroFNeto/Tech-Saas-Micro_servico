@@ -12,6 +12,7 @@ Arquivo em comum da equipe. Cada agente atualiza a própria linha ao começar e 
 | [corrigir-reserva-automatica](archive/corrigir-reserva-automatica/) | deploy | `claude-haiku-5-5` | `openspec/archive/corrigir-reserva-automatica/` | 1 | aprovado |
 | [remover-x-cliente-token](archive/remover-x-cliente-token/) | deploy | `claude-haiku-5-5` | `openspec/archive/remover-x-cliente-token/` | 0 | aprovado |
 | [lembrar-confirmacao-reserva](archive/lembrar-confirmacao-reserva/) | deploy | `claude-haiku-5-5` | `openspec/archive/lembrar-confirmacao-reserva/` | 0 | aprovado |
+| [aprimorar-painel-admin](archive/aprimorar-painel-admin/) | deploy | `antigravity` | `openspec/archive/aprimorar-painel-admin/` | 0 | aprovado |
 
 Estado: `em andamento`, `aprovado`, `reprovado`, `erro`, `aguardando aprovado`.
 

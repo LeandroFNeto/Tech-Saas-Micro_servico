@@ -201,4 +201,14 @@ describe('PainelComponent', () => {
       expect(comp.salvando()).toBeFalse();
     });
   });
+
+  it('quando o admin nao permite previsao, desabilita o interruptor e nao chama a previsao', () => {
+    const fixture = montar({ empresa: { cidadePrevisao: 'Atibaia', previsaoTempoAtiva: false, permitePrevisaoTempo: false } });
+    const raiz: HTMLElement = fixture.nativeElement;
+    expect(buscar).not.toHaveBeenCalled();
+    fixture.componentInstance.abrirEdicao();
+    fixture.detectChanges();
+    const switchInput = raiz.querySelector('input[type="checkbox"][disabled]');
+    expect(switchInput).not.toBeNull();
+  });
 });

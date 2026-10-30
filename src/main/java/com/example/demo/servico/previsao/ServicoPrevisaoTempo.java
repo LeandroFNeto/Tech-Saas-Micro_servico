@@ -74,6 +74,9 @@ public class ServicoPrevisaoTempo {
     }
 
     public PrevisaoTempoResponseDTO consultar(Empresa empresa) {
+        if (!Boolean.TRUE.equals(empresa.getPermitePrevisaoTempo())) {
+            return indisponivel(true, empresa.getCidadePrevisaoResolvida());
+        }
         boolean semCidade = empresa.getCidadePrevisao() == null || empresa.getCidadePrevisao().isBlank()
                 || empresa.getLatitude() == null || empresa.getLongitude() == null;
         if (!Boolean.TRUE.equals(empresa.getPrevisaoTempoAtiva()) || semCidade) {

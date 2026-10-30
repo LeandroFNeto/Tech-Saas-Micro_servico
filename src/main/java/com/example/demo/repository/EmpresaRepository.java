@@ -15,7 +15,7 @@ public interface EmpresaRepository extends JpaRepository<Empresa, Long> {
 
     Empresa findBySessaoWhatsapp(String sessaoWhatsapp);
 
-    @Query("SELECT DISTINCT e FROM Empresa e LEFT JOIN FETCH e.modulosAtivos ORDER BY e.id")
+    @Query("SELECT DISTINCT e FROM Empresa e LEFT JOIN FETCH e.modulosAtivos WHERE e.ativo IS NULL OR e.ativo = true ORDER BY e.id")
     List<Empresa> listarComModulos();
 
     @Query("SELECT e FROM Empresa e LEFT JOIN FETCH e.modulosAtivos WHERE e.sessaoWhatsapp = :sessao")

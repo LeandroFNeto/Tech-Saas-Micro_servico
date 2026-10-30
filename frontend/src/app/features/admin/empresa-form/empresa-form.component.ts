@@ -47,6 +47,7 @@ export class EmpresaFormComponent implements OnInit {
     locacaoPorHora: [false],
     googleCalendarId: [''],
     permiteReservaAutomatica: [false],
+    permitePrevisaoTempo: [false],
     email: [''],
     senha: [''],
     linkFotoPrincipal: [''],
@@ -108,6 +109,7 @@ export class EmpresaFormComponent implements OnInit {
           locacaoPorHora: valor.locacaoPorHora ?? false,
           googleCalendarId: valor.googleCalendarId || null,
           permiteReservaAutomatica: valor.permiteReservaAutomatica ?? false,
+          permitePrevisaoTempo: valor.permitePrevisaoTempo ?? false,
           linkFotoPrincipal: valor.linkFotoPrincipal || undefined,
           urlsGaleria,
           linkGaleria: (valor.linkGaleria ?? '').trim(),
@@ -134,6 +136,7 @@ export class EmpresaFormComponent implements OnInit {
         precoBase: valor.precoBase,
         googleCalendarId: valor.googleCalendarId || null,
         permiteReservaAutomatica: valor.permiteReservaAutomatica ?? false,
+        permitePrevisaoTempo: valor.permitePrevisaoTempo ?? false,
         email: valor.email ?? '',
         senha: valor.senha ?? '',
         linkFotoPrincipal: valor.linkFotoPrincipal || undefined,
@@ -191,6 +194,7 @@ export class EmpresaFormComponent implements OnInit {
       locacaoPorHora: empresa.locacaoPorHora ?? false,
       googleCalendarId: empresa.googleCalendarId ?? '',
       permiteReservaAutomatica: empresa.permiteReservaAutomatica ?? false,
+      permitePrevisaoTempo: empresa.permitePrevisaoTempo ?? false,
       linkFotoPrincipal: empresa.linkFotoPrincipal ?? '',
       linkGaleria: empresa.linkGaleria ?? ''
     });

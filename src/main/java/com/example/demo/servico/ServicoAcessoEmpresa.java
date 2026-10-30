@@ -94,6 +94,9 @@ public class ServicoAcessoEmpresa {
         if (empresa == null) {
             empresa = empresaRepository.findBySessaoWhatsapp(sessao);
         }
+        if (empresa != null && Boolean.FALSE.equals(empresa.getAtivo())) {
+            return null;
+        }
         return empresa;
     }
 

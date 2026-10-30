@@ -66,6 +66,7 @@ export class PainelComponent {
   readonly editando = signal(false);
   readonly cidade = signal('');
   readonly previsaoAtiva = signal(false);
+  readonly permitePrevisaoTempo = signal(true);
   readonly salvando = signal(false);
   readonly erroCidade = signal('');
   readonly sucesso = signal(false);
@@ -134,13 +135,16 @@ export class PainelComponent {
   }
 
   private aplicarEmpresa(
-    empresa: Pick<EmpresaView, 'cidadePrevisao' | 'cidadePrevisaoResolvida' | 'previsaoTempoAtiva'>
+    empresa: Pick<EmpresaView, 'cidadePrevisao' | 'cidadePrevisaoResolvida' | 'previsaoTempoAtiva' | 'permitePrevisaoTempo'>
   ): void {
     this.cidadeSalva.set(empresa.cidadePrevisao ?? '');
     this.cidadeResolvida.set(empresa.cidadePrevisaoResolvida ?? '');
-    this.ativaSalva.set(!!empresa.previsaoTempoAtiva);
+    const permitido = empresa.permitePrevisaoTempo !== false;
+    this.permitePrevisaoTempo.set(permitido);
+    const ativa = permitido && !!empresa.previsaoTempoAtiva;
+    this.ativaSalva.set(ativa);
     this.cidade.set(empresa.cidadePrevisao ?? '');
-    this.previsaoAtiva.set(!!empresa.previsaoTempoAtiva);
+    this.previsaoAtiva.set(ativa);
   }
 
   private buscarPrevisao(): void {
@@ -169,6 +173,9 @@ export class PainelComponent {
   }
 
   alternarPrevisao(): void {
+    if (!this.permitePrevisaoTempo()) {
+      return;
+    }
     this.previsaoAtiva.set(!this.previsaoAtiva());
   }
 

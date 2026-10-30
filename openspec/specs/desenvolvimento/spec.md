@@ -171,3 +171,18 @@ Cenário: skill abre um agente
 - Dado uma skill que abre um agente ou subagente
 - Quando o prompt do agente é escrito
 - Então ele traz a regra de pesquisa pelo Graphify
+
+
+### DEV-11 Modo Ponytail ativo por padrão na equipe
+
+O sistema deve aplicar o modo Ponytail (lazy senior dev) imediatamente ao iniciar qualquer papel ou etapa da equipe (programação, testes, qualidade, segurança e revisão). A solução adotada deve ser a menor alteração funcional estritamente necessária que resolve a tarefa com segurança, priorizando o código já existente e a biblioteca padrão, recusando abstrações, wrappers ou código especulativo não solicitados.
+
+Contrato: nenhum.
+Prova: teste automatizado ainda não existe. O comportamento é regra de agente (`.agents/rules/papeis-ia.md`, `.agents/skills/horadoshow/SKILL.md` e `.agents/skills/horadoshow/acopladas.md`).
+
+Cenário: subagente inicia etapa da equipe
+
+- Dado qualquer subagente ou papel da equipe de desenvolvimento
+- Quando o agente inicia a sua etapa
+- Então ele já aplica a postura Ponytail
+- E entrega o menor diff funcional sem complexidade desnecessária
