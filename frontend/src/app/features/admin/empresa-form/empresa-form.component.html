@@ -345,14 +345,16 @@
     }
   </div>
 
-  <div class="col-span-full">
-    <button class="btn-primary min-h-12 w-full max-w-[320px] px-5 text-[15px] font-bold" type="submit" [disabled]="salvando()">
-      {{ salvando() ? 'Salvando...' : modoEdicao() ? 'Salvar alterações' : 'Criar cliente' }}
-    </button>
-  </div>
+  @if (!auth.isLeitura()) {
+    <div class="col-span-full">
+      <button class="btn-primary min-h-12 w-full max-w-[320px] px-5 text-[15px] font-bold" type="submit" [disabled]="salvando()">
+        {{ salvando() ? 'Salvando...' : modoEdicao() ? 'Salvar alterações' : 'Criar cliente' }}
+      </button>
+    </div>
+  }
 </form>
 
-@if (modoEdicao() && sessaoOriginal()) {
+@if (modoEdicao() && sessaoOriginal() && auth.isSuperAdmin()) {
   <section class="mt-4 flex flex-col gap-4 rounded-[20px] border border-brand-100 bg-white p-5 shadow-[0_1px_2px_rgba(46,26,71,0.05)]">
     <div>
       <h2 class="text-[17px] font-bold leading-6 text-brand-900">Redefinir senha de acesso</h2>

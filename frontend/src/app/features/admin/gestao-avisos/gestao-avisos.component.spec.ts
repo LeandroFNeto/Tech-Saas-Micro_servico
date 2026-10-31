@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
+import { AuthService } from '../../../core/services/auth.service';
 import { AvisoService } from '../../../core/services/aviso.service';
 import { camposAbaixoDoMinimo, garantirTailwindCarregado, medirCampos } from '../../../testing/campos-fonte.testing';
 import { GestaoAvisosComponent } from './gestao-avisos.component';
@@ -8,7 +9,10 @@ describe('GestaoAvisosComponent regressao visual', () => {
   it('todo campo de formulario tem fonte computada de pelo menos 16px', () => {
     TestBed.configureTestingModule({
       imports: [GestaoAvisosComponent],
-      providers: [{ provide: AvisoService, useValue: { listarAdmin: jasmine.createSpy('listarAdmin').and.returnValue(of([])) } }]
+      providers: [
+        { provide: AvisoService, useValue: { listarAdmin: jasmine.createSpy('listarAdmin').and.returnValue(of([])) } },
+        { provide: AuthService, useValue: { isAdmin: () => true, isSuperAdmin: () => true, isLeitura: () => false, possuiPapel: () => true } }
+      ]
     });
     const fixture = TestBed.createComponent(GestaoAvisosComponent);
     fixture.detectChanges();

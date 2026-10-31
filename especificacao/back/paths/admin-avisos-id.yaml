@@ -2,7 +2,7 @@ put:
   tags:
   - Avisos
   summary: Atualizar aviso
-  description: Substitui título, tipo, conteúdo, link e flag ativo. Exige x-admin-token.
+  description: Substitui título, tipo, conteúdo, link e flag ativo. Exige x-admin-token ou autoridade SUPER_ADMIN.
   operationId: atualizarAviso
   parameters:
   - name: x-admin-token
@@ -34,13 +34,15 @@ put:
             $ref: "#/components/schemas/AvisoDTO"
     "401":
       description: Token administrativo inválido
+    "403":
+      description: Nível administrativo sem permissão (exige SUPER_ADMIN)
     "404":
       description: Aviso não encontrado
 delete:
   tags:
   - Avisos
   summary: Excluir aviso
-  description: Remove o aviso do banco. Exige x-admin-token.
+  description: Remove o aviso do banco. Exige x-admin-token ou autoridade SUPER_ADMIN.
   operationId: excluirAviso
   parameters:
   - name: x-admin-token
@@ -62,5 +64,7 @@ delete:
       description: Aviso excluído
     "401":
       description: Token administrativo inválido
+    "403":
+      description: Nível administrativo sem permissão (exige SUPER_ADMIN)
     "404":
       description: Aviso não encontrado

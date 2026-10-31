@@ -393,7 +393,7 @@
           "nome": "block text-[15px] font-semibold leading-[22px] text-brand-900",
           "status": "block text-[13px] leading-[18px] text-brand-600",
           "chave": "switch sm:order-3",
-          "campos": "col-span-full grid grid-cols-3 gap-2 sm:col-span-1",
+          "campos": "col-span-full grid grid-cols-2 gap-2 sm:col-span-1 sm:grid-cols-3",
           "erro": "col-span-full block text-[13px] leading-[18px] text-red-700 sm:order-4"
         },
         "especial": {

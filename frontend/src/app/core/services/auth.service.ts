@@ -32,12 +32,32 @@ export class AuthService {
     return !!atual && atual.exp > Date.now();
   }
 
+  isAdmin(): boolean {
+    const papel = this.sessao()?.papel;
+    return papel === 'ADMIN' || papel === 'SUPER_ADMIN' || papel === 'ADMIN_OPERACIONAL' || papel === 'ADMIN_LEITURA';
+  }
+
+  isSuperAdmin(): boolean {
+    const papel = this.sessao()?.papel;
+    return papel === 'ADMIN' || papel === 'SUPER_ADMIN';
+  }
+
+  isLeitura(): boolean {
+    return this.sessao()?.papel === 'ADMIN_LEITURA';
+  }
+
   possuiPapel(papel: PapelUsuario): boolean {
-    return this.isAuthenticated() && this.sessao()?.papel === papel;
+    if (!this.isAuthenticated()) {
+      return false;
+    }
+    if (papel === 'ADMIN') {
+      return this.isAdmin();
+    }
+    return this.sessao()?.papel === papel;
   }
 
   rotaInicial(): string {
-    return this.sessao()?.papel === 'ADMIN' ? '/admin' : '/cliente';
+    return this.isAdmin() ? '/admin' : '/cliente';
   }
 
   login(credenciais: LoginRequest): Observable<LoginResponse> {

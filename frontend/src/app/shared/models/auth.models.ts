@@ -1,4 +1,4 @@
-export type PapelUsuario = 'ADMIN' | 'CLIENTE';
+export type PapelUsuario = 'ADMIN' | 'SUPER_ADMIN' | 'ADMIN_OPERACIONAL' | 'ADMIN_LEITURA' | 'CLIENTE';
 
 export interface SessaoUsuario {
   sub: string;

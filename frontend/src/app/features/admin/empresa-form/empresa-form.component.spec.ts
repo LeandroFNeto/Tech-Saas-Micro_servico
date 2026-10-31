@@ -2,10 +2,18 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { NEVER, of, throwError } from 'rxjs';
+import { AuthService } from '../../../core/services/auth.service';
 import { EmpresaService } from '../../../core/services/empresa.service';
 import { WhatsappConnectionService } from '../../../core/services/whatsapp-connection.service';
 import { camposAbaixoDoMinimo, garantirTailwindCarregado, medirCampos } from '../../../testing/campos-fonte.testing';
 import { EmpresaFormComponent } from './empresa-form.component';
+
+const mockAuth = {
+  isAdmin: () => true,
+  isSuperAdmin: () => true,
+  isLeitura: () => false,
+  possuiPapel: () => true
+};
 
 describe('EmpresaFormComponent regressao visual', () => {
   const empresa = {
@@ -27,7 +35,8 @@ describe('EmpresaFormComponent regressao visual', () => {
         provideRouter([]),
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ sessao }) } } },
         { provide: EmpresaService, useValue: { buscarPorSessao: jasmine.createSpy('buscarPorSessao').and.returnValue(of(empresa)) } },
-        { provide: WhatsappConnectionService, useValue: { consultarStatus: () => NEVER, iniciar: () => NEVER } }
+        { provide: WhatsappConnectionService, useValue: { consultarStatus: () => NEVER, iniciar: () => NEVER } },
+        { provide: AuthService, useValue: mockAuth }
       ]
     });
     const fixture = TestBed.createComponent(EmpresaFormComponent);
@@ -81,7 +90,8 @@ describe('EmpresaFormComponent, reserva automatica pelo bot', () => {
             ...api
           }
         },
-        { provide: WhatsappConnectionService, useValue: { consultarStatus: () => NEVER, iniciar: () => NEVER } }
+        { provide: WhatsappConnectionService, useValue: { consultarStatus: () => NEVER, iniciar: () => NEVER } },
+        { provide: AuthService, useValue: mockAuth }
       ]
     });
     const fixture = TestBed.createComponent(EmpresaFormComponent);

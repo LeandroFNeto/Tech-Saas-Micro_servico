@@ -129,14 +129,10 @@ components:
       $ref: ./schemas/webhook/RemetenteWebhook.yaml
     ChaveMensagem:
       $ref: ./schemas/webhook/ChaveMensagem.yaml
-    DiaReserva:
-      $ref: ./schemas/data-rest/entidades.yaml#/DiaReserva
     Empresa:
       $ref: ./schemas/data-rest/entidades.yaml#/Empresa
     EntityModelEmpresa:
       $ref: ./schemas/data-rest/entidades.yaml#/EntityModelEmpresa
-    HorarioReserva:
-      $ref: ./schemas/data-rest/entidades.yaml#/HorarioReserva
     ModuloEmpresa:
       $ref: ./schemas/data-rest/entidades.yaml#/ModuloEmpresa
     PagedModelEntityModelEmpresa:
