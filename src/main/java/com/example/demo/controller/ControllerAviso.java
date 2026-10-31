@@ -37,6 +37,9 @@ public class ControllerAviso {
     @Autowired
     private AvisoRepository avisoRepository;
 
+    @Autowired
+    private com.example.demo.servico.ServicoAcessoEmpresa servicoAcessoEmpresa;
+
     @Value("${admin.api.key}")
     private String adminApiKey;
 
@@ -92,7 +95,7 @@ public class ControllerAviso {
             @RequestHeader(value = "x-admin-token", required = false) String token,
             @Valid @RequestBody AvisoDTO dto) {
 
-        exigirAdmin(token);
+        exigirSuperAdmin(token);
         Aviso aviso = new Aviso();
         aplicar(aviso, dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(paraDto(avisoRepository.save(aviso)));
@@ -113,7 +116,7 @@ public class ControllerAviso {
             @PathVariable Long id,
             @Valid @RequestBody AvisoDTO dto) {
 
-        exigirAdmin(token);
+        exigirSuperAdmin(token);
         Aviso aviso = avisoRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Aviso não encontrado"));
         aplicar(aviso, dto);
@@ -132,7 +135,7 @@ public class ControllerAviso {
             @RequestHeader(value = "x-admin-token", required = false) String token,
             @PathVariable Long id) {
 
-        exigirAdmin(token);
+        exigirSuperAdmin(token);
         if (!avisoRepository.existsById(id)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Aviso não encontrado");
         }
@@ -144,6 +147,12 @@ public class ControllerAviso {
         if (isAcessoNegado(token)) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token Inválido");
         }
+    }
+
+    private void exigirSuperAdmin(String token) {
+        exigirAdmin(token);
+        Authentication autenticacao = SecurityContextHolder.getContext().getAuthentication();
+        servicoAcessoEmpresa.exigirSuperAdmin(autenticacao, token);
     }
 
     private void aplicar(Aviso aviso, AvisoDTO dto) {

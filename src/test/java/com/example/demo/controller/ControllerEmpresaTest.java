@@ -70,6 +70,13 @@ class ControllerEmpresaTest {
                 "cliente-token", null, List.of(new SimpleGrantedAuthority("ROLE_CLIENTE"))));
     }
 
+    private void autenticarComoRole(Role role) {
+        Usuario usuario = new Usuario();
+        usuario.setRole(role);
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(usuario, null, usuario.getAuthorities()));
+    }
+
     private Empresa empresaDe(long id, String sessao) {
         Empresa empresa = new Empresa();
         empresa.setId(id);
@@ -957,5 +964,23 @@ class ControllerEmpresaTest {
                 .andExpect(jsonPath("$.previsaoTempoAtiva").value(true))
                 .andExpect(jsonPath("$.permitePrevisaoTempo").value(true))
                 .andExpect(jsonPath("$.ativo").value(true));
+    }
+
+    @Test
+    @DisplayName("DELETE /empresas/{sessao} recusa com 403 para ADMIN_OPERACIONAL")
+    void deveRecusarExclusaoParaAdminOperacional() throws Exception {
+        autenticarComoRole(Role.ADMIN_OPERACIONAL);
+        mockMvc.perform(delete("/empresas/sessao_recanto"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("POST /empresas recusa com 403 para ADMIN_LEITURA")
+    void deveRecusarCriacaoParaAdminLeitura() throws Exception {
+        autenticarComoRole(Role.ADMIN_LEITURA);
+        mockMvc.perform(post("/empresas")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(corpoPost("")))
+                .andExpect(status().isForbidden());
     }
 }

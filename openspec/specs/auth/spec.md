@@ -102,3 +102,29 @@ Cenário: admin em sessão inexistente
 - Dado um usuário `ADMIN` autenticado
 - Quando ele tenta acessar rotas de uma sessão que não existe
 - Então a API responde 404
+
+### AUTH-05 Níveis Administrativos e Controle Granular
+
+O sistema suporta papéis administrativos com permissões escalonadas:
+1. `SUPER_ADMIN` (e `ADMIN` legado): acesso total (excluir empresas, resetar senhas de clientes, gerenciar avisos do sistema, cadastrar e editar empresas).
+2. `ADMIN_OPERACIONAL`: operação diária (cadastrar empresas, editar dados e configurações), porém proibido de excluir empresas, resetar senhas e alterar avisos (retorna 403 Forbidden).
+3. `ADMIN_LEITURA`: auditoria e suporte (somente visualização de empresas, status e avisos), proibido de qualquer mutação (POST/PUT/DELETE retornam 403 Forbidden).
+
+Contrato: `especificacao/back/schemas/auth/LoginResponseDTO.yaml`, `especificacao/back/paths/empresas-sessao.yaml`, `especificacao/back/paths/admin-avisos.yaml`, `especificacao/back/paths/admin-avisos-id.yaml`
+Prova: `src/test/java/com/example/demo/servico/ServicoAcessoEmpresaNiveisTest.java`, `src/test/java/com/example/demo/controller/ControllerEmpresaTest.java`, `src/test/java/com/example/demo/controller/ControllerAvisoTest.java`
+
+Cenário: exclusão de empresa restrita ao super admin
+- Dado um usuário autenticado como `ADMIN_OPERACIONAL` ou `ADMIN_LEITURA`
+- Quando envia DELETE `/empresas/{sessao}`
+- Então a API responde 403 Forbidden
+
+Cenário: criação de empresa proibida para admin de leitura
+- Dado um usuário autenticado como `ADMIN_LEITURA`
+- Quando envia POST `/empresas`
+- Então a API responde 403 Forbidden
+
+Cenário: gestão de avisos restrita ao super admin
+- Dado um usuário autenticado como `ADMIN_OPERACIONAL` ou `ADMIN_LEITURA`
+- Quando envia POST, PUT ou DELETE para `/admin/avisos`
+- Então a API responde 403 Forbidden
+

@@ -72,6 +72,22 @@ public class ControllerEmpresa {
         return token == null || !token.equals(adminApiKey);
     }
 
+    private void exigirAdminEscrita(String token) {
+        if (isAcessoNegado(token)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token Inválido");
+        }
+        Authentication autenticacao = SecurityContextHolder.getContext().getAuthentication();
+        servicoAcessoEmpresa.exigirNaoLeitura(autenticacao);
+    }
+
+    private void exigirSuperAdmin(String token) {
+        if (isAcessoNegado(token)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Acesso negado");
+        }
+        Authentication autenticacao = SecurityContextHolder.getContext().getAuthentication();
+        servicoAcessoEmpresa.exigirSuperAdmin(autenticacao, token);
+    }
+
     @GetMapping
     @Operation(summary = "Listar empresas cadastradas",
             description = "Devolve a coleção HAL (_embedded.empresas) para o painel admin. Exige x-admin-token.")
@@ -125,9 +141,7 @@ public class ControllerEmpresa {
             @RequestHeader(value = "x-admin-token", required = false) String token,
             @Valid @RequestBody EmpresaCreateDTO dto) {
 
-        if (isAcessoNegado(token)) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token Inválido");
-        }
+        exigirAdminEscrita(token);
 
         if (empresaRepository.findBySessaoWhatsapp(dto.sessaoWhatsapp()) != null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Sessão já ocupada");
@@ -315,9 +329,7 @@ public class ControllerEmpresa {
             @PathVariable String sessao,
             @Valid @RequestBody EmpresaUpdateAdminDTO dto) {
 
-        if (isAcessoNegado(token)) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Acesso negado");
-        }
+        exigirAdminEscrita(token);
 
         Empresa empresa = empresaRepository.buscarPorSessaoComModulos(sessao);
         if (empresa == null) {
@@ -363,9 +375,7 @@ public class ControllerEmpresa {
             @PathVariable String sessao,
             @Valid @RequestBody ResetSenhaAdminDTO dto) {
 
-        if (isAcessoNegado(token)) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Acesso negado");
-        }
+        exigirSuperAdmin(token);
 
         if (empresaRepository.findBySessaoWhatsapp(sessao) == null) {
             return ResponseEntity.notFound().build();
@@ -492,9 +502,7 @@ public class ControllerEmpresa {
             @Parameter(description = "Identificador da sessão WhatsApp da empresa", example = "sessao_recanto_01")
             @PathVariable String sessao) {
 
-        if (isAcessoNegado(token)) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Acesso negado");
-        }
+        exigirSuperAdmin(token);
 
         Empresa empresa = empresaRepository.buscarPorSessaoComModulos(sessao);
         if (empresa == null) {

@@ -36,6 +36,49 @@ public class ServicoAcessoEmpresa {
                 .anyMatch("ROLE_ADMIN"::equals);
     }
 
+    public boolean isSuperAdmin(Authentication autenticacao, String adminToken) {
+        if (adminToken != null && adminToken.equals(adminApiKey)) {
+            return true;
+        }
+        if (autenticacao == null || !autenticacao.isAuthenticated()) {
+            return false;
+        }
+        if (autenticacao.getPrincipal() instanceof Usuario usuario) {
+            return usuario.getRole() != null && usuario.getRole().isSuperAdmin();
+        }
+        boolean temAdmin = autenticacao.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch("ROLE_ADMIN"::equals);
+        boolean temRestricao = autenticacao.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch(a -> "ROLE_ADMIN_OPERACIONAL".equals(a) || "ROLE_ADMIN_LEITURA".equals(a));
+        return temAdmin && !temRestricao;
+    }
+
+    public boolean isLeitura(Authentication autenticacao) {
+        if (autenticacao == null || !autenticacao.isAuthenticated()) {
+            return false;
+        }
+        if (autenticacao.getPrincipal() instanceof Usuario usuario) {
+            return usuario.getRole() != null && usuario.getRole().isLeitura();
+        }
+        return autenticacao.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch("ROLE_ADMIN_LEITURA"::equals);
+    }
+
+    public void exigirNaoLeitura(Authentication autenticacao) {
+        if (isLeitura(autenticacao)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Perfil de somente leitura não pode realizar alterações");
+        }
+    }
+
+    public void exigirSuperAdmin(Authentication autenticacao, String adminToken) {
+        if (!isSuperAdmin(autenticacao, adminToken)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acesso restrito ao administrador mestre (SUPER_ADMIN)");
+        }
+    }
+
     public boolean isCliente(Authentication autenticacao) {
         if (autenticacao == null || !autenticacao.isAuthenticated()) {
             return false;

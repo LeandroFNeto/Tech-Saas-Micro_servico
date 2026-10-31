@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { mensagemHttp } from '../../../core/interceptors/auth.interceptor';
+import { AuthService } from '../../../core/services/auth.service';
 import { AvisoService } from '../../../core/services/aviso.service';
 import { AvisoDTO, TIPOS_AVISO, TipoAviso, rotuloTipoAviso } from '../../../shared/models/aviso.models';
 
@@ -11,6 +12,7 @@ import { AvisoDTO, TIPOS_AVISO, TipoAviso, rotuloTipoAviso } from '../../../shar
 })
 export class GestaoAvisosComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
+  readonly auth = inject(AuthService);
   private readonly avisosApi = inject(AvisoService);
 
   readonly tipos = TIPOS_AVISO;

@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed, fakeAsync, discardPeriodicTasks, tick } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
+import { AuthService } from '../../../core/services/auth.service';
 import { EmpresaService } from '../../../core/services/empresa.service';
 import { WhatsappConnectionService } from '../../../core/services/whatsapp-connection.service';
 import { EmpresaView } from '../../../shared/models/empresa.models';
@@ -14,6 +15,13 @@ const empresa: EmpresaView = {
   modulosMenu: []
 };
 
+const mockAuth = {
+  isAdmin: () => true,
+  isSuperAdmin: () => true,
+  isLeitura: () => false,
+  possuiPapel: () => true
+};
+
 describe('DashboardComponent', () => {
   let fixture: ComponentFixture<DashboardComponent>;
   let status: SessaoStatusResponseDTO;
@@ -25,7 +33,8 @@ describe('DashboardComponent', () => {
       providers: [
         provideRouter([]),
         { provide: EmpresaService, useValue: { listar: () => of([empresa]), excluir: () => of(undefined) } },
-        { provide: WhatsappConnectionService, useValue: { consultarStatus: () => of(status) } }
+        { provide: WhatsappConnectionService, useValue: { consultarStatus: () => of(status) } },
+        { provide: AuthService, useValue: mockAuth }
       ]
     });
     fixture = TestBed.createComponent(DashboardComponent);

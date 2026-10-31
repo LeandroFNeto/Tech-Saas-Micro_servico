@@ -2,7 +2,7 @@ get:
   tags:
   - Avisos
   summary: Listar todos os avisos (admin)
-  description: Devolve avisos ativos e inativos para a gestão no painel master. Exige x-admin-token.
+  description: Devolve avisos ativos e inativos para a gestão no painel master. Exige x-admin-token ou autoridade ROLE_ADMIN.
   operationId: listarAvisosAdmin
   parameters:
   - name: x-admin-token
@@ -27,7 +27,7 @@ post:
   tags:
   - Avisos
   summary: Criar aviso
-  description: Cadastra um aviso a partir de AvisoDTO. Exige x-admin-token.
+  description: Cadastra um aviso a partir de AvisoDTO. Exige x-admin-token ou nível SUPER_ADMIN.
   operationId: criarAviso
   parameters:
   - name: x-admin-token
@@ -54,3 +54,5 @@ post:
       description: Dados inválidos
     "401":
       description: Token administrativo inválido
+    "403":
+      description: Nível administrativo sem permissão (exige SUPER_ADMIN)

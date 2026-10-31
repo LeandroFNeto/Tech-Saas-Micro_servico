@@ -3,7 +3,9 @@
     <h1 class="text-[clamp(22px,4vw,28px)] font-bold leading-tight text-brand-900">Clientes cadastrados</h1>
     <p class="mt-1 text-sm text-brand-600">Empresas ativas no painel da gamb.</p>
   </div>
-  <a class="btn-primary min-h-12 px-5 text-[15px] font-bold" routerLink="/admin/empresas/nova">Cadastrar cliente</a>
+  @if (!auth.isLeitura()) {
+    <a class="btn-primary min-h-12 px-5 text-[15px] font-bold" routerLink="/admin/empresas/nova">Cadastrar cliente</a>
+  }
 </div>
 
 @if (erro()) {
@@ -70,14 +72,16 @@
           >
             Editar
           </a>
-          <button
-            type="button"
-            class="btn-secondary min-h-9 flex-1 px-3 py-1.5 text-xs text-red-600 hover:border-red-300 hover:bg-red-50 hover:text-red-700 min-[1100px]:flex-initial min-[1100px]:w-auto"
-            (click)="abrirConfirmacaoExclusao(empresa)"
-            [attr.aria-label]="'Excluir ' + (empresa.nome || empresa.sessaoWhatsapp)"
-          >
-            Excluir
-          </button>
+          @if (auth.isSuperAdmin()) {
+            <button
+              type="button"
+              class="btn-secondary min-h-9 flex-1 px-3 py-1.5 text-xs text-red-600 hover:border-red-300 hover:bg-red-50 hover:text-red-700 min-[1100px]:flex-initial min-[1100px]:w-auto"
+              (click)="abrirConfirmacaoExclusao(empresa)"
+              [attr.aria-label]="'Excluir ' + (empresa.nome || empresa.sessaoWhatsapp)"
+            >
+              Excluir
+            </button>
+          }
         </div>
       </li>
     }

@@ -3,6 +3,7 @@ import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Subject, catchError, forkJoin, of, switchMap, takeUntil, timer } from 'rxjs';
 import { mensagemHttp } from '../../../core/interceptors/auth.interceptor';
+import { AuthService } from '../../../core/services/auth.service';
 import { EmpresaService } from '../../../core/services/empresa.service';
 import { WhatsappConnectionService } from '../../../core/services/whatsapp-connection.service';
 import { EmpresaView } from '../../../shared/models/empresa.models';
@@ -14,6 +15,7 @@ import { StatusSessaoWhatsapp } from '../../../shared/models/whatsapp.models';
   templateUrl: './dashboard.component.html'
 })
 export class DashboardComponent implements OnInit, OnDestroy {
+  readonly auth = inject(AuthService);
   private readonly empresasApi = inject(EmpresaService);
   private readonly whatsapp = inject(WhatsappConnectionService);
   private readonly destroy$ = new Subject<void>();

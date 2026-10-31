@@ -4,6 +4,7 @@ import { FormArray, FormBuilder, ReactiveFormsModule, Validators } from '@angula
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { environment } from '../../../../environments/environment';
 import { mensagemHttp } from '../../../core/interceptors/auth.interceptor';
+import { AuthService } from '../../../core/services/auth.service';
 import { EmpresaService } from '../../../core/services/empresa.service';
 import { ConexaoWhatsappComponent } from '../../../shared/components/conexao-whatsapp/conexao-whatsapp.component';
 import { EmpresaView, MAX_URLS_GALERIA, MODULOS_DISPONIVEIS } from '../../../shared/models/empresa.models';
@@ -19,6 +20,7 @@ export class EmpresaFormComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  readonly auth = inject(AuthService);
   private readonly empresasApi = inject(EmpresaService);
   private readonly zone = inject(NgZone);
   private readonly destroyRef = inject(DestroyRef);
