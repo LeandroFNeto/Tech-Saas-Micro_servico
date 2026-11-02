@@ -1,0 +1,66 @@
+name: CI/CD Deploy Hostinger
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  testar:
+    name: Executar Testes Automatizados
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do Repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'maven'
+
+      - name: Executar Testes Backend
+        run: mvn clean test
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Instalar Dependencias Frontend
+        run: npm --prefix frontend ci
+
+      - name: Executar Testes Frontend
+        run: npm --prefix frontend test -- --watch=false --browsers=ChromeHeadless
+
+  deploy:
+    name: Deploy no VPS Hostinger via SSH
+    needs: testar
+    runs-on: ubuntu-latest
+    steps:
+      - name: Disparar Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOSTINGER_HOST }}
+          username: ${{ secrets.HOSTINGER_USER }}
+          key: ${{ secrets.HOSTINGER_SSH_KEY }}
+          port: ${{ secrets.HOSTINGER_SSH_PORT || 22 }}
+          script: |
+            CAMINHO=""
+            for dir in "$HOME/gamb" "/gamb" "/root/gamb" "/app/Tech-Saas-Micro_servico" "$HOME/Tech-Saas-Micro_servico"; do
+              if [ -d "$dir" ]; then
+                CAMINHO="$dir"
+                break
+              fi
+            done
+
+            if [ -n "$CAMINHO" ]; then
+              echo "Diretório encontrado: $CAMINHO"
+              chmod +x "$CAMINHO/scripts/deploy-hostinger.sh"
+              bash "$CAMINHO/scripts/deploy-hostinger.sh"
+            else
+              echo "Pasta do projeto (gamb) não encontrada!" && exit 1
+            fi

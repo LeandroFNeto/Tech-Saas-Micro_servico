@@ -30,3 +30,9 @@ Este arquivo define as regras e convenções essenciais do repositório para o G
 - O arquivo [AJUDA.md](file:///c:/Projeto-futuro-junior/Tech-Saas-Micro_servico/AJUDA.md) é a referência rápida e central de todos os comandos do Tech-SaaS.
 - Deve ser mantido e atualizado sempre que um novo comando ou skill for criado/alterado.
 - Detalhes em: [.agents/rules/ajuda-comandos.md](file:///c:/Projeto-futuro-junior/Tech-Saas-Micro_servico/.agents/rules/ajuda-comandos.md).
+
+
+## 6. Economia de Tokens via Scripts (Scripts-First)
+- O que puder ser resolvido ou automatizado por código determinístico deve ser transformado em script na pasta `scripts/`.
+- Execuções repetitivas de teste, validação, verificação de conformidade e transformação devem usar scripts locais, eliminando consumo recorrente de tokens de LLM.
+- Detalhes em: [.agents/rules/economia-tokens-scripts.md](file:///c:/Projeto-futuro-junior/Tech-Saas-Micro_servico/.agents/rules/economia-tokens-scripts.md).

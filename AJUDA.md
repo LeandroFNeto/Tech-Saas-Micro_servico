@@ -108,3 +108,16 @@ Especialista em teste de caixa branca e blindagem de código (Dual Wielding: Bac
 
 Conforme definido na regra do repositório em `.agents/rules/ajuda-comandos.md`:
 Sempre que uma nova skill, comando ou rotina for adicionada ou alterada no projeto Tech-SaaS, este arquivo `AJUDA.md` **deve ser mantido e atualizado no mesmo turno**.
+
+
+---
+
+## 8. Scripts e Automação Local (Scripts-First & Economia de Tokens)
+
+Diretriz mandatória: o que for passível de automação determinística local deve ser executado via script em `scripts/` em vez de re-processamento por tokens de LLM ([.agents/rules/economia-tokens-scripts.md](file:///c:/Projeto-futuro-junior/Tech-Saas-Micro_servico/.agents/rules/economia-tokens-scripts.md)).
+
+| Script / Comando | Descrição |
+|---|---|
+| `powershell -ExecutionPolicy Bypass -File scripts/verificar-codigo-limpo.ps1` | Verifica a ausência de comentários proibidos (`//` e `/* */`) nos arquivos `.java`, `.ts`, `.html` e `.css` alterados no git. Adicione `-Todos` para inspecionar todo o projeto. |
+| `powershell -ExecutionPolicy Bypass -File scripts/testar-tudo.ps1` | Executa a bateria unificada de testes (Backend Maven e Frontend Karma Headless). Suporta `-ApenasBackend` e `-ApenasFrontend`. |
+| `bash scripts/deploy-hostinger.sh` | Atualiza o código no VPS Hostinger e sobe os containers com Docker Compose. Acionado via GitHub Actions (`.github/workflows/deploy.yml`) ou manualmente via SSH. |
