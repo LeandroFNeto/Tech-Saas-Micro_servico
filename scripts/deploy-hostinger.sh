@@ -15,7 +15,7 @@ fi
 git fetch origin main
 git reset --hard origin/main
 
-if [ -d "frontend" ]; then
+if [ -d "frontend" ] && command -v npm >/dev/null 2>&1; then
   cd frontend
   npm ci
   npm run build

@@ -60,8 +60,11 @@ jobs:
 
             if [ -n "$CAMINHO" ]; then
               echo "Diretorio encontrado: $CAMINHO"
-              chmod +x "$CAMINHO/scripts/deploy-hostinger.sh"
-              bash "$CAMINHO/scripts/deploy-hostinger.sh"
+              cd "$CAMINHO"
+              git fetch origin main
+              git reset --hard origin/main
+              chmod +x "scripts/deploy-hostinger.sh"
+              bash "scripts/deploy-hostinger.sh"
             else
               echo "Pasta do projeto (gamb) nao encontrada!" && exit 1
             fi
