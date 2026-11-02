@@ -22,7 +22,7 @@ if (-not $ApenasBackend) {
     Write-Host "===============================" -ForegroundColor Cyan
     Write-Host "Executando testes do Frontend..." -ForegroundColor Cyan
     Write-Host "===============================" -ForegroundColor Cyan
-    npm --prefix frontend test -- --watch=false --browsers=ChromeHeadless
+    npm --prefix frontend test -- --watch=false --browsers=ChromeHeadlessCustom
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Falha nos testes do Frontend!" -ForegroundColor Red
         $erroGeral = $true

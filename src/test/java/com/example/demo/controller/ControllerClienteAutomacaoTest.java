@@ -206,7 +206,7 @@ class ControllerClienteAutomacaoTest {
         reserva.setId(101L);
         reserva.setEmpresa(empresa);
         reserva.setContato(null);
-        reserva.setData(LocalDate.now().plusDays(2));
+        reserva.setData(LocalDate.now(ZoneId.of("America/Sao_Paulo")).plusDays(2));
 
         when(reservaRepository.findByIdAndEmpresaId(101L, 10L)).thenReturn(Optional.of(reserva));
 
@@ -228,7 +228,7 @@ class ControllerClienteAutomacaoTest {
         reserva.setId(102L);
         reserva.setEmpresa(empresa);
         reserva.setContato(contato);
-        reserva.setData(LocalDate.now().plusDays(2));
+        reserva.setData(LocalDate.now(ZoneId.of("America/Sao_Paulo")).plusDays(2));
 
         when(reservaRepository.findByIdAndEmpresaId(102L, 10L)).thenReturn(Optional.of(reserva));
 
@@ -250,7 +250,8 @@ class ControllerClienteAutomacaoTest {
         reserva.setId(103L);
         reserva.setEmpresa(empresa);
         reserva.setContato(contato);
-        reserva.setData(LocalDate.now().minusDays(1));
+        ZoneId fuso = ZoneId.of("America/Sao_Paulo");
+        reserva.setData(LocalDate.now(fuso).minusDays(2));
 
         when(reservaRepository.findByIdAndEmpresaId(103L, 10L)).thenReturn(Optional.of(reserva));
 
@@ -272,7 +273,7 @@ class ControllerClienteAutomacaoTest {
         reserva.setId(104L);
         reserva.setEmpresa(empresa);
         reserva.setContato(contato);
-        reserva.setData(LocalDate.now().plusDays(1));
+        reserva.setData(LocalDate.now(ZoneId.of("America/Sao_Paulo")).plusDays(1));
         reserva.setSituacao(SituacaoReserva.AGUARDANDO_LEMBRETE);
 
         when(reservaRepository.findByIdAndEmpresaId(104L, 10L)).thenReturn(Optional.of(reserva));
@@ -298,7 +299,7 @@ class ControllerClienteAutomacaoTest {
         reserva.setId(105L);
         reserva.setEmpresa(empresa);
         reserva.setContato(contato);
-        reserva.setData(LocalDate.now().plusDays(2));
+        reserva.setData(LocalDate.now(ZoneId.of("America/Sao_Paulo")).plusDays(2));
         reserva.setSituacao(SituacaoReserva.AGUARDANDO_LEMBRETE);
 
         when(reservaRepository.findByIdAndEmpresaId(105L, 10L)).thenReturn(Optional.of(reserva));
@@ -367,7 +368,7 @@ class ControllerClienteAutomacaoTest {
         Reserva reserva = new Reserva();
         reserva.setId(203L);
         reserva.setEmpresa(empresa);
-        reserva.setData(LocalDate.now().plusDays(5));
+        reserva.setData(LocalDate.now(ZoneId.of("America/Sao_Paulo")).plusDays(5));
         when(reservaRepository.findByIdAndEmpresaId(203L, 10L)).thenReturn(Optional.of(reserva));
 
         Contato novoContato = new Contato();
