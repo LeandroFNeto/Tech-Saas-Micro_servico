@@ -47,6 +47,7 @@ jobs:
           host: ${{ secrets.HOSTINGER_HOST || '72.62.117.106' }}
           username: ${{ secrets.HOSTINGER_USER || 'root' }}
           key: ${{ secrets.HOSTINGER_SSH_KEY || secrets.GAMB_SERVER }}
+          password: ${{ secrets.HOSTINGER_PASSWORD }}
           port: ${{ secrets.HOSTINGER_SSH_PORT || 22 }}
           script: |
             CAMINHO=""
