@@ -14,7 +14,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Configurar Java 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: '21'
@@ -26,7 +26,7 @@ jobs:
       - name: Configurar Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
 
@@ -44,9 +44,9 @@ jobs:
       - name: Disparar Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.HOSTINGER_HOST }}
-          username: ${{ secrets.HOSTINGER_USER }}
-          key: ${{ secrets.HOSTINGER_SSH_KEY }}
+          host: ${{ secrets.HOSTINGER_HOST || '72.62.117.106' }}
+          username: ${{ secrets.HOSTINGER_USER || 'root' }}
+          key: ${{ secrets.HOSTINGER_SSH_KEY || secrets.GAMB_SERVER }}
           port: ${{ secrets.HOSTINGER_SSH_PORT || 22 }}
           script: |
             CAMINHO=""
@@ -58,9 +58,9 @@ jobs:
             done
 
             if [ -n "$CAMINHO" ]; then
-              echo "Diretório encontrado: $CAMINHO"
+              echo "Diretorio encontrado: $CAMINHO"
               chmod +x "$CAMINHO/scripts/deploy-hostinger.sh"
               bash "$CAMINHO/scripts/deploy-hostinger.sh"
             else
-              echo "Pasta do projeto (gamb) não encontrada!" && exit 1
+              echo "Pasta do projeto (gamb) nao encontrada!" && exit 1
             fi
