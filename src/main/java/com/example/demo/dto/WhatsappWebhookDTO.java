@@ -12,6 +12,8 @@ import com.example.demo.util.MascaraLog;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.io.IOException;
+import java.time.Clock;
+import java.time.Instant;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Schema(description = "Payload tipado recebido do WPPConnect via webhook. Aceita o formato plano (from/body), o aninhado (data.key / data.message) e id/sender/content ora string, ora objeto.")
@@ -26,6 +28,15 @@ public record WhatsappWebhookDTO(
         @JsonProperty("fromMe")
         @Schema(description = "Indica se a mensagem foi enviada pelo próprio número conectado (dono do bot)", example = "false")
         Boolean fromMe,
+
+        @JsonProperty("timestamp")
+        @JsonAlias("t")
+        @Schema(description = "Timestamp Unix da mensagem em segundos ou milissegundos", example = "1730592000")
+        Long timestamp,
+
+        @JsonProperty("to")
+        @Schema(description = "JID do destinatário no formato plano do WPPConnect", example = "5511999999999@c.us")
+        String to,
 
         @JsonProperty("isGroupMsg")
         @JsonAlias("isGroup")
@@ -222,6 +233,28 @@ public record WhatsappWebhookDTO(
         return String.format(
                 "Webhook ID=%s | type=%s | isGroupMsg=%s | fromMe=%s | numero=%s | texto=%s",
                 idLog, type, isGroupMsg, fromMe, MascaraLog.jid(resolverRemoteJid()), MascaraLog.tamanho(resolverTexto()));
+    }
+
+    public boolean ehMensagemAntiga(Clock clock) {
+        if (timestamp == null) {
+            return false;
+        }
+        long epochSegundos = timestamp > 100_000_000_000L ? (timestamp / 1000) : timestamp;
+        Instant agora = clock == null ? Instant.now() : clock.instant();
+        long segundosAtraso = agora.getEpochSecond() - epochSegundos;
+        return segundosAtraso > 120;
+    }
+
+    public String resolverContatoAlvo() {
+        if (enviadaPorMim()) {
+            if (temTexto(to)) {
+                return resolverLid(to);
+            }
+            if (id != null && temTexto(id.remoteJid())) {
+                return resolverLid(id.remoteJid());
+            }
+        }
+        return resolverRemoteJid();
     }
 
     public boolean deveDescartarComoRuido() {

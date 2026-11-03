@@ -8,12 +8,18 @@ Este documento é a referência central e rápida de todos os comandos, skills e
 
 Controla o ciclo de vida de especificações e mudanças de funcionalidades do projeto (Domain Specs e Changes).
 
-| Comando | Descrição |
+| Comando / Skill | Descrição |
 |---|---|
-| `/openspec` | Abre o planejamento e aplicação de mudanças no OpenSpec. |
-| `/openspec proposal <nome>` | Inicia o modo **propor** (cria `proposal.md`, `design.md` e `tasks.md` dentro de `openspec/changes/<nome>/`). |
-| `/openspec apply <nome>` | Inicia o modo **aplicar** (codifica apenas após aprovação formal da pasta `changes/<nome>/`). |
-| `/openspec archive <nome>` | Conclui e consolida a funcionalidade nas especificações definitivas (`openspec/specs/`) e arquiva a change. |
+| `/openspec` | Abre o planejamento e aplicação de mudanças no OpenSpec deste repositório. |
+| `/openspec proposal <nome>` | Inicia o modo **propor** tradicional do projeto. |
+| `/openspec apply <nome>` | Inicia o modo **aplicar** tradicional do projeto. |
+| `/openspec archive <nome>` | Conclui e consolida a funcionalidade nas specs definitivas. |
+| `/opsx-propose` | Cria uma proposta completa do OpenSpec com design, specs e tasks. |
+| `/opsx-apply` | Aplica as tasks aprovadas da change gerando o código. |
+| `/opsx-archive` | Arquiva a change concluída e sincroniza com as specs vigentes. |
+| `/opsx-explore` | Explora a base de conhecimento de especificações e contexto. |
+| `/opsx-sync` | Sincroniza e reconcilia especificações do OpenSpec. |
+| `/opsx-update` | Atualiza propostas ou tasks de uma change existente. |
 
 > **Regra Importante:** Toda nova funcionalidade ou tela obrigatoriamente passa pelo gate do OpenSpec (`proposal.md` -> aprovação -> código).
 

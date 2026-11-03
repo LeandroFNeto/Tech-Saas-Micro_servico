@@ -49,3 +49,6 @@ build/
 
 # Graphify
 graphify-out/
+
+__pycache__/
+*.pyc

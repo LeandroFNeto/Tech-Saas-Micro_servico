@@ -164,6 +164,34 @@ class GerenciadorSessaoTest {
         assertThat(gerenciadorSessao.getEstado(CLIENTE)).isEqualTo(EstadoUsuario.RESERVA_REGISTRANDO);
     }
 
+    @Test
+    @DisplayName("Ativa trava do proprietário e expira após 20 minutos")
+    void deveAtivarTravaProprietarioEExpirarApos20Minutos() {
+        RelogioControlado relogio = new RelogioControlado(INICIO_RELOGIO);
+        GerenciadorSessao gerenciador = new GerenciadorSessao(relogio);
+
+        gerenciador.ativarTravaProprietario(CLIENTE);
+
+        assertThat(gerenciador.estaComTravaProprietarioAtiva(CLIENTE)).isTrue();
+        assertThat(gerenciador.estaComTravaProprietarioAtiva("551188887777")).isTrue();
+
+        relogio.avancarMinutos(19);
+        assertThat(gerenciador.estaComTravaProprietarioAtiva(CLIENTE)).isTrue();
+
+        relogio.avancarMinutos(1);
+        assertThat(gerenciador.estaComTravaProprietarioAtiva(CLIENTE)).isFalse();
+    }
+
+    @Test
+    @DisplayName("Remove trava do proprietário manualmente")
+    void deveRemoverTravaProprietarioManualmente() {
+        gerenciadorSessao.ativarTravaProprietario(CLIENTE);
+        assertThat(gerenciadorSessao.estaComTravaProprietarioAtiva(CLIENTE)).isTrue();
+
+        gerenciadorSessao.removerTravaProprietario(CLIENTE);
+        assertThat(gerenciadorSessao.estaComTravaProprietarioAtiva(CLIENTE)).isFalse();
+    }
+
     private static final class RelogioControlado extends Clock {
         private Instant instante;
 

@@ -107,6 +107,55 @@ class ControllerWhatsappTest {
                 .andExpect(status().isOk());
 
         verify(observador).logFiltro(eq("teste-sessao"), anyString(), contains("Anti-X9"));
+        verify(gerenciadorSessao).ativarTravaProprietario("551188887777");
+        verifyNoInteractions(moduloFactory);
+    }
+
+    @Test
+    @DisplayName("Deve pausar atendimento e não responder quando trava do proprietário estiver ativa")
+    void devePausarAtendimentoQuandoTravaProprietarioEstiverAtiva() throws Exception {
+        when(gerenciadorSessao.estaComTravaProprietarioAtiva("551188887777")).thenReturn(true);
+
+        String payload = """
+            {
+                "session": "teste-sessao",
+                "from": "5511988887777@c.us",
+                "body": "Olá, quero agendar",
+                "type": "chat",
+                "fromMe": false
+            }
+        """;
+
+        mockMvc.perform(post("/webhook/whatsapp")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload))
+                .andExpect(status().isOk());
+
+        verify(observador).logFiltro(eq("teste-sessao"), eq("5511988887777@c.us"), contains("20 minutos"));
+        verifyNoInteractions(moduloFactory);
+    }
+
+    @Test
+    @DisplayName("Deve descartar mensagem antiga sem chamar módulo de atendimento")
+    void deveDescartarMensagemAntiga() throws Exception {
+        long timestampMuitoAntigo = java.time.Instant.now().minus(java.time.Duration.ofMinutes(10)).getEpochSecond();
+        String payload = String.format("""
+            {
+                "session": "teste-sessao",
+                "from": "5511988887777@c.us",
+                "body": "Mensagem histórica",
+                "type": "chat",
+                "fromMe": false,
+                "timestamp": %d
+            }
+        """, timestampMuitoAntigo);
+
+        mockMvc.perform(post("/webhook/whatsapp")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload))
+                .andExpect(status().isOk());
+
+        verify(observador).logFiltro(eq("teste-sessao"), eq("5511988887777@c.us"), contains("antiga"));
         verifyNoInteractions(moduloFactory);
     }
 

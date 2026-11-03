@@ -15,6 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class GerenciadorSessao {
 
     public static final int TTL_MINUTOS = 30;
+    public static final int TRAVA_PROPRIETARIO_MINUTOS = 20;
 
     public record SessaoAtendimento(String estadoAtual, LocalDateTime ultimaInteracao) {
     }
@@ -22,6 +23,7 @@ public class GerenciadorSessao {
     private final Clock clock;
     private final Map<String, SessaoAtendimento> sessoes = new ConcurrentHashMap<>();
     private final Map<String, DadosReservaSessao> reservas = new ConcurrentHashMap<>();
+    private final Map<String, LocalDateTime> travasProprietario = new ConcurrentHashMap<>();
 
     public GerenciadorSessao() {
         this(Clock.systemDefaultZone());
@@ -95,6 +97,37 @@ public class GerenciadorSessao {
             return;
         }
         atualizarEstado(remetente, estado.name());
+    }
+
+    public void ativarTravaProprietario(String numeroCliente) {
+        if (numeroCliente == null || numeroCliente.isBlank()) {
+            return;
+        }
+        travasProprietario.put(chave(numeroCliente), LocalDateTime.now(clock));
+    }
+
+    public boolean estaComTravaProprietarioAtiva(String numeroCliente) {
+        if (numeroCliente == null || numeroCliente.isBlank()) {
+            return false;
+        }
+        String chaveSessao = chave(numeroCliente);
+        LocalDateTime agora = LocalDateTime.now(clock);
+        LocalDateTime momento = travasProprietario.get(chaveSessao);
+        if (momento == null) {
+            return false;
+        }
+        if (Duration.between(momento, agora).toMinutes() >= TRAVA_PROPRIETARIO_MINUTOS) {
+            travasProprietario.remove(chaveSessao);
+            return false;
+        }
+        return true;
+    }
+
+    public void removerTravaProprietario(String numeroCliente) {
+        if (numeroCliente == null || numeroCliente.isBlank()) {
+            return;
+        }
+        travasProprietario.remove(chave(numeroCliente));
     }
 
     public DadosReservaSessao getOuCriarReserva(String remetente) {

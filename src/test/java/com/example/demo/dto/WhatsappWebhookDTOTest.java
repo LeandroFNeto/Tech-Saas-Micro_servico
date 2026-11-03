@@ -3,6 +3,9 @@ package com.example.demo.dto;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -182,5 +185,56 @@ class WhatsappWebhookDTOTest {
 
         assertThat(dto.ehMensagemDeTexto()).isTrue();
         assertThat(dto.deveDescartarComoRuido()).isFalse();
+    }
+
+    @Test
+    @DisplayName("Deserializa timestamp e detecta mensagem antiga com atraso superior a 2 minutos")
+    void deveDetectarMensagemAntigaPeloTimestamp() throws Exception {
+        Instant agora = Instant.parse("2026-11-02T22:00:00Z");
+        Clock clockFixo = Clock.fixed(agora, ZoneId.of("UTC"));
+
+        String jsonRecente = """
+            {
+              "session": "RecantoBot",
+              "from": "5511999999999@c.us",
+              "type": "chat",
+              "body": "Mensagem recente",
+              "timestamp": 1793656750
+            }
+            """;
+
+        String jsonAntigo = """
+            {
+              "session": "RecantoBot",
+              "from": "5511999999999@c.us",
+              "type": "chat",
+              "body": "Mensagem histórica",
+              "timestamp": 1793656600
+            }
+            """;
+
+        WhatsappWebhookDTO recente = mapper.readValue(jsonRecente, WhatsappWebhookDTO.class);
+        WhatsappWebhookDTO antigo = mapper.readValue(jsonAntigo, WhatsappWebhookDTO.class);
+
+        assertThat(recente.ehMensagemAntiga(clockFixo)).isFalse();
+        assertThat(antigo.ehMensagemAntiga(clockFixo)).isTrue();
+    }
+
+    @Test
+    @DisplayName("Resolve contato alvo para o destinatário to quando enviada pelo dono")
+    void deveResolverContatoAlvoQuandoEnviadaPorMim() throws Exception {
+        String json = """
+            {
+              "session": "RecantoBot",
+              "from": "5511888888888@c.us",
+              "to": "5511999999999@c.us",
+              "type": "chat",
+              "fromMe": true,
+              "body": "Olá, sou o dono"
+            }
+            """;
+
+        WhatsappWebhookDTO dto = mapper.readValue(json, WhatsappWebhookDTO.class);
+        assertThat(dto.resolverContatoAlvo()).isEqualTo("5511999999999@c.us");
     }
 }

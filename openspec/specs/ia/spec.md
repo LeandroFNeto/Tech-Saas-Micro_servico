@@ -64,3 +64,38 @@ Cenário: projeção da IA omite o calendário
 
 - Quando a consulta devolve a empresa para a IA
 - Então o JSON não contém `googleCalendarId`
+
+
+### IA-04 Atendimento humanizado de saudações e dúvidas com IA
+
+O sistema deve responder saudações e dúvidas básicas em linguagem natural quando a empresa possuir `usaIA = true` e o cliente estiver no estado inicial de atendimento.
+
+Prova: `src/test/java/com/example/demo/servico/ServicoIATest.java`, `src/test/java/com/example/demo/strategy/LocacaoStrategyTest.java`
+
+Cenário: saudação informal do cliente
+
+- Dado uma empresa com `usaIA = true`
+- Quando o cliente envia mensagem inicial em texto livre
+- Então o sistema responde cordialmente com mensagem humanizada contendo o nome da empresa e orientando as opções do menu
+
+### IA-05 Isolamento estrito de contexto multi-tenant
+
+O sistema deve restringir todas as informações enviadas no prompt da IA aos dados cadastrais públicos da empresa vinculada à sessão ativa do WhatsApp, sem incluir credenciais nem segredos de outras empresas.
+
+Prova: `src/test/java/com/example/demo/servico/ServicoIATest.java`
+
+Cenário: prompt sanitizado por empresa
+
+- Quando a IA é acionada para responder a um cliente na sessão da Empresa A
+- Então o prompt contém exclusivamente dados cadastrais da Empresa A e omite credenciais e identificadores de calendário
+
+### IA-06 Resiliência e fallback para menu determinístico
+
+O sistema deve realizar chamadas ao modelo leve de IA respeitando a cota gratuita da API, aplicando timeout de 3 segundos e caindo em fallback determinístico caso a API falhe ou a cota atinja o limite.
+
+Prova: `src/test/java/com/example/demo/servico/ServicoIATest.java`
+
+Cenário: falha ou esgotamento de cota da IA aciona menu padrão
+
+- Quando a chamada ao modelo Gemini falhar, estourar timeout ou retornar erro de cota (429)
+- Então o sistema responde com o menu principal determinístico sem travar o atendimento

@@ -8,7 +8,9 @@ import com.example.demo.servico.GerenciadorSessao;
 import com.example.demo.servico.ServicoFuncionamento;
 import com.example.demo.servico.ServicoGoogleagenda;
 import com.example.demo.servico.ServicoMensagem;
+import com.example.demo.servico.ServicoIA;
 import com.example.demo.servico.ServicoMenu;
+import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,6 +33,7 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.ArgumentMatchers.contains;
@@ -56,6 +59,7 @@ class LocacaoStrategyTest {
     @Mock private ServicoGoogleagenda servicoGoogleagenda;
     @Mock private ServicoFuncionamento servicoFuncionamento;
     @Spy private GerenciadorSessao gerenciadorSessao = new GerenciadorSessao();
+    @Mock private ServicoIA servicoIA;
     @Mock private ApplicationEventPublisher publicadorEventos;
     @InjectMocks private LocacaoStrategy locacaoStrategy;
 
@@ -887,5 +891,31 @@ class LocacaoStrategyTest {
         assertThat(evento.getDatas()).containsExactly(primeira.format(FORMATO_DATA), segunda.format(FORMATO_DATA));
         assertThat(evento.getHorario()).isEqualTo("14:00");
         assertThat(gerenciadorSessao.getEstado(REMETENTE)).isEqualTo(EstadoUsuario.RESERVA_REGISTRANDO);
+    }
+    @Test
+    @DisplayName("Responde saudação humanizada quando empresa usa IA")
+    void deveResponderSaudacaoHumanizadaComIAQuandoEmpresaUsaIA() {
+        Empresa empresa = empresaComMenu();
+        empresa.setUsaIA(true);
+        when(servicoIA.responderAtendimento(eq(empresa), eq("Bom dia!")))
+                .thenReturn(Optional.of("Olá! Bem-vindo ao Recanto das Palmeiras!"));
+
+        locacaoStrategy.processarMensagem(empresa, REMETENTE, "Bom dia!", "INICIO");
+
+        verify(servicoMensagem).enviarMensagemWPP(eq(empresa), eq(REMETENTE), eq("Olá! Bem-vindo ao Recanto das Palmeiras!"));
+        assertThat(gerenciadorSessao.getEstado(REMETENTE)).isEqualTo(EstadoUsuario.MENU_PRINCIPAL);
+    }
+
+    @Test
+    @DisplayName("Fallback para menu principal quando IA retornar empty")
+    void deveCairNoMenuDeterministicoEmFallbackQuandoIANaoRetornarResposta() {
+        Empresa empresa = empresaComMenu();
+        empresa.setUsaIA(true);
+        when(servicoIA.responderAtendimento(eq(empresa), anyString())).thenReturn(Optional.empty());
+
+        locacaoStrategy.processarMensagem(empresa, REMETENTE, "Olá", "INICIO");
+
+        verify(servicoMensagem).enviarMensagemWPP(eq(empresa), eq(REMETENTE), contains("desejada"));
+        assertThat(gerenciadorSessao.getEstado(REMETENTE)).isEqualTo(EstadoUsuario.MENU_PRINCIPAL);
     }
 }

@@ -14,6 +14,7 @@ import com.example.demo.servico.observador.Observadorwhatsapp;
 import com.example.demo.strategy.FactoryModulo;
 import com.example.demo.strategy.ModuloAtendimentoStrategy;
 import com.example.demo.util.WhatsappUtil;
+import java.time.Clock;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -48,6 +49,11 @@ public class ControllerWhatsapp {
     @Autowired private ServicoAcessoEmpresa servicoAcessoEmpresa;
     @Autowired private ServicoContato servicoContato;
     @Autowired private ServicoRespostaLembrete servicoRespostaLembrete;
+    @Autowired(required = false) private Clock clock = Clock.systemDefaultZone();
+
+    void setClock(Clock clock) {
+        this.clock = clock == null ? Clock.systemDefaultZone() : clock;
+    }
 
     @PostMapping("/webhook/whatsapp")
     @Tag(name = "Webhook WhatsApp", description = "Recepção tipada de eventos do WPPConnect")
@@ -75,7 +81,16 @@ public class ControllerWhatsapp {
                 return ResponseEntity.ok().build();
             }
 
+            if (payload.ehMensagemAntiga(clock)) {
+                observador.logFiltro(sessao, rawFrom, "Mensagem antiga descartada");
+                return ResponseEntity.ok().build();
+            }
+
             if (payload.enviadaPorMim()) {
+                String contatoAlvo = payload.resolverContatoAlvo();
+                if (contatoAlvo != null && !contatoAlvo.isBlank()) {
+                    gerenciadorSessao.ativarTravaProprietario(WhatsappUtil.normalizarParaChaveEstado(contatoAlvo));
+                }
                 observador.logFiltro(sessao, rawFrom, "Dono do celular digitou (Anti-X9)");
                 return ResponseEntity.ok().build();
             }
@@ -86,6 +101,11 @@ public class ControllerWhatsapp {
             }
 
             String chaveEstado = WhatsappUtil.normalizarParaChaveEstado(rawFrom);
+
+            if (gerenciadorSessao.estaComTravaProprietarioAtiva(chaveEstado)) {
+                observador.logFiltro(sessao, rawFrom, "Atendimento pausado: proprietário atendeu nos últimos 20 minutos");
+                return ResponseEntity.ok().build();
+            }
             Empresa empresa = empresaRepository.buscarPorSessaoComModulos(sessao);
 
             if (empresa == null) {

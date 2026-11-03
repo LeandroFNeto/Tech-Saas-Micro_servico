@@ -7,7 +7,9 @@ import com.example.demo.model.EstadoUsuario;
 import com.example.demo.servico.GerenciadorSessao;
 import com.example.demo.servico.ServicoFuncionamento;
 import com.example.demo.servico.ServicoGoogleagenda;
+import com.example.demo.servico.ServicoIA;
 import com.example.demo.servico.ServicoMensagem;
+import java.util.Optional;
 import com.example.demo.servico.ServicoMenu;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,6 +58,7 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
     @Autowired private ServicoGoogleagenda servicoGoogleagenda;
     @Autowired private ServicoFuncionamento servicoFuncionamento;
     @Autowired private ApplicationEventPublisher publicadorEventos;
+    @Autowired(required = false) private ServicoIA servicoIA;
 
     @Override
     public String getRamoDeAtuacao() {
@@ -71,7 +74,7 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
         }
         if (ehComandoMenuPrincipal(texto)) {
             gerenciadorSessao.atualizarEstado(numeroCliente, EstadoUsuario.INICIO.name());
-            tratarInicio(empresa, numeroCliente);
+            tratarInicio(empresa, numeroCliente, texto);
             return;
         }
 
@@ -81,7 +84,7 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
         }
 
         switch (estado) {
-            case INICIO -> tratarInicio(empresa, numeroCliente);
+            case INICIO -> tratarInicio(empresa, numeroCliente, texto);
             case MENU_PRINCIPAL -> tratarMenuPrincipal(empresa, numeroCliente, texto);
             case ESPERANDO_DATA -> tratarDataInformada(empresa, numeroCliente, texto);
             case ESPERANDO_RESPOSTA_GALERIA -> tratarRespostaGaleria(empresa, numeroCliente, texto);
@@ -99,9 +102,21 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
         return "0".equals(normalizado) || "menu".equals(normalizado) || "voltar".equals(normalizado);
     }
 
-    private void tratarInicio(Empresa empresa, String numeroCliente) {
+    private void tratarInicio(Empresa empresa, String numeroCliente, String texto) {
+        if (servicoIA != null) {
+            Optional<String> respostaIa = servicoIA.responderAtendimento(empresa, texto);
+            if (respostaIa.isPresent()) {
+                servicoMensagem.enviarMensagemWPP(empresa, numeroCliente, respostaIa.get());
+                gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.MENU_PRINCIPAL);
+                return;
+            }
+        }
         servicoMensagem.enviarMensagemWPP(empresa, numeroCliente, servicoMenu.montarMenuPrincipal(empresa));
         gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.MENU_PRINCIPAL);
+    }
+
+    private void tratarInicio(Empresa empresa, String numeroCliente) {
+        tratarInicio(empresa, numeroCliente, null);
     }
 
     private void tratarMenuPrincipal(Empresa empresa, String numeroCliente, String texto) {
@@ -124,6 +139,13 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
             case "IA_GEMINI" -> servicoMensagem.enviarMensagemWPP(
                     empresa, numeroCliente, "Recebemos sua mensagem. Logo um atendente vai te responder.");
             default -> {
+                if (servicoIA != null) {
+                    Optional<String> respostaIa = servicoIA.responderAtendimento(empresa, texto);
+                    if (respostaIa.isPresent()) {
+                        servicoMensagem.enviarMensagemWPP(empresa, numeroCliente, respostaIa.get());
+                        return;
+                    }
+                }
                 servicoMensagem.enviarMensagemWPP(
                         empresa, numeroCliente, "Opção inválida. Digite o número de uma das opções do menu.");
                 return;
@@ -183,7 +205,7 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
         }
         if (respostaNegativa(resposta)) {
             gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.INICIO);
-            tratarInicio(empresa, numeroCliente);
+            tratarInicio(empresa, numeroCliente, texto);
             return;
         }
         servicoMensagem.enviarMensagemWPP(
