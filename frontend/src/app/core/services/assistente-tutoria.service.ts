@@ -5,13 +5,15 @@ import { environment } from '../../../environments/environment';
 import {
   AssistenteChatRequestDTO,
   AssistenteChatResponseDTO,
-  DiagnosticoResponseDTO
+  DiagnosticoResponseDTO,
+  SuportePublicoRequestDTO
 } from '../../shared/models/assistente.models';
 
 @Injectable({ providedIn: 'root' })
 export class AssistenteTutoriaService {
   private readonly baseUrl = `${environment.apiUrl}/admin/assistente-tutoria`;
   private readonly clienteUrl = `${environment.apiUrl}/api/cliente/assistente`;
+  private readonly publicoUrl = `${environment.apiUrl}/api/publico/assistente`;
 
   constructor(private readonly http: HttpClient) {}
 
@@ -25,5 +27,9 @@ export class AssistenteTutoriaService {
 
   conversarCliente(requisicao: AssistenteChatRequestDTO): Observable<AssistenteChatResponseDTO> {
     return this.http.post<AssistenteChatResponseDTO>(`${this.clienteUrl}/chat`, requisicao);
+  }
+
+  conversarPublico(requisicao: SuportePublicoRequestDTO): Observable<AssistenteChatResponseDTO> {
+    return this.http.post<AssistenteChatResponseDTO>(`${this.publicoUrl}/suporte`, requisicao);
   }
 }

@@ -7,6 +7,9 @@
     "topo": {
       "entrar": "Entrar"
     },
+    "chat": {
+      "dica": "Para mais informações, fale com o chat agora"
+    },
     "hero": {
       "selo": "Atendimento automático no WhatsApp",
       "titulo": "O cliente pergunta.",

@@ -1,0 +1,24 @@
+post:
+  tags:
+  - Assistente Público
+  summary: Tirar dúvida sobre o app com o bot de Suporte, sem login
+  description: Canal público do bot de Suporte usado no login e na apresentação. Responde só com a base de conhecimento e os avisos ativos, nunca com dado de empresa, e não executa ação no sistema. Limite de 10 mensagens por minuto por IP, mensagem de até 500 caracteres e nenhum histórico guardado.
+  operationId: conversarSuportePublico
+  security: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: "#/components/schemas/SuportePublicoRequestDTO"
+  responses:
+    "200":
+      description: Resposta do bot de Suporte
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/AssistenteChatResponseDTO"
+    "400":
+      description: Mensagem vazia ou acima de 500 caracteres
+    "429":
+      description: Limite de mensagens por minuto excedido para o IP

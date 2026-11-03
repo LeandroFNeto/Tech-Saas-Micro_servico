@@ -9,14 +9,19 @@ describe('AssistenteClienteComponent', () => {
   let fixture: ComponentFixture<AssistenteClienteComponent>;
   let assistenteServiceSpy: jasmine.SpyObj<AssistenteTutoriaService>;
 
+  const respostaPadrao: AssistenteChatResponseDTO = {
+    resposta: 'Passo a passo de teste retornado pelo backend.',
+    modo: 'SUPORTE',
+    dataHora: '2026-11-03T16:00:00Z',
+    sugestoes: ['Nova sugestao']
+  };
+
   beforeEach(() => {
-    assistenteServiceSpy = jasmine.createSpyObj('AssistenteTutoriaService', ['conversarCliente']);
+    assistenteServiceSpy = jasmine.createSpyObj('AssistenteTutoriaService', ['conversarCliente', 'conversarPublico']);
 
     TestBed.configureTestingModule({
       imports: [AssistenteClienteComponent],
-      providers: [
-        { provide: AssistenteTutoriaService, useValue: assistenteServiceSpy }
-      ]
+      providers: [{ provide: AssistenteTutoriaService, useValue: assistenteServiceSpy }]
     });
 
     fixture = TestBed.createComponent(AssistenteClienteComponent);
@@ -24,28 +29,20 @@ describe('AssistenteClienteComponent', () => {
     fixture.detectChanges();
   });
 
-  it('inicia no modo SUPORTE com mensagem de boas-vindas', () => {
-    expect(component.modo()).toBe('SUPORTE');
+  it('inicia com mensagem de boas-vindas do Suporte', () => {
     expect(component.mensagens().length).toBe(1);
     expect(component.mensagens()[0].origem).toBe('ia');
     expect(component.mensagens()[0].texto).toContain('assistente de suporte');
   });
 
-  it('alterna para modo TESTE_VIRTUAL e ajusta mensagem introdutoria e sugestoes', () => {
-    component.alternarModo('TESTE_VIRTUAL');
-    expect(component.modo()).toBe('TESTE_VIRTUAL');
-    expect(component.mensagens()[0].texto).toContain('Sessão Virtual de Testes');
-    expect(component.sugestoes()[0]).toContain('preços e regras');
+  it('nao exibe Simulador nem alternancia de modo', () => {
+    const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(texto).not.toContain('Simulador');
+    expect(texto).not.toContain('Sessão Virtual');
   });
 
   it('envia mensagem e adiciona resposta da IA na conversa', () => {
-    const mockResp: AssistenteChatResponseDTO = {
-      resposta: 'Passo a passo de teste retornado pelo backend.',
-      modo: 'SUPORTE',
-      dataHora: '2026-11-03T16:00:00Z',
-      sugestoes: ['Nova sugestao']
-    };
-    assistenteServiceSpy.conversarCliente.and.returnValue(of(mockResp));
+    assistenteServiceSpy.conversarCliente.and.returnValue(of(respostaPadrao));
 
     component.mensagemInput = 'Como conectar WhatsApp?';
     component.enviar();
@@ -56,10 +53,19 @@ describe('AssistenteClienteComponent', () => {
     });
     expect(component.mensagens().length).toBe(3);
     expect(component.mensagens()[1].origem).toBe('usuario');
-    expect(component.mensagens()[1].texto).toBe('Como conectar WhatsApp?');
-    expect(component.mensagens()[2].origem).toBe('ia');
     expect(component.mensagens()[2].texto).toBe('Passo a passo de teste retornado pelo backend.');
     expect(component.sugestoes()).toEqual(['Nova sugestao']);
+  });
+
+  it('no modo publico chama o endpoint sem login', () => {
+    assistenteServiceSpy.conversarPublico.and.returnValue(of(respostaPadrao));
+    component.publico = true;
+
+    component.mensagemInput = 'O que o app faz?';
+    component.enviar();
+
+    expect(assistenteServiceSpy.conversarPublico).toHaveBeenCalledWith({ mensagem: 'O que o app faz?' });
+    expect(assistenteServiceSpy.conversarCliente).not.toHaveBeenCalled();
   });
 
   it('trata erro ao enviar mensagem exibindo mensagem de erro amigavel', () => {
@@ -72,19 +78,37 @@ describe('AssistenteClienteComponent', () => {
     expect(component.enviando()).toBeFalse();
   });
 
-  it('usarSugestao preenche o input e envia automaticamente', () => {
-    const mockResp: AssistenteChatResponseDTO = {
-      resposta: 'Resposta automatica.',
-      modo: 'SUPORTE',
-      dataHora: '2026-11-03T16:00:00Z',
-      sugestoes: []
-    };
-    assistenteServiceSpy.conversarCliente.and.returnValue(of(mockResp));
+  it('avisa quando o limite de mensagens por minuto e atingido', () => {
+    assistenteServiceSpy.conversarPublico.and.returnValue(throwError(() => ({ status: 429 })));
+    component.publico = true;
 
+    component.mensagemInput = 'Outra duvida';
+    component.enviar();
+
+    expect(component.erro()).toContain('Muitas mensagens');
+  });
+
+  it('usarSugestao so preenche o campo e nao envia', () => {
     component.usarSugestao('Duvida rapida');
-    expect(assistenteServiceSpy.conversarCliente).toHaveBeenCalledWith({
-      mensagem: 'Duvida rapida',
-      modo: 'SUPORTE'
-    });
+
+    expect(component.mensagemInput).toBe('Duvida rapida');
+    expect(assistenteServiceSpy.conversarCliente).not.toHaveBeenCalled();
+    expect(assistenteServiceSpy.conversarPublico).not.toHaveBeenCalled();
+  });
+
+  it('exibe Fechar apenas quando fechavel e emite o evento', () => {
+    expect((fixture.nativeElement as HTMLElement).textContent).not.toContain('Fechar');
+
+    component.fechavel = true;
+    fixture.changeDetectorRef.detectChanges();
+    let emitido = false;
+    component.fechar.subscribe(() => (emitido = true));
+    const botao = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('button')).find(
+      (b) => b.textContent?.trim() === 'Fechar'
+    );
+    botao?.click();
+
+    expect(botao).toBeTruthy();
+    expect(emitido).toBeTrue();
   });
 });

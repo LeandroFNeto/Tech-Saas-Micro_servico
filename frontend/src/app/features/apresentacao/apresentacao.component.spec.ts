@@ -1,5 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
+import { NEVER } from 'rxjs';
+import { AssistenteTutoriaService } from '../../core/services/assistente-tutoria.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ApresentacaoComponent } from './apresentacao.component';
 
@@ -13,7 +15,11 @@ describe('ApresentacaoComponent', () => {
     };
     TestBed.configureTestingModule({
       imports: [ApresentacaoComponent],
-      providers: [provideRouter([]), { provide: AuthService, useValue: authStub }]
+      providers: [
+        provideRouter([]),
+        { provide: AuthService, useValue: authStub },
+        { provide: AssistenteTutoriaService, useValue: { conversarPublico: () => NEVER } }
+      ]
     });
     const router = TestBed.inject(Router);
     const navegar = spyOn(router, 'navigateByUrl').and.resolveTo(true);
@@ -35,6 +41,22 @@ describe('ApresentacaoComponent', () => {
     const { navegar } = montar(true);
     expect(authStub.rotaInicial).toHaveBeenCalled();
     expect(navegar).toHaveBeenCalledWith('/admin/empresas');
+  });
+
+  it('mostra o chat flutuante fechado com a dica e so o Suporte, sem Simulador', () => {
+    const { fixture } = montar(false);
+    const raiz: HTMLElement = fixture.nativeElement;
+
+    expect(raiz.querySelector('app-chat-flutuante')).not.toBeNull();
+    expect(raiz.textContent).toContain('Para mais informações, fale com o chat agora');
+    expect(raiz.querySelector('[role="dialog"]')).toBeNull();
+
+    const botaoChat = raiz.querySelector<HTMLButtonElement>('app-chat-flutuante button');
+    botaoChat?.click();
+    fixture.detectChanges();
+
+    expect(raiz.querySelector('[role="dialog"]')).not.toBeNull();
+    expect(raiz.textContent).not.toContain('Simulador');
   });
 
   it('"Ver como funciona" leva ao id="como" e nao exibe [CONTATO DA GAMB]', () => {

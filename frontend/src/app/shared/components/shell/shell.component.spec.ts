@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 import { ShellComponent } from './shell.component';
 import { AuthService } from '../../../core/services/auth.service';
 import { SessaoUsuario } from '../../models/auth.models';
@@ -61,5 +61,24 @@ describe('ShellComponent', () => {
 
   it('expoe conteudo do menu cliente incluindo tutoriais', () => {
     expect(component.conteudo.menuCliente.tutoriais).toBe('Tutoriais');
+  });
+
+  it('mostra o chat flutuante para o cliente fora de Tutoriais', () => {
+    sessaoSignal.set({ sub: 'c@x.com', nome: 'Cliente', papel: 'CLIENTE', exp: Date.now() + 3600000 });
+
+    expect(component.mostrarChat).toBeTrue();
+  });
+
+  it('nao mostra o chat flutuante na tela de Tutoriais', async () => {
+    sessaoSignal.set({ sub: 'c@x.com', nome: 'Cliente', papel: 'CLIENTE', exp: Date.now() + 3600000 });
+    spyOnProperty(TestBed.inject(Router), 'url').and.returnValue('/cliente/tutoriais');
+
+    expect(component.mostrarChat).toBeFalse();
+  });
+
+  it('nao mostra o chat flutuante na area do admin', () => {
+    sessaoSignal.set({ sub: 'a@x.com', nome: 'Admin', papel: 'ADMIN', exp: Date.now() + 3600000 });
+
+    expect(component.mostrarChat).toBeFalse();
   });
 });

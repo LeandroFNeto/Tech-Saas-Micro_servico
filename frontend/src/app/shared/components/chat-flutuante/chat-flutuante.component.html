@@ -1,0 +1,31 @@
+@if (aberto()) {
+  <div
+    role="dialog"
+    aria-label="Assistente de Suporte"
+    class="fixed right-4 z-40 w-[min(24rem,calc(100vw-2rem))] shadow-xl lg:right-6"
+    [class]="posicaoPainel"
+  >
+    <app-assistente-cliente [publico]="publico" [fechavel]="true" (fechar)="fechar()" />
+  </div>
+}
+
+@if (dica && !aberto()) {
+  <div
+    class="fixed right-[88px] z-30 flex max-w-[14rem] items-center gap-2 rounded-xl bg-brand-900 px-3 py-2 text-xs font-semibold text-white shadow-lg lg:right-[96px]"
+    [class]="posicaoBase"
+  >
+    <span>{{ dica }}</span>
+    <span aria-hidden="true">&rarr;</span>
+  </div>
+}
+
+<button
+  type="button"
+  (click)="alternar()"
+  [attr.aria-expanded]="aberto()"
+  [attr.aria-label]="aberto() ? 'Fechar assistente de suporte' : 'Abrir assistente de suporte'"
+  class="fixed right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-brand-900 shadow-xl transition hover:bg-brand-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-400 lg:right-6"
+  [class]="posicaoBase"
+>
+  <img src="logo-gamb.png" alt="" width="36" height="36" class="h-9 w-9 object-contain" />
+</button>

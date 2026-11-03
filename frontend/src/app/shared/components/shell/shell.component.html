@@ -1,4 +1,3 @@
-<!-- Ícones do menu (iguais ao desenho), definidos uma vez e reusados na barra lateral e nas abas. -->
 <ng-template #iconeEmpresas>
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
     <path d="M4 21V6l8-3 8 3v15" />
@@ -65,13 +64,11 @@
 </ng-template>
 
 <div class="flex min-h-screen flex-col lg:flex-row">
-  <!-- Celular e tablet: barra superior -->
   <header class="flex items-center justify-between gap-3 bg-brand-900 px-4 py-2 text-white lg:hidden">
     <ng-container [ngTemplateOutlet]="marca" />
     <ng-container [ngTemplateOutlet]="botaoSair" />
   </header>
 
-  <!-- Desktop: barra lateral de 248 px -->
   <aside class="hidden w-[248px] shrink-0 flex-col gap-6 bg-brand-900 px-3 py-5 text-white lg:sticky lg:top-0 lg:flex lg:h-screen lg:overflow-y-auto">
     <ng-container [ngTemplateOutlet]="marca" />
 
@@ -156,7 +153,10 @@
     <router-outlet />
   </main>
 
-  <!-- Celular e tablet: abas fixas embaixo -->
+  @if (mostrarChat) {
+    <app-chat-flutuante [acimaDasAbas]="true" />
+  }
+
   @if (admin) {
     <nav
       class="sticky bottom-0 z-10 flex border-t border-brand-200 bg-white pb-[env(safe-area-inset-bottom)] lg:hidden"

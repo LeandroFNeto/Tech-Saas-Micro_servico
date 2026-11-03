@@ -9,10 +9,19 @@ export interface GuiaPassoAPasso {
   id: string;
   titulo: string;
   resumo: string;
+  duracao: string;
   passos: string[];
-  icone: string;
   duvidaSugerida: string;
 }
+
+export type SeloTutorial = 'Novo' | 'Em andamento' | 'Concluído';
+
+interface ProgressoGuia {
+  passo: number;
+  concluido: boolean;
+}
+
+const CHAVE_PROGRESSO = 'gamb.tutoriais.progresso';
 
 @Component({
   selector: 'app-tutoriais',
@@ -27,82 +36,70 @@ export class TutoriaisComponent implements OnInit {
 
   readonly carregandoAvisos = signal(true);
   readonly tutoriaisSistema = signal<AvisoDTO[]>([]);
-  readonly cardExpandido = signal<string | null>('whatsapp');
+  readonly guiaAberto = signal<string | null>(null);
+  readonly progresso = signal<Record<string, ProgressoGuia>>({});
 
   readonly guias: GuiaPassoAPasso[] = [
     {
       id: 'whatsapp',
-      titulo: '1. Conectar WhatsApp via QR Code',
-      resumo: 'Aprenda como escanear o QR Code e manter a sessão conectada para atendimento automatizado.',
+      titulo: 'Conectar o WhatsApp',
+      resumo: 'Escaneie o QR Code e mantenha a sessão conectada.',
+      duracao: '3 min',
       passos: [
-        'Acesse a página inicial do Painel do Cliente ou o menu de Chatbot.',
-        'Localize o cartão "Conexão WhatsApp" e clique no botão "Iniciar Conexão".',
-        'Abra o WhatsApp no seu smartphone, vá em "Configurações" > "Aparelhos Conectados" > "Conectar um Aparelho".',
+        'Acesse a página inicial do Painel do Cliente.',
+        'Localize o cartão "Conexão WhatsApp" e clique em "Iniciar Conexão".',
+        'No celular, abra o WhatsApp e vá em "Configurações" > "Aparelhos Conectados" > "Conectar um Aparelho".',
         'Aponte a câmera para o QR Code gerado na tela.',
-        'Quando o status mudar para "Conectado" em verde, seu bot já começará a responder automaticamente.'
+        'Quando o status mudar para "Conectado" em verde, o bot já responde automaticamente.'
       ],
-      icone: 'qr',
       duvidaSugerida: 'Como conectar o WhatsApp via QR Code passo a passo?'
     },
     {
       id: 'horarios',
-      titulo: '2. Configurar Horários e Modalidade de Locação',
-      resumo: 'Defina se seu espaço trabalha por diária fechada ou por hora de atendimento.',
+      titulo: 'Horários e locação',
+      resumo: 'Defina se o espaço trabalha por diária ou por hora.',
+      duracao: '4 min',
       passos: [
         'No menu lateral, clique em "Configuração do chatbot".',
         'Na aba "Geral & Locação", ative ou desative "Locação por hora".',
-        'Selecione a duração de cada atendimento e o tempo de intervalo para higienização/preparo.',
-        'Preencha a mensagem de saudação que o cliente receberá no primeiro contato.',
+        'Selecione a duração de cada atendimento e o intervalo para preparo.',
+        'Preencha a mensagem de saudação do primeiro contato.',
         'Clique em "Salvar Alterações" no rodapé do formulário.'
       ],
-      icone: 'relogio',
-      duvidaSugerida: 'Como configurar modalidade de locação por hora vs diária?'
+      duvidaSugerida: 'Como configurar locação por hora e por diária?'
     },
     {
       id: 'agenda',
-      titulo: '3. Sincronização com Google Agenda',
-      resumo: 'Evite conflitos de reservas sincronizando os agendamentos diretamente na sua conta Google.',
+      titulo: 'Google Agenda',
+      resumo: 'Sincronize as reservas direto na sua conta Google.',
+      duracao: '5 min',
       passos: [
         'No menu de Chatbot, acesse a aba "Agenda Google".',
-        'Insira o ID da sua Google Agenda (ex: usuario@gmail.com ou o identificador do calendário).',
-        'Verifique se a conta de serviço do Tech-SaaS possui permissão de leitura/gravação em sua agenda.',
-        'Ative a opção "Permitir Reserva Automática" se desejar confirmação sem intervenção manual.',
-        'As novas reservas confirmadas no bot serão lançadas instantaneamente como eventos no seu calendário.'
+        'Insira o ID da sua Google Agenda.',
+        'Confirme que a conta de serviço do Tech-SaaS tem permissão de leitura e gravação na agenda.',
+        'Ative "Permitir Reserva Automática" se quiser confirmação sem intervenção manual.',
+        'As reservas confirmadas no bot passam a aparecer como eventos no calendário.'
       ],
-      icone: 'calendario',
       duvidaSugerida: 'Como sincronizar as reservas com a minha Google Agenda?'
     },
     {
       id: 'regras-fotos',
-      titulo: '4. Fotos, Preços e Regras de Locação',
-      resumo: 'Disponibilize fotos do espaço, tabela de valores e termos de uso do local.',
+      titulo: 'Fotos, preços e regras',
+      resumo: 'Cadastre fotos, tabela de valores e termos do local.',
+      duracao: '4 min',
       passos: [
-        'Acesse "Configuração do chatbot" e role até os campos de Tabela de Preços e Regras de Locação.',
-        'Escreva os valores de forma limpa (ex: Segunda a Quinta R$ 500,00 | Fins de semana R$ 900,00).',
-        'Cole o link da foto principal de divulgação e os links da galeria de fotos.',
-        'Adicione o link do Google Maps para que o bot forneça rota de chegada.',
-        'Salve as alterações para que o bot envie essas informações aos clientes interessados.'
+        'Acesse "Configuração do chatbot" e role até Tabela de Preços e Regras de Locação.',
+        'Escreva os valores de forma limpa, um por linha.',
+        'Cole o link da foto principal e os links da galeria.',
+        'Adicione o link do Google Maps para o bot enviar a rota de chegada.',
+        'Salve as alterações para o bot passar essas informações aos clientes.'
       ],
-      icone: 'fotos',
       duvidaSugerida: 'Como cadastrar fotos, link do Google Maps e tabela de preços?'
-    },
-    {
-      id: 'simulador',
-      titulo: '5. Sessão Virtual de Testes (Sem QR Code)',
-      resumo: 'Experimente as respostas e fluxo do bot em memória sem precisar escanear QR Code.',
-      passos: [
-        'Role esta tela até a caixa do "Assistente Inteligente & Simulador" logo abaixo.',
-        'Alterne para a aba "Simulador Virtual".',
-        'Envie "oi", "menu", "preço" ou "regras" para ver a resposta que o cliente receberia.',
-        'Valide se as opções de menu e textos cadastrados estão exatamente como você deseja.',
-        'Esse teste funciona totalmente em memória e não consome recursos de conexão física.'
-      ],
-      icone: 'simulador',
-      duvidaSugerida: 'Como funciona a sessão virtual de testes de novos módulos?'
     }
   ];
 
   ngOnInit(): void {
+    this.progresso.set(this.lerProgresso());
     this.carregarAvisosTutoriais();
   }
 
@@ -121,27 +118,92 @@ export class TutoriaisComponent implements OnInit {
     });
   }
 
-  alternarCard(id: string): void {
-    this.cardExpandido.update((atual) => (atual === id ? null : id));
+  get guiaSelecionado(): GuiaPassoAPasso | null {
+    const id = this.guiaAberto();
+    return this.guias.find((g) => g.id === id) ?? null;
+  }
+
+  get passoAtual(): number {
+    const guia = this.guiaSelecionado;
+    return guia ? Math.min(this.progresso()[guia.id]?.passo ?? 0, guia.passos.length - 1) : 0;
+  }
+
+  get percentualProgresso(): number {
+    const guia = this.guiaSelecionado;
+    return guia ? Math.round(((this.passoAtual + 1) / guia.passos.length) * 100) : 0;
+  }
+
+  selo(id: string): SeloTutorial {
+    const item = this.progresso()[id];
+    if (item?.concluido) {
+      return 'Concluído';
+    }
+    return item ? 'Em andamento' : 'Novo';
+  }
+
+  abrir(id: string): void {
+    this.guiaAberto.set(id);
+    if (!this.progresso()[id]) {
+      this.gravarProgresso(id, { passo: 0, concluido: false });
+    }
+  }
+
+  voltar(): void {
+    this.guiaAberto.set(null);
+  }
+
+  anterior(): void {
+    const guia = this.guiaSelecionado;
+    if (guia && this.passoAtual > 0) {
+      this.gravarProgresso(guia.id, { passo: this.passoAtual - 1, concluido: false });
+    }
+  }
+
+  proximo(): void {
+    const guia = this.guiaSelecionado;
+    if (!guia) {
+      return;
+    }
+    if (this.passoAtual >= guia.passos.length - 1) {
+      this.gravarProgresso(guia.id, { passo: guia.passos.length - 1, concluido: true });
+      this.guiaAberto.set(null);
+      return;
+    }
+    this.gravarProgresso(guia.id, { passo: this.passoAtual + 1, concluido: false });
   }
 
   tirarDuvidaNoAssistente(duvida: string): void {
     if (this.assistenteRef) {
       this.assistenteRef.usarSugestao(duvida);
-      const elemento = document.getElementById('secao-assistente-cliente');
-      if (elemento) {
-        elemento.scrollIntoView({ behavior: 'smooth' });
-      }
+      document.getElementById('chat')?.scrollIntoView({ behavior: 'smooth' });
     }
   }
 
-  abrirSimuladorVirtual(): void {
-    if (this.assistenteRef) {
-      this.assistenteRef.alternarModo('TESTE_VIRTUAL');
-      const elemento = document.getElementById('secao-assistente-cliente');
-      if (elemento) {
-        elemento.scrollIntoView({ behavior: 'smooth' });
-      }
+  perguntarSobrePasso(): void {
+    const guia = this.guiaSelecionado;
+    if (!guia) {
+      return;
+    }
+    const passo = guia.passos[this.passoAtual];
+    this.tirarDuvidaNoAssistente(`No tutorial "${guia.titulo}", passo ${this.passoAtual + 1}: ${passo} Pode me ajudar com isso?`);
+  }
+
+  private gravarProgresso(id: string, item: ProgressoGuia): void {
+    const atualizado = { ...this.progresso(), [id]: item };
+    this.progresso.set(atualizado);
+    try {
+      localStorage.setItem(CHAVE_PROGRESSO, JSON.stringify(atualizado));
+    } catch {
+      return;
+    }
+  }
+
+  private lerProgresso(): Record<string, ProgressoGuia> {
+    try {
+      const bruto = localStorage.getItem(CHAVE_PROGRESSO);
+      return bruto ? (JSON.parse(bruto) as Record<string, ProgressoGuia>) : {};
+    } catch {
+      return {};
     }
   }
 }

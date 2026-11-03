@@ -11,6 +11,7 @@ Esta pasta é a fonte da verdade do que o sistema faz. Cada domínio fica numa s
 | Google Agenda | `agenda/spec.md` | `observer-agenda.feature`, `ServicoReservaAgendarTest`, `ObservadorGoogleAgendaTest`, `ObservadorGoogleAgendaPorHoraTest`, `ServicoGoogleagendaSobreposicaoTest`, `GerenciadorSessaoTest`, `ServicoSincronizacaoAgendaTest`, `CriptografiaCampoTest` |
 | Comunicados do painel | `avisos/spec.md` | `ControllerAvisoTest` |
 | Consulta em grafo para a IA | `ia/spec.md` | `ConsultaEmpresaGrafoTest`, `ia-query.feature` |
+| Assistente de tutoria | `assistente-tutoria/spec.md` | `AssistenteTutoriaServiceTest`, `DiagnosticoModulosServiceTest`, `AdminAssistenteTutoriaControllerTest`, `ClienteAssistenteChatTest`, `PublicoAssistenteSuporteTest`, `chat-flutuante.component.spec.ts`, `assistente-cliente.component.spec.ts`, `tutoriais.component.spec.ts`, `apresentacao.component.spec.ts` |
 | Equipe de desenvolvimento | `desenvolvimento/spec.md` | teste automatizado ainda não existe |
 
 ## O que cada dono guarda

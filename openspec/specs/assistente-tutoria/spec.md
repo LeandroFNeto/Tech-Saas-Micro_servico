@@ -8,6 +8,9 @@ Disponibiliza um módulo interno e ambiente de testes com IA para diagnóstico d
 ### Requirement: Diagnóstico integrado de integridade dos módulos
 O sistema SHALL disponibilizar endpoint e rotina de diagnóstico administrativo para checar a saúde operacional de todos os módulos principais do sistema (auth, avisos, agenda, empresa, whatsapp e ia), retornando o status consolidado de cada serviço.
 
+Contrato: `especificacao/back/paths/admin-assistente-tutoria-diagnostico.yaml`
+Prova: `DiagnosticoModulosServiceTest`, `AdminAssistenteTutoriaControllerTest`
+
 #### Scenario: Execução de diagnóstico com todos os módulos saudáveis
 - **GIVEN** que o administrador autenticado solicita a checagem geral de módulos
 - **WHEN** a requisição de diagnóstico é processada
@@ -20,6 +23,9 @@ O sistema SHALL disponibilizar endpoint e rotina de diagnóstico administrativo 
 
 ### Requirement: Consulta de avisos e tutoriais via assistente IA
 O sistema SHALL processar perguntas do usuário através de um assistente de IA interno que recupera avisos ativos e tutoriais de configuração para gerar respostas precisas e instruções passo a passo.
+
+Contrato: `especificacao/back/paths/admin-assistente-tutoria-chat.yaml`
+Prova: `AssistenteTutoriaServiceTest`
 
 #### Scenario: Esclarecimento de dúvida sobre configuração do sistema
 - **GIVEN** um usuário no módulo de testes solicitando ajuda para configurar horários de locação ou conexão do WhatsApp
@@ -34,6 +40,9 @@ O sistema SHALL processar perguntas do usuário através de um assistente de IA 
 ### Requirement: Comutador de modo de operação no módulo de teste
 O módulo de uso interno SHALL fornecer um botão comutador (toggle) para alternar entre o Modo Diagnóstico (verificação de saúde dos módulos) e o Modo Atendimento Assistido (simulação e teste de atendimento ao cliente).
 
+Contrato: `especificacao/front/shell.content.json`
+Prova: `laboratorio-testes.component.spec.ts`
+
 #### Scenario: Seleção do Modo Diagnóstico
 - **WHEN** o usuário seleciona o modo diagnóstico no comutador
 - **THEN** o módulo exibe os indicadores de saúde dos serviços e habilita o botão para disparar novos testes de integridade
@@ -43,7 +52,10 @@ O módulo de uso interno SHALL fornecer um botão comutador (toggle) para altern
 - **THEN** o módulo ativa o painel interativo de chat para testes e simulação de respostas da IA aos clientes
 
 ### Requirement: Controle de acesso restrito a administradores
-O sistema SHALL exigir autenticação administrativa válida via cabeçalho `x-admin-token` ou token JWT de administrador para qualquer chamada aos endpoints e telas do módulo de uso interno.
+O sistema SHALL exigir autenticação administrativa válida via cabeçalho `x-admin-token` ou token JWT de administrador para qualquer chamada aos endpoints `/admin/assistente-tutoria/**` e às telas administrativas do módulo de uso interno. O endpoint do cliente `/api/cliente/assistente/chat` exige login JWT da empresa e fica fora desta regra.
+
+Contrato: `especificacao/back/paths/admin-assistente-tutoria.yaml`
+Prova: `AdminAssistenteTutoriaControllerTest`
 
 #### Scenario: Requisição não autorizada ao módulo interno
 - **WHEN** uma requisição para diagnóstico ou chat interno é enviada sem credenciais administrativas
@@ -56,6 +68,9 @@ O sistema SHALL exigir autenticação administrativa válida via cabeçalho `x-a
 
 ### Requirement: Tela dedicada de tutoriais no painel do cliente
 O sistema SHALL disponibilizar uma rota e tela independente na área do cliente (`/cliente/tutoriais`) com navegação acessível no menu principal, apresentando guias práticos e ilustrados de configuração (WhatsApp, horários, fotos, agendamento) e listando tutoriais ativos cadastrados na plataforma.
+
+Contrato: `especificacao/front/shell.content.json`
+Prova: `tutoriais.component.spec.ts`, `shell.component.spec.ts`
 
 #### Scenario: Visualização da tela de tutoriais pelo cliente
 - **GIVEN** que o cliente está autenticado no painel
@@ -70,6 +85,9 @@ O sistema SHALL disponibilizar uma rota e tela independente na área do cliente 
 ### Requirement: Assistente de tutoria e suporte no painel do cliente
 O sistema SHALL disponibilizar endpoint autenticado e interface no painel do cliente permitindo que o usuário da empresa envie dúvidas sobre configurações, regras, avisos e conexão do WhatsApp, recebendo respostas orientadas pela base de conhecimento do sistema e pelos dados do seu próprio estabelecimento.
 
+Contrato: `especificacao/back/paths/cliente-assistente-chat.yaml`
+Prova: `ClienteAssistenteChatTest`, `assistente-cliente.component.spec.ts`
+
 #### Scenario: Cliente tira dúvida sobre conexão do WhatsApp
 - **GIVEN** que o responsável pela empresa está autenticado no painel do cliente
 - **WHEN** envia a pergunta "Como conecto o meu WhatsApp?"
@@ -82,6 +100,9 @@ O sistema SHALL disponibilizar endpoint autenticado e interface no painel do cli
 
 ### Requirement: Sessão virtual de testes para simulação de novos módulos
 O sistema SHALL fornecer um canal de sessão virtual no assistente que permite ao usuário e ao desenvolvedor simular conversas de clientes finais e testar módulos existentes ou novas funções em homologação sem exigir pareamento ou criação de sessões reais de WhatsApp no WPPConnect.
+
+Contrato: `especificacao/back/paths/cliente-assistente-chat.yaml`
+Prova: `ClienteAssistenteChatTest`, `AssistenteTutoriaServiceTest`
 
 #### Scenario: Teste simulado de agendamento em sessão virtual
 - **GIVEN** que o usuário ativa a simulação de teste no assistente

@@ -1,12 +1,13 @@
 import { Component, inject } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+import { ChatFlutuanteComponent } from '../../shared/components/chat-flutuante/chat-flutuante.component';
 import contentData from '../../../../../especificacao/front/apresentacao.content.json';
 import designData from '../../../../../especificacao/front/telas.design.json';
 
 @Component({
   selector: 'app-apresentacao',
-  imports: [RouterLink],
+  imports: [RouterLink, ChatFlutuanteComponent],
   templateUrl: './apresentacao.component.html'
 })
 export class ApresentacaoComponent {

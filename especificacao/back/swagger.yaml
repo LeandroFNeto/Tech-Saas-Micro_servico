@@ -62,6 +62,8 @@ paths:
     $ref: ./paths/admin-assistente-tutoria-diagnostico.yaml
   /admin/assistente-tutoria/chat:
     $ref: ./paths/admin-assistente-tutoria-chat.yaml
+  /api/publico/assistente/suporte:
+    $ref: ./paths/publico-assistente-suporte.yaml
   /api/cliente/assistente/chat:
     $ref: ./paths/cliente-assistente-chat.yaml
 components:
@@ -81,6 +83,8 @@ components:
       $ref: ./schemas/assistente/DiagnosticoResponseDTO.yaml
     AssistenteChatRequestDTO:
       $ref: ./schemas/assistente/AssistenteChatRequestDTO.yaml
+    SuportePublicoRequestDTO:
+      $ref: ./schemas/assistente/SuportePublicoRequestDTO.yaml
     AssistenteChatResponseDTO:
       $ref: ./schemas/assistente/AssistenteChatResponseDTO.yaml
     LoginRequestDTO:

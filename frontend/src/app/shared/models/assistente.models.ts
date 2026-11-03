@@ -16,6 +16,10 @@ export interface AssistenteChatRequestDTO {
   modo?: 'DIAGNOSTICO' | 'ATENDIMENTO_SANDBOX' | 'SUPORTE' | 'TESTE_VIRTUAL';
 }
 
+export interface SuportePublicoRequestDTO {
+  mensagem: string;
+}
+
 export interface AssistenteChatResponseDTO {
   resposta: string;
   modo: string;

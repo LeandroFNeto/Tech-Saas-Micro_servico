@@ -2,7 +2,7 @@ post:
   tags:
   - Assistente Cliente
   summary: Interagir com o assistente IA e sessão virtual de testes (Cliente)
-  description: Canal de suporte para o cliente autenticado tirar dúvidas da sua empresa ou testar módulos em sessão virtual sem exigir QR Code físico. Exige Bearer Token JWT.
+  description: Canal de suporte para o cliente autenticado tirar dúvidas sobre o uso do app ou testar módulos em sessão virtual sem exigir QR Code físico. Exige Bearer Token JWT. O modo Suporte responde só com a base de conhecimento e os avisos ativos, ajudando a localizar uma função, explicar como fazer uma tarefa e indicar a tela certa. Não envia nem devolve dado de nenhuma empresa, não responde sobre assuntos fora do app e não executa ação no sistema; pedidos fora desse escopo recebem uma recusa curta. O modo TESTE_VIRTUAL usa os dados da própria empresa do cliente.
   operationId: conversarAssistenteCliente
   security:
   - bearerAuth: []
