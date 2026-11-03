@@ -25,6 +25,11 @@ export const ADMIN_ROUTES: Routes = [
         path: 'avisos',
         loadComponent: () =>
           import('./gestao-avisos/gestao-avisos.component').then((m) => m.GestaoAvisosComponent)
+      },
+      {
+        path: 'assistente-tutoria',
+        loadComponent: () =>
+          import('./laboratorio-testes/laboratorio-testes.component').then((m) => m.LaboratorioTestesComponent)
       }
     ]
   }

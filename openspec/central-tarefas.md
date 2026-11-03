@@ -15,8 +15,9 @@ Arquivo em comum da equipe. Cada agente atualiza a própria linha ao começar e 
 | [aprimorar-painel-admin](archive/aprimorar-painel-admin/) | deploy | `antigravity` | `openspec/archive/aprimorar-painel-admin/` | 0 | aprovado |
 | [fechar-pendencias-reserva-por-hora](archive/fechar-pendencias-reserva-por-hora/) | deploy | `gemini-3.8-flash` | `openspec/archive/fechar-pendencias-reserva-por-hora/` | 0 | aprovado |
 | [definir-niveis-admin](archive/definir-niveis-admin/) | deploy | `antigravity` | `openspec/archive/definir-niveis-admin/` | 0 | aprovado |
-| [trava-proprietario-mensagens-antigas](archive/trava-proprietario-mensagens-antigas/) | deploy | ntigravity | openspec/archive/trava-proprietario-mensagens-antigas/ | 0 | aprovado |
-| [modulo-ia-conversa-humanizada](changes/modulo-ia-conversa-humanizada/) | revisao | ntigravity | openspec/changes/modulo-ia-conversa-humanizada/ | 0 | aprovado |
+| [trava-proprietario-mensagens-antigas](archive/trava-proprietario-mensagens-antigas/) | deploy | `antigravity` | `openspec/archive/trava-proprietario-mensagens-antigas/` | 0 | aprovado |
+| [modulo-ia-conversa-humanizada](changes/modulo-ia-conversa-humanizada/) | revisao | `antigravity` | `openspec/changes/modulo-ia-conversa-humanizada/` | 0 | aprovado |
+| [modulo-assistente-tutoria-testes](archive/2026-11-03-modulo-assistente-tutoria-testes/) | deploy | `gemini-3.8-flash` | `openspec/archive/2026-11-03-modulo-assistente-tutoria-testes/` | 0 | aprovado |
 
 Estado: `em andamento`, `aprovado`, `reprovado`, `erro`, `aguardando aprovado`.
 

@@ -58,6 +58,10 @@ paths:
     $ref: ./paths/admin-avisos-id.yaml
   /api/ia-query:
     $ref: ./paths/ia-query.yaml
+  /admin/assistente-tutoria/diagnostico:
+    $ref: ./paths/admin-assistente-tutoria-diagnostico.yaml
+  /admin/assistente-tutoria/chat:
+    $ref: ./paths/admin-assistente-tutoria-chat.yaml
 components:
   securitySchemes:
     bearerAuth:
@@ -69,6 +73,14 @@ components:
       $ref: ./schemas/ia/IaQueryRequest.yaml
     IaQueryResponse:
       $ref: ./schemas/ia/IaQueryResponse.yaml
+    DiagnosticoStatusDTO:
+      $ref: ./schemas/assistente/DiagnosticoStatusDTO.yaml
+    DiagnosticoResponseDTO:
+      $ref: ./schemas/assistente/DiagnosticoResponseDTO.yaml
+    AssistenteChatRequestDTO:
+      $ref: ./schemas/assistente/AssistenteChatRequestDTO.yaml
+    AssistenteChatResponseDTO:
+      $ref: ./schemas/assistente/AssistenteChatResponseDTO.yaml
     LoginRequestDTO:
       $ref: ./schemas/auth/LoginRequestDTO.yaml
     LoginResponseDTO:

@@ -1,0 +1,168 @@
+<div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+  <div>
+    <div class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-brand-600">
+      <a routerLink="/admin" class="hover:underline">Painel Admin</a>
+      <span>/</span>
+      <span>Laboratório & Assistente</span>
+    </div>
+    <h1 class="mt-1 text-[clamp(22px,4vw,28px)] font-bold text-brand-900">Laboratório de Testes & Assistente IA</h1>
+    <p class="mt-0.5 text-sm text-brand-600">Diagnóstico de módulos, tutoria operacional e simulação de atendimento.</p>
+  </div>
+
+  <div class="inline-flex rounded-xl border border-brand-200 bg-white p-1 shadow-sm">
+    <button
+      type="button"
+      (click)="alternarModo('DIAGNOSTICO')"
+      [class.bg-brand-900]="modo() === 'DIAGNOSTICO'"
+      [class.text-white]="modo() === 'DIAGNOSTICO'"
+      [class.text-brand-700]="modo() !== 'DIAGNOSTICO'"
+      class="rounded-lg px-4 py-2 text-sm font-semibold transition hover:opacity-90"
+    >
+      Modo Diagnóstico
+    </button>
+    <button
+      type="button"
+      (click)="alternarModo('ATENDIMENTO_SANDBOX')"
+      [class.bg-brand-900]="modo() === 'ATENDIMENTO_SANDBOX'"
+      [class.text-white]="modo() === 'ATENDIMENTO_SANDBOX'"
+      [class.text-brand-700]="modo() !== 'ATENDIMENTO_SANDBOX'"
+      class="rounded-lg px-4 py-2 text-sm font-semibold transition hover:opacity-90"
+    >
+      Atendimento Sandbox
+    </button>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 gap-6 lg:grid-cols-12">
+  <div class="space-y-6 lg:col-span-5">
+    <div class="rounded-[20px] border border-brand-100 bg-white p-5 shadow-sm">
+      <div class="mb-4 flex items-center justify-between">
+        <h2 class="text-lg font-bold text-brand-900">Saúde dos Módulos</h2>
+        <button
+          type="button"
+          (click)="executarDiagnostico()"
+          [disabled]="carregandoDiagnostico()"
+          class="btn-primary inline-flex min-h-10 items-center gap-2 rounded-xl px-3 text-xs font-bold"
+        >
+          @if (carregandoDiagnostico()) {
+            <span>Testando...</span>
+          } @else {
+            <span>Executar Diagnóstico</span>
+          }
+        </button>
+      </div>
+
+      @if (erroDiagnostico()) {
+        <div class="mb-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700">
+          {{ erroDiagnostico() }}
+        </div>
+      }
+
+      @if (diagnostico(); as diag) {
+        <div class="mb-4 flex items-center justify-between rounded-xl border p-3" [ngClass]="statusClasse(diag.statusGeral)">
+          <span class="text-xs font-bold uppercase tracking-wider">Status Geral</span>
+          <span class="inline-flex items-center gap-1.5 text-xs font-bold">
+            <span class="h-2 w-2 rounded-full" [ngClass]="indicadorDotClasse(diag.statusGeral)"></span>
+            {{ diag.statusGeral }}
+          </span>
+        </div>
+
+        <div class="space-y-3">
+          @for (modulo of diag.modulos; track modulo.modulo) {
+            <div class="rounded-xl border border-brand-100 p-3 transition hover:border-brand-300">
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-brand-900">{{ modulo.modulo }}</span>
+                <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-bold" [ngClass]="statusClasse(modulo.status)">
+                  <span class="h-1.5 w-1.5 rounded-full" [ngClass]="indicadorDotClasse(modulo.status)"></span>
+                  {{ modulo.status }}
+                </span>
+              </div>
+              <p class="mt-1 text-xs text-brand-600">{{ modulo.mensagem }}</p>
+              <span class="mt-1.5 block text-[10px] text-brand-400">Tempo: {{ modulo.tempoRespostaMs }}ms</span>
+            </div>
+          }
+        </div>
+      } @else if (carregandoDiagnostico()) {
+        <p class="py-6 text-center text-sm text-brand-500">Executando checagem nos subsistemas...</p>
+      }
+    </div>
+  </div>
+
+  <div class="lg:col-span-7">
+    <div class="flex h-[600px] flex-col rounded-[20px] border border-brand-100 bg-white p-5 shadow-sm">
+      <div class="mb-3 border-b border-brand-100 pb-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="flex h-3 w-3 items-center justify-center rounded-full bg-accent-500"></span>
+            <h2 class="text-base font-bold text-brand-900">
+              {{ modo() === 'DIAGNOSTICO' ? 'Assistente de Tutoria e Dúvidas' : 'Simulador de Atendimento (Sandbox)' }}
+            </h2>
+          </div>
+          <span class="rounded-md bg-brand-50 px-2 py-0.5 text-[11px] font-semibold text-brand-700">
+            {{ modo() }}
+          </span>
+        </div>
+        <p class="mt-1 text-xs text-brand-500">
+          {{ modo() === 'DIAGNOSTICO' ? 'Faça perguntas sobre configurações, regras ou avisos do sistema.' : 'Simule uma conversa de cliente final testando a inteligência artificial.' }}
+        </p>
+      </div>
+
+      <div class="flex-1 space-y-3 overflow-y-auto pr-1">
+        @for (msg of mensagens(); track $index) {
+          <div class="flex flex-col" [class.items-end]="msg.origem === 'usuario'" [class.items-start]="msg.origem === 'ia'">
+            <div
+              class="max-w-[85%] rounded-2xl px-4 py-2.5 text-sm shadow-sm"
+              [class.bg-brand-900]="msg.origem === 'usuario'"
+              [class.text-white]="msg.origem === 'usuario'"
+              [class.bg-brand-50]="msg.origem === 'ia'"
+              [class.text-brand-900]="msg.origem === 'ia'"
+            >
+              <p class="whitespace-pre-wrap">{{ msg.texto }}</p>
+            </div>
+            <span class="mt-0.5 px-1 text-[10px] text-brand-400">
+              {{ msg.origem === 'usuario' ? 'Você' : 'Assistente GAMB' }} • {{ msg.dataHora | date:'HH:mm' }}
+            </span>
+          </div>
+        }
+        @if (enviandoMensagem()) {
+          <div class="flex items-start">
+            <div class="rounded-2xl bg-brand-50 px-4 py-2 text-xs text-brand-600">
+              Assistente pensando...
+            </div>
+          </div>
+        }
+      </div>
+
+      <div class="mt-3 pt-3 border-t border-brand-100">
+        <div class="mb-2 flex flex-wrap gap-1.5">
+          @for (sugestao of sugestoes(); track sugestao) {
+            <button
+              type="button"
+              (click)="selecionarSugestao(sugestao)"
+              class="rounded-full border border-brand-200 bg-brand-50/50 px-2.5 py-1 text-[11px] text-brand-700 transition hover:bg-brand-100"
+            >
+              {{ sugestao }}
+            </button>
+          }
+        </div>
+
+        <form (ngSubmit)="enviarMensagem()" class="flex items-center gap-2">
+          <input
+            type="text"
+            [(ngModel)]="mensagemInput"
+            name="mensagemInput"
+            placeholder="Digite sua dúvida ou comando..."
+            class="min-h-11 flex-1 rounded-xl border border-brand-200 px-3.5 text-sm focus:border-brand-500 focus:outline-none"
+          />
+          <button
+            type="submit"
+            [disabled]="!mensagemInput.trim() || enviandoMensagem()"
+            class="btn-primary min-h-11 px-4 text-sm font-bold disabled:opacity-50"
+          >
+            Enviar
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

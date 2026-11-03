@@ -1,0 +1,29 @@
+type: object
+description: Estado de integridade de um módulo verificado no diagnóstico do sistema
+required:
+- modulo
+- status
+- mensagem
+- tempoRespostaMs
+properties:
+  modulo:
+    type: string
+    description: Nome identificador do módulo ou subsistema verificado
+    example: Auth
+  status:
+    type: string
+    description: Estado operacional apurado no teste de saúde
+    enum:
+    - OPERACIONAL
+    - DEGRADADO
+    - INDISPONIVEL
+    example: OPERACIONAL
+  mensagem:
+    type: string
+    description: Detalhes ou diagnóstico do teste de conectividade e funcionamento
+    example: "Conectividade e emissão de tokens validadas com sucesso."
+  tempoRespostaMs:
+    type: integer
+    format: int64
+    description: Tempo de resposta medido em milissegundos
+    example: 45
