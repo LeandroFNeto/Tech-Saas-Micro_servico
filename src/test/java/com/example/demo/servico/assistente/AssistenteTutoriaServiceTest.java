@@ -101,4 +101,60 @@ class AssistenteTutoriaServiceTest {
         assertThat(resp.modo()).isEqualTo("ATENDIMENTO_SANDBOX");
         assertThat(resp.resposta()).contains("Olá! Sou o assistente virtual");
     }
+
+    @Test
+    @DisplayName("Deve responder ao cliente no modo SUPORTE contextualizado com a empresa")
+    void deveResponderClienteSuporteComContextoEmpresa() {
+        when(avisoRepository.findByAtivoTrueOrderByIdDesc()).thenReturn(List.of());
+        when(servicoIA.gerarRespostaHumanizada(anyString())).thenReturn(null);
+
+        com.example.demo.model.Empresa empresa = new com.example.demo.model.Empresa();
+        empresa.setNome("Espaço Gourmet VIP");
+        empresa.setSessaoWhatsapp("espaco-vip");
+
+        AssistenteChatRequestDTO req = new AssistenteChatRequestDTO("Como conectar o whatsapp?", "SUPORTE");
+        AssistenteChatResponseDTO resp = service.responderCliente(empresa, req);
+
+        assertThat(resp).isNotNull();
+        assertThat(resp.modo()).isEqualTo("SUPORTE");
+        assertThat(resp.resposta()).contains("QR Code").contains("Conexão WhatsApp");
+        assertThat(resp.sugestoes()).isNotEmpty();
+    }
+
+    @Test
+    @DisplayName("Deve responder ao cliente no modo TESTE_VIRTUAL simulando regras do bot")
+    void deveResponderClienteTesteVirtualSimulandoBot() {
+        com.example.demo.model.Empresa empresa = new com.example.demo.model.Empresa();
+        empresa.setNome("Chácara Paraíso");
+        empresa.setTabelaDePrecos("Diária: R$ 800,00");
+        empresa.setRegrasLocacao("Proibido som alto após as 22h");
+
+        when(servicoIA.gerarRespostaHumanizada(anyString())).thenReturn(null);
+
+        AssistenteChatRequestDTO reqPreco = new AssistenteChatRequestDTO("Qual o preço?", "TESTE_VIRTUAL");
+        AssistenteChatResponseDTO respPreco = service.responderCliente(empresa, reqPreco);
+
+        assertThat(respPreco.modo()).isEqualTo("TESTE_VIRTUAL");
+        assertThat(respPreco.resposta()).contains("R$ 800,00");
+
+        AssistenteChatRequestDTO reqRegra = new AssistenteChatRequestDTO("Quais são as regras?", "TESTE_VIRTUAL");
+        AssistenteChatResponseDTO respRegra = service.responderCliente(empresa, reqRegra);
+
+        assertThat(respRegra.resposta()).contains("Proibido som alto");
+    }
+
+    @Test
+    @DisplayName("Deve responder ao cliente no modo TESTE_VIRTUAL utilizando IA quando disponivel")
+    void deveResponderClienteTesteVirtualComIA() {
+        com.example.demo.model.Empresa empresa = new com.example.demo.model.Empresa();
+        empresa.setNome("Chácara Paraíso");
+
+        when(servicoIA.gerarRespostaHumanizada(anyString())).thenReturn("Olá! Bem-vindo à Chácara Paraíso. Como posso ajudar com sua reserva?");
+
+        AssistenteChatRequestDTO req = new AssistenteChatRequestDTO("Olá, boa tarde!", "TESTE_VIRTUAL");
+        AssistenteChatResponseDTO resp = service.responderCliente(empresa, req);
+
+        assertThat(resp.modo()).isEqualTo("TESTE_VIRTUAL");
+        assertThat(resp.resposta()).isEqualTo("Olá! Bem-vindo à Chácara Paraíso. Como posso ajudar com sua reserva?");
+    }
 }

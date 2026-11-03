@@ -34,6 +34,12 @@
     <path d="M8 10h.01M12 10h.01M16 10h.01" />
   </svg>
 </ng-template>
+<ng-template #iconeTutoriais>
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z" />
+    <path d="M6 6h10M6 10h10" />
+  </svg>
+</ng-template>
 
 <ng-template #marca>
   <a
@@ -128,6 +134,15 @@
           <ng-container [ngTemplateOutlet]="iconeChatbot" />
           {{ conteudo.menuCliente.chatbot }}
         </a>
+        <a
+          routerLink="/cliente/tutoriais"
+          routerLinkActive="!bg-accent-500/20 !text-accent-300"
+          ariaCurrentWhenActive="page"
+          [class]="linkLateral"
+        >
+          <ng-container [ngTemplateOutlet]="iconeTutoriais" />
+          {{ conteudo.menuCliente.tutoriais }}
+        </a>
       }
     </nav>
 
@@ -141,7 +156,7 @@
     <router-outlet />
   </main>
 
-  <!-- Celular e tablet: abas fixas embaixo, só para o admin -->
+  <!-- Celular e tablet: abas fixas embaixo -->
   @if (admin) {
     <nav
       class="sticky bottom-0 z-10 flex border-t border-brand-200 bg-white pb-[env(safe-area-inset-bottom)] lg:hidden"
@@ -208,6 +223,15 @@
       >
         <ng-container [ngTemplateOutlet]="iconeChatbot" />
         {{ conteudo.menuCliente.chatbot }}
+      </a>
+      <a
+        routerLink="/cliente/tutoriais"
+        routerLinkActive="!text-accent-800 shadow-[inset_0_3px_0_#F7931E]"
+        ariaCurrentWhenActive="page"
+        [class]="abaInferior"
+      >
+        <ng-container [ngTemplateOutlet]="iconeTutoriais" />
+        {{ conteudo.menuCliente.tutoriais }}
       </a>
     </nav>
   }

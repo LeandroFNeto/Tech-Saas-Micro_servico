@@ -3,7 +3,8 @@
     "menuCliente": {
       "painel": "Painel",
       "automacao": "Automação",
-      "chatbot": "Configuração do chatbot"
+      "chatbot": "Configuração do chatbot",
+      "tutoriais": "Tutoriais"
     },
     "sair": "Sair"
   }

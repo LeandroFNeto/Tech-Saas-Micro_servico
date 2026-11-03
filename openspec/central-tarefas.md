@@ -18,6 +18,7 @@ Arquivo em comum da equipe. Cada agente atualiza a própria linha ao começar e 
 | [trava-proprietario-mensagens-antigas](archive/trava-proprietario-mensagens-antigas/) | deploy | `antigravity` | `openspec/archive/trava-proprietario-mensagens-antigas/` | 0 | aprovado |
 | [modulo-ia-conversa-humanizada](changes/modulo-ia-conversa-humanizada/) | revisao | `antigravity` | `openspec/changes/modulo-ia-conversa-humanizada/` | 0 | aprovado |
 | [modulo-assistente-tutoria-testes](archive/2026-11-03-modulo-assistente-tutoria-testes/) | deploy | `gemini-3.8-flash` | `openspec/archive/2026-11-03-modulo-assistente-tutoria-testes/` | 0 | aprovado |
+| [assistente-cliente-sandbox-modulos](archive/2026-11-03-assistente-cliente-sandbox-modulos/) | deploy | `gemini-3.8-flash` | `openspec/archive/2026-11-03-assistente-cliente-sandbox-modulos/` | 0 | aprovado |
 
 Estado: `em andamento`, `aprovado`, `reprovado`, `erro`, `aguardando aprovado`.
 

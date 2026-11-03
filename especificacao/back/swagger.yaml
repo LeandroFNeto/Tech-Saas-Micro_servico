@@ -62,6 +62,8 @@ paths:
     $ref: ./paths/admin-assistente-tutoria-diagnostico.yaml
   /admin/assistente-tutoria/chat:
     $ref: ./paths/admin-assistente-tutoria-chat.yaml
+  /api/cliente/assistente/chat:
+    $ref: ./paths/cliente-assistente-chat.yaml
 components:
   securitySchemes:
     bearerAuth:

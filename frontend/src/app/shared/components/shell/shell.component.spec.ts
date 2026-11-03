@@ -58,4 +58,8 @@ describe('ShellComponent', () => {
     component.sair();
     expect(authServiceSpy.logout).toHaveBeenCalled();
   });
+
+  it('expoe conteudo do menu cliente incluindo tutoriais', () => {
+    expect(component.conteudo.menuCliente.tutoriais).toBe('Tutoriais');
+  });
 });

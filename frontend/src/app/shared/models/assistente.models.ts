@@ -13,7 +13,7 @@ export interface DiagnosticoResponseDTO {
 
 export interface AssistenteChatRequestDTO {
   mensagem: string;
-  modo?: 'DIAGNOSTICO' | 'ATENDIMENTO_SANDBOX';
+  modo?: 'DIAGNOSTICO' | 'ATENDIMENTO_SANDBOX' | 'SUPORTE' | 'TESTE_VIRTUAL';
 }
 
 export interface AssistenteChatResponseDTO {

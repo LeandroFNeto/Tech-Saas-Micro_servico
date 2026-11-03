@@ -5,6 +5,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { EmpresaService } from '../../../core/services/empresa.service';
 import { PrevisaoService } from '../../../core/services/previsao.service';
 import { ConexaoWhatsappComponent } from '../../../shared/components/conexao-whatsapp/conexao-whatsapp.component';
+import { AssistenteClienteComponent } from '../../../shared/components/assistente-cliente/assistente-cliente.component';
 import { EmpresaView } from '../../../shared/models/empresa.models';
 import { PrevisaoDia, PrevisaoTempoResponse, RiscoDesmarcacao } from '../../../shared/models/previsao.models';
 import contentData from '../../../../../../especificacao/front/cliente-painel.content.json';
@@ -43,7 +44,7 @@ function semanaCurta(diaSemana: string): string {
 
 @Component({
   selector: 'app-painel',
-  imports: [RouterLink, ConexaoWhatsappComponent],
+  imports: [RouterLink, ConexaoWhatsappComponent, AssistenteClienteComponent],
   templateUrl: './painel.component.html'
 })
 export class PainelComponent {

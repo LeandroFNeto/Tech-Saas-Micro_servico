@@ -45,7 +45,7 @@ describe('AssistenteTutoriaService', () => {
     req.flush(mockResp);
   });
 
-  it('conversar faz requisicao POST com payload para endpoint de chat', () => {
+  it('conversar faz requisicao POST com payload para endpoint de chat admin', () => {
     const payload: AssistenteChatRequestDTO = {
       mensagem: 'Como funciona?',
       modo: 'DIAGNOSTICO'
@@ -64,6 +64,30 @@ describe('AssistenteTutoriaService', () => {
     });
 
     const req = httpMock.expectOne(`${environment.apiUrl}/admin/assistente-tutoria/chat`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual(payload);
+    req.flush(mockResp);
+  });
+
+  it('conversarCliente faz requisicao POST com payload para endpoint de chat do cliente', () => {
+    const payload: AssistenteChatRequestDTO = {
+      mensagem: 'Como conectar o WhatsApp?',
+      modo: 'SUPORTE'
+    };
+
+    const mockResp: AssistenteChatResponseDTO = {
+      resposta: 'Passo a passo do cliente',
+      modo: 'SUPORTE',
+      dataHora: '2026-11-03T14:30:05Z',
+      sugestoes: ['Sugestao']
+    };
+
+    service.conversarCliente(payload).subscribe((res) => {
+      expect(res.resposta).toBe('Passo a passo do cliente');
+      expect(res.modo).toBe('SUPORTE');
+    });
+
+    const req = httpMock.expectOne(`${environment.apiUrl}/api/cliente/assistente/chat`);
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual(payload);
     req.flush(mockResp);

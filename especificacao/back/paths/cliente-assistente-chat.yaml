@@ -1,0 +1,25 @@
+post:
+  tags:
+  - Assistente Cliente
+  summary: Interagir com o assistente IA e sessão virtual de testes (Cliente)
+  description: Canal de suporte para o cliente autenticado tirar dúvidas da sua empresa ou testar módulos em sessão virtual sem exigir QR Code físico. Exige Bearer Token JWT.
+  operationId: conversarAssistenteCliente
+  security:
+  - bearerAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: "#/components/schemas/AssistenteChatRequestDTO"
+  responses:
+    "200":
+      description: Resposta processada pela IA com sucesso
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/AssistenteChatResponseDTO"
+    "400":
+      description: Requisição inválida
+    "401":
+      description: Não autorizado

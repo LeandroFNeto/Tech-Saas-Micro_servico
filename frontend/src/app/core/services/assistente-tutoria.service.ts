@@ -11,6 +11,7 @@ import {
 @Injectable({ providedIn: 'root' })
 export class AssistenteTutoriaService {
   private readonly baseUrl = `${environment.apiUrl}/admin/assistente-tutoria`;
+  private readonly clienteUrl = `${environment.apiUrl}/api/cliente/assistente`;
 
   constructor(private readonly http: HttpClient) {}
 
@@ -20,5 +21,9 @@ export class AssistenteTutoriaService {
 
   conversar(requisicao: AssistenteChatRequestDTO): Observable<AssistenteChatResponseDTO> {
     return this.http.post<AssistenteChatResponseDTO>(`${this.baseUrl}/chat`, requisicao);
+  }
+
+  conversarCliente(requisicao: AssistenteChatRequestDTO): Observable<AssistenteChatResponseDTO> {
+    return this.http.post<AssistenteChatResponseDTO>(`${this.clienteUrl}/chat`, requisicao);
   }
 }
