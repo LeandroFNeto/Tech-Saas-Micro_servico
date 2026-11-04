@@ -41,6 +41,13 @@ public class RoteamentoSteps {
         assertThat(strategy.getRamoDeAtuacao()).isEqualTo("LOCACAO");
     }
 
+    @Então("a Strategy retornada deve ser a {string} do ramo {string}")
+    public void deveSerAStrategyDoRamo(String classe, String ramo) {
+        assertThat(ctx.erroFactory).isNull();
+        assertThat(strategy.getClass().getSimpleName()).isEqualTo(classe);
+        assertThat(strategy.getRamoDeAtuacao()).isEqualTo(ramo);
+    }
+
     @Então("deve ocorrer erro de ramo não suportado")
     public void ramoNaoSuportado() {
         assertThat(ctx.erroFactory)

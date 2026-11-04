@@ -46,6 +46,7 @@ class ControllerEmpresaTest {
     @MockitoBean private ServicoAuth servicoAuth;
     @MockitoBean private com.example.demo.servico.previsao.ServicoPrevisaoTempo servicoPrevisaoTempo;
     @MockitoBean private com.example.demo.servico.ServicoWppConnect servicoWppConnect;
+    @MockitoBean private com.example.demo.servico.ServicoReserva servicoReserva;
 
     @AfterEach
     void limparContexto() {
@@ -168,6 +169,140 @@ class ControllerEmpresaTest {
         assertEquals("nova-agenda@group.calendar.google.com", empresa.getGoogleCalendarId());
         assertEquals(1, empresa.getModulosAtivos().size());
         assertEquals("GOOGLE_CALENDAR", empresa.getModulosAtivos().get(0).getCodigoAcao());
+    }
+
+    @Test
+    @DisplayName("PUT /empresas/{sessao}/admin salva os e-mails dos responsáveis e atualiza os convidados das reuniões futuras")
+    void deveSalvarEmailsDosResponsaveisDaReuniao() throws Exception {
+        Empresa empresa = new Empresa();
+        empresa.setId(7L);
+        empresa.setSessaoWhatsapp("gamb_atendente");
+        empresa.setRamoDeAtuacao("ATENDENTE_GAMB");
+        empresa.setGoogleCalendarId("gamb@group.calendar.google.com");
+        when(empresaRepository.buscarPorSessaoComModulos("gamb_atendente")).thenReturn(empresa);
+        when(empresaRepository.save(any(Empresa.class))).thenAnswer(invocacao -> invocacao.getArgument(0));
+
+        mockMvc.perform(put("/empresas/gamb_atendente/admin")
+                        .header("x-admin-token", "sua-chave-admin")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {"emailsResponsaveisReuniao": ["ana@gamb.com.br", "leo@gamb.com.br"]}
+                            """))
+                .andExpect(status().isOk());
+
+        assertEquals(List.of("ana@gamb.com.br", "leo@gamb.com.br"), empresa.getEmailsResponsaveisReuniao());
+        verify(servicoReserva).atualizarConvidadosDeReunioesFuturas(
+                empresa, List.of("ana@gamb.com.br", "leo@gamb.com.br"));
+    }
+
+    @Test
+    @DisplayName("PUT /empresas/{sessao}/admin com e-mail inválido retorna 400 e não grava nem mexe nas reuniões")
+    void deveRejeitarEmailInvalidoDoResponsavel() throws Exception {
+        Empresa empresa = new Empresa();
+        empresa.setId(7L);
+        empresa.setSessaoWhatsapp("gamb_atendente");
+        empresa.setEmailsResponsaveisReuniao(List.of("ana@gamb.com.br"));
+        when(empresaRepository.buscarPorSessaoComModulos("gamb_atendente")).thenReturn(empresa);
+
+        mockMvc.perform(put("/empresas/gamb_atendente/admin")
+                        .header("x-admin-token", "sua-chave-admin")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {"emailsResponsaveisReuniao": ["ana@gamb.com.br", "isto-nao-e-email"]}
+                            """))
+                .andExpect(status().isBadRequest());
+
+        verify(empresaRepository, never()).save(any(Empresa.class));
+        verify(servicoReserva, never()).atualizarConvidadosDeReunioesFuturas(any(), any());
+        assertEquals(List.of("ana@gamb.com.br"), empresa.getEmailsResponsaveisReuniao());
+    }
+
+    @Test
+    @DisplayName("PUT /empresas/{sessao}/admin sem o campo mantém a lista e não toca nas reuniões")
+    void deveManterAListaQuandoOCampoNaoVem() throws Exception {
+        Empresa empresa = new Empresa();
+        empresa.setId(7L);
+        empresa.setSessaoWhatsapp("gamb_atendente");
+        empresa.setEmailsResponsaveisReuniao(List.of("ana@gamb.com.br"));
+        when(empresaRepository.buscarPorSessaoComModulos("gamb_atendente")).thenReturn(empresa);
+        when(empresaRepository.save(any(Empresa.class))).thenAnswer(invocacao -> invocacao.getArgument(0));
+
+        mockMvc.perform(put("/empresas/gamb_atendente/admin")
+                        .header("x-admin-token", "sua-chave-admin")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"locacaoPorHora\": true}"))
+                .andExpect(status().isOk());
+
+        assertEquals(List.of("ana@gamb.com.br"), empresa.getEmailsResponsaveisReuniao());
+        verify(servicoReserva, never()).atualizarConvidadosDeReunioesFuturas(any(), any());
+    }
+
+    @Test
+    @DisplayName("PUT /empresas/{sessao}/admin com lista vazia salva a lista vazia")
+    void devePermitirEsvaziarAListaDeResponsaveis() throws Exception {
+        Empresa empresa = new Empresa();
+        empresa.setId(7L);
+        empresa.setSessaoWhatsapp("gamb_atendente");
+        empresa.setEmailsResponsaveisReuniao(List.of("ana@gamb.com.br"));
+        when(empresaRepository.buscarPorSessaoComModulos("gamb_atendente")).thenReturn(empresa);
+        when(empresaRepository.save(any(Empresa.class))).thenAnswer(invocacao -> invocacao.getArgument(0));
+
+        mockMvc.perform(put("/empresas/gamb_atendente/admin")
+                        .header("x-admin-token", "sua-chave-admin")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"emailsResponsaveisReuniao\": []}"))
+                .andExpect(status().isOk());
+
+        assertTrue(empresa.getEmailsResponsaveisReuniao().isEmpty());
+    }
+
+    @Test
+    @DisplayName("Falha ao atualizar os convidados na agenda não desfaz a lista salva e o e-mail não vai para o log")
+    void deveManterAListaSalvaMesmoSeAAgendaFalhar() throws Exception {
+        ch.qos.logback.classic.Logger logger =
+                (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger(ControllerEmpresa.class);
+        ch.qos.logback.core.read.ListAppender<ch.qos.logback.classic.spi.ILoggingEvent> captura =
+                new ch.qos.logback.core.read.ListAppender<>();
+        captura.start();
+        logger.addAppender(captura);
+        try {
+            Empresa empresa = new Empresa();
+            empresa.setId(7L);
+            empresa.setSessaoWhatsapp("gamb_atendente");
+            empresa.setGoogleCalendarId("gamb@group.calendar.google.com");
+            when(empresaRepository.buscarPorSessaoComModulos("gamb_atendente")).thenReturn(empresa);
+            when(empresaRepository.save(any(Empresa.class))).thenAnswer(invocacao -> invocacao.getArgument(0));
+            org.mockito.Mockito.doThrow(new IllegalStateException("agenda fora do ar"))
+                    .when(servicoReserva).atualizarConvidadosDeReunioesFuturas(any(), any());
+
+            mockMvc.perform(put("/empresas/gamb_atendente/admin")
+                            .header("x-admin-token", "sua-chave-admin")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"emailsResponsaveisReuniao\": [\"secreto@gamb.com.br\"]}"))
+                    .andExpect(status().isOk());
+
+            assertEquals(List.of("secreto@gamb.com.br"), empresa.getEmailsResponsaveisReuniao());
+            assertTrue(captura.list.stream().anyMatch(e -> e.getFormattedMessage().contains("IllegalStateException")));
+            assertTrue(captura.list.stream().noneMatch(e -> e.getFormattedMessage().contains("secreto@gamb.com.br")));
+        } finally {
+            logger.detachAppender(captura);
+        }
+    }
+
+    @Test
+    @DisplayName("GET /empresas/search/findBySessaoWhatsapp devolve os e-mails dos responsáveis ao admin")
+    void deveMostrarOsEmailsDosResponsaveisAoAdmin() throws Exception {
+        Empresa empresa = new Empresa();
+        empresa.setId(7L);
+        empresa.setSessaoWhatsapp("gamb_atendente");
+        empresa.setEmailsResponsaveisReuniao(List.of("ana@gamb.com.br"));
+        when(empresaRepository.buscarPorSessaoComModulos("gamb_atendente")).thenReturn(empresa);
+
+        mockMvc.perform(get("/empresas/search/findBySessaoWhatsapp")
+                        .param("sessaoWhatsapp", "gamb_atendente")
+                        .header("x-admin-token", "sua-chave-admin"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.emailsResponsaveisReuniao[0]").value("ana@gamb.com.br"));
     }
 
     private void exigirMensagem(org.springframework.test.web.servlet.MvcResult resultado, String trecho) {

@@ -81,6 +81,23 @@ class LocacaoStrategyTest {
     }
 
     @Test
+    @DisplayName("Estados da atendente da Gamb recebidos pela Locação respondem o menu")
+    void deveMostrarMenuQuandoEstadoPertenceAoAtendenteGamb() {
+        for (EstadoUsuario estadoAlheio : List.of(EstadoUsuario.ATENDENTE_MENU, EstadoUsuario.ATENDENTE_DUVIDA,
+                EstadoUsuario.REUNIAO_MOTIVO, EstadoUsuario.REUNIAO_DATA, EstadoUsuario.REUNIAO_HORARIO,
+                EstadoUsuario.REUNIAO_CONFIRMACAO)) {
+            Empresa empresa = empresaComMenu();
+            gerenciadorSessao.setEstado(REMETENTE, estadoAlheio);
+
+            locacaoStrategy.processarMensagem(empresa, REMETENTE, "oi", estadoAlheio.name());
+
+            verify(servicoMensagem).enviarMensagemWPP(eq(empresa), eq(REMETENTE), contains("Digite o número da opção desejada"));
+            assertThat(gerenciadorSessao.getEstado(REMETENTE)).isEqualTo(EstadoUsuario.MENU_PRINCIPAL);
+            org.mockito.Mockito.clearInvocations(servicoMensagem);
+        }
+    }
+
+    @Test
     @DisplayName("Número do menu resolve o codigo_acao (fotos)")
     void deveRoteamentoDinamicoParaFotos() {
         Empresa empresa = empresaComMenu();

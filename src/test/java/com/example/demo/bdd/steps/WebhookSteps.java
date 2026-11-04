@@ -116,6 +116,11 @@ public class WebhookSteps {
         verify(servicoMensagem, atLeastOnce()).enviarMensagemWPP(any(), anyString(), anyString());
     }
 
+    @E("a mensagem enviada ao cliente deve conter {string}")
+    public void mensagemEnviadaContem(String trecho) {
+        verify(servicoMensagem, atLeastOnce()).enviarMensagemWPP(any(), anyString(), contains(trecho));
+    }
+
     private String json(DataTable tabela) {
         Map<String, String> mapa = tabela.asMap();
         return mapa.entrySet().stream()

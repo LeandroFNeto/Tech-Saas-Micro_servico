@@ -74,6 +74,12 @@ EntityModelEmpresa:
       type: string
       nullable: true
       description: Só o admin recebe o valor. Para o cliente vem nulo.
+    emailsResponsaveisReuniao:
+      type: array
+      description: Só o admin recebe a lista. Para o cliente vem vazia.
+      items:
+        type: string
+        format: email
     locacaoPorHora:
       type: boolean
     permiteReservaAutomatica:

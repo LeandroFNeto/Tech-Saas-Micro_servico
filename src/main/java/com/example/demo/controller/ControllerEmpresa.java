@@ -18,6 +18,7 @@ import com.example.demo.repository.EmpresaRepository;
 import com.example.demo.servico.CatalogoModulos;
 import com.example.demo.servico.ServicoAcessoEmpresa;
 import com.example.demo.servico.ServicoAuth;
+import com.example.demo.servico.ServicoReserva;
 import com.example.demo.servico.ServicoWppConnect;
 import com.example.demo.servico.previsao.ProvedorIndisponivelException;
 import com.example.demo.servico.previsao.ProvedorPrevisao;
@@ -30,6 +31,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -48,11 +51,14 @@ import java.util.List;
 @Tag(name = "Gerenciamento de Empresas", description = "Cadastro e atualização de empresas do SaaS, isolados por intenção (criação, cliente e admin)")
 public class ControllerEmpresa {
 
+    private static final Logger log = LoggerFactory.getLogger(ControllerEmpresa.class);
+
     @Autowired private EmpresaRepository empresaRepository;
     @Autowired private ServicoAuth servicoAuth;
     @Autowired private ServicoPrevisaoTempo servicoPrevisaoTempo;
     @Autowired private ServicoAcessoEmpresa servicoAcessoEmpresa;
     @Autowired(required = false) private ServicoWppConnect servicoWppConnect;
+    @Autowired(required = false) private ServicoReserva servicoReserva;
     @Value("${admin.api.key}") private String adminApiKey;
 
     private boolean possuiPapel(String papel) {
@@ -355,8 +361,13 @@ public class ControllerEmpresa {
         }
         if (dto.permitePrevisaoTempo() != null) empresa.setPermitePrevisaoTempo(dto.permitePrevisaoTempo());
         CatalogoModulos.aplicar(empresa, dto.modulosAtivos());
+        if (dto.emailsResponsaveisReuniao() != null) empresa.setEmailsResponsaveisReuniao(dto.emailsResponsaveisReuniao());
 
-        return ResponseEntity.ok(paraResposta(empresaRepository.save(empresa)));
+        Empresa salva = empresaRepository.save(empresa);
+        if (dto.emailsResponsaveisReuniao() != null) {
+            sincronizarConvidadosDeReunioes(salva);
+        }
+        return ResponseEntity.ok(paraResposta(salva));
     }
 
     @PutMapping("/{sessao}/reset-senha")
@@ -383,6 +394,18 @@ public class ControllerEmpresa {
 
         servicoAuth.resetarSenhaDoCliente(sessao, dto.novaSenha());
         return ResponseEntity.noContent().build();
+    }
+
+    private void sincronizarConvidadosDeReunioes(Empresa empresa) {
+        if (servicoReserva == null) {
+            return;
+        }
+        try {
+            servicoReserva.atualizarConvidadosDeReunioesFuturas(empresa, List.copyOf(empresa.getEmailsResponsaveisReuniao()));
+        } catch (Exception e) {
+            log.warn("Não foi possível atualizar os convidados das reuniões futuras (empresa {}): {}",
+                    empresa.getId(), e.getClass().getSimpleName());
+        }
     }
 
     private void exigirAgendaParaReservaAutomatica(boolean ligar, String googleCalendarId) {
@@ -481,6 +504,7 @@ public class ControllerEmpresa {
                 empresa.getLocacaoPorHora(),
                 Boolean.TRUE.equals(empresa.getPermiteReservaAutomatica()),
                 modulos,
+                admin ? List.copyOf(empresa.getEmailsResponsaveisReuniao()) : List.of(),
                 empresa.getCidadePrevisao(),
                 empresa.getCidadePrevisaoResolvida(),
                 Boolean.TRUE.equals(empresa.getPrevisaoTempoAtiva()),

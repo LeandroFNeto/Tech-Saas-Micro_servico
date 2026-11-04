@@ -48,3 +48,18 @@ Funcionalidade: Roteamento Factory e Strategy
       | body    | Quero consultar    |
     Então o status HTTP deve ser 200
     E o observador deve registrar erro contendo "Ramo de atuação não suportado"
+
+  Cenário: ramo ATENDENTE_GAMB é resolvido para AtendenteGambStrategy
+    Dado as Strategies carregadas no contexto Spring
+    Quando a FactoryModulo busca o ramo "ATENDENTE_GAMB"
+    Então a Strategy retornada deve ser a "AtendenteGambStrategy" do ramo "ATENDENTE_GAMB"
+
+  Cenário: ramo TESTE_MODULOS é resolvido para TesteModulosStrategy
+    Dado as Strategies carregadas no contexto Spring
+    Quando a FactoryModulo busca o ramo "TESTE_MODULOS"
+    Então a Strategy retornada deve ser a "TesteModulosStrategy" do ramo "TESTE_MODULOS"
+
+  Cenário: as strategies das empresas continuam resolvendo para as mesmas classes
+    Dado as Strategies carregadas no contexto Spring
+    Quando a FactoryModulo busca o ramo "Locação"
+    Então a Strategy retornada deve ser LocacaoStrategy

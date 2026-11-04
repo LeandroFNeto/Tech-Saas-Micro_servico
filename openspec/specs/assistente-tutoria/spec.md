@@ -99,17 +99,17 @@ Prova: `ClienteAssistenteChatTest`, `assistente-cliente.component.spec.ts`
 - **THEN** a IA responde usando exclusivamente os dados da Empresa X e omitindo informações de outras empresas
 
 ### Requirement: Sessão virtual de testes para simulação de novos módulos
-O sistema SHALL fornecer um canal de sessão virtual no assistente que permite ao usuário e ao desenvolvedor simular conversas de clientes finais e testar módulos existentes ou novas funções em homologação sem exigir pareamento ou criação de sessões reais de WhatsApp no WPPConnect.
+O sistema SHALL fornecer um canal de sessão virtual que permite ao desenvolvedor simular conversas de clientes finais e testar módulos existentes ou novas funções em homologação, sem exigir pareamento ou criação de sessões reais de WhatsApp de empresas no WPPConnect. O canal SHALL ser o modo `TESTE_VIRTUAL` do endpoint autenticado do cliente e o bot de teste de módulos da sessão de teste da Gamb no WhatsApp (WPP-15), em que o modo `TESTE_VIRTUAL` é o módulo experimental `teste-virtual`.
 
-Contrato: `especificacao/back/paths/cliente-assistente-chat.yaml`
-Prova: `ClienteAssistenteChatTest`, `AssistenteTutoriaServiceTest`
+Contrato: `especificacao/back/paths/cliente-assistente-chat.yaml`, `especificacao/back/paths/webhook-whatsapp.yaml`
+Prova: `ClienteAssistenteChatTest`, `AssistenteTutoriaServiceTest`, `TesteModulosStrategyTest`, `RegistroModulosExperimentaisTest`
 
 #### Scenario: Teste simulado de agendamento em sessão virtual
-- **GIVEN** que o usuário ativa a simulação de teste no assistente
+- **GIVEN** que o usuário ativa a simulação de teste no endpoint do cliente
 - **WHEN** envia uma mensagem simulada de cliente final solicitando consulta de agenda
 - **THEN** o assistente simula o comportamento do bot respondendo com o fluxo do módulo de agendamento da empresa sem disparar mensagens em WhatsApp físico
 
 #### Scenario: Teste de nova função experimental
 - **GIVEN** um novo módulo ou funcionalidade em teste registrado no sistema
-- **WHEN** o usuário envia comando de teste na sessão virtual
-- **THEN** o assistente processa a regra do módulo correspondente e devolve a resposta simulada sem requerer QR Code
+- **WHEN** o desenvolvedor envia o comando do módulo na sessão de teste da Gamb
+- **THEN** o bot processa a regra do módulo correspondente e devolve a resposta simulada sem requerer QR Code de empresa

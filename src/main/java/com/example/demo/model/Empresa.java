@@ -51,6 +51,12 @@ public class Empresa {
     @Column(name = "google_calendar_id")
     private String googleCalendarId;
 
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "empresa_emails_responsaveis_reuniao", joinColumns = @JoinColumn(name = "empresa_id"))
+    @Column(name = "email")
+    @OrderColumn(name = "ordem")
+    private List<String> emailsResponsaveisReuniao = new ArrayList<>();
+
 
 
     @Column(name = "locacao_por_hora")
@@ -317,6 +323,29 @@ public class Empresa {
 
     public void setLinkGaleria(String linkGaleria) {
         this.linkGaleria = linkGaleria;
+    }
+
+    public List<String> getEmailsResponsaveisReuniao() {
+        if (emailsResponsaveisReuniao == null) {
+            emailsResponsaveisReuniao = new ArrayList<>();
+        }
+        return emailsResponsaveisReuniao;
+    }
+
+    public void setEmailsResponsaveisReuniao(List<String> emails) {
+        if (this.emailsResponsaveisReuniao == null) {
+            this.emailsResponsaveisReuniao = new ArrayList<>();
+        } else {
+            this.emailsResponsaveisReuniao.clear();
+        }
+        if (emails == null) {
+            return;
+        }
+        emails.stream()
+                .filter(email -> email != null && !email.isBlank())
+                .map(String::trim)
+                .distinct()
+                .forEach(this.emailsResponsaveisReuniao::add);
     }
 
     public List<String> getUrlsGaleria() {

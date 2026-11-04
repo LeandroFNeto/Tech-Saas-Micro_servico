@@ -28,7 +28,7 @@ public class AssistenteTutoriaService {
 
     private static final Logger log = LoggerFactory.getLogger(AssistenteTutoriaService.class);
 
-    static final String RECUSA_SUPORTE = "Só posso ajudar com o uso do app: onde fica uma função, como configurar o WhatsApp, a agenda, os horários e as fotos, e o que dizem os avisos e tutoriais. Sobre dados de empresas ou outros assuntos não consigo ajudar.";
+    public static final String RECUSA_SUPORTE = "Só posso ajudar com o uso do app: onde fica uma função, como configurar o WhatsApp, a agenda, os horários e as fotos, e o que dizem os avisos e tutoriais. Sobre dados de empresas ou outros assuntos não consigo ajudar.";
 
     static final String RECUSA_COMERCIAL = "Só posso falar sobre a Gamb: quem somos, o que oferecemos hoje, como funciona o plano de assinatura e como começar a conversa pelo WhatsApp. Sobre outros assuntos ou dados de empresas não consigo ajudar.";
 

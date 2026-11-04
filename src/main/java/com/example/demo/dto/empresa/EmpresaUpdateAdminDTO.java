@@ -1,6 +1,8 @@
 package com.example.demo.dto.empresa;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 import java.util.List;
@@ -37,6 +39,11 @@ public record EmpresaUpdateAdminDTO(
         String linkGaleria,
 
         @Schema(description = "Lista de módulos liberados após pagamento", example = "[\"IA_GEMINI\", \"GOOGLE_CALENDAR\"]")
-        List<String> modulosAtivos
+        List<String> modulosAtivos,
+
+        @Schema(description = "E-mails dos responsáveis convidados em cada reunião marcada pelo atendente da Gamb. Ausente mantém a lista; lista vazia desliga o agendamento de reunião",
+                example = "[\"suporte@gamb.com.br\"]")
+        @Size(max = 10)
+        List<@NotBlank @Email String> emailsResponsaveisReuniao
 ) {
 }

@@ -19,6 +19,7 @@ Arquivo em comum da equipe. Cada agente atualiza a própria linha ao começar e 
 | [modulo-ia-conversa-humanizada](changes/modulo-ia-conversa-humanizada/) | revisao | `antigravity` | `openspec/changes/modulo-ia-conversa-humanizada/` | 0 | aprovado |
 | [modulo-assistente-tutoria-testes](archive/modulo-assistente-tutoria-testes/) | deploy | `antigravity` | `openspec/archive/modulo-assistente-tutoria-testes/` | 0 | aprovado |
 | [assistente-cliente-sandbox-modulos](archive/assistente-cliente-sandbox-modulos/) | deploy | `antigravity` | `openspec/archive/assistente-cliente-sandbox-modulos/` | 0 | aprovado |
+| [bot-whatsapp-gamb-suporte-teste](archive/bot-whatsapp-gamb-suporte-teste/) | deploy | `claude-haiku-5-5` | `openspec/archive/bot-whatsapp-gamb-suporte-teste/` | 1 | aprovado |
 
 Estado: `em andamento`, `aprovado`, `reprovado`, `erro`, `aguardando aprovado`.
 

@@ -22,6 +22,7 @@ public record EmpresaPainelDTO(
         Boolean locacaoPorHora,
         Boolean permiteReservaAutomatica,
         List<ModuloPainelDTO> modulosAtivos,
+        List<String> emailsResponsaveisReuniao,
         String cidadePrevisao,
         String cidadePrevisaoResolvida,
         Boolean previsaoTempoAtiva,

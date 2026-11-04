@@ -1,6 +1,7 @@
 package com.example.demo.servico;
 
 import com.example.demo.model.DadosReservaSessao;
+import com.example.demo.model.DadosReuniaoSessao;
 import com.example.demo.model.EstadoUsuario;
 import com.example.demo.util.WhatsappUtil;
 import org.springframework.stereotype.Service;
@@ -23,6 +24,7 @@ public class GerenciadorSessao {
     private final Clock clock;
     private final Map<String, SessaoAtendimento> sessoes = new ConcurrentHashMap<>();
     private final Map<String, DadosReservaSessao> reservas = new ConcurrentHashMap<>();
+    private final Map<String, DadosReuniaoSessao> reunioes = new ConcurrentHashMap<>();
     private final Map<String, LocalDateTime> travasProprietario = new ConcurrentHashMap<>();
 
     public GerenciadorSessao() {
@@ -47,6 +49,7 @@ public class GerenciadorSessao {
             }
             if (expirou(atual, agora)) {
                 reservas.remove(chaveSessao);
+                reunioes.remove(chaveSessao);
                 return null;
             }
             return atual;
@@ -66,6 +69,7 @@ public class GerenciadorSessao {
         sessoes.put(chaveSessao, new SessaoAtendimento(novoEstado, LocalDateTime.now(clock)));
         if (EstadoUsuario.INICIO.name().equals(novoEstado)) {
             reservas.remove(chaveSessao);
+            reunioes.remove(chaveSessao);
         }
     }
 
@@ -135,6 +139,20 @@ public class GerenciadorSessao {
             return new DadosReservaSessao();
         }
         return reservas.computeIfAbsent(chave(remetente), ignorado -> new DadosReservaSessao());
+    }
+
+    public DadosReuniaoSessao getOuCriarReuniao(String remetente) {
+        if (remetente == null || remetente.isBlank()) {
+            return new DadosReuniaoSessao();
+        }
+        return reunioes.computeIfAbsent(chave(remetente), ignorado -> new DadosReuniaoSessao());
+    }
+
+    public void limparReuniao(String remetente) {
+        if (remetente == null || remetente.isBlank()) {
+            return;
+        }
+        reunioes.remove(chave(remetente));
     }
 
     public DadosReservaSessao getReserva(String remetente) {

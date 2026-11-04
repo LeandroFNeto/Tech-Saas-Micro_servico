@@ -470,6 +470,18 @@
         }
       }
     },
+    "adminEmpresaForm": {
+      "campo": {
+        "rotulo": "mb-1.5 block text-sm font-semibold text-brand-800",
+        "entrada": "input-field shadow-none",
+        "entradaCodigo": "input-field font-mono text-base shadow-none",
+        "areaTexto": "input-field block min-h-24 resize-y break-all font-mono text-base shadow-none read-only:cursor-not-allowed read-only:bg-brand-50 read-only:text-brand-500",
+        "entradaInvalida": "border-red-500 focus:border-red-500 focus:ring-red-100",
+        "dica": "mt-1.5 text-[13px] leading-[18px] text-brand-600",
+        "dicaDestaque": "rounded-xl border border-accent-200 bg-accent-50 px-3 py-2 font-semibold text-brand-800",
+        "erro": "mt-1.5 block text-[13px] font-semibold leading-[18px] text-red-700"
+      }
+    },
     "v0Dashboard": {
       "pagina": "min-h-screen bg-brand-50",
       "cabecalho": "border-b border-brand-200 px-6 py-5",

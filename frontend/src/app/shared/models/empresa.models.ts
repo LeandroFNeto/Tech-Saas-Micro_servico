@@ -49,6 +49,7 @@ export interface EmpresaUpdateAdminDTO {
   urlsGaleria?: string[];
   linkGaleria?: string;
   modulosAtivos?: string[];
+  emailsResponsaveisReuniao?: string[];
 }
 
 export interface EmpresaResponseDTO {
@@ -101,6 +102,7 @@ export interface EmpresaView {
   linkGaleria?: string;
   locacaoPorHora?: boolean;
   googleCalendarId?: string;
+  emailsResponsaveisReuniao?: string[];
   usaIA?: boolean;
   permiteReservaAutomatica?: boolean;
   permitePrevisaoTempo?: boolean;

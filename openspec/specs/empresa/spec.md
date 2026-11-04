@@ -383,3 +383,28 @@ Cenário: exclusão de empresa inexistente
 - Dado o token de administrador válido
 - Quando o admin envia DELETE `/empresas/{sessao-inexistente}`
 - Então a API responde 404 Not Found
+
+### EMP-14 Admin cadastra os responsáveis da reunião da Gamb
+
+O sistema deve aceitar `emailsResponsaveisReuniao` no PUT `/empresas/{sessao}/admin` (`EmpresaUpdateAdminDTO`): até 10 e-mails válidos, gravados sem repetição e sem item em branco. E-mail inválido responde 400 e nada é gravado. Campo ausente mantém a lista; lista vazia desliga o agendamento de reunião (WPP-13). Ao salvar a lista, o sistema atualiza os convidados das reuniões futuras (WPP-13); falha na agenda não desfaz a lista salva e o e-mail não vai para o log. A lista só volta na resposta para o admin. No painel admin, o formulário da empresa mostra o campo só na empresa interna de ramo `ATENDENTE_GAMB`, bloqueia o envio com e-mail inválido e não envia a lista nas empresas de outros ramos.
+
+Contrato: `especificacao/back/paths/empresas-admin.yaml`, `especificacao/back/schemas/empresa/EmpresaUpdateAdminDTO.yaml`
+Prova: `src/test/java/com/example/demo/controller/ControllerEmpresaTest.java`, `frontend/src/app/features/admin/empresa-form/empresa-form.component.spec.ts`
+
+Cenário: admin salva os responsáveis
+
+- Dado a empresa interna da atendente e o token administrativo válido
+- Quando o admin envia PUT `/empresas/{sessao}/admin` com dois e-mails válidos
+- Então a API responde 200 com a lista salva
+- E os convidados das reuniões futuras são atualizados
+
+Cenário: e-mail inválido
+
+- Quando o PUT `/empresas/{sessao}/admin` traz um e-mail inválido na lista
+- Então a API responde 400
+- E a lista e as reuniões continuam como estavam
+
+Cenário: campo ausente
+
+- Quando o PUT `/empresas/{sessao}/admin` chega sem `emailsResponsaveisReuniao`
+- Então a lista continua a mesma e as reuniões não são tocadas

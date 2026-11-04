@@ -94,6 +94,7 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
             case RESERVA_ESPERANDO_NOME -> tratarReservaNome(empresa, numeroCliente, texto);
             case RESERVA_CONFIRMACAO -> tratarReservaConfirmacao(empresa, numeroCliente, texto);
             case RESERVA_REGISTRANDO -> servicoMensagem.enviarMensagemWPP(empresa, numeroCliente, MENSAGEM_AINDA_REGISTRANDO);
+            default -> tratarInicio(empresa, numeroCliente, texto);
         }
     }
 

@@ -213,3 +213,114 @@ describe('EmpresaFormComponent, reserva automatica pelo bot', () => {
     expect(fixture.componentInstance.erroReservaAutomatica()).toBe('');
   });
 });
+
+describe('EmpresaFormComponent, responsaveis da reuniao da Gamb', () => {
+  function montarGamb(ramo: string, api: Record<string, unknown> = {}) {
+    TestBed.configureTestingModule({
+      imports: [EmpresaFormComponent],
+      providers: [
+        provideRouter([]),
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ sessao: 'gamb_atendente' }) } } },
+        {
+          provide: EmpresaService,
+          useValue: {
+            buscarPorSessao: () =>
+              of({
+                nome: 'Atendente Gamb',
+                sessaoWhatsapp: 'gamb_atendente',
+                ramoDeAtuacao: ramo,
+                googleCalendarId: 'gamb@group.calendar.google.com',
+                emailsResponsaveisReuniao: ['ana@gamb.com.br', 'leo@gamb.com.br'],
+                urlsGaleria: [],
+                modulosAtivos: []
+              }),
+            ...api
+          }
+        },
+        { provide: WhatsappConnectionService, useValue: { consultarStatus: () => NEVER, iniciar: () => NEVER } },
+        { provide: AuthService, useValue: mockAuth }
+      ]
+    });
+    const fixture = TestBed.createComponent(EmpresaFormComponent);
+    fixture.detectChanges();
+    return fixture;
+  }
+
+  it('mostra o campo com os e-mails salvos na empresa interna da atendente', () => {
+    const fixture = montarGamb('ATENDENTE_GAMB');
+    const campo = (fixture.nativeElement as HTMLElement).querySelector<HTMLTextAreaElement>('#empresa-responsaveis');
+
+    expect(campo).not.toBeNull();
+    expect(campo?.value).toBe('ana@gamb.com.br\nleo@gamb.com.br');
+  });
+
+  it('nao mostra o campo nas empresas de outros ramos', () => {
+    const fixture = montarGamb('locacao');
+
+    expect((fixture.nativeElement as HTMLElement).querySelector('#empresa-responsaveis')).toBeNull();
+  });
+
+  it('envia a lista de e-mails no PUT do admin', () => {
+    const atualizarPeloAdmin = jasmine.createSpy('atualizarPeloAdmin').and.returnValue(of({}));
+    const fixture = montarGamb('ATENDENTE_GAMB', { atualizarPeloAdmin });
+    fixture.componentInstance.form.patchValue({ emailsResponsaveisReuniao: 'ana@gamb.com.br, novo@gamb.com.br\nleo@gamb.com.br' });
+
+    fixture.componentInstance.salvar();
+
+    const [, dto] = atualizarPeloAdmin.calls.mostRecent().args;
+    expect(dto.emailsResponsaveisReuniao).toEqual(['ana@gamb.com.br', 'novo@gamb.com.br', 'leo@gamb.com.br']);
+  });
+
+  it('lista vazia vai como lista vazia para desligar o agendamento', () => {
+    const atualizarPeloAdmin = jasmine.createSpy('atualizarPeloAdmin').and.returnValue(of({}));
+    const fixture = montarGamb('ATENDENTE_GAMB', { atualizarPeloAdmin });
+    fixture.componentInstance.form.patchValue({ emailsResponsaveisReuniao: '' });
+
+    fixture.componentInstance.salvar();
+
+    expect(atualizarPeloAdmin.calls.mostRecent().args[1].emailsResponsaveisReuniao).toEqual([]);
+  });
+
+  it('e-mail invalido bloqueia o envio e acende o aviso do campo', () => {
+    const atualizarPeloAdmin = jasmine.createSpy('atualizarPeloAdmin').and.returnValue(of({}));
+    const fixture = montarGamb('ATENDENTE_GAMB', { atualizarPeloAdmin });
+    fixture.componentInstance.form.patchValue({ emailsResponsaveisReuniao: 'ana@gamb.com.br\nnao-e-email' });
+
+    fixture.componentInstance.salvar();
+    fixture.detectChanges();
+
+    expect(atualizarPeloAdmin).not.toHaveBeenCalled();
+    expect(fixture.componentInstance.form.controls.emailsResponsaveisReuniao.invalid).toBeTrue();
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Há um e-mail inválido na lista.');
+  });
+
+  it('mais de 10 e-mails bloqueia o envio e mostra o aviso de excesso', () => {
+    const atualizarPeloAdmin = jasmine.createSpy('atualizarPeloAdmin').and.returnValue(of({}));
+    const fixture = montarGamb('ATENDENTE_GAMB', { atualizarPeloAdmin });
+    const onze = Array.from({ length: 11 }, (_, i) => `pessoa${i}@gamb.com.br`).join(',');
+    fixture.componentInstance.form.patchValue({ emailsResponsaveisReuniao: onze });
+
+    fixture.componentInstance.salvar();
+    fixture.detectChanges();
+
+    expect(atualizarPeloAdmin).not.toHaveBeenCalled();
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Use no máximo 10 e-mails.');
+  });
+
+  it('exatamente 10 e-mails e aceito', () => {
+    const fixture = montarGamb('ATENDENTE_GAMB');
+    const dez = Array.from({ length: 10 }, (_, i) => `pessoa${i}@gamb.com.br`).join(',');
+    fixture.componentInstance.form.patchValue({ emailsResponsaveisReuniao: dez });
+
+    expect(fixture.componentInstance.form.controls.emailsResponsaveisReuniao.errors).toBeNull();
+  });
+
+  it('empresa de outro ramo nao envia a lista no PUT', () => {
+    const atualizarPeloAdmin = jasmine.createSpy('atualizarPeloAdmin').and.returnValue(of({}));
+    const fixture = montarGamb('locacao', { atualizarPeloAdmin });
+
+    fixture.componentInstance.salvar();
+
+    expect('emailsResponsaveisReuniao' in atualizarPeloAdmin.calls.mostRecent().args[1]).toBeFalse();
+  });
+});

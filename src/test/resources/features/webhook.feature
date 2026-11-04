@@ -53,3 +53,27 @@ Funcionalidade: Webhook WhatsApp tipado
     E a saída de log deve conter "***3333"
     E a saída de log não deve conter "5511955553333"
     E a saída de log não deve conter "Quero alugar o salao para sabado"
+
+  Cenário: primeira mensagem na sessão da atendente da Gamb recebe o menu de dúvida e reunião
+    Dado uma empresa persistida com sessão "sessao_gamb_atendente" e ramo "ATENDENTE_GAMB"
+    Quando eu envio POST /webhook/whatsapp com o WhatsappWebhookDTO:
+      | session | sessao_gamb_atendente |
+      | type    | chat                  |
+      | fromMe  | false                 |
+      | from    | 5543911112222@c.us    |
+      | body    | Oi                    |
+    Então o status HTTP deve ser 200
+    E a FactoryModulo deve ter resolvido o ramo "ATENDENTE_GAMB"
+    E a mensagem enviada ao cliente deve conter "Marcar reunião com a equipe"
+
+  Cenário: sessão de teste da Gamb sem número autorizado responde a mensagem fixa e roda nenhum módulo
+    Dado uma empresa persistida com sessão "sessao_gamb_teste" e ramo "TESTE_MODULOS"
+    Quando eu envio POST /webhook/whatsapp com o WhatsappWebhookDTO:
+      | session | sessao_gamb_teste       |
+      | type    | chat                    |
+      | fromMe  | false                   |
+      | from    | 5543933334444@c.us      |
+      | body    | /modulo teste-virtual oi |
+    Então o status HTTP deve ser 200
+    E a FactoryModulo deve ter resolvido o ramo "TESTE_MODULOS"
+    E a mensagem enviada ao cliente deve conter "Não há número autorizado"

@@ -1,6 +1,6 @@
 import { Component, DestroyRef, NgZone, OnInit, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormArray, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormArray, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { environment } from '../../../../environments/environment';
 import { mensagemHttp } from '../../../core/interceptors/auth.interceptor';
@@ -10,6 +10,26 @@ import { ConexaoWhatsappComponent } from '../../../shared/components/conexao-wha
 import { EmpresaView, MAX_URLS_GALERIA, MODULOS_DISPONIVEIS } from '../../../shared/models/empresa.models';
 
 declare var cloudinary: any;
+
+const PADRAO_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const RAMO_ATENDENTE_GAMB = 'ATENDENTE_GAMB';
+
+function separarEmails(texto: string | null | undefined): string[] {
+  return (texto ?? '')
+    .split(/[\s,;]+/)
+    .map((email) => email.trim())
+    .filter((email) => email.length > 0);
+}
+
+const MAX_EMAILS_RESPONSAVEIS = 10;
+
+function emailsValidos(controle: AbstractControl): ValidationErrors | null {
+  const emails = separarEmails(controle.value as string | null);
+  if (emails.length > MAX_EMAILS_RESPONSAVEIS) {
+    return { excessoEmails: true };
+  }
+  return emails.some((email) => !PADRAO_EMAIL.test(email)) ? { emailInvalido: true } : null;
+}
 
 @Component({
   selector: 'app-empresa-form',
@@ -55,6 +75,7 @@ export class EmpresaFormComponent implements OnInit {
     linkFotoPrincipal: [''],
     urlsGaleria: this.fb.nonNullable.array([this.fb.nonNullable.control('')]),
     linkGaleria: [''],
+    emailsResponsaveisReuniao: ['', emailsValidos],
     modulos: this.fb.group(
       Object.fromEntries(MODULOS_DISPONIVEIS.map((modulo) => [modulo.codigo, this.fb.control(false)]))
     )
@@ -62,6 +83,10 @@ export class EmpresaFormComponent implements OnInit {
 
   get urlsGaleria(): FormArray {
     return this.form.controls.urlsGaleria;
+  }
+
+  ehAtendenteGamb(): boolean {
+    return this.form.controls.ramoDeAtuacao.value === RAMO_ATENDENTE_GAMB;
   }
 
   get galeriaCheia(): boolean {
@@ -115,7 +140,8 @@ export class EmpresaFormComponent implements OnInit {
           linkFotoPrincipal: valor.linkFotoPrincipal || undefined,
           urlsGaleria,
           linkGaleria: (valor.linkGaleria ?? '').trim(),
-          modulosAtivos
+          modulosAtivos,
+          ...(this.ehAtendenteGamb() ? { emailsResponsaveisReuniao: separarEmails(valor.emailsResponsaveisReuniao) } : {})
         })
         .subscribe({
           next: () => {
@@ -198,7 +224,8 @@ export class EmpresaFormComponent implements OnInit {
       permiteReservaAutomatica: empresa.permiteReservaAutomatica ?? false,
       permitePrevisaoTempo: empresa.permitePrevisaoTempo ?? false,
       linkFotoPrincipal: empresa.linkFotoPrincipal ?? '',
-      linkGaleria: empresa.linkGaleria ?? ''
+      linkGaleria: empresa.linkGaleria ?? '',
+      emailsResponsaveisReuniao: (empresa.emailsResponsaveisReuniao ?? []).join('\n')
     });
     this.preencherGaleria(empresa.urlsGaleria);
     this.imagemSelecionada.set(empresa.linkFotoPrincipal ?? empresa.urlsGaleria?.[0] ?? '');

@@ -336,3 +336,113 @@ Cenário: cliente confirma reserva
 - Dado um cliente com reserva em LEMBRETE_ENVIADO respondendo "Sim, confirmo"
 - Quando o webhook processa a mensagem
 - Então a reserva passa a CONFIRMADA_PELO_CLIENTE e o cliente recebe mensagem de confirmação
+
+### WPP-12 Sessão da atendente da Gamb no WhatsApp
+
+O sistema deve entregar a mensagem da empresa interna de ramo reservado `ATENDENTE_GAMB` à `AtendenteGambStrategy`, sem mudar o roteamento nem as strategies das empresas clientes (WPP-01). Todo contato dessa sessão é tratado como cliente. A primeira mensagem, e `0` em qualquer passo, abre o menu "Tirar uma dúvida" (`1`) ou "Marcar reunião" (`2`). Na dúvida, o bot responde pelo Suporte de `AssistenteTutoriaService`, só com a base de conhecimento e os avisos ativos, sem enviar ao modelo nem devolver dado de empresa e sem executar ação no sistema. Mensagem fora do escopo recebe a recusa padrão do Suporte seguida de "Para consultar os dados da sua empresa, use o painel do app.". Mensagem filtrada, recusada ou respondida pelo bot devolve 200 ao webhook. O número sai mascarado e o texto só pelo tamanho no log (WPP-06).
+
+Contrato: `especificacao/back/paths/webhook-whatsapp.yaml`
+Prova: `src/test/java/com/example/demo/strategy/AtendenteGambStrategyTest.java`, `src/test/java/com/example/demo/strategy/GambStrategiesLogTest.java`, `src/test/resources/features/webhook.feature`, `src/test/resources/features/roteamento-strategy.feature`
+
+Cenário: primeira mensagem abre o menu
+
+- Dado uma empresa persistida com a sessão da atendente e ramo `ATENDENTE_GAMB`
+- Quando chega POST `/webhook/whatsapp` com `type=chat` e texto "Oi"
+- Então a API responde 200
+- E a `FactoryModulo` entrega a mensagem à `AtendenteGambStrategy`
+- E o bot responde o menu de dúvida e reunião
+
+Cenário: cliente tira dúvida no número da Gamb
+
+- Dado o cliente na opção de dúvida da sessão da atendente
+- Quando pergunta como conectar o WhatsApp
+- Então o bot responde com o passo a passo da base de conhecimento
+
+Cenário: cliente pede dado de empresa no número da Gamb
+
+- Dado o cliente na opção de dúvida da sessão da atendente
+- Quando pede preços, reservas ou dados de uma empresa
+- Então o bot responde a recusa padrão do Suporte e orienta a usar o painel
+- E nenhum dado de empresa é consultado nem devolvido
+
+Cenário: strategies das empresas não mudam
+
+- Dado as strategies carregadas no contexto Spring
+- Quando a `FactoryModulo` busca o ramo "Locação"
+- Então a strategy retornada continua a `LocacaoStrategy`
+
+### WPP-13 Reunião com a equipe da Gamb pelo WhatsApp
+
+O sistema deve, na sessão da atendente, deixar o cliente marcar reunião com a equipe informando o motivo (`AJUSTE` ou `NOVA_INOVACAO`), a data (DD-MM-AAAA, de hoje até o limite de dias à frente do funcionamento e em dia aberto) e o horário (HH:MM, entre os horários livres) e confirmando o resumo. Com o horário livre na Google Agenda da empresa interna, conferido de novo na confirmação, o sistema cria o evento pelo `ServicoReserva` com o motivo no título, o número do cliente mascarado na descrição e todos os `emailsResponsaveisReuniao` daquele momento como convidados, com convite por e-mail, e responde "Reunião marcada para <data> às <horário>.". Com o horário ocupado, o bot oferece os horários livres e não cria evento; sem horário livre na data, pede outra data. Sem responsáveis cadastrados, sem agenda configurada ou com a agenda desconectada ou falhando, o bot informa que o agendamento está indisponível, não cria evento e mantém a dúvida funcionando. Ao mudar a lista de responsáveis (EMP-14), o sistema atualiza só os convidados das reuniões futuras marcadas pelo atendente (entram os e-mails novos, saem os removidos) e não cancela nem remarca reunião; reunião cancelada na agenda é ignorada. O e-mail dos responsáveis não aparece em log.
+
+Contrato: `especificacao/back/paths/webhook-whatsapp.yaml`, `especificacao/back/paths/empresas-admin.yaml`
+Prova: `src/test/java/com/example/demo/strategy/AtendenteGambStrategyTest.java`, `src/test/java/com/example/demo/servico/ServicoReservaReuniaoTest.java`, `src/test/java/com/example/demo/strategy/GambStrategiesLogTest.java`, `src/test/java/com/example/demo/controller/ControllerEmpresaTest.java`
+
+Cenário: cliente marca reunião em horário livre
+
+- Dado responsáveis cadastrados e a Google Agenda da Gamb conectada
+- Quando o cliente escolhe marcar reunião, informa motivo, data e horário livres e confirma o resumo
+- Então o evento é criado com os responsáveis convidados por e-mail
+- E o bot responde com a data e o horário da reunião
+
+Cenário: cliente escolhe horário ocupado
+
+- Dado um horário já ocupado na Google Agenda da Gamb
+- Quando o cliente informa esse horário, ou o horário fica ocupado antes da confirmação
+- Então o bot oferece outros horários
+- E nenhum evento é criado
+
+Cenário: agendamento indisponível
+
+- Dado a lista de responsáveis vazia, ou a agenda desconectada
+- Quando o cliente escolhe marcar reunião
+- Então o bot informa que o agendamento está indisponível e nenhum evento é criado
+- E a opção de dúvida continua respondendo
+
+Cenário: lista de responsáveis muda
+
+- Dado reuniões futuras marcadas pelo atendente
+- Quando o admin salva uma nova lista de responsáveis
+- Então só os convidados dessas reuniões são atualizados
+- E título, data e horário ficam como estão e nada é cancelado
+- E nenhum e-mail aparece em log
+
+### WPP-14 Limite diário de mensagens da atendente
+
+O sistema deve contar as mensagens de cada número por dia (fuso de Brasília) na sessão da atendente, com teto configurado em `gamb.atendente.limite-diario-mensagens` (padrão 30). Acima do teto, o bot responde "Você atingiu o limite de mensagens de hoje. Volte amanhã para continuarmos a conversa." e não chama o modelo nem a agenda. A contagem recomeça no dia seguinte.
+
+Contrato: `especificacao/back/paths/webhook-whatsapp.yaml`
+Prova: `src/test/java/com/example/demo/servico/LimiteDiarioMensagensTest.java`, `src/test/java/com/example/demo/strategy/AtendenteGambStrategyTest.java`
+
+Cenário: cliente passa do limite diário
+
+- Dado um número que atingiu o limite diário
+- Quando envia outra mensagem à sessão da atendente
+- Então o bot responde a mensagem fixa
+- E o modelo e a agenda não são chamados
+
+### WPP-15 Sessão de teste de módulos da Gamb
+
+O sistema deve entregar a mensagem da empresa interna de ramo reservado `TESTE_MODULOS` à `TesteModulosStrategy`, que só atende números da lista `gamb.teste-modulos.numeros-autorizados`. `/modulos` lista o nome e a descrição de cada `ModuloExperimental` registrado; `/modulo <nome> <texto>` executa o módulo e devolve a resposta simulada; outro texto recebe a ajuda dos comandos; módulo inexistente ou sem texto não executa nada. Número fora da lista recebe "Este número não está autorizado a usar o bot de teste de módulos." e lista vazia recebe "Não há número autorizado para o bot de teste de módulos. Nenhum módulo foi executado."; em ambos nenhum módulo roda. O módulo experimental responde de forma simulada e não grava em dados de empresas reais. O primeiro módulo registrado é `teste-virtual`, que reaproveita o modo `TESTE_VIRTUAL` do assistente. A mensagem devolve 200 ao webhook e o número sai mascarado no log, sem o texto do comando.
+
+Contrato: `especificacao/back/paths/webhook-whatsapp.yaml`
+Prova: `src/test/java/com/example/demo/strategy/TesteModulosStrategyTest.java`, `src/test/java/com/example/demo/strategy/experimental/RegistroModulosExperimentaisTest.java`, `src/test/java/com/example/demo/strategy/GambStrategiesLogTest.java`, `src/test/resources/features/webhook.feature`, `src/test/resources/features/roteamento-strategy.feature`
+
+Cenário: número autorizado lista os módulos
+
+- Dado um número autorizado na sessão de teste
+- Quando envia `/modulos`
+- Então o bot responde com o nome e a descrição de cada módulo registrado
+
+Cenário: número autorizado executa um módulo
+
+- Dado um módulo experimental registrado
+- Quando o número autorizado envia `/modulo <nome> <texto>`
+- Então o bot responde com a resposta simulada do módulo, sem gravar em empresa real
+
+Cenário: número não autorizado
+
+- Dado um número fora da lista de autorizados, ou a lista vazia
+- Quando envia qualquer mensagem à sessão de teste
+- Então a API responde 200
+- E o bot responde a mensagem fixa e nenhum módulo é executado
