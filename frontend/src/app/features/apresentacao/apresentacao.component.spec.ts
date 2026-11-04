@@ -82,4 +82,37 @@ describe('ApresentacaoComponent', () => {
     expect(raiz.querySelector('#como')).not.toBeNull();
     expect(raiz.innerHTML).not.toContain('[CONTATO DA GAMB]');
   });
+
+  it('mostra Quem somos, Hoje e o que vem e Contato', () => {
+    const { fixture } = montar(false);
+    const raiz: HTMLElement = fixture.nativeElement;
+    const texto = raiz.textContent ?? '';
+
+    expect(raiz.querySelector('#quem-somos')).not.toBeNull();
+    expect(raiz.querySelector('#hoje')).not.toBeNull();
+    expect(raiz.querySelector('#contato')).not.toBeNull();
+    expect(texto).toContain('Funcionando');
+    expect(texto).toContain('Em desenvolvimento');
+    expect(texto).toContain('sem guardar informação de ninguém');
+  });
+
+  it('nao mostra preco nem nome de cliente', () => {
+    const { fixture } = montar(false);
+    const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(texto).not.toContain('R$');
+  });
+
+  it('links de WhatsApp abrem wa.me em nova aba e o numero aparece', () => {
+    const { fixture } = montar(false);
+    const raiz: HTMLElement = fixture.nativeElement;
+    const links = Array.from(raiz.querySelectorAll<HTMLAnchorElement>('a'))
+      .filter(a => a.getAttribute('href') === 'https://wa.me/5543998165047');
+
+    expect(links.length).toBe(3);
+    links.forEach(a => {
+      expect(a.getAttribute('target')).toBe('_blank');
+      expect(a.getAttribute('rel')).toContain('noopener');
+    });
+    expect(raiz.textContent).toContain('(43) 99816-5047');
+  });
 });

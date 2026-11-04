@@ -5,7 +5,8 @@
       "logoAlt": "Logo gamb"
     },
     "topo": {
-      "entrar": "Entrar"
+      "entrar": "Entrar",
+      "whatsapp": "Falar no WhatsApp"
     },
     "chat": {
       "dica": "Para mais informações, fale com o chat agora",
@@ -51,6 +52,25 @@
         }
       ]
     },
+    "quemSomos": {
+      "rotulo": "Quem somos",
+      "titulo": "Uma startup de desenvolvedores que cresce junto com o seu negócio",
+      "texto": "A Gamb é um grupo pequeno de desenvolvedores. Levamos tecnologia a quem ainda não a aproveita, trabalhando sobre o que o seu negócio já usa, sem empilhar aplicativos novos.",
+      "itens": [
+        {
+          "titulo": "Assinatura com acompanhamento",
+          "texto": "Plano de assinatura e evolução contínua conforme a necessidade do seu negócio."
+        },
+        {
+          "titulo": "Poucos clientes por vez",
+          "texto": "Atendemos de perto e crescemos junto com cada negócio, sem promessa de vaga."
+        },
+        {
+          "titulo": "Tudo começa pelo WhatsApp",
+          "texto": "A conversa é o primeiro passo: sem formulário e sem cadastro."
+        }
+      ]
+    },
     "beneficios": {
       "rotulo": "Por que o gamb",
       "titulo": "Feito para quem toca o negócio pelo celular",
@@ -73,12 +93,66 @@
         }
       ]
     },
+    "hoje": {
+      "rotulo": "Hoje e o que vem",
+      "titulo": "O que já funciona e o que estamos construindo",
+      "hojeTitulo": "Hoje",
+      "hojeSelo": "Funcionando",
+      "hojeItens": [
+        {
+          "titulo": "",
+          "texto": "Assistente virtual no WhatsApp, com conversa humanizada feita por inteligência artificial"
+        },
+        {
+          "titulo": "",
+          "texto": "Controle de reserva automático, conferido na Google Agenda"
+        },
+        {
+          "titulo": "",
+          "texto": "Fotos, preços, regras e avisos que você mesmo escolhe"
+        },
+        {
+          "titulo": "",
+          "texto": "Painel no celular para ajustar o atendimento de onde estiver"
+        }
+      ],
+      "vemTitulo": "O que vem",
+      "vemSelo": "Em desenvolvimento",
+      "vemItens": [
+        {
+          "titulo": "",
+          "texto": "Nova conexão com outras funcionalidades do WhatsApp do cliente"
+        },
+        {
+          "titulo": "",
+          "texto": "Integração com as ferramentas que você já usa e automações"
+        },
+        {
+          "titulo": "",
+          "texto": "IoT, levando o atendimento também para o espaço físico"
+        },
+        {
+          "titulo": "Análise das câmeras de segurança que você já tem.",
+          "texto": "Uma ferramenta de apoio à decisão: mede quanto cada cliente espera, quem já foi atendido e o tempo médio de atendimento, e ajuda a definir uma meta de espera. Ela analisa sem guardar informação de ninguém, para melhorar a eficiência do estabelecimento e a satisfação do cliente."
+        }
+      ],
+      "nota": "Cada solução nova é avaliada em conversa com você, caso a caso, e o leque cresce conforme a necessidade dos clientes. Não há prazo prometido."
+    },
+    "contato": {
+      "rotulo": "Contato",
+      "titulo": "Vamos conversar?",
+      "texto": "O plano de assinatura é combinado conforme o seu negócio. Chame a Gamb no WhatsApp e conte o que você precisa.",
+      "botao": "Falar com a Gamb no WhatsApp",
+      "whatsapp": "5543998165047",
+      "whatsappTexto": "(43) 99816-5047"
+    },
     "chamada": {
       "titulo": "Já é cliente? Entre no painel.",
       "entrar": "Entrar"
     },
     "rodape": {
-      "texto": "© gamb · Painel de atendimento no WhatsApp"
+      "texto": "© gamb · Painel de atendimento no WhatsApp",
+      "whatsapp": "WhatsApp"
     }
   }
 }
