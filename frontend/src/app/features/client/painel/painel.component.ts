@@ -66,7 +66,7 @@ export class PainelComponent {
   readonly editando = signal(false);
   readonly cidade = signal('');
   readonly previsaoAtiva = signal(false);
-  readonly permitePrevisaoTempo = signal(true);
+  readonly permitePrevisaoTempo = signal(false);
   readonly salvando = signal(false);
   readonly erroCidade = signal('');
   readonly sucesso = signal(false);
@@ -148,7 +148,7 @@ export class PainelComponent {
   }
 
   private buscarPrevisao(): void {
-    if (this.cidadeSalva().trim() === '' || !this.ativaSalva()) {
+    if (!this.permitePrevisaoTempo() || this.cidadeSalva().trim() === '' || !this.ativaSalva()) {
       this.previsao.set(null);
       this.carregando.set(false);
       return;

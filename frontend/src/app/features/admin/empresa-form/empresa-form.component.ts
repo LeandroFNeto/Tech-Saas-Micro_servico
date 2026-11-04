@@ -55,6 +55,8 @@ export class EmpresaFormComponent implements OnInit {
   readonly erroReservaAutomatica = signal('');
   readonly sucesso = signal('');
   readonly sucessoSenha = signal('');
+  readonly confirmacaoAberta = signal(false);
+  readonly excluindo = signal(false);
   readonly imagemSelecionada = signal('');
 
   readonly formResetSenha = this.fb.nonNullable.group({
@@ -210,6 +212,33 @@ export class EmpresaFormComponent implements OnInit {
       error: (err) => {
         this.erro.set(mensagemHttp(err));
         this.salvandoSenha.set(false);
+      }
+    });
+  }
+
+  abrirConfirmacaoExclusao(): void {
+    this.confirmacaoAberta.set(true);
+  }
+
+  cancelarExclusao(): void {
+    this.confirmacaoAberta.set(false);
+  }
+
+  confirmarExclusao(): void {
+    if (this.excluindo()) {
+      return;
+    }
+    this.excluindo.set(true);
+    this.empresasApi.excluir(this.sessaoOriginal()).subscribe({
+      next: () => {
+        this.excluindo.set(false);
+        this.confirmacaoAberta.set(false);
+        void this.router.navigateByUrl('/admin');
+      },
+      error: (err) => {
+        this.excluindo.set(false);
+        this.confirmacaoAberta.set(false);
+        this.erro.set(mensagemHttp(err));
       }
     });
   }

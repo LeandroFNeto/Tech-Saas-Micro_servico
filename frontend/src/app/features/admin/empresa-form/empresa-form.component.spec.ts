@@ -1,6 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
-import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
+import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
 import { NEVER, of, throwError } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
 import { EmpresaService } from '../../../core/services/empresa.service';
@@ -322,5 +322,106 @@ describe('EmpresaFormComponent, responsaveis da reuniao da Gamb', () => {
     fixture.componentInstance.salvar();
 
     expect('emailsResponsaveisReuniao' in atualizarPeloAdmin.calls.mostRecent().args[1]).toBeFalse();
+  });
+});
+
+describe('EmpresaFormComponent, recursos e exclusao', () => {
+  function montar(sessao: string, api: Record<string, unknown> = {}, superAdmin = true, modulosAtivos: string[] = []) {
+    TestBed.configureTestingModule({
+      imports: [EmpresaFormComponent],
+      providers: [
+        provideRouter([]),
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ sessao }) } } },
+        {
+          provide: EmpresaService,
+          useValue: {
+            buscarPorSessao: () =>
+              of({
+                nome: 'Quadra Teste',
+                sessaoWhatsapp: 'quadra',
+                ramoDeAtuacao: 'locacao',
+                permitePrevisaoTempo: true,
+                urlsGaleria: [],
+                modulosAtivos
+              }),
+            ...api
+          }
+        },
+        { provide: WhatsappConnectionService, useValue: { consultarStatus: () => NEVER, iniciar: () => NEVER } },
+        { provide: AuthService, useValue: { ...mockAuth, isSuperAdmin: () => superAdmin } }
+      ]
+    });
+    const fixture = TestBed.createComponent(EmpresaFormComponent);
+    fixture.detectChanges();
+    return fixture;
+  }
+
+  function botao(fixture: ReturnType<typeof montar>, texto: string): HTMLButtonElement | undefined {
+    const botoes: HTMLButtonElement[] = Array.from(fixture.nativeElement.querySelectorAll('button'));
+    return botoes.find((b) => b.textContent?.trim() === texto);
+  }
+
+  it('ligar a IA envia IA_GEMINI nos modulos do PUT', () => {
+    const atualizarPeloAdmin = jasmine.createSpy('atualizarPeloAdmin').and.returnValue(of({}));
+    const fixture = montar('quadra', { atualizarPeloAdmin });
+    fixture.componentInstance.form.controls.modulos.get('IA_GEMINI')?.setValue(true);
+
+    fixture.componentInstance.salvar();
+
+    expect(atualizarPeloAdmin.calls.mostRecent().args[1].modulosAtivos).toContain('IA_GEMINI');
+  });
+
+  it('desligar a IA tira IA_GEMINI dos modulos do PUT', () => {
+    const atualizarPeloAdmin = jasmine.createSpy('atualizarPeloAdmin').and.returnValue(of({}));
+    const fixture = montar('quadra', { atualizarPeloAdmin }, true, ['IA_GEMINI', 'VER_FOTOS']);
+    fixture.componentInstance.form.controls.modulos.get('IA_GEMINI')?.setValue(false);
+
+    fixture.componentInstance.salvar();
+
+    expect(atualizarPeloAdmin.calls.mostRecent().args[1].modulosAtivos).toEqual(['VER_FOTOS']);
+  });
+
+  it('carrega os interruptores de IA e previsao ligados', () => {
+    const fixture = montar('quadra', {}, true, ['IA_GEMINI']);
+    expect(fixture.componentInstance.form.controls.modulos.get('IA_GEMINI')?.value).toBeTrue();
+    expect(fixture.componentInstance.form.controls.permitePrevisaoTempo.value).toBeTrue();
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Recursos da empresa');
+  });
+
+  it('super admin exclui pela zona do fim da pagina e volta para o painel', () => {
+    const excluir = jasmine.createSpy('excluir').and.returnValue(of(undefined));
+    const fixture = montar('quadra', { excluir });
+    const navegar = spyOn(TestBed.inject(Router), 'navigateByUrl').and.resolveTo(true);
+
+    botao(fixture, 'Excluir empresa')!.click();
+    fixture.detectChanges();
+    expect(excluir).not.toHaveBeenCalled();
+    botao(fixture, 'Confirmar exclusão')!.click();
+
+    expect(excluir).toHaveBeenCalledWith('quadra');
+    expect(navegar).toHaveBeenCalledWith('/admin');
+  });
+
+  it('cancelar a confirmacao nao exclui', () => {
+    const excluir = jasmine.createSpy('excluir').and.returnValue(of(undefined));
+    const fixture = montar('quadra', { excluir });
+
+    botao(fixture, 'Excluir empresa')!.click();
+    fixture.detectChanges();
+    botao(fixture, 'Cancelar')!.click();
+    fixture.detectChanges();
+
+    expect(excluir).not.toHaveBeenCalled();
+    expect(botao(fixture, 'Confirmar exclusão')).toBeUndefined();
+  });
+
+  it('quem nao e super admin nao ve a exclusao', () => {
+    const fixture = montar('quadra', {}, false);
+    expect(botao(fixture, 'Excluir empresa')).toBeUndefined();
+  });
+
+  it('cadastro novo nao mostra a exclusao', () => {
+    const fixture = montar('nova');
+    expect(botao(fixture, 'Excluir empresa')).toBeUndefined();
   });
 });

@@ -53,29 +53,15 @@ describe('DashboardComponent', () => {
     discardPeriodicTasks();
   }));
 
-  it('abre modal de exclusão e confirma exclusão da empresa', fakeAsync(() => {
-    const empresasApi = TestBed.inject(EmpresaService);
-    spyOn(empresasApi, 'excluir').and.returnValue(of(undefined));
-    spyOn(empresasApi, 'listar').and.returnValue(of([empresa]));
-
+  it('lista só com o botão Editar, sem botão de excluir', fakeAsync(() => {
     fixture.detectChanges();
     tick(0);
     fixture.detectChanges();
 
-    const btnExcluir: HTMLButtonElement | null = fixture.nativeElement.querySelector('button[aria-label="Excluir Casa de Festas"]');
-    expect(btnExcluir).toBeTruthy();
-    btnExcluir!.click();
-    fixture.detectChanges();
-
-    expect(fixture.nativeElement.textContent).toContain('Excluir empresa');
-
-    const botoes: HTMLButtonElement[] = Array.from(fixture.nativeElement.querySelectorAll('button'));
-    const btnConfirmar = botoes.find((b) => b.textContent?.includes('Confirmar exclusão'));
-    expect(btnConfirmar).toBeTruthy();
-    btnConfirmar!.click();
-    fixture.detectChanges();
-
-    expect(empresasApi.excluir).toHaveBeenCalledWith('casa');
+    const raiz: HTMLElement = fixture.nativeElement;
+    expect(raiz.querySelector('a[aria-label="Editar Casa de Festas"]')).toBeTruthy();
+    expect(raiz.querySelector('button[aria-label="Excluir Casa de Festas"]')).toBeNull();
+    expect(raiz.textContent).not.toContain('Excluir');
     discardPeriodicTasks();
   }));
 });

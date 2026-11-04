@@ -161,6 +161,11 @@ export const MODULOS_MENU_BOT: CatalogoMenuBot[] = [
 
 export const CATALOGO_MODULOS: CatalogoModulo[] = [
   {
+    codigo: 'IA_GEMINI',
+    label: 'Atendente virtual com IA',
+    descricao: 'Responde saudações e dúvidas com inteligência artificial'
+  },
+  {
     codigo: 'VER_FOTOS',
     label: 'Fotos do espaço',
     descricao: 'Envia até 5 fotos cadastradas quando o cliente pedir'
