@@ -1,18 +1,20 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { Component, inject } from '@angular/core';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { ChatFlutuanteComponent } from '../chat-flutuante/chat-flutuante.component';
 import contentData from '../../../../../../especificacao/front/shell.content.json';
 
 const FOCO = 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent-400';
 
 @Component({
   selector: 'app-shell',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, NgTemplateOutlet],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, NgTemplateOutlet, ChatFlutuanteComponent],
   templateUrl: './shell.component.html'
 })
 export class ShellComponent {
   private readonly authService = inject(AuthService);
+  private readonly router = inject(Router);
 
   readonly conteudo = contentData.shell;
 
@@ -24,6 +26,10 @@ export class ShellComponent {
 
   get admin(): boolean {
     return this.authService.sessao()?.papel === 'ADMIN';
+  }
+
+  get mostrarChat(): boolean {
+    return !this.admin && !this.router.url.startsWith('/cliente/tutoriais');
   }
 
   get nomeUsuario(): string {

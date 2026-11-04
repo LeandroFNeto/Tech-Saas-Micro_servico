@@ -100,7 +100,7 @@
       "conteiner": "mx-auto max-w-[1120px] px-[clamp(16px,5vw,48px)]",
       "foco": "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-400",
       "cabecalho": {
-        "fundo": "bg-brand-900 bg-[radial-gradient(circle_at_50%_0%,rgba(247,147,30,0.28),transparent_52%)] text-white",
+        "fundo": "bg-brand-900 bg-[radial-gradient(circle_at_50%_0%,rgba(247,147,30,0.10),transparent_52%)] md:bg-[radial-gradient(circle_at_50%_0%,rgba(247,147,30,0.28),transparent_52%)] text-white",
         "topo": "flex items-center justify-between gap-3 py-4",
         "marca": "flex items-center gap-3",
         "logo": "h-11 w-11 object-contain",
@@ -119,8 +119,8 @@
       },
       "celular": {
         "figura": "relative mx-auto min-w-0 max-w-full flex-[0_1_320px]",
-        "brilho": "pointer-events-none absolute -inset-6 rounded-[48px] bg-[radial-gradient(circle_at_50%_40%,rgba(247,147,30,0.35),transparent_70%)]",
-        "moldura": "relative rounded-[36px] border border-white/20 bg-[#0f0720] p-2.5 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.6),0_0_0_3px_rgba(255,140,66,0.25)]",
+        "brilho": "pointer-events-none absolute -inset-6 rounded-[48px] bg-[radial-gradient(circle_at_50%_40%,rgba(247,147,30,0.14),transparent_70%)] md:bg-[radial-gradient(circle_at_50%_40%,rgba(247,147,30,0.35),transparent_70%)]",
+        "moldura": "relative rounded-[36px] border border-white/20 bg-[#0f0720] p-2.5 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.6),0_0_0_3px_rgba(255,140,66,0.12)] md:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.6),0_0_0_3px_rgba(255,140,66,0.25)]",
         "tela": "overflow-hidden rounded-[27px] bg-white",
         "imagem": "block h-auto w-full",
         "legenda": "relative mt-4 text-center text-[13px] leading-[18px] text-brand-200"
@@ -145,7 +145,7 @@
         "texto": "mt-1.5 text-[15px] leading-6 text-brand-700"
       },
       "chamada": {
-        "fundo": "bg-brand-900 bg-[radial-gradient(circle_at_50%_100%,rgba(247,147,30,0.22),transparent_60%)] py-[clamp(40px,8vw,80px)] text-white",
+        "fundo": "bg-brand-900 bg-[radial-gradient(circle_at_50%_100%,rgba(247,147,30,0.08),transparent_60%)] md:bg-[radial-gradient(circle_at_50%_100%,rgba(247,147,30,0.22),transparent_60%)] py-[clamp(40px,8vw,80px)] text-white",
         "linha": "mx-auto flex max-w-[1120px] flex-wrap items-center justify-between gap-6 px-[clamp(16px,5vw,48px)]",
         "texto": "min-w-0 flex-[1_1_320px]",
         "titulo": "font-display text-[clamp(24px,4.5vw,34px)] font-semibold leading-[1.25]",

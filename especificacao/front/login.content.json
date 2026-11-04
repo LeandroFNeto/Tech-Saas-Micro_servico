@@ -31,6 +31,17 @@
     "erros": {
       "credenciaisInvalidas": "E-mail ou senha inválidos. Confira os dados e tente de novo."
     },
-    "voltar": "← Conhecer o gamb"
+    "voltar": "← Conhecer o gamb",
+    "chat": {
+      "titulo": "Fale com a Gamb",
+      "subtitulo": "Ajuda para entrar e dúvidas sobre a Gamb",
+      "saudacao": "Olá! Posso ajudar com o acesso ao painel ou contar um pouco sobre a Gamb.",
+      "sugestoes": [
+        "Como entro no painel?",
+        "Esqueci minha senha",
+        "Ainda não sou cliente, como falo com a Gamb?",
+        "Quem é a Gamb?"
+      ]
+    }
   }
 }

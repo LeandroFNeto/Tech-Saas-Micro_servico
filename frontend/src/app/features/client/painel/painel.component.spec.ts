@@ -7,6 +7,7 @@ import { EmpresaService } from '../../../core/services/empresa.service';
 import { PrevisaoService } from '../../../core/services/previsao.service';
 import { WhatsappConnectionService } from '../../../core/services/whatsapp-connection.service';
 import { PrevisaoDia, PrevisaoTempoResponse } from '../../../shared/models/previsao.models';
+import { AssistenteTutoriaService } from '../../../core/services/assistente-tutoria.service';
 import { PainelComponent } from './painel.component';
 
 function dia(data: string, sobrescrever: Partial<PrevisaoDia> = {}): PrevisaoDia {
@@ -58,7 +59,8 @@ describe('PainelComponent', () => {
         },
         { provide: WhatsappConnectionService, useValue: { consultarStatus: () => NEVER, iniciar: () => NEVER } },
         { provide: EmpresaService, useValue: { buscarPorSessao: () => of(empresa), atualizarPeloCliente } },
-        { provide: PrevisaoService, useValue: { buscar } }
+        { provide: PrevisaoService, useValue: { buscar } },
+        { provide: AssistenteTutoriaService, useValue: { conversarCliente: () => NEVER } }
       ]
     });
     const fixture = TestBed.createComponent(PainelComponent);

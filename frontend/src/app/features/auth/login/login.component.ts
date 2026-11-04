@@ -4,6 +4,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { mensagemHttp } from '../../../core/interceptors/auth.interceptor';
 import { AuthService } from '../../../core/services/auth.service';
+import { ChatFlutuanteComponent } from '../../../shared/components/chat-flutuante/chat-flutuante.component';
 import contentData from '../../../../../../especificacao/front/login.content.json';
 import designData from '../../../../../../especificacao/front/telas.design.json';
 
@@ -11,7 +12,7 @@ const EMAIL_GAMB = /^[a-zA-Z0-9._%+-]+@gamb\.com\.br$/;
 
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, ChatFlutuanteComponent],
   templateUrl: './login.component.html'
 })
 export class LoginComponent {

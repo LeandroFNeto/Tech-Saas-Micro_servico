@@ -17,6 +17,10 @@ export const CLIENT_ROUTES: Routes = [
       {
         path: 'automacao',
         loadComponent: () => import('./automacao/automacao.component').then((m) => m.AutomacaoComponent)
+      },
+      {
+        path: 'tutoriais',
+        loadComponent: () => import('./tutoriais/tutoriais.component').then((m) => m.TutoriaisComponent)
       }
     ]
   }

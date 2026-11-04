@@ -1,0 +1,86 @@
+<div class="overflow-hidden rounded-2xl border border-brand-200/80 bg-white shadow-sm">
+  <div class="flex items-center justify-between gap-3 bg-brand-900 px-4 py-3 text-white">
+    <div class="flex min-w-0 items-center gap-3">
+      <img src="logo-gamb.png" alt="" width="32" height="32" class="h-8 w-8 shrink-0 object-contain" />
+      <div class="min-w-0">
+        <h3 class="truncate text-sm font-bold">{{ titulo }}</h3>
+        <p class="truncate text-xs text-brand-200">{{ subtitulo }}</p>
+      </div>
+    </div>
+    @if (fechavel) {
+      <button
+        type="button"
+        (click)="fechar.emit()"
+        class="min-h-11 rounded-xl px-3 text-xs font-semibold text-white transition hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent-400"
+      >
+        Fechar
+      </button>
+    }
+  </div>
+
+  <div class="flex h-80 flex-col gap-3 overflow-y-auto bg-brand-50/20 p-4">
+    @for (msg of mensagens(); track $index) {
+      <div
+        class="flex max-w-[85%] flex-col rounded-2xl px-4 py-2.5 text-sm"
+        [class]="msg.origem === 'usuario' ? 'self-end bg-accent-500 text-brand-900' : 'self-start border border-brand-200/70 bg-white text-brand-900 shadow-sm'"
+      >
+        <span class="whitespace-pre-wrap leading-relaxed">{{ msg.texto }}</span>
+        <span
+          class="mt-1 text-[10px]"
+          [class]="msg.origem === 'usuario' ? 'self-end text-brand-700' : 'self-start text-brand-500'"
+        >
+          {{ msg.dataHora | date:'HH:mm' }}
+        </span>
+      </div>
+    }
+
+    @if (enviando()) {
+      <div class="flex items-center gap-2 self-start rounded-2xl border border-brand-200/70 bg-white px-4 py-2 text-xs text-brand-500 shadow-sm">
+        <span class="inline-block h-2 w-2 animate-ping rounded-full bg-accent-500"></span>
+        Processando resposta...
+      </div>
+    }
+
+    @if (erro()) {
+      <div class="rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-700">
+        {{ erro() }}
+      </div>
+    }
+  </div>
+
+  <div class="border-t border-brand-100 bg-white p-3">
+    @if (sugestoes().length > 0) {
+      <div class="mb-3 flex flex-wrap gap-1.5">
+        @for (sug of sugestoes(); track $index) {
+          <button
+            type="button"
+            (click)="usarSugestao(sug)"
+            class="rounded-full border border-brand-200 bg-brand-50/60 px-2.5 py-1 text-xs text-brand-700 transition hover:bg-brand-100 hover:text-brand-900"
+          >
+            {{ sug }}
+          </button>
+        }
+      </div>
+    }
+
+    <form class="flex items-center gap-2" (submit)="$event.preventDefault(); enviar()">
+      <input
+        type="text"
+        [(ngModel)]="mensagemInput"
+        name="mensagem"
+        maxlength="500"
+        placeholder="Escreva sua dúvida sobre o app..."
+        class="flex-1 rounded-xl border border-brand-200 px-3.5 py-2 text-base text-brand-900 placeholder:text-brand-400 focus:border-accent-500 focus:outline-none focus:ring-1 focus:ring-accent-500"
+        [disabled]="enviando()"
+      />
+      <button
+        type="button"
+        (click)="enviar()"
+        [disabled]="enviando() || !mensagemInput.trim()"
+        class="min-h-11 rounded-xl bg-accent-500 px-4 py-2 text-sm font-semibold text-brand-900 shadow-sm transition hover:bg-accent-400 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        Enviar
+      </button>
+    </form>
+  </div>
+</div>

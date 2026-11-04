@@ -75,4 +75,13 @@
 
     <a routerLink="/" [class]="design.linkVoltar + ' ' + design.foco">{{ conteudo.voltar }}</a>
   </section>
+
+  <app-chat-flutuante
+    [publico]="true"
+    origem="LOGIN"
+    [titulo]="conteudo.chat.titulo"
+    [subtitulo]="conteudo.chat.subtitulo"
+    [saudacao]="conteudo.chat.saudacao"
+    [sugestoesIniciais]="conteudo.chat.sugestoes"
+  />
 </div>
