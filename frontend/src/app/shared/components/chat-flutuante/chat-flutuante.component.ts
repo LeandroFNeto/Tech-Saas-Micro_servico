@@ -11,6 +11,11 @@ export class ChatFlutuanteComponent {
   @Input() publico = false;
   @Input() acimaDasAbas = false;
   @Input() dica: string | null = null;
+  @Input() origem: 'LOGIN' | 'APRESENTACAO' | null = null;
+  @Input() titulo = 'Assistente de Suporte';
+  @Input() subtitulo = 'Ajuda para usar o app';
+  @Input() saudacao: string | null = null;
+  @Input() sugestoesIniciais: readonly string[] | null = null;
 
   readonly aberto = signal(false);
 

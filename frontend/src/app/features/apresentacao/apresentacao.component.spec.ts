@@ -59,6 +59,21 @@ describe('ApresentacaoComponent', () => {
     expect(raiz.textContent).not.toContain('Simulador');
   });
 
+  it('chat da apresentacao abre com sugestoes sobre a Gamb, sem QR Code nem Google Agenda', () => {
+    const { fixture } = montar(false);
+    const raiz: HTMLElement = fixture.nativeElement;
+
+    raiz.querySelector<HTMLButtonElement>('app-chat-flutuante button')?.click();
+    fixture.detectChanges();
+
+    const texto = raiz.querySelector('[role="dialog"]')?.textContent ?? '';
+    expect(texto).toContain('Fale com a Gamb');
+    expect(texto).toContain('Quem é a Gamb?');
+    expect(texto).toContain('Como funciona o plano de assinatura?');
+    expect(texto).not.toContain('QR Code');
+    expect(texto).not.toContain('Google Agenda');
+  });
+
   it('"Ver como funciona" leva ao id="como" e nao exibe [CONTATO DA GAMB]', () => {
     const { fixture } = montar(false);
     const raiz: HTMLElement = fixture.nativeElement;

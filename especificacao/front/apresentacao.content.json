@@ -8,7 +8,16 @@
       "entrar": "Entrar"
     },
     "chat": {
-      "dica": "Para mais informações, fale com o chat agora"
+      "dica": "Para mais informações, fale com o chat agora",
+      "titulo": "Fale com a Gamb",
+      "subtitulo": "Tire suas dúvidas sobre a Gamb",
+      "saudacao": "Olá! Sou o assistente da Gamb. Posso contar quem somos, o que oferecemos hoje e como funciona o plano de assinatura.",
+      "sugestoes": [
+        "Quem é a Gamb?",
+        "O que vocês oferecem?",
+        "Como funciona o plano de assinatura?",
+        "Como começo?"
+      ]
     },
     "hero": {
       "selo": "Atendimento automático no WhatsApp",

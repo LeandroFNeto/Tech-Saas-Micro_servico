@@ -35,6 +35,26 @@ describe('AssistenteClienteComponent', () => {
     expect(component.mensagens()[0].texto).toContain('assistente de suporte');
   });
 
+  it('usa saudacao, titulo e sugestoes iniciais e envia a origem quando informados', () => {
+    const fixture2 = TestBed.createComponent(AssistenteClienteComponent);
+    const comp = fixture2.componentInstance;
+    comp.publico = true;
+    comp.origem = 'LOGIN';
+    comp.titulo = 'Fale com a Gamb';
+    comp.saudacao = 'Ola visitante';
+    comp.sugestoesIniciais = ['Quem é a Gamb?'];
+    assistenteServiceSpy.conversarPublico.and.returnValue(of(respostaPadrao));
+    fixture2.detectChanges();
+
+    expect(comp.mensagens()[0].texto).toBe('Ola visitante');
+    expect(comp.sugestoes()).toEqual(['Quem é a Gamb?']);
+    expect((fixture2.nativeElement as HTMLElement).textContent).toContain('Fale com a Gamb');
+
+    comp.mensagemInput = 'Quem é a Gamb?';
+    comp.enviar();
+    expect(assistenteServiceSpy.conversarPublico).toHaveBeenCalledWith({ mensagem: 'Quem é a Gamb?', origem: 'LOGIN' });
+  });
+
   it('nao exibe Simulador nem alternancia de modo', () => {
     const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
     expect(texto).not.toContain('Simulador');

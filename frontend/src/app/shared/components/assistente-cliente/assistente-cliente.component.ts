@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output, inject, signal } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AssistenteTutoriaService } from '../../../core/services/assistente-tutoria.service';
 import { AssistenteChatResponseDTO } from '../../models/assistente.models';
@@ -16,11 +16,16 @@ export interface MensagemClienteChat {
   imports: [CommonModule, FormsModule],
   templateUrl: './assistente-cliente.component.html'
 })
-export class AssistenteClienteComponent {
+export class AssistenteClienteComponent implements OnInit {
   private readonly assistenteService = inject(AssistenteTutoriaService);
 
   @Input() publico = false;
   @Input() fechavel = false;
+  @Input() origem: 'LOGIN' | 'APRESENTACAO' | null = null;
+  @Input() titulo = 'Assistente de Suporte';
+  @Input() subtitulo = 'Ajuda para usar o app';
+  @Input() saudacao: string | null = null;
+  @Input() sugestoesIniciais: readonly string[] | null = null;
   @Output() fechar = new EventEmitter<void>();
 
   mensagens = signal<MensagemClienteChat[]>([
@@ -40,6 +45,15 @@ export class AssistenteClienteComponent {
     'Como cadastrar fotos e regras de locação?',
     'Onde vejo os tutoriais passo a passo?'
   ]);
+
+  ngOnInit(): void {
+    if (this.saudacao) {
+      this.mensagens.set([{ origem: 'ia', texto: this.saudacao, dataHora: new Date() }]);
+    }
+    if (this.sugestoesIniciais && this.sugestoesIniciais.length > 0) {
+      this.sugestoes.set([...this.sugestoesIniciais]);
+    }
+  }
 
   usarSugestao(texto: string): void {
     this.mensagemInput = texto;
@@ -62,7 +76,9 @@ export class AssistenteClienteComponent {
     this.erro.set(null);
 
     const chamada = this.publico
-      ? this.assistenteService.conversarPublico({ mensagem: texto })
+      ? this.assistenteService.conversarPublico(
+        this.origem ? { mensagem: texto, origem: this.origem } : { mensagem: texto }
+      )
       : this.assistenteService.conversarCliente({ mensagem: texto, modo: 'SUPORTE' });
 
     chamada.subscribe({

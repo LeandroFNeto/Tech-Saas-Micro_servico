@@ -17,7 +17,9 @@ import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import java.time.Instant;
 import java.util.List;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -50,17 +52,41 @@ class PublicoAssistenteSuporteTest {
         return "{\"mensagem\":\"" + mensagem + "\"}";
     }
 
+    private String corpo(String mensagem, String origem) {
+        return "{\"mensagem\":\"" + mensagem + "\",\"origem\":\"" + origem + "\"}";
+    }
+
     @Test
-    @DisplayName("POST /api/publico/assistente/suporte sem login responde 200 com o bot de Suporte")
+    @DisplayName("Origem LOGIN chega ao servico e origem invalida responde 400")
+    void deveRepassarOrigemEValidar() throws Exception {
+        when(assistenteTutoriaService.responderComercial(anyString(), eq("LOGIN")))
+                .thenReturn(new AssistenteChatResponseDTO("ok", "COMERCIAL", Instant.now(), List.of("Como entro no painel?")));
+
+        mockMvc.perform(post(ROTA).with(doIp("10.0.0.4"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(corpo("Quem e a Gamb?", "LOGIN")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.sugestoes[0]").value("Como entro no painel?"));
+
+        mockMvc.perform(post(ROTA).with(doIp("10.0.0.4"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(corpo("Quem e a Gamb?", "OUTRA")))
+                .andExpect(status().isBadRequest());
+
+        verify(assistenteTutoriaService, times(1)).responderComercial(anyString(), any());
+    }
+
+    @Test
+    @DisplayName("POST /api/publico/assistente/suporte sem login responde 200 com o assistente comercial")
     void deveResponder200SemLogin() throws Exception {
-        when(assistenteTutoriaService.responderSuporte(anyString()))
-                .thenReturn(new AssistenteChatResponseDTO("Acesse a Conexão WhatsApp.", "SUPORTE", Instant.now(), List.of()));
+        when(assistenteTutoriaService.responderComercial(anyString(), any()))
+                .thenReturn(new AssistenteChatResponseDTO("Acesse a Conexão WhatsApp.", "COMERCIAL", Instant.now(), List.of()));
 
         mockMvc.perform(post(ROTA).with(doIp("10.0.0.1"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(corpo("Como conecto o WhatsApp?")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.modo").value("SUPORTE"));
+                .andExpect(jsonPath("$.modo").value("COMERCIAL"));
     }
 
     @Test
@@ -76,14 +102,14 @@ class PublicoAssistenteSuporteTest {
                         .content(corpo("a".repeat(501))))
                 .andExpect(status().isBadRequest());
 
-        verify(assistenteTutoriaService, never()).responderSuporte(anyString());
+        verify(assistenteTutoriaService, never()).responderComercial(anyString(), any());
     }
 
     @Test
     @DisplayName("Acima de 10 mensagens por minuto no mesmo IP responde 429 sem chamar o modelo")
     void deveResponder429AcimaDoLimite() throws Exception {
-        when(assistenteTutoriaService.responderSuporte(anyString()))
-                .thenReturn(new AssistenteChatResponseDTO("ok", "SUPORTE", Instant.now(), List.of()));
+        when(assistenteTutoriaService.responderComercial(anyString(), any()))
+                .thenReturn(new AssistenteChatResponseDTO("ok", "COMERCIAL", Instant.now(), List.of()));
 
         for (int i = 0; i < 10; i++) {
             mockMvc.perform(post(ROTA).with(doIp("10.0.0.3"))
@@ -97,6 +123,6 @@ class PublicoAssistenteSuporteTest {
                         .content(corpo("duvida")))
                 .andExpect(status().isTooManyRequests());
 
-        verify(assistenteTutoriaService, times(10)).responderSuporte(anyString());
+        verify(assistenteTutoriaService, times(10)).responderComercial(anyString(), any());
     }
 }

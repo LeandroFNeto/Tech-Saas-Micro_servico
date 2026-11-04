@@ -18,6 +18,7 @@ export interface AssistenteChatRequestDTO {
 
 export interface SuportePublicoRequestDTO {
   mensagem: string;
+  origem?: 'LOGIN' | 'APRESENTACAO';
 }
 
 export interface AssistenteChatResponseDTO {

@@ -79,7 +79,15 @@
     </section>
   </main>
 
-  <app-chat-flutuante [publico]="true" [dica]="conteudo.chat.dica" />
+  <app-chat-flutuante
+    [publico]="true"
+    origem="APRESENTACAO"
+    [dica]="conteudo.chat.dica"
+    [titulo]="conteudo.chat.titulo"
+    [subtitulo]="conteudo.chat.subtitulo"
+    [saudacao]="conteudo.chat.saudacao"
+    [sugestoesIniciais]="conteudo.chat.sugestoes"
+  />
 
   <footer [class]="design.rodape.fundo">
     <div [class]="design.rodape.linha">
