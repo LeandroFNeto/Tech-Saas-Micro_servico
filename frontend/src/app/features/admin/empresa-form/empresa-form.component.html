@@ -59,6 +59,47 @@
         </p>
       </div>
 
+      @if (modoEdicao() && ehAtendenteGamb()) {
+        @let responsaveis = form.controls.emailsResponsaveisReuniao;
+        @let responsaveisComErro = responsaveis.invalid && responsaveis.touched;
+        @let responsaveisVazio = !(responsaveis.value ?? '').trim();
+        <div class="min-w-0">
+          <label class="mb-1.5 block text-sm font-semibold text-brand-800" for="empresa-responsaveis">E-mails dos responsáveis da reunião</label>
+          <textarea
+            id="empresa-responsaveis"
+            class="input-field block min-h-24 resize-y break-all font-mono text-base shadow-none read-only:cursor-not-allowed read-only:bg-brand-50 read-only:text-brand-500"
+            [class]="responsaveisComErro ? 'border-red-500 focus:border-red-500 focus:ring-red-100' : ''"
+            formControlName="emailsResponsaveisReuniao"
+            rows="3"
+            spellcheck="false"
+            autocomplete="off"
+            placeholder="um e-mail por linha"
+            [readOnly]="salvando()"
+            [attr.aria-invalid]="responsaveisComErro"
+            [attr.aria-describedby]="responsaveisComErro ? 'empresa-responsaveis-ajuda empresa-responsaveis-vazio empresa-responsaveis-erro' : 'empresa-responsaveis-ajuda empresa-responsaveis-vazio'"
+          ></textarea>
+          <p id="empresa-responsaveis-ajuda" class="mt-1.5 text-[13px] leading-[18px] text-brand-600">
+            Cada reunião marcada pelo atendente convida todos estes e-mails. Pode mudar a lista a qualquer momento: as reuniões futuras só trocam os convidados, sem cancelar nem remarcar. Até 10 e-mails.
+          </p>
+          <p
+            id="empresa-responsaveis-vazio"
+            class="mt-1.5 text-[13px] leading-[18px]"
+            [class]="responsaveisVazio ? 'rounded-xl border border-accent-200 bg-accent-50 px-3 py-2 font-semibold text-brand-800' : 'text-brand-600'"
+          >
+            Lista vazia desliga o agendamento de reunião.
+          </p>
+          @if (responsaveisComErro) {
+            <p id="empresa-responsaveis-erro" class="mt-1.5 block text-[13px] font-semibold leading-[18px] text-red-700" role="alert">
+              @if (responsaveis.errors?.['excessoEmails']) {
+                Use no máximo 10 e-mails.
+              } @else {
+                Há um e-mail inválido na lista.
+              }
+            </p>
+          }
+        </div>
+      }
+
       <div>
         <label
           class="flex cursor-pointer items-start justify-between gap-4 rounded-[14px] border px-4 py-3.5"
@@ -116,6 +157,8 @@
             <option value="locacao">Locação</option>
             <option value="clinica">Clínica</option>
             <option value="barbearia">Barbearia</option>
+            <option value="ATENDENTE_GAMB">Atendente da Gamb (WhatsApp)</option>
+            <option value="TESTE_MODULOS">Teste de módulos (WhatsApp)</option>
           </select>
         </div>
 

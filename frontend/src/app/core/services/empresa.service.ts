@@ -84,6 +84,9 @@ export class EmpresaService {
       regrasLocacao: item['regrasLocacao'] as string | undefined,
       locacaoPorHora: Boolean(item['locacaoPorHora']),
       googleCalendarId: item['googleCalendarId'] as string | undefined,
+      emailsResponsaveisReuniao: Array.isArray(item['emailsResponsaveisReuniao'])
+        ? (item['emailsResponsaveisReuniao'] as unknown[]).filter((email): email is string => typeof email === 'string')
+        : [],
       modulosAtivos: this.extrairCodigos(item['modulosAtivos']),
       modulosMenu: this.extrairModulos(item['modulosAtivos'] ?? item['modulosMenu']),
       cidadePrevisao: item['cidadePrevisao'] as string | undefined,
