@@ -13,6 +13,7 @@ import designData from '../../../../../especificacao/front/telas.design.json';
 export class ApresentacaoComponent {
   readonly conteudo = contentData.apresentacao;
   readonly design = designData.telas.apresentacao;
+  readonly linkWhatsapp = `https://wa.me/${contentData.apresentacao.contato.whatsapp}`;
 
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);

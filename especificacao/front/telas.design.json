@@ -105,7 +105,10 @@
         "marca": "flex items-center gap-3",
         "logo": "h-11 w-11 object-contain",
         "nome": "wordmark text-lg",
-        "botaoEntrar": "inline-flex min-h-11 items-center justify-center rounded-xl bg-accent-500 px-5 text-sm font-semibold text-brand-900 transition hover:bg-accent-400"
+        "botaoEntrar": "inline-flex min-h-11 items-center justify-center rounded-xl bg-accent-500 px-5 text-sm font-semibold text-brand-900 transition hover:bg-accent-400",
+        "acoes": "flex flex-wrap items-center justify-end gap-2.5",
+        "botaoWhatsapp": "inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-white/35 px-4 text-sm font-semibold text-white transition hover:bg-white/10",
+        "iconeWhatsapp": "h-[18px] w-[18px]"
       },
       "hero": {
         "linha": "flex flex-wrap items-center gap-[clamp(32px,6vw,64px)] pb-[clamp(40px,8vw,88px)] pt-[clamp(32px,7vw,80px)]",
@@ -127,9 +130,14 @@
       },
       "secao": {
         "como": "scroll-mt-4 bg-brand-50 py-[clamp(40px,8vw,88px)]",
-        "beneficios": "bg-white py-[clamp(40px,8vw,88px)]",
+        "beneficios": "bg-brand-50 py-[clamp(40px,8vw,88px)]",
         "rotulo": "mb-2 text-[13px] font-semibold uppercase tracking-[0.12em] text-brand-600",
-        "titulo": "max-w-[640px] text-[clamp(24px,4.5vw,36px)] font-bold leading-[1.2] text-brand-900"
+        "titulo": "max-w-[640px] text-[clamp(24px,4.5vw,36px)] font-bold leading-[1.2] text-brand-900",
+        "quemSomos": "bg-white py-[clamp(40px,8vw,88px)]",
+        "hoje": "scroll-mt-4 bg-white py-[clamp(40px,8vw,88px)]",
+        "contato": "scroll-mt-4 bg-brand-50 py-[clamp(40px,8vw,88px)]",
+        "tituloLargo": "max-w-[720px] text-[clamp(24px,4.5vw,36px)] font-bold leading-[1.2] text-brand-900",
+        "texto": "mt-4 max-w-[720px] text-[clamp(16px,2.4vw,18px)] leading-[1.7] text-brand-700"
       },
       "passos": {
         "lista": "mt-8 grid grid-cols-[repeat(auto-fit,minmax(min(100%,340px),1fr))] gap-4",
@@ -140,7 +148,7 @@
       },
       "beneficios": {
         "lista": "mt-8 grid grid-cols-[repeat(auto-fit,minmax(min(100%,260px),1fr))] gap-4",
-        "item": "rounded-2xl bg-brand-50 p-5",
+        "item": "rounded-2xl bg-white p-5",
         "titulo": "text-[17px] font-semibold leading-6",
         "texto": "mt-1.5 text-[15px] leading-6 text-brand-700"
       },
@@ -155,7 +163,40 @@
         "fundo": "border-t border-white/10 bg-brand-900 py-6",
         "linha": "mx-auto flex max-w-[1120px] flex-wrap items-center justify-between gap-3 px-[clamp(16px,5vw,48px)]",
         "nome": "wordmark text-[15px]",
-        "texto": "text-[13px] text-brand-300"
+        "texto": "text-[13px] text-brand-300",
+        "whatsapp": "inline-flex min-h-11 items-center text-[13px] font-semibold text-white"
+      },
+      "quemSomos": {
+        "lista": "mt-8 grid grid-cols-[repeat(auto-fit,minmax(min(100%,300px),1fr))] gap-4",
+        "item": "rounded-2xl bg-brand-50 p-5",
+        "titulo": "text-[17px] font-semibold leading-6",
+        "texto": "mt-1.5 text-[15px] leading-6 text-brand-700"
+      },
+      "hoje": {
+        "colunas": "mt-8 flex flex-wrap items-stretch gap-5",
+        "cartaoHoje": "min-w-0 flex-[1_1_340px] rounded-[20px] border border-brand-200 bg-brand-50 p-6",
+        "cartaoVem": "min-w-0 flex-[1_1_340px] rounded-[20px] border border-dashed border-accent-600 bg-accent-50 p-6",
+        "cabecalhoCartao": "flex flex-wrap items-center gap-2.5",
+        "tituloCartao": "text-xl font-bold leading-7",
+        "seloHoje": "inline-flex min-h-[26px] items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 text-xs font-bold text-emerald-800",
+        "seloVem": "inline-flex min-h-[26px] items-center rounded-full border border-accent-200 bg-white px-3 text-xs font-bold text-accent-800",
+        "lista": "mt-[18px] flex flex-col gap-3.5",
+        "item": "flex items-start gap-3 text-base leading-6",
+        "iconeHoje": "mt-px h-[22px] w-[22px] shrink-0 text-emerald-700",
+        "iconeVem": "mt-px h-[22px] w-[22px] shrink-0 text-accent-800",
+        "destaque": "font-semibold",
+        "nota": "mt-5 max-w-[720px] text-[15px] leading-6 text-brand-700"
+      },
+      "contato": {
+        "caixa": "flex flex-wrap items-center justify-between gap-7 rounded-3xl bg-brand-900 bg-[radial-gradient(circle_at_80%_0%,rgba(247,147,30,0.10),transparent_55%)] p-[clamp(24px,5vw,40px)] text-white md:bg-[radial-gradient(circle_at_80%_0%,rgba(247,147,30,0.28),transparent_55%)]",
+        "texto": "min-w-0 flex-[1_1_320px]",
+        "rotulo": "mb-2 text-[13px] font-semibold uppercase tracking-[0.12em] text-brand-200",
+        "titulo": "font-display text-[clamp(24px,4.5vw,34px)] font-semibold leading-[1.25]",
+        "descricao": "mt-3.5 max-w-[520px] text-[clamp(16px,2.4vw,18px)] leading-[1.6] text-brand-100",
+        "acoes": "flex flex-col items-start gap-2.5",
+        "botao": "inline-flex min-h-[52px] items-center justify-center gap-2.5 rounded-[14px] bg-accent-500 px-7 text-[17px] font-bold text-brand-900 transition hover:bg-accent-400",
+        "icone": "h-[22px] w-[22px]",
+        "numero": "text-[17px] font-semibold tracking-[0.02em] text-white"
       }
     },
     "login": {
