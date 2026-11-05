@@ -36,8 +36,13 @@ public class ServicoMensagem {
             Map<String, Object> body = new HashMap<>();
             preencherDestino(body, numeroDestino);
             body.put("message", texto);
-            postWpp(sessao, "/send-message", body);
             registrarTexto(numeroDestino, texto);
+            try {
+                postWpp(sessao, "/send-message", body);
+            } catch (RuntimeException falha) {
+                esquecerTexto(numeroDestino, texto);
+                throw falha;
+            }
             observador.logSucesso(sessao, numeroDestino, "[RESPOSTA ENVIADA]: " + texto);
         } catch (Exception e) {
             observador.logErro(sessao, numeroDestino, "ServicoMensagem (Envio)", e);
@@ -53,8 +58,13 @@ public class ServicoMensagem {
             Map<String, Object> body = new HashMap<>();
             preencherDestino(body, numeroDestino);
             body.put("message", texto);
-            postWpp(sessao, "/send-message", body);
             registrarTexto(numeroDestino, texto);
+            try {
+                postWpp(sessao, "/send-message", body);
+            } catch (RuntimeException falha) {
+                esquecerTexto(numeroDestino, texto);
+                throw falha;
+            }
             observador.logSucesso(sessao, numeroDestino, "[RESPOSTA ENVIADA]: " + texto);
             return true;
         } catch (Exception e) {
@@ -81,10 +91,18 @@ public class ServicoMensagem {
             if (caption != null && !caption.isBlank()) {
                 body.put("caption", caption);
             }
-            postWpp(sessao, "/send-image", body);
             if (registroEnviosBot != null) {
                 registroEnviosBot.registrarMidia(numeroDestino);
                 registroEnviosBot.registrarTexto(numeroDestino, caption);
+            }
+            try {
+                postWpp(sessao, "/send-image", body);
+            } catch (RuntimeException falha) {
+                if (registroEnviosBot != null) {
+                    registroEnviosBot.esquecerMidia(numeroDestino);
+                    registroEnviosBot.esquecerTexto(numeroDestino, caption);
+                }
+                throw falha;
             }
             observador.logSucesso(sessao, numeroDestino, "[IMAGEM ENVIADA]: " + url);
         } catch (Exception e) {
@@ -126,13 +144,19 @@ public class ServicoMensagem {
         }
     }
 
+    private void esquecerTexto(String numeroDestino, String texto) {
+        if (registroEnviosBot != null) {
+            registroEnviosBot.esquecerTexto(numeroDestino, texto);
+        }
+    }
+
     static void preencherDestino(Map<String, Object> body, String numeroDestino) {
         body.put("phone", WhatsappUtil.extrairApenasNumeros(numeroDestino));
         body.put("isGroup", false);
         body.put("isLid", WhatsappUtil.isLid(numeroDestino));
     }
 
-    private void postWpp(String sessao, String caminho, Map<String, Object> body) {
+    void postWpp(String sessao, String caminho, Map<String, Object> body) {
         RestTemplate restTemplate = new RestTemplate();
         String url = "http://wppconnect:21465/api/" + sessao + caminho;
 

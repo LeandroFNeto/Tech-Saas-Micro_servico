@@ -26,6 +26,7 @@ services:
       - PORT=21465
       - SECRET_KEY=${WPP_SECRET_KEY}
       - WPPCONNECT_WEBHOOK_URL=http://bot-java:8080/webhook/whatsapp
+      - WPPCONNECT_ON_SELF_MESSAGE=${WPPCONNECT_ON_SELF_MESSAGE:-true}
     networks:
       - bot-network
     volumes:

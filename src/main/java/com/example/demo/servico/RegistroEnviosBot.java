@@ -41,6 +41,31 @@ public class RegistroEnviosBot {
         registrar(contato, MARCA_MIDIA);
     }
 
+    public void esquecerTexto(String contato, String texto) {
+        esquecer(contato, normalizar(texto));
+    }
+
+    public void esquecerMidia(String contato) {
+        esquecer(contato, MARCA_MIDIA);
+    }
+
+    private void esquecer(String contato, String conteudo) {
+        String chave = chave(contato);
+        Deque<Envio> fila = chave.isEmpty() ? null : envios.get(chave);
+        if (fila == null || conteudo.isEmpty()) {
+            return;
+        }
+        synchronized (fila) {
+            java.util.Iterator<Envio> it = fila.descendingIterator();
+            while (it.hasNext()) {
+                if (it.next().conteudo().equals(conteudo)) {
+                    it.remove();
+                    return;
+                }
+            }
+        }
+    }
+
     public boolean foiEnviadoPeloBot(String contato, String texto) {
         String chave = chave(contato);
         if (chave.isEmpty()) {

@@ -231,8 +231,8 @@ public record WhatsappWebhookDTO(
     public String resumoRaioX() {
         String idLog = id == null ? null : MascaraLog.idMensagem(temTexto(id.serialized()) ? id.serialized() : id.remoteJid());
         return String.format(
-                "Webhook ID=%s | type=%s | isGroupMsg=%s | fromMe=%s | numero=%s | texto=%s",
-                idLog, type, isGroupMsg, fromMe, MascaraLog.jid(resolverRemoteJid()), MascaraLog.tamanho(resolverTexto()));
+                "Webhook ID=%s | event=%s | type=%s | isGroupMsg=%s | fromMe=%s | numero=%s | texto=%s",
+                idLog, event, type, isGroupMsg, fromMe, MascaraLog.jid(resolverRemoteJid()), MascaraLog.tamanho(resolverTexto()));
     }
 
     public boolean ehMensagemAntiga(Clock clock) {
@@ -336,11 +336,18 @@ public record WhatsappWebhookDTO(
                 || valor.equals("onreactionmessage")
                 || valor.equals("onrevokedmessage")
                 || valor.equals("onpollresponse")
-                || valor.equals("onupdatelabel")
-                || valor.equals("onselfmessage");
+                || valor.equals("onupdatelabel");
+    }
+
+    public boolean ehEventoMensagemDoDono() {
+        return "onselfmessage".equalsIgnoreCase(event != null ? event.trim() : null)
+                || "onselfmessage".equalsIgnoreCase(type != null ? type.trim() : null);
     }
 
     public boolean enviadaPorMim() {
+        if (ehEventoMensagemDoDono()) {
+            return true;
+        }
         if (fromMe != null) {
             return fromMe;
         }

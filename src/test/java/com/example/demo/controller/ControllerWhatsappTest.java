@@ -677,4 +677,75 @@ class ControllerWhatsappTest {
                 .andExpect(jsonPath("$.status").value("DISCONNECTED"));
         verifyNoInteractions(servicoWppConnect);
     }
+
+    @Test
+    @DisplayName("Payload real do gateway (event=onselfmessage) liga a trava no cliente destinatário")
+    void eventoOnselfmessageLigaATrava() throws Exception {
+        String payload = """
+            {
+                "event": "onselfmessage",
+                "session": "teste-sessao",
+                "from": "5511900000000@c.us",
+                "to": "5511988887777@c.us",
+                "body": "Já te respondo",
+                "type": "chat",
+                "fromMe": true
+            }
+        """;
+
+        mockMvc.perform(post("/webhook/whatsapp")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload))
+                .andExpect(status().isOk());
+
+        verify(observador).logFiltro(eq("teste-sessao"), anyString(), contains("Anti-X9"));
+        verify(gerenciadorSessao).ativarTravaProprietario("551188887777");
+        verifyNoInteractions(moduloFactory);
+    }
+
+    @Test
+    @DisplayName("Evento onselfmessage sem fromMe também liga a trava")
+    void eventoOnselfmessageSemFromMeLigaATrava() throws Exception {
+        String payload = """
+            {
+                "event": "onselfmessage",
+                "session": "teste-sessao",
+                "from": "5511900000000@c.us",
+                "to": "5511988887777@c.us",
+                "body": "Já te respondo",
+                "type": "chat"
+            }
+        """;
+
+        mockMvc.perform(post("/webhook/whatsapp")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload))
+                .andExpect(status().isOk());
+
+        verify(gerenciadorSessao).ativarTravaProprietario("551188887777");
+    }
+
+    @Test
+    @DisplayName("Eco do bot em onselfmessage não liga a trava")
+    void ecoDoBotEmOnselfmessageNaoLigaATrava() throws Exception {
+        when(registroEnviosBot.foiEnviadoPeloBot(anyString(), anyString())).thenReturn(true);
+        String payload = """
+            {
+                "event": "onselfmessage",
+                "session": "teste-sessao",
+                "from": "5511900000000@c.us",
+                "to": "5511988887777@c.us",
+                "body": "Olá! Como posso ajudar?",
+                "type": "chat",
+                "fromMe": true
+            }
+        """;
+
+        mockMvc.perform(post("/webhook/whatsapp")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload))
+                .andExpect(status().isOk());
+
+        verify(gerenciadorSessao, never()).ativarTravaProprietario(anyString());
+    }
 }

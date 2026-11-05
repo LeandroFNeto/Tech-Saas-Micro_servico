@@ -109,4 +109,17 @@ class RegistroEnviosBotTest {
         assertFalse(registro.foiEnviadoPeloBot(null, "Olá!"));
         assertFalse(registro.foiEnviadoPeloBot(" ", "Olá!"));
     }
+
+    @Test
+    @DisplayName("Esquecer remove o registro de texto e mídia")
+    void esquecerRemoveORegistro() {
+        registro.registrarTexto(CONTATO, "Olá!");
+        registro.registrarMidia(CONTATO);
+
+        registro.esquecerTexto(CONTATO, "Olá!");
+        registro.esquecerMidia(CONTATO);
+
+        assertFalse(registro.foiEnviadoPeloBot(CONTATO, "Olá!"));
+        assertFalse(registro.foiEnviadoPeloBot(CONTATO, ""));
+    }
 }

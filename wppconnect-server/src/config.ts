@@ -23,7 +23,7 @@ export default {
     onPollResponse: true,
     onRevokedMessage: true,
     onLabelUpdated: true,
-    onSelfMessage: false,
+    onSelfMessage: process.env.WPPCONNECT_ON_SELF_MESSAGE !== 'false',
     ignore: ['status@broadcast'],
   },
   websocket: {

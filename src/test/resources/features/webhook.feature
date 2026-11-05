@@ -20,6 +20,7 @@ Funcionalidade: Webhook WhatsApp tipado
   Cenário: Anti-X9 ignora mensagem do dono e não aciona a Factory
     Dado uma empresa persistida com sessão "sessao_recanto_01" e ramo "LOCACAO"
     Quando eu envio POST /webhook/whatsapp com o WhatsappWebhookDTO:
+      | event   | onselfmessage      |
       | session | sessao_recanto_01  |
       | type    | chat               |
       | fromMe  | true               |
