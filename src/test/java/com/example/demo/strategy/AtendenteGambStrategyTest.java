@@ -275,4 +275,138 @@ class AtendenteGambStrategyTest {
         assertThat(ultimaResposta()).contains("já passou");
         verify(servicoGoogleagenda, never()).horariosLivres(any(), any(), any(), anyInt(), anyInt(), any());
     }
+
+    @Test
+    @DisplayName("Menu traz a opção de conhecer a Gamb")
+    void menuTrazAOpcaoDeConhecerAGamb() {
+        enviar("oi");
+
+        assertThat(ultimaResposta()).contains("3").contains("Conhecer a Gamb");
+    }
+
+    @Test
+    @DisplayName("Data escrita por extenso, com ponto ou com espaço segue para os horários livres")
+    void deveAceitarDataEmVariosFormatos() {
+        String comPonto = dia.getDayOfMonth() + "." + dia.getMonthValue() + "." + dia.getYear();
+        String porExtenso = dia.format(java.time.format.DateTimeFormatter.ofPattern("d 'de' MMMM 'de' yyyy", java.util.Locale.of("pt", "BR")));
+        String comEspaco = dia.getDayOfMonth() + " " + dia.getMonthValue() + " " + dia.getYear();
+
+        for (String texto : List.of(comPonto, porExtenso, comEspaco, "pode ser dia " + comPonto + " mesmo?")) {
+            gerenciadorSessao.setEstado(CLIENTE, EstadoUsuario.REUNIAO_DATA);
+            enviar(texto);
+
+            assertThat(gerenciadorSessao.getEstado(CLIENTE)).as(texto).isEqualTo(EstadoUsuario.REUNIAO_HORARIO);
+            assertThat(ultimaResposta()).as(texto).contains("Horários livres em " + dia.format(FORMATO_DATA));
+        }
+    }
+
+    @Test
+    @DisplayName("Amanhã é entendido como a data de amanhã")
+    void deveEntenderAmanha() {
+        LocalDate amanha = LocalDate.now(ZoneId.of("America/Sao_Paulo")).plusDays(1);
+
+        ate("oi", "2", "1", "amanhã");
+
+        assertThat(ultimaResposta()).contains("Horários livres em " + amanha.format(FORMATO_DATA));
+    }
+
+    @Test
+    @DisplayName("Dia da semana deixa em dúvida: pergunta e o sim segue para os horários")
+    void devePerguntarNaDuvidaESeguirAoConfirmar() {
+        ate("oi", "2", "1", "tem sábado?");
+
+        assertThat(ultimaResposta()).contains("Só para confirmar").contains("sábado");
+        assertThat(gerenciadorSessao.getEstado(CLIENTE)).isEqualTo(EstadoUsuario.REUNIAO_CONFIRMACAO_DATA);
+
+        enviar("sim");
+
+        assertThat(gerenciadorSessao.getEstado(CLIENTE)).isEqualTo(EstadoUsuario.REUNIAO_HORARIO);
+        assertThat(ultimaResposta()).contains("Horários livres");
+    }
+
+    @Test
+    @DisplayName("Na dúvida, o cliente corrige com outra data e ela é usada")
+    void deveAceitarCorrecaoDaData() {
+        ate("oi", "2", "1", "dia 25", dia.format(FORMATO_DATA));
+
+        assertThat(gerenciadorSessao.getEstado(CLIENTE)).isEqualTo(EstadoUsuario.REUNIAO_HORARIO);
+        assertThat(ultimaResposta()).contains("Horários livres em " + dia.format(FORMATO_DATA));
+    }
+
+    @Test
+    @DisplayName("Dizer não na confirmação volta a pedir a data")
+    void deveVoltarAPedirADataQuandoClienteNegar() {
+        ate("oi", "2", "1", "tem sábado?", "não");
+
+        assertThat(gerenciadorSessao.getEstado(CLIENTE)).isEqualTo(EstadoUsuario.REUNIAO_DATA);
+        assertThat(ultimaResposta()).contains("qual é a data");
+    }
+
+    @Test
+    @DisplayName("Texto sem data repete o pedido sem avançar")
+    void deveRepetirOPedidoQuandoNaoHouverData() {
+        ate("oi", "2", "1", "não sei ainda");
+
+        assertThat(ultimaResposta()).contains("Não entendi a data").contains("do seu jeito");
+        assertThat(gerenciadorSessao.getEstado(CLIENTE)).isEqualTo(EstadoUsuario.REUNIAO_DATA);
+    }
+
+    @Test
+    @DisplayName("Opção 3 responde pela base comercial e convida a digitar 2 para marcar reunião")
+    void deveResponderSobreAGambaPelaOpcaoTres() {
+        when(servicoIA.gerarRespostaHumanizada(anyString())).thenReturn("A Gamb é uma startup que leva tecnologia a negócios.");
+
+        ate("oi", "3");
+
+        assertThat(ultimaResposta()).contains("startup").contains("Digite *2*").doesNotContain("wa.me");
+        assertThat(gerenciadorSessao.getEstado(CLIENTE)).isEqualTo(EstadoUsuario.ATENDENTE_SOBRE);
+
+        enviar("2");
+
+        assertThat(gerenciadorSessao.getEstado(CLIENTE)).isEqualTo(EstadoUsuario.REUNIAO_MOTIVO);
+    }
+
+    @Test
+    @DisplayName("Pergunta livre sobre a empresa, no menu ou na dúvida, vai para a resposta comercial")
+    void deveDesviarPerguntaSobreAEmpresa() {
+        when(servicoIA.gerarRespostaHumanizada(anyString())).thenReturn("Somos uma startup de tecnologia.");
+
+        ate("oi", "o que vocês fazem?");
+        assertThat(gerenciadorSessao.getEstado(CLIENTE)).isEqualTo(EstadoUsuario.ATENDENTE_SOBRE);
+        assertThat(ultimaResposta()).contains("startup").contains("Digite *2*");
+
+        ate("0", "1", "quem é a Gamb?");
+        assertThat(gerenciadorSessao.getEstado(CLIENTE)).isEqualTo(EstadoUsuario.ATENDENTE_SOBRE);
+        assertThat(ultimaResposta()).contains("startup");
+    }
+
+    @Test
+    @DisplayName("Cliente descreve o problema: sem IA, a resposta liga ao que existe hoje, sem preço nem prazo")
+    void deveOrientarQuandoClienteDescreveOProblema() {
+        when(servicoIA.gerarRespostaHumanizada(anyString())).thenReturn(null);
+
+        ate("oi", "3", "perco reservas porque demoro a responder, como vocês resolvem?");
+
+        assertThat(ultimaResposta()).contains("assistente virtual").contains("Google Agenda").contains("sem prometer prazo")
+                .doesNotContain("R$").doesNotContain("wa.me");
+    }
+
+    @Test
+    @DisplayName("Resposta comercial da IA com valor em reais é trocada pelo texto sem preço")
+    void naoDeveInformarValorNaRespostaComercial() {
+        when(servicoIA.gerarRespostaHumanizada(anyString())).thenReturn("O plano custa R$ 199 por mês.");
+
+        ate("oi", "3", "quanto custa?");
+
+        assertThat(ultimaResposta()).doesNotContain("R$").contains("combinado");
+    }
+
+    @Test
+    @DisplayName("Pergunta do app na dúvida continua no Suporte")
+    void perguntaDoAppContinuaNoSuporte() {
+        ate("oi", "1", "Como conectar o WhatsApp pelo QR Code?");
+
+        assertThat(gerenciadorSessao.getEstado(CLIENTE)).isEqualTo(EstadoUsuario.ATENDENTE_DUVIDA);
+        assertThat(ultimaResposta()).contains("QR Code").doesNotContain("Digite *2*");
+    }
 }

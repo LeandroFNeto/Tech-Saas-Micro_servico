@@ -5,6 +5,7 @@ import com.example.demo.model.Empresa;
 import com.example.demo.model.EstadoUsuario;
 import com.example.demo.model.MotivoReuniao;
 import com.example.demo.servico.GerenciadorSessao;
+import com.example.demo.servico.InterpretadorDeData;
 import com.example.demo.servico.LimiteDiarioMensagens;
 import com.example.demo.servico.ServicoFuncionamento;
 import com.example.demo.servico.ServicoGoogleagenda;
@@ -22,7 +23,6 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
@@ -45,7 +45,8 @@ public class AtendenteGambStrategy implements ModuloAtendimentoStrategy {
     static final String MENSAGEM_MENU =
             "Olá! Eu sou a atendente da Gamb. Como posso ajudar?\n\n"
                     + "1️⃣ - Tirar uma dúvida sobre o app\n"
-                    + "2️⃣ - Marcar reunião com a equipe\n\n"
+                    + "2️⃣ - Marcar reunião com a equipe\n"
+                    + "3️⃣ - Conhecer a Gamb e ver como podemos ajudar no seu negócio\n\n"
                     + "Digite o número da opção desejada.";
     static final String MENSAGEM_LIMITE =
             "Você atingiu o limite de mensagens de hoje. Volte amanhã para continuarmos a conversa.";
@@ -57,7 +58,9 @@ public class AtendenteGambStrategy implements ModuloAtendimentoStrategy {
     static final String MENSAGEM_MOTIVO =
             "Qual é o motivo da reunião?\n\n1️⃣ - Ajuste\n2️⃣ - Nova inovação\n\nDigite *0* para voltar ao menu.";
     static final String MENSAGEM_PEDIR_DATA =
-            "Para qual data? Envie no formato DD-MM-AAAA, por exemplo 16-09-2026.";
+            "Para qual data? Pode escrever do seu jeito, por exemplo 16/09/2026 ou 16 de setembro.";
+    static final String CONVITE_REUNIAO =
+            "\n\nDigite *2* para marcar uma reunião com a equipe ou *0* para voltar ao menu.";
 
     @Autowired private ServicoMensagem servicoMensagem;
     @Autowired private GerenciadorSessao gerenciadorSessao;
@@ -66,6 +69,7 @@ public class AtendenteGambStrategy implements ModuloAtendimentoStrategy {
     @Autowired private ServicoFuncionamento servicoFuncionamento;
     @Autowired private ServicoReserva servicoReserva;
     @Autowired private LimiteDiarioMensagens limiteDiarioMensagens;
+    private final InterpretadorDeData interpretadorDeData = new InterpretadorDeData();
 
     @Override
     public String getRamoDeAtuacao() {
@@ -90,8 +94,10 @@ public class AtendenteGambStrategy implements ModuloAtendimentoStrategy {
         switch (gerenciadorSessao.getEstado(numeroCliente)) {
             case ATENDENTE_MENU -> tratarMenu(empresa, numeroCliente, texto);
             case ATENDENTE_DUVIDA -> responderDuvida(empresa, numeroCliente, texto);
+            case ATENDENTE_SOBRE -> tratarSobre(empresa, numeroCliente, texto);
             case REUNIAO_MOTIVO -> tratarMotivo(empresa, numeroCliente, texto);
             case REUNIAO_DATA -> tratarData(empresa, numeroCliente, texto);
+            case REUNIAO_CONFIRMACAO_DATA -> tratarConfirmacaoData(empresa, numeroCliente, texto);
             case REUNIAO_HORARIO -> tratarHorario(empresa, numeroCliente, texto);
             case REUNIAO_CONFIRMACAO -> tratarConfirmacao(empresa, numeroCliente, texto);
             default -> mostrarMenu(empresa, numeroCliente);
@@ -100,6 +106,7 @@ public class AtendenteGambStrategy implements ModuloAtendimentoStrategy {
 
     private void mostrarMenu(Empresa empresa, String numeroCliente) {
         gerenciadorSessao.limparReuniao(numeroCliente);
+        gerenciadorSessao.limparDataPendente(numeroCliente);
         gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.ATENDENTE_MENU);
         enviar(empresa, numeroCliente, MENSAGEM_MENU);
     }
@@ -115,10 +122,33 @@ public class AtendenteGambStrategy implements ModuloAtendimentoStrategy {
             iniciarReuniao(empresa, numeroCliente);
             return;
         }
+        if (normalizado.equals("3") || AssistenteTutoriaService.temIntencaoComercial(texto)) {
+            responderSobre(empresa, numeroCliente, normalizado.equals("3") ? "Quem é a Gamb e como vocês podem ajudar o meu negócio?" : texto);
+            return;
+        }
         enviar(empresa, numeroCliente, MENSAGEM_MENU);
     }
 
+    private void tratarSobre(Empresa empresa, String numeroCliente, String texto) {
+        String normalizado = normalizar(texto);
+        if (normalizado.equals("2") || normalizado.contains("reuni")) {
+            iniciarReuniao(empresa, numeroCliente);
+            return;
+        }
+        responderSobre(empresa, numeroCliente, texto);
+    }
+
+    private void responderSobre(Empresa empresa, String numeroCliente, String texto) {
+        gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.ATENDENTE_SOBRE);
+        String resposta = assistenteTutoriaService.responderComercialWhatsapp(texto).resposta();
+        enviar(empresa, numeroCliente, resposta + CONVITE_REUNIAO);
+    }
+
     private void responderDuvida(Empresa empresa, String numeroCliente, String texto) {
+        if (AssistenteTutoriaService.temIntencaoComercial(texto)) {
+            responderSobre(empresa, numeroCliente, texto);
+            return;
+        }
         String resposta = assistenteTutoriaService.responderSuporte(texto).resposta();
         if (AssistenteTutoriaService.RECUSA_SUPORTE.equals(resposta)) {
             resposta = resposta + " " + ORIENTACAO_PAINEL;
@@ -171,14 +201,66 @@ public class AtendenteGambStrategy implements ModuloAtendimentoStrategy {
     }
 
     private void tratarData(Empresa empresa, String numeroCliente, String texto) {
-        LocalDate data;
-        try {
-            data = LocalDate.parse(texto.replace('/', '-'), FORMATO_DATA);
-        } catch (DateTimeParseException e) {
-            enviar(empresa, numeroCliente, "Não entendi a data. " + MENSAGEM_PEDIR_DATA);
+        InterpretadorDeData.Resultado resultado = interpretadorDeData.interpretar(texto, LocalDate.now(FUSO_BRASILIA));
+        if (resultado instanceof InterpretadorDeData.Certa certa) {
+            seguirComData(empresa, numeroCliente, certa.data());
             return;
         }
+        if (resultado instanceof InterpretadorDeData.Duvidosa duvidosa && duvidosa.sugestao() != null) {
+            perguntarSeEssaEhAData(empresa, numeroCliente, duvidosa.sugestao());
+            return;
+        }
+        enviar(empresa, numeroCliente, "Não entendi a data. " + MENSAGEM_PEDIR_DATA);
+    }
 
+    private void perguntarSeEssaEhAData(Empresa empresa, String numeroCliente, LocalDate sugestao) {
+        gerenciadorSessao.guardarDataPendente(numeroCliente, sugestao, EstadoUsuario.REUNIAO_DATA);
+        gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.REUNIAO_CONFIRMACAO_DATA);
+        enviar(empresa, numeroCliente, "Só para confirmar: você quer dizer " + descreverData(sugestao)
+                + "? Responda *sim* ou me diga a data certa.");
+    }
+
+    private String descreverData(LocalDate data) {
+        String diaSemana = data.getDayOfWeek().getDisplayName(java.time.format.TextStyle.FULL, Locale.of("pt", "BR"));
+        return diaSemana + ", " + data.format(FORMATO_DATA);
+    }
+
+    private void tratarConfirmacaoData(Empresa empresa, String numeroCliente, String texto) {
+        GerenciadorSessao.DataPendente pendente = gerenciadorSessao.obterDataPendente(numeroCliente);
+        if (pendente == null) {
+            gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.REUNIAO_DATA);
+            enviar(empresa, numeroCliente, MENSAGEM_PEDIR_DATA);
+            return;
+        }
+        String resposta = normalizar(texto).replaceAll("[.! ]+$", "");
+        if (resposta.matches("^(sim|s|isso|isso mesmo|ok|pode ser|pode|claro|exato|exatamente|correto|certo|confirmo|e|essa mesma)$")) {
+            gerenciadorSessao.limparDataPendente(numeroCliente);
+            gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.REUNIAO_DATA);
+            seguirComData(empresa, numeroCliente, pendente.data());
+            return;
+        }
+        if (resposta.matches("^(nao|n|negativo|errado|nao e|nao e essa|outra)$")) {
+            gerenciadorSessao.limparDataPendente(numeroCliente);
+            gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.REUNIAO_DATA);
+            enviar(empresa, numeroCliente, "Tudo bem! Então qual é a data? " + MENSAGEM_PEDIR_DATA);
+            return;
+        }
+        InterpretadorDeData.Resultado resultado = interpretadorDeData.interpretar(texto, LocalDate.now(FUSO_BRASILIA));
+        if (resultado instanceof InterpretadorDeData.Certa certa) {
+            gerenciadorSessao.limparDataPendente(numeroCliente);
+            gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.REUNIAO_DATA);
+            seguirComData(empresa, numeroCliente, certa.data());
+            return;
+        }
+        if (resultado instanceof InterpretadorDeData.Duvidosa duvidosa && duvidosa.sugestao() != null) {
+            perguntarSeEssaEhAData(empresa, numeroCliente, duvidosa.sugestao());
+            return;
+        }
+        enviar(empresa, numeroCliente, "Não entendi. Responda *sim* se a data é " + descreverData(pendente.data())
+                + " ou me diga a data certa.");
+    }
+
+    private void seguirComData(Empresa empresa, String numeroCliente, LocalDate data) {
         LocalDate hoje = LocalDate.now(FUSO_BRASILIA);
         if (data.isBefore(hoje)) {
             enviar(empresa, numeroCliente, "Essa data já passou. " + MENSAGEM_PEDIR_DATA);
