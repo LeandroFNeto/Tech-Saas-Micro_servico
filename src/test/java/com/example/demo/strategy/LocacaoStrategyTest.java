@@ -335,14 +335,14 @@ class LocacaoStrategyTest {
     }
 
     @Test
-    @DisplayName("Texto inválido pede o formato e mantém ESPERANDO_DATA")
-    void devePedirFormatoQuandoDataForInvalida() {
+    @DisplayName("Texto sem data pede para escrever de outro jeito e mantém ESPERANDO_DATA")
+    void devePedirOutraFormaQuandoNaoHouverData() {
         Empresa empresa = empresaComAgenda();
         gerenciadorSessao.setEstado(REMETENTE, EstadoUsuario.ESPERANDO_DATA);
 
-        locacaoStrategy.processarMensagem(empresa, REMETENTE, "amanhã", "ESPERANDO_DATA");
+        locacaoStrategy.processarMensagem(empresa, REMETENTE, "não sei ainda", "ESPERANDO_DATA");
 
-        verify(servicoMensagem).enviarMensagemWPP(eq(empresa), eq(REMETENTE), contains("Não entendi essa data"));
+        verify(servicoMensagem).enviarMensagemWPP(eq(empresa), eq(REMETENTE), contains("Não consegui entender essa data"));
         assertThat(gerenciadorSessao.getEstado(REMETENTE)).isEqualTo(EstadoUsuario.ESPERANDO_DATA);
     }
 
@@ -914,7 +914,7 @@ class LocacaoStrategyTest {
     void deveResponderSaudacaoHumanizadaComIAQuandoEmpresaUsaIA() {
         Empresa empresa = empresaComMenu();
         empresa.setUsaIA(true);
-        when(servicoIA.responderAtendimento(eq(empresa), eq("Bom dia!")))
+        when(servicoIA.responderAtendimento(eq(empresa), eq("Bom dia!"), anyString()))
                 .thenReturn(Optional.of("Olá! Bem-vindo ao Recanto das Palmeiras!"));
 
         locacaoStrategy.processarMensagem(empresa, REMETENTE, "Bom dia!", "INICIO");
@@ -928,11 +928,78 @@ class LocacaoStrategyTest {
     void deveCairNoMenuDeterministicoEmFallbackQuandoIANaoRetornarResposta() {
         Empresa empresa = empresaComMenu();
         empresa.setUsaIA(true);
-        when(servicoIA.responderAtendimento(eq(empresa), anyString())).thenReturn(Optional.empty());
+        when(servicoIA.responderAtendimento(eq(empresa), anyString(), anyString())).thenReturn(Optional.empty());
 
         locacaoStrategy.processarMensagem(empresa, REMETENTE, "Olá", "INICIO");
 
         verify(servicoMensagem).enviarMensagemWPP(eq(empresa), eq(REMETENTE), contains("desejada"));
+        assertThat(gerenciadorSessao.getEstado(REMETENTE)).isEqualTo(EstadoUsuario.MENU_PRINCIPAL);
+    }
+
+    @Test
+    @DisplayName("Data escrita de outro jeito no meio da conversa é consultada na agenda")
+    void deveConsultarDataEscritaLivrementeSemPassarPeloMenu() throws Exception {
+        Empresa empresa = empresaComAgenda();
+        LocalDate dataFutura = LocalDate.now(FUSO_BRASILIA).plusDays(20);
+        when(servicoGoogleagenda.dataEstaLivre(eq(CALENDAR_ID), eq(dataFutura))).thenReturn(true);
+        String texto = "tem a data " + dataFutura.getDayOfMonth() + "/" + dataFutura.getMonthValue() + "/" + dataFutura.getYear() + " livre?";
+
+        locacaoStrategy.processarMensagem(empresa, REMETENTE, texto, "INICIO");
+
+        verify(servicoMensagem).enviarMensagemWPP(eq(empresa), eq(REMETENTE), eq("✅ Esta data está livre para locação!"));
+        assertThat(gerenciadorSessao.getEstado(REMETENTE)).isEqualTo(EstadoUsuario.INICIO);
+    }
+
+    @Test
+    @DisplayName("Dia da semana deixa em dúvida: pergunta, e o sim consulta a agenda")
+    void devePerguntarQuandoDataForDuvidosaEConsultarAoConfirmar() throws Exception {
+        Empresa empresa = empresaComAgenda();
+        when(servicoGoogleagenda.dataEstaLivre(eq(CALENDAR_ID), org.mockito.ArgumentMatchers.any(LocalDate.class))).thenReturn(true);
+
+        locacaoStrategy.processarMensagem(empresa, REMETENTE, "tem sábado livre?", "INICIO");
+
+        verify(servicoMensagem).enviarMensagemWPP(eq(empresa), eq(REMETENTE), contains("Só para confirmar"));
+        assertThat(gerenciadorSessao.getEstado(REMETENTE)).isEqualTo(EstadoUsuario.ESPERANDO_CONFIRMACAO_DATA);
+
+        locacaoStrategy.processarMensagem(empresa, REMETENTE, "sim", "ESPERANDO_CONFIRMACAO_DATA");
+
+        verify(servicoMensagem).enviarMensagemWPP(eq(empresa), eq(REMETENTE), eq("✅ Esta data está livre para locação!"));
+        assertThat(gerenciadorSessao.getEstado(REMETENTE)).isEqualTo(EstadoUsuario.INICIO);
+    }
+
+    @Test
+    @DisplayName("Na dúvida, o cliente corrige com outra data e ela é consultada")
+    void deveAceitarCorrecaoDaDataNaConfirmacao() throws Exception {
+        Empresa empresa = empresaComAgenda();
+        LocalDate dataFutura = LocalDate.now(FUSO_BRASILIA).plusDays(30);
+        when(servicoGoogleagenda.dataEstaLivre(eq(CALENDAR_ID), eq(dataFutura))).thenReturn(false);
+
+        locacaoStrategy.processarMensagem(empresa, REMETENTE, "tem sábado livre?", "INICIO");
+        locacaoStrategy.processarMensagem(empresa, REMETENTE, dataFutura.format(FORMATO_DATA), "ESPERANDO_CONFIRMACAO_DATA");
+
+        verify(servicoMensagem).enviarMensagemWPP(eq(empresa), eq(REMETENTE), eq("❌ Infelizmente esta data já está reservada."));
+    }
+
+    @Test
+    @DisplayName("Dizer não na confirmação volta a pedir a data")
+    void deveVoltarAPedirADataQuandoClienteNegarASugestao() {
+        Empresa empresa = empresaComAgenda();
+
+        locacaoStrategy.processarMensagem(empresa, REMETENTE, "dia 25", "INICIO");
+        locacaoStrategy.processarMensagem(empresa, REMETENTE, "não", "ESPERANDO_CONFIRMACAO_DATA");
+
+        verify(servicoMensagem).enviarMensagemWPP(eq(empresa), eq(REMETENTE), contains("qual é a data"));
+        assertThat(gerenciadorSessao.getEstado(REMETENTE)).isEqualTo(EstadoUsuario.ESPERANDO_DATA);
+    }
+
+    @Test
+    @DisplayName("Sem agenda configurada, texto com data cai no fluxo normal e não na consulta")
+    void naoDeveConsultarDataQuandoEmpresaNaoTemAgenda() {
+        Empresa empresa = empresaComMenu();
+
+        locacaoStrategy.processarMensagem(empresa, REMETENTE, "tem sábado livre?", "INICIO");
+
+        verify(servicoMensagem, never()).enviarMensagemWPP(eq(empresa), eq(REMETENTE), contains("Só para confirmar"));
         assertThat(gerenciadorSessao.getEstado(REMETENTE)).isEqualTo(EstadoUsuario.MENU_PRINCIPAL);
     }
 }

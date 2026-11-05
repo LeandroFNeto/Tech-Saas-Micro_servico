@@ -21,12 +21,16 @@ public class GerenciadorSessao {
     public record SessaoAtendimento(String estadoAtual, LocalDateTime ultimaInteracao) {
     }
 
+    public record DataPendente(java.time.LocalDate data, EstadoUsuario retorno) {
+    }
+
     private final Clock clock;
     private final Map<String, SessaoAtendimento> sessoes = new ConcurrentHashMap<>();
     private final Map<String, DadosReservaSessao> reservas = new ConcurrentHashMap<>();
     private final Map<String, DadosReuniaoSessao> reunioes = new ConcurrentHashMap<>();
     private final Map<String, LocalDateTime> travasProprietario = new ConcurrentHashMap<>();
     private final Map<String, String> apelidos = new ConcurrentHashMap<>();
+    private final Map<String, DataPendente> datasPendentes = new ConcurrentHashMap<>();
 
     public GerenciadorSessao() {
         this(Clock.systemDefaultZone());
@@ -71,7 +75,29 @@ public class GerenciadorSessao {
         if (EstadoUsuario.INICIO.name().equals(novoEstado)) {
             reservas.remove(chaveSessao);
             reunioes.remove(chaveSessao);
+            datasPendentes.remove(chaveSessao);
         }
+    }
+
+    public void guardarDataPendente(String numeroCliente, java.time.LocalDate data, EstadoUsuario retorno) {
+        if (numeroCliente == null || numeroCliente.isBlank() || data == null || retorno == null) {
+            return;
+        }
+        datasPendentes.put(chave(numeroCliente), new DataPendente(data, retorno));
+    }
+
+    public DataPendente obterDataPendente(String numeroCliente) {
+        if (numeroCliente == null || numeroCliente.isBlank()) {
+            return null;
+        }
+        return datasPendentes.get(chave(numeroCliente));
+    }
+
+    public void limparDataPendente(String numeroCliente) {
+        if (numeroCliente == null || numeroCliente.isBlank()) {
+            return;
+        }
+        datasPendentes.remove(chave(numeroCliente));
     }
 
     public void concluirRegistro(String numeroCliente, EstadoUsuario novoEstado) {

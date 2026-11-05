@@ -10,11 +10,14 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -24,10 +27,16 @@ public class ServicoIA {
 
     private static final Logger log = LoggerFactory.getLogger(ServicoIA.class);
 
+    private static final String ORIENTACAO_BASICA =
+            "Você faz parte da equipe da empresa e atende um cliente pelo WhatsApp. Converse como uma pessoa, em português do Brasil, "
+                    + "respondendo primeiro o que foi perguntado. Use só os dados cadastrados, nunca confirme reserva e, "
+                    + "sem a informação, diga que um atendente vai responder.";
+
     private final String geminiApiUrl;
     private final String geminiApiKey;
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
+    private volatile String orientacaoAtendimento;
 
     public ServicoIA(
             RestTemplate restTemplate,
@@ -48,6 +57,10 @@ public class ServicoIA {
     }
 
     public Optional<String> responderAtendimento(Empresa empresa, String mensagemUsuario) {
+        return responderAtendimento(empresa, mensagemUsuario, null);
+    }
+
+    public Optional<String> responderAtendimento(Empresa empresa, String mensagemUsuario, String menuDaEmpresa) {
         if (empresa == null || !Boolean.TRUE.equals(empresa.getUsaIA())) {
             return Optional.empty();
         }
@@ -63,7 +76,7 @@ public class ServicoIA {
             return Optional.empty();
         }
 
-        String prompt = construirPromptEmpresa(empresa, mensagemUsuario);
+        String prompt = construirPromptEmpresa(empresa, mensagemUsuario, menuDaEmpresa);
         String resposta = gerarRespostaHumanizada(prompt);
 
         if (resposta == null || resposta.isBlank()) {
@@ -81,11 +94,21 @@ public class ServicoIA {
     }
 
     public String construirPromptEmpresa(Empresa empresa, String mensagemUsuario) {
+        return construirPromptEmpresa(empresa, mensagemUsuario, null);
+    }
+
+    public String construirPromptEmpresa(Empresa empresa, String mensagemUsuario, String menuDaEmpresa) {
         StringBuilder sb = new StringBuilder();
-        sb.append("Você é o assistente virtual da empresa '").append(empresa.getNome()).append("'.\n");
+        sb.append(orientacaoAtendimento()).append("\n\n");
+        sb.append("Empresa: '").append(empresa.getNome()).append("'.\n");
         sb.append("Ramo: ").append(empresa.getRamoDeAtuacao()).append(".\n");
+        sb.append(empresa.isLocacaoPorHora()
+                ? "Modalidade: locação cobrada por hora.\n"
+                : "Modalidade: locação cobrada por diária.\n");
         if (empresa.getTabelaDePrecos() != null && !empresa.getTabelaDePrecos().isBlank()) {
             sb.append("Preços: ").append(empresa.getTabelaDePrecos()).append(".\n");
+        } else {
+            sb.append("Preços: não cadastrados; não informe valor, diga que um atendente responde.\n");
         }
         if (empresa.getRegrasLocacao() != null && !empresa.getRegrasLocacao().isBlank()) {
             sb.append("Regras: ").append(empresa.getRegrasLocacao()).append(".\n");
@@ -93,13 +116,29 @@ public class ServicoIA {
         if (empresa.getLinkGoogleMaps() != null && !empresa.getLinkGoogleMaps().isBlank()) {
             sb.append("Localização: ").append(empresa.getLinkGoogleMaps()).append(".\n");
         }
-        sb.append("Instruções:\n");
-        sb.append("1. Responda em português do Brasil, de forma humana, simpática e concisa (máximo 2 a 3 frases curtas).\n");
-        sb.append("2. Se o cliente apenas saudou, cumprimente-o calorosamente pelo nome da empresa e convide-o a escolher uma opção do menu.\n");
-        sb.append("3. Se o cliente fez pergunta sobre regras ou valores, responda exclusivamente com base nos dados fornecidos.\n");
-        sb.append("4. Finalize lembrando cordialmente que ele pode digitar 1 para ver a agenda, 2 para pesquisar data ou 3 para solicitar reserva.\n");
-        sb.append("5. Mensagem do cliente: \"").append(mensagemUsuario.replace("\"", "'")).append("\"");
+        if (menuDaEmpresa != null && !menuDaEmpresa.isBlank()) {
+            sb.append("\nOpções disponíveis no menu desta empresa (o cliente digita o número):\n")
+                    .append(menuDaEmpresa.trim()).append("\n");
+        } else {
+            sb.append("\nO cliente pode digitar 'menu' para ver as opções.\n");
+        }
+        sb.append("\nMensagem do cliente: \"").append(mensagemUsuario.replace("\"", "'")).append("\"");
         return sb.toString();
+    }
+
+    private String orientacaoAtendimento() {
+        String atual = orientacaoAtendimento;
+        if (atual != null) {
+            return atual;
+        }
+        try (InputStream entrada = new ClassPathResource("assistente/atendimento-empresa.md").getInputStream()) {
+            atual = new String(entrada.readAllBytes(), StandardCharsets.UTF_8).trim();
+        } catch (Exception e) {
+            log.warn("Orientação de atendimento indisponível; usando instruções básicas");
+            atual = ORIENTACAO_BASICA;
+        }
+        orientacaoAtendimento = atual;
+        return atual;
     }
 
     public String gerarRespostaHumanizada(String prompt) {

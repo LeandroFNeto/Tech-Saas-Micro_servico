@@ -10,6 +10,7 @@ import com.example.demo.servico.ServicoGoogleagenda;
 import com.example.demo.servico.ServicoIA;
 import com.example.demo.servico.ServicoMensagem;
 import java.util.Optional;
+import com.example.demo.servico.InterpretadorDeData;
 import com.example.demo.servico.ServicoMenu;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,6 +56,7 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
     @Autowired private ServicoMensagem servicoMensagem;
     @Autowired private GerenciadorSessao gerenciadorSessao;
     @Autowired private ServicoMenu servicoMenu;
+    private final InterpretadorDeData interpretadorDeData = new InterpretadorDeData();
     @Autowired private ServicoGoogleagenda servicoGoogleagenda;
     @Autowired private ServicoFuncionamento servicoFuncionamento;
     @Autowired private ApplicationEventPublisher publicadorEventos;
@@ -87,6 +89,7 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
             case INICIO -> tratarInicio(empresa, numeroCliente, texto);
             case MENU_PRINCIPAL -> tratarMenuPrincipal(empresa, numeroCliente, texto);
             case ESPERANDO_DATA -> tratarDataInformada(empresa, numeroCliente, texto);
+            case ESPERANDO_CONFIRMACAO_DATA -> tratarConfirmacaoData(empresa, numeroCliente, texto);
             case ESPERANDO_RESPOSTA_GALERIA -> tratarRespostaGaleria(empresa, numeroCliente, texto);
             case RESERVA_ESPERANDO_DATA -> tratarReservaData(empresa, numeroCliente, texto);
             case RESERVA_ESPERANDO_HORARIO -> tratarReservaHorario(empresa, numeroCliente, texto);
@@ -104,8 +107,11 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
     }
 
     private void tratarInicio(Empresa empresa, String numeroCliente, String texto) {
+        if (tratouDataDigitadaLivre(empresa, numeroCliente, texto)) {
+            return;
+        }
         if (servicoIA != null) {
-            Optional<String> respostaIa = servicoIA.responderAtendimento(empresa, texto);
+            Optional<String> respostaIa = servicoIA.responderAtendimento(empresa, texto, servicoMenu.montarMenuPrincipal(empresa));
             if (respostaIa.isPresent()) {
                 servicoMensagem.enviarMensagemWPP(empresa, numeroCliente, respostaIa.get());
                 gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.MENU_PRINCIPAL);
@@ -140,8 +146,11 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
             case "IA_GEMINI" -> servicoMensagem.enviarMensagemWPP(
                     empresa, numeroCliente, "Recebemos sua mensagem. Logo um atendente vai te responder.");
             default -> {
+                if (tratouDataDigitadaLivre(empresa, numeroCliente, texto)) {
+                    return;
+                }
                 if (servicoIA != null) {
-                    Optional<String> respostaIa = servicoIA.responderAtendimento(empresa, texto);
+                    Optional<String> respostaIa = servicoIA.responderAtendimento(empresa, texto, servicoMenu.montarMenuPrincipal(empresa));
                     if (respostaIa.isPresent()) {
                         servicoMensagem.enviarMensagemWPP(empresa, numeroCliente, respostaIa.get());
                         return;
@@ -262,10 +271,14 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
     }
 
     private void tratarReservaData(Empresa empresa, String numeroCliente, String texto) {
-        LocalDate data = parseData(empresa, numeroCliente, texto);
+        LocalDate data = parseData(empresa, numeroCliente, texto, EstadoUsuario.RESERVA_ESPERANDO_DATA);
         if (data == null) {
             return;
         }
+        processarReservaData(empresa, numeroCliente, data, texto);
+    }
+
+    private void processarReservaData(Empresa empresa, String numeroCliente, LocalDate data, String texto) {
         if (recusarDataPassada(empresa, numeroCliente, data)) {
             return;
         }
@@ -678,16 +691,106 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
         return valor == null || valor.isBlank() ? "-" : valor;
     }
 
-    private LocalDate parseData(Empresa empresa, String numeroCliente, String texto) {
-        try {
-            return LocalDate.parse(texto.replace("/", "-"), FORMATO_DATA);
-        } catch (DateTimeParseException e) {
-            servicoMensagem.enviarMensagemWPP(
-                    empresa,
-                    numeroCliente,
-                    "Não entendi essa data. Envie no formato DD-MM-AAAA, por exemplo 16-09-2026.");
+    private LocalDate parseData(Empresa empresa, String numeroCliente, String texto, EstadoUsuario retorno) {
+        InterpretadorDeData.Resultado resultado = interpretadorDeData.interpretar(texto, LocalDate.now(FUSO_BRASILIA));
+        if (resultado instanceof InterpretadorDeData.Certa certa) {
+            return certa.data();
+        }
+        if (resultado instanceof InterpretadorDeData.Duvidosa duvidosa && duvidosa.sugestao() != null) {
+            perguntarSeEssaEhAData(empresa, numeroCliente, duvidosa.sugestao(), retorno);
             return null;
         }
+        servicoMensagem.enviarMensagemWPP(
+                empresa,
+                numeroCliente,
+                "Não consegui entender essa data. Pode escrever de outro jeito? Por exemplo: 16/09/2026 ou 16 de setembro.");
+        return null;
+    }
+
+    private void perguntarSeEssaEhAData(Empresa empresa, String numeroCliente, LocalDate sugestao, EstadoUsuario retorno) {
+        gerenciadorSessao.guardarDataPendente(numeroCliente, sugestao, retorno);
+        gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.ESPERANDO_CONFIRMACAO_DATA);
+        servicoMensagem.enviarMensagemWPP(
+                empresa,
+                numeroCliente,
+                "Só para confirmar: você quer dizer " + descreverData(sugestao)
+                        + "? Responda *sim* ou me diga a data certa.");
+    }
+
+    private String descreverData(LocalDate data) {
+        String diaSemana = data.getDayOfWeek().getDisplayName(java.time.format.TextStyle.FULL, Locale.of("pt", "BR"));
+        return diaSemana + ", " + data.format(FORMATO_DATA);
+    }
+
+    private boolean tratouDataDigitadaLivre(Empresa empresa, String numeroCliente, String texto) {
+        if (texto == null || texto.isBlank()) {
+            return false;
+        }
+        String calendarId = empresa.getGoogleCalendarId();
+        if (calendarId == null || calendarId.isBlank()) {
+            return false;
+        }
+        InterpretadorDeData.Resultado resultado = interpretadorDeData.interpretar(texto, LocalDate.now(FUSO_BRASILIA));
+        if (resultado instanceof InterpretadorDeData.Nenhuma) {
+            return false;
+        }
+        if (resultado instanceof InterpretadorDeData.Duvidosa duvidosa && duvidosa.sugestao() == null) {
+            return false;
+        }
+        gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.ESPERANDO_DATA);
+        tratarDataInformada(empresa, numeroCliente, texto);
+        return true;
+    }
+
+    private void tratarConfirmacaoData(Empresa empresa, String numeroCliente, String texto) {
+        GerenciadorSessao.DataPendente pendente = gerenciadorSessao.obterDataPendente(numeroCliente);
+        if (pendente == null) {
+            gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.ESPERANDO_DATA);
+            servicoMensagem.enviarMensagemWPP(empresa, numeroCliente, "Qual data você quer consultar?");
+            return;
+        }
+        String resposta = texto == null ? "" : texto.trim().toLowerCase(Locale.of("pt", "BR"));
+        if (ehConfirmacao(resposta)) {
+            aplicarDataConfirmada(empresa, numeroCliente, pendente.data(), pendente.retorno());
+            return;
+        }
+        if (ehNegacao(resposta)) {
+            gerenciadorSessao.limparDataPendente(numeroCliente);
+            gerenciadorSessao.setEstado(numeroCliente, pendente.retorno());
+            servicoMensagem.enviarMensagemWPP(empresa, numeroCliente, "Tudo bem! Então qual é a data? Pode escrever do seu jeito.");
+            return;
+        }
+        InterpretadorDeData.Resultado resultado = interpretadorDeData.interpretar(texto, LocalDate.now(FUSO_BRASILIA));
+        if (resultado instanceof InterpretadorDeData.Certa certa) {
+            aplicarDataConfirmada(empresa, numeroCliente, certa.data(), pendente.retorno());
+            return;
+        }
+        if (resultado instanceof InterpretadorDeData.Duvidosa duvidosa && duvidosa.sugestao() != null) {
+            perguntarSeEssaEhAData(empresa, numeroCliente, duvidosa.sugestao(), pendente.retorno());
+            return;
+        }
+        servicoMensagem.enviarMensagemWPP(
+                empresa,
+                numeroCliente,
+                "Não entendi. Responda *sim* se a data é " + descreverData(pendente.data()) + " ou me diga a data certa.");
+    }
+
+    private void aplicarDataConfirmada(Empresa empresa, String numeroCliente, LocalDate data, EstadoUsuario retorno) {
+        gerenciadorSessao.limparDataPendente(numeroCliente);
+        gerenciadorSessao.setEstado(numeroCliente, retorno);
+        if (retorno == EstadoUsuario.RESERVA_ESPERANDO_DATA) {
+            processarReservaData(empresa, numeroCliente, data, data.format(FORMATO_DATA));
+            return;
+        }
+        consultarData(empresa, numeroCliente, data);
+    }
+
+    private boolean ehConfirmacao(String resposta) {
+        return resposta.matches("^(sim|s|isso|isso mesmo|ok|pode ser|pode|claro|exato|exatamente|correto|certo|confirmo|é|e|essa mesma|sim,? (é|e) (essa|isso).*)[.! ]*$");
+    }
+
+    private boolean ehNegacao(String resposta) {
+        return resposta.matches("^(não|nao|n|negativo|errado|não é|nao e|não é essa|nao e essa|outra)[.! ]*$");
     }
 
     private LocalTime parseHorario(String texto) {
@@ -800,10 +903,27 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
             return;
         }
 
-        LocalDate data = parseData(empresa, numeroCliente, texto);
+        LocalDate data = parseData(empresa, numeroCliente, texto, EstadoUsuario.ESPERANDO_DATA);
         if (data == null) {
             return;
         }
+        consultarDataNaAgenda(empresa, numeroCliente, data, calendarId);
+    }
+
+    private void consultarData(Empresa empresa, String numeroCliente, LocalDate data) {
+        String calendarId = empresa.getGoogleCalendarId();
+        if (calendarId == null || calendarId.isBlank()) {
+            servicoMensagem.enviarMensagemWPP(
+                    empresa,
+                    numeroCliente,
+                    "O calendário ainda não foi configurado. Peça ao administrador para cadastrar o ID da agenda.");
+            gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.INICIO);
+            return;
+        }
+        consultarDataNaAgenda(empresa, numeroCliente, data, calendarId);
+    }
+
+    private void consultarDataNaAgenda(Empresa empresa, String numeroCliente, LocalDate data, String calendarId) {
         if (recusarDataPassada(empresa, numeroCliente, data)) {
             return;
         }

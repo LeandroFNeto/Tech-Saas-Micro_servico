@@ -45,7 +45,7 @@ O **GAMB** (Gerenciador de Atendimento para Meios de Hospedagem e Bens / Pequeno
 - **US01 - Receber menu de atendimento**: O cliente inicia a conversa e recebe um menu dinâmico numerado contendo apenas as opções ativas para a empresa.
 - **US02 - Visualizar fotos da empresa**: Envio da foto principal do estabelecimento e oferta de fotos complementares (galeria até 5 imagens).
 - **US03 - Consultar informações da empresa**: Exibição dos valores, localização (link do Maps) e regras de locação.
-- **US04 - Consultar disponibilidade para reserva**: Verificação de datas e períodos livres conforme a modalidade de locação (diária ou hora).
+- **US04 - Consultar disponibilidade para reserva**: Verificação de datas e períodos livres conforme a modalidade de locação (diária ou hora). O cliente pode escrever a data do jeito que preferir (`25/12`, `25 de dezembro`, `amanhã`); quando a data fica em dúvida, o atendimento pergunta qual ele quis dizer antes de consultar a agenda.
 - **US05 - Solicitar reserva**: Coleta dos dados do solicitante, revisão dos dados e registro da intenção de reserva para processamento com Google Agenda.
 - **US06 - Consultar cardápio ou produtos**: Consulta a catálogo de itens ou opções de cardápio caso a empresa utilize esse módulo.
 

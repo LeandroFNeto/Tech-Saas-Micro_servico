@@ -155,4 +155,46 @@ class ServicoIATest {
 
         assertThat(resposta).isEmpty();
     }
+
+    @Test
+    @DisplayName("Prompt traz o menu real da empresa e não o roteiro fixo de opções 1, 2 e 3")
+    void promptTrazOMenuRealDaEmpresa() {
+        String menu = "Olá!\n\n1 - Ver fotos do espaço\n2 - Fazer reserva\n\nDigite o número da opção desejada.";
+
+        String prompt = servicoIA.construirPromptEmpresa(empresa, "Oi", menu);
+
+        assertThat(prompt).contains("1 - Ver fotos do espaço").contains("2 - Fazer reserva");
+        assertThat(prompt).doesNotContain("1 para ver a agenda");
+        assertThat(prompt).doesNotContain("máximo 2 a 3 frases");
+    }
+
+    @Test
+    @DisplayName("Prompt orienta conversa humana, sem roteiro, e a conduta sobre reserva")
+    void promptTrazPersonaHumanaEConduta() {
+        String prompt = servicoIA.construirPromptEmpresa(empresa, "Oi", null);
+
+        assertThat(prompt).contains("Converse como uma pessoa");
+        assertThat(prompt).contains("Acompanhe o jeito dele");
+        assertThat(prompt).contains("Varie a forma de começar");
+        assertThat(prompt).contains("nunca confirma nem promete uma reserva");
+        assertThat(prompt).contains("'menu'");
+    }
+
+    @Test
+    @DisplayName("Empresa sem preço cadastrado manda a IA passar para um atendente")
+    void promptSemPrecoNaoInformaValor() {
+        empresa.setTabelaDePrecos(null);
+
+        String prompt = servicoIA.construirPromptEmpresa(empresa, "Quanto custa?", null);
+
+        assertThat(prompt).contains("Preços: não cadastrados");
+    }
+
+    @Test
+    @DisplayName("Prompt informa a modalidade por hora ou por diária")
+    void promptInformaModalidade() {
+        assertThat(servicoIA.construirPromptEmpresa(empresa, "Oi", null)).contains("cobrada por diária");
+        empresa.setLocacaoPorHora(true);
+        assertThat(servicoIA.construirPromptEmpresa(empresa, "Oi", null)).contains("cobrada por hora");
+    }
 }
