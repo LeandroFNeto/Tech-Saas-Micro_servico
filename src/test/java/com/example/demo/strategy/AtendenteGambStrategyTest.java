@@ -270,7 +270,7 @@ class AtendenteGambStrategyTest {
     @Test
     @DisplayName("Data passada é recusada sem consultar a agenda")
     void deveRecusarDataPassada() throws Exception {
-        ate("oi", "2", "1", LocalDate.now().minusDays(1).format(FORMATO_DATA));
+        ate("oi", "2", "1", LocalDate.now(ZoneId.of("America/Sao_Paulo")).minusDays(1).format(FORMATO_DATA));
 
         assertThat(ultimaResposta()).contains("já passou");
         verify(servicoGoogleagenda, never()).horariosLivres(any(), any(), any(), anyInt(), anyInt(), any());
