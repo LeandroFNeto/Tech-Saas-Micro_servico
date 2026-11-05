@@ -7,6 +7,7 @@ import com.example.demo.model.Role;
 import com.example.demo.model.Usuario;
 import com.example.demo.repository.EmpresaRepository;
 import com.example.demo.servico.GerenciadorSessao;
+import com.example.demo.servico.RegistroEnviosBot;
 import com.example.demo.servico.ServicoAcessoEmpresa;
 import com.example.demo.servico.ServicoGoogleagenda;
 import com.example.demo.servico.ServicoIA;
@@ -37,6 +38,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -57,6 +59,7 @@ class ControllerWhatsappTest {
     private LocacaoStrategy locacaoStrategy;
 
     @MockitoBean private GerenciadorSessao gerenciadorSessao;
+    @MockitoBean private RegistroEnviosBot registroEnviosBot;
     @MockitoBean private EmpresaRepository empresaRepository;
     @MockitoBean private FactoryModulo moduloFactory;
     @MockitoBean private Observadorwhatsapp observador;
@@ -109,6 +112,77 @@ class ControllerWhatsappTest {
         verify(observador).logFiltro(eq("teste-sessao"), anyString(), contains("Anti-X9"));
         verify(gerenciadorSessao).ativarTravaProprietario("551188887777");
         verifyNoInteractions(moduloFactory);
+    }
+
+    @Test
+    @DisplayName("Resposta enviada pelo bot que volta com fromMe=true não liga a trava")
+    void naoDeveLigarTravaQuandoEcoDoBot() throws Exception {
+        when(registroEnviosBot.foiEnviadoPeloBot(anyString(), anyString())).thenReturn(true);
+
+        String payload = """
+            {
+                "session": "teste-sessao",
+                "from": "5511988887777@c.us",
+                "body": "Olá! Como posso ajudar?",
+                "type": "chat",
+                "fromMe": true
+            }
+        """;
+
+        mockMvc.perform(post("/webhook/whatsapp")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload))
+                .andExpect(status().isOk());
+
+        verify(observador).logFiltro(eq("teste-sessao"), anyString(), contains("Eco do bot ignorado"));
+        verify(gerenciadorSessao, never()).ativarTravaProprietario(anyString());
+        verifyNoInteractions(moduloFactory);
+    }
+
+    @Test
+    @DisplayName("Dono escreve para cliente @lid: a trava vai para o cliente e não para a empresa")
+    void travaVaiParaOClienteLid() throws Exception {
+        String payload = """
+            {
+                "session": "teste-sessao",
+                "from": "5511900000000@c.us",
+                "to": "185336529469528@lid",
+                "sender": { "id": "5511900000000@c.us" },
+                "body": "Oi, sou eu",
+                "type": "chat",
+                "fromMe": true
+            }
+        """;
+
+        mockMvc.perform(post("/webhook/whatsapp")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload))
+                .andExpect(status().isOk());
+
+        verify(gerenciadorSessao).ativarTravaProprietario("185336529469528");
+        verify(gerenciadorSessao, never()).ativarTravaProprietario("551100000000");
+    }
+
+    @Test
+    @DisplayName("Cliente com @lid e número registra o apelido para a trava valer nos dois")
+    void registraApelidoDoCliente() throws Exception {
+        String payload = """
+            {
+                "session": "teste-sessao",
+                "from": "185336529469528@lid",
+                "sender": { "id": "5511988887777@c.us" },
+                "body": "Olá",
+                "type": "chat",
+                "fromMe": false
+            }
+        """;
+
+        mockMvc.perform(post("/webhook/whatsapp")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload))
+                .andExpect(status().isOk());
+
+        verify(gerenciadorSessao).registrarApelido("185336529469528@lid", "5511988887777@c.us");
     }
 
     @Test

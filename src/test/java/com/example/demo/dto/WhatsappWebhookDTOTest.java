@@ -237,4 +237,42 @@ class WhatsappWebhookDTOTest {
         WhatsappWebhookDTO dto = mapper.readValue(json, WhatsappWebhookDTO.class);
         assertThat(dto.resolverContatoAlvo()).isEqualTo("5511999999999@c.us");
     }
+
+    @Test
+    @DisplayName("Mensagem do dono para cliente @lid mira o cliente e não o número da empresa")
+    void contatoAlvoDaMensagemDoDonoEhODestinatarioLid() throws Exception {
+        String json = """
+            {
+              "session": "sessao",
+              "type": "chat",
+              "fromMe": true,
+              "from": "5511900000000@c.us",
+              "to": "185336529469528@lid",
+              "sender": { "id": "5511900000000@c.us" },
+              "body": "Oi, sou eu"
+            }
+        """;
+        WhatsappWebhookDTO dto = mapper.readValue(json, WhatsappWebhookDTO.class);
+
+        assertThat(dto.resolverContatoAlvo()).isEqualTo("185336529469528@lid");
+    }
+
+    @Test
+    @DisplayName("Jid bruto devolve o @lid mesmo quando o remetente resolvido é o número")
+    void jidBrutoMantemOLid() throws Exception {
+        String json = """
+            {
+              "session": "sessao",
+              "type": "chat",
+              "fromMe": false,
+              "from": "185336529469528@lid",
+              "sender": { "id": "5511988887777@c.us" },
+              "body": "Olá"
+            }
+        """;
+        WhatsappWebhookDTO dto = mapper.readValue(json, WhatsappWebhookDTO.class);
+
+        assertThat(dto.resolverJidBruto()).isEqualTo("185336529469528@lid");
+        assertThat(dto.resolverRemoteJid()).isEqualTo("5511988887777@c.us");
+    }
 }

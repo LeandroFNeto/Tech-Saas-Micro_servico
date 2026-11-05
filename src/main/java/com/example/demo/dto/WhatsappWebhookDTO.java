@@ -248,13 +248,32 @@ public record WhatsappWebhookDTO(
     public String resolverContatoAlvo() {
         if (enviadaPorMim()) {
             if (temTexto(to)) {
-                return resolverLid(to);
+                return to;
             }
             if (id != null && temTexto(id.remoteJid())) {
-                return resolverLid(id.remoteJid());
+                return id.remoteJid();
             }
         }
         return resolverRemoteJid();
+    }
+
+    public String resolverJidBruto() {
+        if (temTexto(remoteJid)) {
+            return remoteJid;
+        }
+        if (temTexto(from)) {
+            return from;
+        }
+        if (data != null && data.key() != null && temTexto(data.key().remoteJid())) {
+            return data.key().remoteJid();
+        }
+        if (id != null && temTexto(id.remoteJid())) {
+            return id.remoteJid();
+        }
+        if (sender != null && temTexto(sender.id())) {
+            return sender.id();
+        }
+        return null;
     }
 
     public boolean deveDescartarComoRuido() {

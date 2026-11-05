@@ -26,6 +26,9 @@ public class ServicoMensagem {
     @Autowired
     private Observadorwhatsapp observador;
 
+    @Autowired(required = false)
+    private RegistroEnviosBot registroEnviosBot;
+
     public void enviarMensagemWPP(Empresa empresa, String numeroDestino, String texto) {
         String sessao = empresa.getSessaoWhatsapp();
 
@@ -34,6 +37,7 @@ public class ServicoMensagem {
             preencherDestino(body, numeroDestino);
             body.put("message", texto);
             postWpp(sessao, "/send-message", body);
+            registrarTexto(numeroDestino, texto);
             observador.logSucesso(sessao, numeroDestino, "[RESPOSTA ENVIADA]: " + texto);
         } catch (Exception e) {
             observador.logErro(sessao, numeroDestino, "ServicoMensagem (Envio)", e);
@@ -50,6 +54,7 @@ public class ServicoMensagem {
             preencherDestino(body, numeroDestino);
             body.put("message", texto);
             postWpp(sessao, "/send-message", body);
+            registrarTexto(numeroDestino, texto);
             observador.logSucesso(sessao, numeroDestino, "[RESPOSTA ENVIADA]: " + texto);
             return true;
         } catch (Exception e) {
@@ -77,6 +82,10 @@ public class ServicoMensagem {
                 body.put("caption", caption);
             }
             postWpp(sessao, "/send-image", body);
+            if (registroEnviosBot != null) {
+                registroEnviosBot.registrarMidia(numeroDestino);
+                registroEnviosBot.registrarTexto(numeroDestino, caption);
+            }
             observador.logSucesso(sessao, numeroDestino, "[IMAGEM ENVIADA]: " + url);
         } catch (Exception e) {
             observador.logErro(sessao, numeroDestino, "ServicoMensagem (Imagem)", e);
@@ -108,6 +117,12 @@ public class ServicoMensagem {
 
         if (aoTerminar != null) {
             aoTerminar.run();
+        }
+    }
+
+    private void registrarTexto(String numeroDestino, String texto) {
+        if (registroEnviosBot != null) {
+            registroEnviosBot.registrarTexto(numeroDestino, texto);
         }
     }
 

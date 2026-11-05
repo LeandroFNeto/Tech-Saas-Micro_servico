@@ -26,6 +26,7 @@ public class GerenciadorSessao {
     private final Map<String, DadosReservaSessao> reservas = new ConcurrentHashMap<>();
     private final Map<String, DadosReuniaoSessao> reunioes = new ConcurrentHashMap<>();
     private final Map<String, LocalDateTime> travasProprietario = new ConcurrentHashMap<>();
+    private final Map<String, String> apelidos = new ConcurrentHashMap<>();
 
     public GerenciadorSessao() {
         this(Clock.systemDefaultZone());
@@ -107,7 +108,33 @@ public class GerenciadorSessao {
         if (numeroCliente == null || numeroCliente.isBlank()) {
             return;
         }
-        travasProprietario.put(chave(numeroCliente), LocalDateTime.now(clock));
+        String chaveSessao = chave(numeroCliente);
+        LocalDateTime agora = LocalDateTime.now(clock);
+        travasProprietario.put(chaveSessao, agora);
+        String outra = apelidos.get(chaveSessao);
+        if (outra != null) {
+            travasProprietario.put(outra, agora);
+        }
+    }
+
+    public void registrarApelido(String identificador, String outroIdentificador) {
+        if (identificador == null || identificador.isBlank() || outroIdentificador == null || outroIdentificador.isBlank()) {
+            return;
+        }
+        String a = chave(identificador);
+        String b = chave(outroIdentificador);
+        if (a.isEmpty() || b.isEmpty() || a.equals(b)) {
+            return;
+        }
+        apelidos.put(a, b);
+        apelidos.put(b, a);
+    }
+
+    public String apelidoDe(String numeroCliente) {
+        if (numeroCliente == null || numeroCliente.isBlank()) {
+            return null;
+        }
+        return apelidos.get(chave(numeroCliente));
     }
 
     public boolean estaComTravaProprietarioAtiva(String numeroCliente) {
@@ -116,6 +143,11 @@ public class GerenciadorSessao {
         }
         String chaveSessao = chave(numeroCliente);
         LocalDateTime agora = LocalDateTime.now(clock);
+        return travaVigente(chaveSessao, agora)
+                || (apelidos.get(chaveSessao) != null && travaVigente(apelidos.get(chaveSessao), agora));
+    }
+
+    private boolean travaVigente(String chaveSessao, LocalDateTime agora) {
         LocalDateTime momento = travasProprietario.get(chaveSessao);
         if (momento == null) {
             return false;
@@ -131,7 +163,12 @@ public class GerenciadorSessao {
         if (numeroCliente == null || numeroCliente.isBlank()) {
             return;
         }
-        travasProprietario.remove(chave(numeroCliente));
+        String chaveSessao = chave(numeroCliente);
+        travasProprietario.remove(chaveSessao);
+        String outra = apelidos.get(chaveSessao);
+        if (outra != null) {
+            travasProprietario.remove(outra);
+        }
     }
 
     public DadosReservaSessao getOuCriarReserva(String remetente) {

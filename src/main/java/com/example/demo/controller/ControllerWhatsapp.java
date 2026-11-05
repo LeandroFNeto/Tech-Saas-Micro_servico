@@ -6,6 +6,7 @@ import com.example.demo.model.Empresa;
 import com.example.demo.model.EstadoUsuario;
 import com.example.demo.repository.EmpresaRepository;
 import com.example.demo.servico.GerenciadorSessao;
+import com.example.demo.servico.RegistroEnviosBot;
 import com.example.demo.servico.ServicoAcessoEmpresa;
 import com.example.demo.servico.ServicoContato;
 import com.example.demo.servico.ServicoRespostaLembrete;
@@ -42,6 +43,7 @@ public class ControllerWhatsapp {
     private static final Logger log = LoggerFactory.getLogger(ControllerWhatsapp.class);
 
     @Autowired private GerenciadorSessao gerenciadorSessao;
+    @Autowired private RegistroEnviosBot registroEnviosBot;
     @Autowired private EmpresaRepository empresaRepository;
     @Autowired private FactoryModulo moduloFactory;
     @Autowired private Observadorwhatsapp observador;
@@ -88,6 +90,10 @@ public class ControllerWhatsapp {
 
             if (payload.enviadaPorMim()) {
                 String contatoAlvo = payload.resolverContatoAlvo();
+                if (foiEnviadoPeloBot(contatoAlvo, textoRecebido)) {
+                    observador.logFiltro(sessao, rawFrom, "Eco do bot ignorado");
+                    return ResponseEntity.ok().build();
+                }
                 if (contatoAlvo != null && !contatoAlvo.isBlank()) {
                     gerenciadorSessao.ativarTravaProprietario(WhatsappUtil.normalizarParaChaveEstado(contatoAlvo));
                 }
@@ -100,6 +106,10 @@ public class ControllerWhatsapp {
                 return ResponseEntity.ok().build();
             }
 
+            String jidBruto = payload.resolverJidBruto();
+            if (jidBruto != null && !jidBruto.equals(rawFrom)) {
+                gerenciadorSessao.registrarApelido(jidBruto, rawFrom);
+            }
             String chaveEstado = WhatsappUtil.normalizarParaChaveEstado(rawFrom);
 
             if (gerenciadorSessao.estaComTravaProprietarioAtiva(chaveEstado)) {
@@ -135,6 +145,14 @@ public class ControllerWhatsapp {
             observador.logErro(sessao, rawFrom, "ControllerWhatsapp", e);
         }
         return ResponseEntity.ok().build();
+    }
+
+    private boolean foiEnviadoPeloBot(String contatoAlvo, String texto) {
+        if (registroEnviosBot.foiEnviadoPeloBot(contatoAlvo, texto)) {
+            return true;
+        }
+        String apelido = gerenciadorSessao.apelidoDe(contatoAlvo);
+        return apelido != null && registroEnviosBot.foiEnviadoPeloBot(apelido, texto);
     }
 
     @GetMapping({"/whatsapp/{sessao}/status", "/whatsapp/status/{sessao}"})

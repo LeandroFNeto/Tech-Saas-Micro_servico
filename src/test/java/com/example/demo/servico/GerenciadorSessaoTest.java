@@ -218,4 +218,39 @@ class GerenciadorSessaoTest {
             return instante;
         }
     }
+
+    @Test
+    @DisplayName("Trava ligada pelo @lid vale para o número do mesmo cliente e o contrário")
+    void travaValePeloApelido() {
+        gerenciadorSessao.registrarApelido("185336529469528@lid", CLIENTE);
+
+        gerenciadorSessao.ativarTravaProprietario("185336529469528@lid");
+
+        assertThat(gerenciadorSessao.estaComTravaProprietarioAtiva(CLIENTE)).isTrue();
+
+        GerenciadorSessao outro = new GerenciadorSessao();
+        outro.registrarApelido("185336529469528@lid", CLIENTE);
+        outro.ativarTravaProprietario(CLIENTE);
+        assertThat(outro.estaComTravaProprietarioAtiva("185336529469528@lid")).isTrue();
+    }
+
+    @Test
+    @DisplayName("Trava de um cliente sem apelido não vale para outro")
+    void travaNaoVazaParaOutroCliente() {
+        gerenciadorSessao.ativarTravaProprietario("185336529469528@lid");
+
+        assertThat(gerenciadorSessao.estaComTravaProprietarioAtiva(CLIENTE)).isFalse();
+    }
+
+    @Test
+    @DisplayName("Remover a trava limpa também o apelido")
+    void removerTravaLimpaOApelido() {
+        gerenciadorSessao.registrarApelido("185336529469528@lid", CLIENTE);
+        gerenciadorSessao.ativarTravaProprietario(CLIENTE);
+
+        gerenciadorSessao.removerTravaProprietario("185336529469528@lid");
+
+        assertThat(gerenciadorSessao.estaComTravaProprietarioAtiva(CLIENTE)).isFalse();
+        assertThat(gerenciadorSessao.apelidoDe(CLIENTE)).isNotNull();
+    }
 }
