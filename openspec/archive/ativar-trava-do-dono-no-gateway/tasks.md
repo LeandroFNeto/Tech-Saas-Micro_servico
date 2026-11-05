@@ -2,8 +2,8 @@
 
 ## 1. Gateway
 
-- [ ] 1.1 `wppconnect-server/src/config.ts`: `webhook.onSelfMessage` lê `WPPCONNECT_ON_SELF_MESSAGE` e vale `true` quando a variável não existe; verificar com `wppconnect-server/src/tests/config.test.ts` (padrão `true`, `false` com a variável em `false`) rodando `npx jest config`
-- [ ] 1.2 `docker-compose.yml` e `.env.example`: repassar `WPPCONNECT_ON_SELF_MESSAGE` ao serviço `wppconnect`; verificar com `docker compose config` mostrando a variável no serviço
+- [x] 1.1 `wppconnect-server/src/config.ts`: `webhook.onSelfMessage` lê `WPPCONNECT_ON_SELF_MESSAGE` e vale `true` quando a variável não existe; verificar com `wppconnect-server/src/tests/config.test.ts` (padrão `true`, `false` com a variável em `false`) rodando `npx jest config`
+- [x] 1.2 `docker-compose.yml` e `.env.example`: repassar `WPPCONNECT_ON_SELF_MESSAGE` ao serviço `wppconnect`; verificar com `docker compose config` mostrando a variável no serviço
 
 ## 2. Back
 
@@ -21,10 +21,10 @@
 
 ## 4. Operação e conferência
 
-- [ ] 4.1 Rebuild e redeploy do container `wppconnect` e do Java no VPS; verificar nos logs do gateway que a mensagem do dono gera POST em `/webhook/whatsapp`
-- [ ] 4.2 Conferir numa conversa real: dono digita no celular, log "Dono do celular digitou (Anti-X9)" aparece, o cliente responde e o bot fica quieto por 20 minutos; a resposta normal do bot não gera esse log; anotar o resultado no design
-- [ ] 4.3 Sincronizar `openspec/specs/whatsapp/spec.md` (WPP-02) com o delta, à mão (o cabeçalho de WPP-02 não tem o prefixo `Requirement:`); verificar relendo o texto do arquivo
-- [ ] 4.4 Atualizar `especificacao/back/paths/webhook-whatsapp.yaml` se a descrição mudar; verificar com `git diff` do arquivo
+- [x] 4.1 Rebuild e redeploy do container `wppconnect` e do Java no VPS; verificar nos logs do gateway que a mensagem do dono gera POST em `/webhook/whatsapp`
+- [x] 4.2 Conferir numa conversa real: dono digita no celular, log "Dono do celular digitou (Anti-X9)" aparece, o cliente responde e o bot fica quieto por 20 minutos; a resposta normal do bot não gera esse log; anotar o resultado no design
+- [x] 4.3 Sincronizar `openspec/specs/whatsapp/spec.md` (WPP-02) com o delta, à mão (o cabeçalho de WPP-02 não tem o prefixo `Requirement:`); verificar relendo o texto do arquivo
+- [x] 4.4 Atualizar `especificacao/back/paths/webhook-whatsapp.yaml` se a descrição mudar; verificar com `git diff` do arquivo
 
 ## Workflow follow-up
 

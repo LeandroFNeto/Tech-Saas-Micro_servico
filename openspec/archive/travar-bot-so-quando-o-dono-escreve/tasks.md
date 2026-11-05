@@ -1,7 +1,7 @@
 # Tarefas
 
 ## Confirmar a causa
-- [ ] Reproduzir com o gateway: enviar uma resposta do bot e ver nos logs se ela volta com `fromMe=true` e liga a trava ("Dono do celular digitou (Anti-X9)" logo após "[RESPOSTA ENVIADA]"); anotar o resultado no design
+- [x] Reproduzir com o gateway: enviar uma resposta do bot e ver nos logs se ela volta com `fromMe=true` e liga a trava ("Dono do celular digitou (Anti-X9)" logo após "[RESPOSTA ENVIADA]"); anotar o resultado no design
 
 ## Back
 - [x] `WhatsappWebhookDTO.resolverContatoAlvo()`: na mensagem do dono, devolver o destinatário (`to` / `id.remoteJid`) sem trocar por `sender.id`
@@ -17,9 +17,9 @@
 - [x] `ControllerWhatsappTest`: dono escreve para o cliente `@lid`, cliente responde pelo número, bot não responde
 - [x] Teste do registro: casa por id, casa por texto, expira em 2 minutos, respeita o tamanho limite
 - [x] Rodar `mvn test` (suíte do back passa)
-- [ ] Conferir uma conversa real em cada número
+- [x] Conferir uma conversa real em cada número
 
 ## Fechamento
-- [ ] Sincronizar `openspec/specs/whatsapp/spec.md` com o delta, à mão (o cabeçalho de WPP-02 não tem o prefixo `Requirement:`)
-- [ ] Atualizar `especificacao/back/paths/webhook-whatsapp.yaml` se a descrição da trava mudar
-- [ ] Mover esta pasta para `openspec/archive/travar-bot-so-quando-o-dono-escreve/`
+- [x] Sincronizar `openspec/specs/whatsapp/spec.md` com o delta, à mão (o cabeçalho de WPP-02 não tem o prefixo `Requirement:`)
+- [x] Atualizar `especificacao/back/paths/webhook-whatsapp.yaml` se a descrição da trava mudar
+- [x] Mover esta pasta para `openspec/archive/travar-bot-so-quando-o-dono-escreve/`
