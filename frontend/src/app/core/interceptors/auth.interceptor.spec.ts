@@ -28,7 +28,7 @@ describe('authInterceptor e mensagemHttp', () => {
     httpMock.verify();
   });
 
-  it('anexa cabecalho Authorization Bearer quando token existe', () => {
+  it('anexa cabecalho Authorization Bearer em rotas relativas da API quando token valido existe', () => {
     authServiceSpy.token.and.returnValue('meu-jwt-token');
 
     http.get('/api/teste').subscribe();
@@ -38,7 +38,7 @@ describe('authInterceptor e mensagemHttp', () => {
     req.flush({});
   });
 
-  it('nao anexa cabecalho Authorization quando token e nulo', () => {
+  it('nao anexa cabecalho Authorization quando token e nulo ou expirado', () => {
     authServiceSpy.token.and.returnValue(null);
 
     http.get('/api/teste').subscribe();
@@ -48,28 +48,32 @@ describe('authInterceptor e mensagemHttp', () => {
     req.flush({});
   });
 
-  it('mensagemHttp traduz corretamente status de erro e payloads', () => {
+  it('nao vaza cabecalho Authorization para dominios externos como Cloudinary', () => {
+    authServiceSpy.token.and.returnValue('jwt-secreto');
+
+    const urlCloudinary = 'https://api.cloudinary.com/v1_1/demo/image/upload';
+    http.post(urlCloudinary, {}).subscribe();
+
+    const req = httpMock.expectOne(urlCloudinary);
+    expect(req.request.headers.has('Authorization')).toBeFalse();
+    req.flush({});
+  });
+
+  it('mensagemHttp traduz corretamente status HTTP 0, 400, 401, 403, 404, 405, 422, 429 e 500 sem expor localhost', () => {
     expect(mensagemHttp('erro generico')).toBe('Não foi possível concluir a operação.');
 
     const erro0 = new HttpErrorResponse({ status: 0 });
-    expect(mensagemHttp(erro0)).toBe('API indisponível. Confira se o Spring Boot está em http://localhost:8080.');
+    expect(mensagemHttp(erro0)).not.toContain('localhost:8080');
+    expect(mensagemHttp(erro0)).toContain('indisponível');
 
-    const erro401Padrao = new HttpErrorResponse({ status: 401 });
-    expect(mensagemHttp(erro401Padrao)).toBe('Não autorizado. Faça login novamente.');
-
-    const erro401Custom = new HttpErrorResponse({ status: 401, error: { message: 'Token expirado' } });
-    expect(mensagemHttp(erro401Custom)).toBe('Token expirado');
-
-    const erro404Padrao = new HttpErrorResponse({ status: 404 });
-    expect(mensagemHttp(erro404Padrao)).toBe('Recurso não encontrado.');
-
-    const erro405 = new HttpErrorResponse({ status: 405 });
-    expect(mensagemHttp(erro405)).toBe('A API rejeitou o método HTTP. Conectar WhatsApp usa POST em /whatsapp/{sessao}/iniciar.');
-
-    const erro400Padrao = new HttpErrorResponse({ status: 400 });
-    expect(mensagemHttp(erro400Padrao)).toBe('Sessão WhatsApp já ocupada ou dados inválidos.');
-
-    const erro500Padrao = new HttpErrorResponse({ status: 500 });
-    expect(mensagemHttp(erro500Padrao)).toBe('Erro 500 ao falar com a API.');
+    expect(mensagemHttp(new HttpErrorResponse({ status: 400 }))).toBe('Dados inválidos. Confira os campos informados.');
+    expect(mensagemHttp(new HttpErrorResponse({ status: 401 }))).toBe('Não autorizado. Faça login novamente.');
+    expect(mensagemHttp(new HttpErrorResponse({ status: 401, error: { message: 'Token expirado' } }))).toBe('Token expirado');
+    expect(mensagemHttp(new HttpErrorResponse({ status: 403 }))).toBe('Acesso negado para esta operação.');
+    expect(mensagemHttp(new HttpErrorResponse({ status: 404 }))).toBe('Recurso não encontrado.');
+    expect(mensagemHttp(new HttpErrorResponse({ status: 405 }))).toBe('Método HTTP não permitido para este recurso.');
+    expect(mensagemHttp(new HttpErrorResponse({ status: 422 }))).toBe('Dados inválidos para processamento.');
+    expect(mensagemHttp(new HttpErrorResponse({ status: 429 }))).toContain('Muitas requisições');
+    expect(mensagemHttp(new HttpErrorResponse({ status: 500 }))).toBe('Erro 500 ao falar com a API.');
   });
 });

@@ -58,6 +58,7 @@ export class PainelComponent {
 
   readonly carregando = signal(true);
   readonly falha = signal(false);
+  readonly erroCarregamentoInicial = signal(false);
   readonly cidadeSalva = signal('');
   readonly ativaSalva = signal(false);
   readonly cidadeResolvida = signal('');
@@ -66,7 +67,7 @@ export class PainelComponent {
   readonly editando = signal(false);
   readonly cidade = signal('');
   readonly previsaoAtiva = signal(false);
-  readonly permitePrevisaoTempo = signal(true);
+  readonly permitePrevisaoTempo = signal(false);
   readonly salvando = signal(false);
   readonly erroCidade = signal('');
   readonly sucesso = signal(false);
@@ -119,15 +120,24 @@ export class PainelComponent {
     return !this.carregando() && !this.erro() && !this.semCidade() && !this.desligada();
   }
 
-  private carregar(): void {
+  carregar(): void {
+    if (!this.sessao) {
+      this.erroCarregamentoInicial.set(true);
+      this.falha.set(true);
+      this.carregando.set(false);
+      return;
+    }
     this.carregando.set(true);
     this.falha.set(false);
+    this.erroCarregamentoInicial.set(false);
     this.empresaService.buscarPorSessao(this.sessao).subscribe({
       next: (empresa) => {
+        this.erroCarregamentoInicial.set(false);
         this.aplicarEmpresa(empresa);
         this.buscarPrevisao();
       },
       error: () => {
+        this.erroCarregamentoInicial.set(true);
         this.falha.set(true);
         this.carregando.set(false);
       }
@@ -148,7 +158,7 @@ export class PainelComponent {
   }
 
   private buscarPrevisao(): void {
-    if (this.cidadeSalva().trim() === '' || !this.ativaSalva()) {
+    if (!this.permitePrevisaoTempo() || this.cidadeSalva().trim() === '' || !this.ativaSalva()) {
       this.previsao.set(null);
       this.carregando.set(false);
       return;
@@ -195,7 +205,7 @@ export class PainelComponent {
   }
 
   salvarCidade(): void {
-    if (this.salvando()) {
+    if (this.salvando() || !this.sessao) {
       return;
     }
     this.salvando.set(true);

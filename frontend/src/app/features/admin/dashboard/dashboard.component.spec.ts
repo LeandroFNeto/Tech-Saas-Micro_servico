@@ -1,6 +1,7 @@
-import { ComponentFixture, TestBed, fakeAsync, discardPeriodicTasks, tick } from '@angular/core/testing';
+import { HttpErrorResponse } from '@angular/common/http';
+import { ComponentFixture, TestBed, discardPeriodicTasks, fakeAsync, tick } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { of } from 'rxjs';
+import { Subject, of, throwError } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
 import { EmpresaService } from '../../../core/services/empresa.service';
 import { WhatsappConnectionService } from '../../../core/services/whatsapp-connection.service';
@@ -53,29 +54,69 @@ describe('DashboardComponent', () => {
     discardPeriodicTasks();
   }));
 
-  it('abre modal de exclusão e confirma exclusão da empresa', fakeAsync(() => {
-    const empresasApi = TestBed.inject(EmpresaService);
-    spyOn(empresasApi, 'excluir').and.returnValue(of(undefined));
-    spyOn(empresasApi, 'listar').and.returnValue(of([empresa]));
-
+  it('lista só com o botão Editar, sem botão de excluir', fakeAsync(() => {
     fixture.detectChanges();
     tick(0);
     fixture.detectChanges();
 
-    const btnExcluir: HTMLButtonElement | null = fixture.nativeElement.querySelector('button[aria-label="Excluir Casa de Festas"]');
-    expect(btnExcluir).toBeTruthy();
-    btnExcluir!.click();
-    fixture.detectChanges();
+    const raiz: HTMLElement = fixture.nativeElement;
+    expect(raiz.querySelector('a[aria-label="Editar Casa de Festas"]')).toBeTruthy();
+    expect(raiz.querySelector('button[aria-label="Excluir Casa de Festas"]')).toBeNull();
+    expect(raiz.textContent).not.toContain('Excluir');
+    discardPeriodicTasks();
+  }));
 
-    expect(fixture.nativeElement.textContent).toContain('Excluir empresa');
+  it('consulta status imediatamente quando listar resolve de forma assincrona sem esperar 5 segundos', fakeAsync(() => {
+    TestBed.resetTestingModule();
+    const listar$ = new Subject<EmpresaView[]>();
+    const consultarStatus = jasmine.createSpy('consultarStatus').and.returnValue(
+      of({ sessao: 'casa', status: 'CONNECTED', qrcodeBase64: null })
+    );
 
-    const botoes: HTMLButtonElement[] = Array.from(fixture.nativeElement.querySelectorAll('button'));
-    const btnConfirmar = botoes.find((b) => b.textContent?.includes('Confirmar exclusão'));
-    expect(btnConfirmar).toBeTruthy();
-    btnConfirmar!.click();
-    fixture.detectChanges();
+    TestBed.configureTestingModule({
+      imports: [DashboardComponent],
+      providers: [
+        provideRouter([]),
+        { provide: EmpresaService, useValue: { listar: () => listar$.asObservable() } },
+        { provide: WhatsappConnectionService, useValue: { consultarStatus } },
+        { provide: AuthService, useValue: mockAuth }
+      ]
+    });
 
-    expect(empresasApi.excluir).toHaveBeenCalledWith('casa');
+    const f = TestBed.createComponent(DashboardComponent);
+    f.detectChanges();
+    tick(200);
+    expect(consultarStatus).not.toHaveBeenCalled();
+
+    listar$.next([empresa]);
+    listar$.complete();
+    f.detectChanges();
+
+    expect(consultarStatus).toHaveBeenCalledWith('casa');
+    expect(f.nativeElement.textContent).toContain('WhatsApp Online');
+    discardPeriodicTasks();
+  }));
+
+  it('exibe alerta de erro quando listar falha', fakeAsync(() => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      imports: [DashboardComponent],
+      providers: [
+        provideRouter([]),
+        {
+          provide: EmpresaService,
+          useValue: {
+            listar: () => throwError(() => new HttpErrorResponse({ status: 500, error: { message: 'Falha ao carregar lista' } }))
+          }
+        },
+        { provide: WhatsappConnectionService, useValue: { consultarStatus: () => of(status) } },
+        { provide: AuthService, useValue: mockAuth }
+      ]
+    });
+
+    const f = TestBed.createComponent(DashboardComponent);
+    f.detectChanges();
+    expect(f.nativeElement.textContent).toContain('Falha ao carregar lista');
     discardPeriodicTasks();
   }));
 });

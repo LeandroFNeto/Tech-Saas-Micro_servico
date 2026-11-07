@@ -94,7 +94,7 @@ export class EmpresaService {
       previsaoTempoAtiva: Boolean(item['previsaoTempoAtiva']),
       permitePrevisaoTempo: item['permitePrevisaoTempo'] !== undefined ? Boolean(item['permitePrevisaoTempo']) : true,
       ativo: item['ativo'] !== undefined ? Boolean(item['ativo']) : true,
-      lembrete: item['lembrete'] as LembreteConfirmacaoDTO | undefined,
+      lembreteConfirmacao: (item['lembreteConfirmacao'] ?? item['lembrete']) as LembreteConfirmacaoDTO | undefined,
       atualizadoEm: item['atualizadoEm'] as string | undefined
     };
   }

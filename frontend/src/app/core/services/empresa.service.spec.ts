@@ -126,4 +126,31 @@ describe('EmpresaService', () => {
       { codigoAcao: 'PREVISAO', textoMenu: 'Previsão do Tempo', ordemExibicao: 1, ativo: true }
     ]);
   });
+
+  it('paraView mapeia lembreteConfirmacao, permitePrevisaoTempo e aceita fallback legado lembrete', () => {
+    const viewNovo = service.paraView({
+      id: 7,
+      nome: 'Espaço Sol',
+      sessaoWhatsapp: 'espaco_sol',
+      permitePrevisaoTempo: false,
+      lembreteConfirmacao: { modo: 'AUTOMATICO', diasAntes: 1, horarioEnvio: '09:00', texto: 'Confirme' }
+    });
+
+    expect(viewNovo.permitePrevisaoTempo).toBeFalse();
+    expect(viewNovo.lembreteConfirmacao).toEqual({
+      modo: 'AUTOMATICO',
+      diasAntes: 1,
+      horarioEnvio: '09:00',
+      texto: 'Confirme'
+    });
+
+    const viewLegado = service.paraView({
+      id: 8,
+      nome: 'Espaço Lua',
+      sessaoWhatsapp: 'espaco_lua',
+      lembrete: { modo: 'SUGERIDO', diasAntes: 2, horarioEnvio: '10:00', texto: 'Olá' }
+    });
+    expect(viewLegado.permitePrevisaoTempo).toBeTrue();
+    expect(viewLegado.lembreteConfirmacao?.modo).toBe('SUGERIDO');
+  });
 });

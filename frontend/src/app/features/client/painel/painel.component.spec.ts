@@ -204,13 +204,59 @@ describe('PainelComponent', () => {
     });
   });
 
-  it('quando o admin nao permite previsao, desabilita o interruptor e nao chama a previsao', () => {
-    const fixture = montar({ empresa: { cidadePrevisao: 'Atibaia', previsaoTempoAtiva: false, permitePrevisaoTempo: false } });
+  it('quando o admin nao permite previsao, esconde o bloco e nao chama a previsao', () => {
+    const fixture = montar({ empresa: { cidadePrevisao: 'Atibaia', previsaoTempoAtiva: true, permitePrevisaoTempo: false } });
     const raiz: HTMLElement = fixture.nativeElement;
     expect(buscar).not.toHaveBeenCalled();
-    fixture.componentInstance.abrirEdicao();
+    expect(raiz.querySelector('#painel-titulo-previsao')).toBeNull();
+    expect(raiz.querySelector('input[type="checkbox"]')).toBeNull();
+    expect(raiz.querySelector('a[href="/cliente/chatbot"]')).not.toBeNull();
+  });
+});
+
+describe('PainelComponent, resiliencia no carregamento inicial', () => {
+  it('protege carregar() quando sessao esta vazia e exibe alerta de erro inicial', () => {
+    const buscarPorSessao = jasmine.createSpy('buscarPorSessao');
+    TestBed.configureTestingModule({
+      imports: [PainelComponent],
+      providers: [
+        provideRouter([]),
+        { provide: AuthService, useValue: { sessao: () => ({ sessaoWhatsapp: '', sub: 'x@gamb.com.br', papel: 'CLIENTE' }) } },
+        { provide: WhatsappConnectionService, useValue: { consultarStatus: () => NEVER, iniciar: () => NEVER } },
+        { provide: EmpresaService, useValue: { buscarPorSessao, atualizarPeloCliente: () => NEVER } },
+        { provide: PrevisaoService, useValue: { buscar: () => NEVER } },
+        { provide: AssistenteTutoriaService, useValue: { conversarCliente: () => NEVER } }
+      ]
+    });
+    const fixture = TestBed.createComponent(PainelComponent);
     fixture.detectChanges();
-    const switchInput = raiz.querySelector('input[type="checkbox"][disabled]');
-    expect(switchInput).not.toBeNull();
+
+    expect(buscarPorSessao).not.toHaveBeenCalled();
+    expect((fixture.nativeElement as HTMLElement).querySelector('[role="alert"]')).not.toBeNull();
+  });
+
+  it('exibe alerta de erro inicial quando buscarPorSessao falha mesmo com permitePrevisaoTempo ainda false', () => {
+    TestBed.configureTestingModule({
+      imports: [PainelComponent],
+      providers: [
+        provideRouter([]),
+        { provide: AuthService, useValue: { sessao: () => ({ sessaoWhatsapp: 'quadra', sub: 'q@gamb.com.br', papel: 'CLIENTE' }) } },
+        { provide: WhatsappConnectionService, useValue: { consultarStatus: () => NEVER, iniciar: () => NEVER } },
+        {
+          provide: EmpresaService,
+          useValue: {
+            buscarPorSessao: () => throwError(() => new HttpErrorResponse({ status: 500 })),
+            atualizarPeloCliente: () => NEVER
+          }
+        },
+        { provide: PrevisaoService, useValue: { buscar: () => NEVER } },
+        { provide: AssistenteTutoriaService, useValue: { conversarCliente: () => NEVER } }
+      ]
+    });
+    const fixture = TestBed.createComponent(PainelComponent);
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.permitePrevisaoTempo()).toBeFalse();
+    expect((fixture.nativeElement as HTMLElement).querySelector('[role="alert"]')).not.toBeNull();
   });
 });

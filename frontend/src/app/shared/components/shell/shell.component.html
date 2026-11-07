@@ -84,15 +84,17 @@
           <ng-container [ngTemplateOutlet]="iconeEmpresas" />
           Empresas
         </a>
-        <a
-          routerLink="/admin/empresas/nova"
-          routerLinkActive="!bg-accent-500/20 !text-accent-300"
-          ariaCurrentWhenActive="page"
-          [class]="linkLateral"
-        >
-          <ng-container [ngTemplateOutlet]="iconeNovo" />
-          Novo cliente
-        </a>
+        @if (!authService.isLeitura()) {
+          <a
+            routerLink="/admin/empresas/nova"
+            routerLinkActive="!bg-accent-500/20 !text-accent-300"
+            ariaCurrentWhenActive="page"
+            [class]="linkLateral"
+          >
+            <ng-container [ngTemplateOutlet]="iconeNovo" />
+            Novo cliente
+          </a>
+        }
         <a
           routerLink="/admin/avisos"
           routerLinkActive="!bg-accent-500/20 !text-accent-300"
@@ -172,15 +174,17 @@
         <ng-container [ngTemplateOutlet]="iconeEmpresas" />
         Empresas
       </a>
-      <a
-        routerLink="/admin/empresas/nova"
-        routerLinkActive="!text-accent-800 shadow-[inset_0_3px_0_#F7931E]"
-        ariaCurrentWhenActive="page"
-        [class]="abaInferior"
-      >
-        <ng-container [ngTemplateOutlet]="iconeNovo" />
-        Novo cliente
-      </a>
+      @if (!authService.isLeitura()) {
+        <a
+          routerLink="/admin/empresas/nova"
+          routerLinkActive="!text-accent-800 shadow-[inset_0_3px_0_#F7931E]"
+          ariaCurrentWhenActive="page"
+          [class]="abaInferior"
+        >
+          <ng-container [ngTemplateOutlet]="iconeNovo" />
+          Novo cliente
+        </a>
+      }
       <a
         routerLink="/admin/avisos"
         routerLinkActive="!text-accent-800 shadow-[inset_0_3px_0_#F7931E]"

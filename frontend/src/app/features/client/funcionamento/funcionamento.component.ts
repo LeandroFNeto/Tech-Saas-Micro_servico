@@ -58,7 +58,7 @@ function hora(valor: string | null | undefined): string {
 }
 
 function mensagemDoServidor(erro: unknown): string | null {
-  if (!(erro instanceof HttpErrorResponse) || erro.status !== 400) {
+  if (!(erro instanceof HttpErrorResponse) || ![400, 403, 409, 422].includes(erro.status)) {
     return null;
   }
   const corpo = erro.error as unknown;
@@ -204,7 +204,19 @@ export class FuncionamentoComponent {
   }
 
   atualizarDia(codigo: CodigoDia, mudanca: Partial<HorarioDia>): void {
-    this.horarios.update((lista) => lista.map((dia) => (dia.codigo === codigo ? { ...dia, ...mudanca } : dia)));
+    this.horarios.update((lista) =>
+      lista.map((dia) => {
+        if (dia.codigo !== codigo) {
+          return dia;
+        }
+        const atualizado = { ...dia, ...mudanca };
+        if (mudanca.aberto === true && !dia.aberto) {
+          atualizado.abre = atualizado.abre || this.abre();
+          atualizado.fecha = atualizado.fecha || this.fecha();
+        }
+        return atualizado;
+      })
+    );
   }
 
   duracaoDoTexto(texto: string): number | null {

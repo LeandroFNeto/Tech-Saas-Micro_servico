@@ -3,18 +3,38 @@ import { signal } from '@angular/core';
 import { Router, provideRouter } from '@angular/router';
 import { ShellComponent } from './shell.component';
 import { AuthService } from '../../../core/services/auth.service';
-import { SessaoUsuario } from '../../models/auth.models';
+import { PapelUsuario, SessaoUsuario } from '../../models/auth.models';
 
 describe('ShellComponent', () => {
   let component: ShellComponent;
   let fixture: ComponentFixture<ShellComponent>;
   let sessaoSignal: ReturnType<typeof signal<SessaoUsuario | null>>;
-  let authServiceSpy: { sessao: typeof sessaoSignal; logout: jasmine.Spy };
+  let authServiceStub: {
+    sessao: typeof sessaoSignal;
+    isAdmin: () => boolean;
+    isLeitura: () => boolean;
+    logout: jasmine.Spy;
+  };
+
+  function definirPapel(papel: PapelUsuario, nome = 'Usuário Teste', sub = 'user@gamb.com') {
+    sessaoSignal.set({
+      sub,
+      nome,
+      papel,
+      exp: Date.now() + 3600000
+    });
+    fixture.detectChanges();
+  }
 
   beforeEach(() => {
     sessaoSignal = signal<SessaoUsuario | null>(null);
-    authServiceSpy = {
+    authServiceStub = {
       sessao: sessaoSignal,
+      isAdmin: () => {
+        const p = sessaoSignal()?.papel;
+        return p === 'ADMIN' || p === 'SUPER_ADMIN' || p === 'ADMIN_OPERACIONAL' || p === 'ADMIN_LEITURA';
+      },
+      isLeitura: () => sessaoSignal()?.papel === 'ADMIN_LEITURA',
       logout: jasmine.createSpy('logout')
     };
 
@@ -22,7 +42,7 @@ describe('ShellComponent', () => {
       imports: [ShellComponent],
       providers: [
         provideRouter([]),
-        { provide: AuthService, useValue: authServiceSpy }
+        { provide: AuthService, useValue: authServiceStub }
       ]
     });
 
@@ -31,53 +51,57 @@ describe('ShellComponent', () => {
   });
 
   it('exibe dados do usuario autenticado corretamente', () => {
-    sessaoSignal.set({
-      sub: 'admin@techsaas.com',
-      nome: 'Administrador Chefe',
-      papel: 'ADMIN',
-      exp: Date.now() + 3600000
-    });
+    definirPapel('ADMIN', 'Administrador Chefe', 'admin@techsaas.com');
 
     expect(component.admin).toBeTrue();
     expect(component.nomeUsuario).toBe('Administrador Chefe');
     expect(component.emailUsuario).toBe('admin@techsaas.com');
   });
 
-  it('identifica usuario cliente como nao admin', () => {
-    sessaoSignal.set({
-      sub: 'cliente@techsaas.com',
-      nome: 'Cliente Usuario',
-      papel: 'CLIENTE',
-      exp: Date.now() + 3600000
+  const papeisAdminComCriacao: PapelUsuario[] = ['SUPER_ADMIN', 'ADMIN_OPERACIONAL'];
+  papeisAdminComCriacao.forEach((papel) => {
+    it(`exibe menu administrativo com botao Novo cliente e sem chat flutuante para ${papel}`, () => {
+      definirPapel(papel);
+      const raiz: HTMLElement = fixture.nativeElement;
+
+      expect(component.admin).toBeTrue();
+      expect(component.mostrarChat).toBeFalse();
+      expect(raiz.querySelector('app-chat-flutuante')).toBeNull();
+      expect(raiz.querySelectorAll('a[href="/admin/empresas/nova"]').length).toBeGreaterThan(0);
+      expect(raiz.textContent).toContain('Empresas');
+      expect(raiz.textContent).toContain('Novo cliente');
     });
+  });
+
+  it('exibe menu administrativo sem botao Novo cliente e sem chat flutuante para ADMIN_LEITURA', () => {
+    definirPapel('ADMIN_LEITURA', 'Auditor', 'leitura@gamb.com');
+    const raiz: HTMLElement = fixture.nativeElement;
+
+    expect(component.admin).toBeTrue();
+    expect(component.mostrarChat).toBeFalse();
+    expect(raiz.querySelector('app-chat-flutuante')).toBeNull();
+    expect(raiz.querySelector('a[href="/admin/empresas/nova"]')).toBeNull();
+    expect(raiz.textContent).toContain('Empresas');
+    expect(raiz.textContent).not.toContain('Novo cliente');
+  });
+
+  it('identifica usuario cliente como nao admin e mostra menu do cliente', () => {
+    definirPapel('CLIENTE', 'Cliente Usuario', 'cliente@techsaas.com');
+    const raiz: HTMLElement = fixture.nativeElement;
 
     expect(component.admin).toBeFalse();
+    expect(component.mostrarChat).toBeTrue();
+    expect(raiz.textContent).toContain('Tutoriais');
   });
 
   it('chama logout ao acionar sair()', () => {
     component.sair();
-    expect(authServiceSpy.logout).toHaveBeenCalled();
+    expect(authServiceStub.logout).toHaveBeenCalled();
   });
 
-  it('expoe conteudo do menu cliente incluindo tutoriais', () => {
-    expect(component.conteudo.menuCliente.tutoriais).toBe('Tutoriais');
-  });
-
-  it('mostra o chat flutuante para o cliente fora de Tutoriais', () => {
-    sessaoSignal.set({ sub: 'c@x.com', nome: 'Cliente', papel: 'CLIENTE', exp: Date.now() + 3600000 });
-
-    expect(component.mostrarChat).toBeTrue();
-  });
-
-  it('nao mostra o chat flutuante na tela de Tutoriais', async () => {
-    sessaoSignal.set({ sub: 'c@x.com', nome: 'Cliente', papel: 'CLIENTE', exp: Date.now() + 3600000 });
+  it('nao mostra o chat flutuante na tela de Tutoriais', () => {
+    definirPapel('CLIENTE', 'Cliente', 'c@x.com');
     spyOnProperty(TestBed.inject(Router), 'url').and.returnValue('/cliente/tutoriais');
-
-    expect(component.mostrarChat).toBeFalse();
-  });
-
-  it('nao mostra o chat flutuante na area do admin', () => {
-    sessaoSignal.set({ sub: 'a@x.com', nome: 'Admin', papel: 'ADMIN', exp: Date.now() + 3600000 });
 
     expect(component.mostrarChat).toBeFalse();
   });

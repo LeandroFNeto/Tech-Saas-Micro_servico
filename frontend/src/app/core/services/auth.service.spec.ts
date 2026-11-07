@@ -6,6 +6,15 @@ import { AuthService } from './auth.service';
 import { environment } from '../../../environments/environment';
 import { LoginRequest, LoginResponse } from '../../shared/models/auth.models';
 
+function paraBase64UrlUtf8(objeto: Record<string, unknown>): string {
+  const bytes = new TextEncoder().encode(JSON.stringify(objeto));
+  let binario = '';
+  bytes.forEach((b) => {
+    binario += String.fromCharCode(b);
+  });
+  return btoa(binario).replaceAll('+', '-').replaceAll('/', '_').replace(/=+$/, '');
+}
+
 describe('AuthService', () => {
   let service: AuthService;
   let httpMock: HttpTestingController;
@@ -39,35 +48,33 @@ describe('AuthService', () => {
     expect(service.sessao()).toBeNull();
   });
 
-  it('deve realizar login, persistir sessao e decodificar token corretamente', () => {
-    const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
-    const payload = btoa(JSON.stringify({
-      sub: 'admin@gamb.com.br',
-      nome: 'Administrador',
-      sessaoWhatsapp: 'sessao-1',
+  it('decodifica claims JWT em Base64URL com acentuacao UTF-8 sem corromper caracteres', () => {
+    const header = paraBase64UrlUtf8({ alg: 'HS256', typ: 'JWT' });
+    const payload = paraBase64UrlUtf8({
+      sub: 'joao@gamb.com',
+      nome: 'João São Paulo',
+      sessaoWhatsapp: 'sessao_joao',
       exp: Math.floor(Date.now() / 1000) + 3600
-    }));
+    });
     const fakeJwt = `${header}.${payload}.assinatura`;
 
     const loginResponse: LoginResponse = {
       token: fakeJwt,
-      email: 'admin@gamb.com.br',
-      role: 'ADMIN',
-      nome: 'Administrador',
-      sessaoWhatsapp: 'sessao-1'
+      email: 'joao@gamb.com',
+      role: 'SUPER_ADMIN'
     };
 
-    const credenciais: LoginRequest = { email: 'admin@gamb.com.br', senha: '123' };
+    const credenciais: LoginRequest = { email: 'joao@gamb.com', senha: '123' };
 
-    service.login(credenciais).subscribe((res) => {
-      expect(res.token).toBe(fakeJwt);
-    });
+    service.login(credenciais).subscribe();
 
     const req = httpMock.expectOne(`${environment.apiUrl}/auth/login`);
     expect(req.request.method).toBe('POST');
     req.flush(loginResponse);
 
     expect(service.token()).toBe(fakeJwt);
+    expect(service.sessao()?.nome).toBe('João São Paulo');
+    expect(service.sessao()?.sessaoWhatsapp).toBe('sessao_joao');
     expect(service.isAuthenticated()).toBeTrue();
     expect(service.isAdmin()).toBeTrue();
     expect(service.isSuperAdmin()).toBeTrue();
@@ -75,14 +82,45 @@ describe('AuthService', () => {
     expect(service.possuiPapel('ADMIN')).toBeTrue();
   });
 
-  it('identifica corretamente perfis de cliente e leitura', () => {
+  it('token() retorna null e limpa localStorage quando a sessao esta expirada', () => {
+    localStorage.setItem('gamb.jwt', 'token-expirado');
+    localStorage.setItem('gamb.sessao', JSON.stringify({
+      sub: 'exp@gamb.com',
+      nome: 'Expirado',
+      papel: 'ADMIN',
+      exp: Date.now() - 1000
+    }));
+    service.sessao.set({
+      sub: 'exp@gamb.com',
+      nome: 'Expirado',
+      papel: 'ADMIN',
+      exp: Date.now() - 1000
+    });
+
+    expect(service.isAuthenticated()).toBeFalse();
+    expect(service.token()).toBeNull();
+    expect(localStorage.getItem('gamb.jwt')).toBeNull();
+    expect(localStorage.getItem('gamb.sessao')).toBeNull();
+    expect(service.sessao()).toBeNull();
+  });
+
+  it('identifica corretamente perfis ADMIN_OPERACIONAL, ADMIN_LEITURA e CLIENTE', () => {
+    service.sessao.set({
+      sub: 'op@gamb.com.br',
+      nome: 'Operacional',
+      papel: 'ADMIN_OPERACIONAL',
+      exp: Date.now() + 60000
+    });
+    expect(service.isAdmin()).toBeTrue();
+    expect(service.isSuperAdmin()).toBeFalse();
+    expect(service.isLeitura()).toBeFalse();
+
     service.sessao.set({
       sub: 'leitor@gamb.com.br',
       nome: 'Leitor',
       papel: 'ADMIN_LEITURA',
       exp: Date.now() + 60000
     });
-
     expect(service.isLeitura()).toBeTrue();
     expect(service.isAdmin()).toBeTrue();
     expect(service.isSuperAdmin()).toBeFalse();
@@ -93,7 +131,6 @@ describe('AuthService', () => {
       papel: 'CLIENTE',
       exp: Date.now() + 60000
     });
-
     expect(service.isAdmin()).toBeFalse();
     expect(service.possuiPapel('CLIENTE')).toBeTrue();
     expect(service.possuiPapel('ADMIN')).toBeFalse();

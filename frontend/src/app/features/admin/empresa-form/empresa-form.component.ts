@@ -55,6 +55,8 @@ export class EmpresaFormComponent implements OnInit {
   readonly erroReservaAutomatica = signal('');
   readonly sucesso = signal('');
   readonly sucessoSenha = signal('');
+  readonly confirmacaoAberta = signal(false);
+  readonly excluindo = signal(false);
   readonly imagemSelecionada = signal('');
 
   readonly formResetSenha = this.fb.nonNullable.group({
@@ -99,6 +101,10 @@ export class EmpresaFormComponent implements OnInit {
   ngOnInit(): void {
     const sessao = this.route.snapshot.paramMap.get('sessao');
     if (!sessao || sessao === 'nova') {
+      if (this.auth.isLeitura()) {
+        void this.router.navigateByUrl('/admin');
+        return;
+      }
       this.form.controls.email.setValidators([Validators.required, Validators.email]);
       this.form.controls.senha.setValidators([Validators.required, Validators.minLength(6)]);
       this.form.controls.email.updateValueAndValidity();
@@ -109,6 +115,9 @@ export class EmpresaFormComponent implements OnInit {
 
     this.modoEdicao.set(true);
     this.sessaoOriginal.set(sessao);
+    if (this.auth.isLeitura()) {
+      this.form.disable({ emitEvent: false });
+    }
     this.empresasApi.buscarPorSessao(sessao).subscribe({
       next: (empresa) => this.preencher(empresa),
       error: (err) => this.erro.set(mensagemHttp(err))
@@ -116,6 +125,10 @@ export class EmpresaFormComponent implements OnInit {
   }
 
   salvar(): void {
+    if (this.auth.isLeitura() || this.salvando()) {
+      return;
+    }
+
     this.erro.set('');
     this.erroReservaAutomatica.set('');
     this.sucesso.set('');
@@ -130,8 +143,9 @@ export class EmpresaFormComponent implements OnInit {
     const urlsGaleria = this.urlsValidas(valor.urlsGaleria);
 
     if (this.modoEdicao()) {
+      const sessaoAnterior = this.sessaoOriginal();
       this.empresasApi
-        .atualizarPeloAdmin(this.sessaoOriginal(), {
+        .atualizarPeloAdmin(sessaoAnterior, {
           sessaoWhatsapp: valor.sessaoWhatsapp ?? undefined,
           locacaoPorHora: valor.locacaoPorHora ?? false,
           googleCalendarId: valor.googleCalendarId || null,
@@ -145,9 +159,13 @@ export class EmpresaFormComponent implements OnInit {
         })
         .subscribe({
           next: () => {
+            const novaSessao = (valor.sessaoWhatsapp ?? '').trim() || sessaoAnterior;
             this.sucesso.set('Infraestrutura e módulos atualizados.');
             this.salvando.set(false);
-            this.sessaoOriginal.set(valor.sessaoWhatsapp ?? this.sessaoOriginal());
+            this.sessaoOriginal.set(novaSessao);
+            if (novaSessao !== sessaoAnterior) {
+              void this.router.navigateByUrl(`/admin/empresas/${novaSessao}/editar`, { replaceUrl: true });
+            }
           },
           error: (err) => {
             this.tratarErroSalvar(err);
@@ -193,6 +211,9 @@ export class EmpresaFormComponent implements OnInit {
   }
 
   resetarSenha(): void {
+    if (this.auth.isLeitura() || !this.auth.isSuperAdmin()) {
+      return;
+    }
     this.erro.set('');
     this.sucessoSenha.set('');
     if (this.formResetSenha.invalid) {
@@ -210,6 +231,33 @@ export class EmpresaFormComponent implements OnInit {
       error: (err) => {
         this.erro.set(mensagemHttp(err));
         this.salvandoSenha.set(false);
+      }
+    });
+  }
+
+  abrirConfirmacaoExclusao(): void {
+    this.confirmacaoAberta.set(true);
+  }
+
+  cancelarExclusao(): void {
+    this.confirmacaoAberta.set(false);
+  }
+
+  confirmarExclusao(): void {
+    if (this.excluindo() || this.auth.isLeitura() || !this.auth.isSuperAdmin()) {
+      return;
+    }
+    this.excluindo.set(true);
+    this.empresasApi.excluir(this.sessaoOriginal()).subscribe({
+      next: () => {
+        this.excluindo.set(false);
+        this.confirmacaoAberta.set(false);
+        void this.router.navigateByUrl('/admin');
+      },
+      error: (err) => {
+        this.excluindo.set(false);
+        this.confirmacaoAberta.set(false);
+        this.erro.set(mensagemHttp(err));
       }
     });
   }
@@ -234,6 +282,9 @@ export class EmpresaFormComponent implements OnInit {
     for (const modulo of this.modulos) {
       grupo.get(modulo.codigo)?.setValue(empresa.modulosAtivos.includes(modulo.codigo));
     }
+    if (this.auth.isLeitura()) {
+      this.form.disable({ emitEvent: false });
+    }
   }
 
   private observarSessaoParaEmail(): void {
@@ -249,6 +300,9 @@ export class EmpresaFormComponent implements OnInit {
   }
 
   abrirWidgetCloudinary(tipo: 'principal' | 'galeria'): void {
+    if (this.auth.isLeitura()) {
+      return;
+    }
     if (typeof cloudinary === 'undefined') {
       this.erro.set('O widget do Cloudinary não carregou. Recarregue a página.');
       return;
@@ -292,13 +346,16 @@ export class EmpresaFormComponent implements OnInit {
   }
 
   adicionarUrlGaleria(): void {
-    if (this.urlsGaleria.length >= this.maxUrlsGaleria) {
+    if (this.auth.isLeitura() || this.urlsGaleria.length >= this.maxUrlsGaleria) {
       return;
     }
     this.urlsGaleria.push(this.fb.nonNullable.control(''));
   }
 
   removerUrlGaleria(indice: number): void {
+    if (this.auth.isLeitura()) {
+      return;
+    }
     this.urlsGaleria.removeAt(indice);
     if (this.urlsGaleria.length === 0) {
       this.adicionarUrlGaleria();
@@ -323,7 +380,7 @@ export class EmpresaFormComponent implements OnInit {
     this.urlsGaleria.clear();
     const validas = this.urlsValidas(urls ?? []);
     if (validas.length === 0) {
-      this.adicionarUrlGaleria();
+      this.urlsGaleria.push(this.fb.nonNullable.control(''));
       return;
     }
     for (const url of validas) {

@@ -36,7 +36,7 @@ export interface EmpresaUpdateDTO {
   modulosMenu?: ModuloMenuDTO[];
   cidadePrevisao?: string;
   previsaoTempoAtiva?: boolean;
-  lembrete?: LembreteConfirmacaoDTO;
+  lembreteConfirmacao?: LembreteConfirmacaoDTO;
 }
 
 export interface EmpresaUpdateAdminDTO {
@@ -69,7 +69,8 @@ export interface EmpresaResponseDTO {
   cidadePrevisao?: string;
   cidadePrevisaoResolvida?: string;
   previsaoTempoAtiva?: boolean;
-  lembrete?: LembreteConfirmacaoDTO;
+  ativo?: boolean;
+  lembreteConfirmacao?: LembreteConfirmacaoDTO;
   atualizadoEm: string;
 }
 
@@ -113,7 +114,7 @@ export interface EmpresaView {
   cidadePrevisao?: string;
   cidadePrevisaoResolvida?: string;
   previsaoTempoAtiva?: boolean;
-  lembrete?: LembreteConfirmacaoDTO;
+  lembreteConfirmacao?: LembreteConfirmacaoDTO;
   atualizadoEm?: string;
 }
 
@@ -160,6 +161,11 @@ export const MODULOS_MENU_BOT: CatalogoMenuBot[] = [
 ];
 
 export const CATALOGO_MODULOS: CatalogoModulo[] = [
+  {
+    codigo: 'IA_GEMINI',
+    label: 'Atendente virtual com IA',
+    descricao: 'Responde saudações e dúvidas com inteligência artificial'
+  },
   {
     codigo: 'VER_FOTOS',
     label: 'Fotos do espaço',

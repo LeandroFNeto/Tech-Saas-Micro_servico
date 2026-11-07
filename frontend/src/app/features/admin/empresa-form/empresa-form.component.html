@@ -100,56 +100,6 @@
         </div>
       }
 
-      <div>
-        <label
-          class="flex cursor-pointer items-start justify-between gap-4 rounded-[14px] border px-4 py-3.5"
-          [class.border-brand-100]="!erroReservaAutomatica()"
-          [class.border-red-300]="!!erroReservaAutomatica()"
-          [class.bg-red-50]="!!erroReservaAutomatica()"
-        >
-          <span>
-            <span class="block text-[15px] font-semibold leading-[22px]">Reserva automática pelo bot</span>
-            <span class="mt-0.5 block text-[13px] leading-[18px] text-brand-600">
-              Ligada = o WhatsApp mostra a opção de solicitar reserva. Desligada = avisa que um atendente vai responder.
-            </span>
-          </span>
-          <span class="switch">
-            <input
-              type="checkbox"
-              formControlName="permiteReservaAutomatica"
-              [attr.aria-invalid]="!!erroReservaAutomatica()"
-              [attr.aria-describedby]="erroReservaAutomatica() ? 'empresa-reserva-erro' : null"
-            />
-            <span aria-hidden="true"></span>
-          </span>
-        </label>
-        @if (erroReservaAutomatica()) {
-          <p id="empresa-reserva-erro" class="mt-1.5 text-[13px] font-semibold leading-[18px] text-red-700">
-            {{ erroReservaAutomatica() }}
-          </p>
-        }
-      </div>
-
-      <div>
-        <label
-          class="flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-brand-100 bg-brand-50/50 p-4 transition-colors hover:bg-brand-50"
-        >
-          <span>
-            <span class="block text-[15px] font-semibold leading-[22px]">Liberar previsão do tempo</span>
-            <span class="mt-0.5 block text-[13px] leading-[18px] text-brand-600">
-              Permite que o cliente ative e visualize a previsão meteorológica e risco de chuva no painel dele.
-            </span>
-          </span>
-          <span class="switch">
-            <input
-              type="checkbox"
-              formControlName="permitePrevisaoTempo"
-            />
-            <span aria-hidden="true"></span>
-          </span>
-        </label>
-      </div>
-
       @if (!modoEdicao()) {
         <div>
           <label class="mb-1.5 block text-sm font-semibold text-brand-800" for="empresa-ramo">Ramo de atuação</label>
@@ -249,7 +199,12 @@
               </svg>
             </span>
           }
-          <button class="btn-primary flex-1 px-3.5" type="button" (click)="abrirWidgetCloudinary('principal')">
+          <button
+            class="btn-primary flex-1 px-3.5 disabled:cursor-not-allowed disabled:opacity-60"
+            type="button"
+            [disabled]="auth.isLeitura()"
+            (click)="abrirWidgetCloudinary('principal')"
+          >
             Enviar foto principal
           </button>
         </div>
@@ -277,9 +232,9 @@
           <span class="text-sm font-semibold text-brand-800">Galeria (até {{ maxUrlsGaleria }} URLs)</span>
           <span class="flex flex-wrap gap-2">
             <button
-              class="btn-primary px-3.5"
+              class="btn-primary px-3.5 disabled:cursor-not-allowed disabled:opacity-60"
               type="button"
-              [disabled]="galeriaCheia"
+              [disabled]="auth.isLeitura() || galeriaCheia"
               (click)="abrirWidgetCloudinary('galeria')"
             >
               Enviar fotos
@@ -287,7 +242,7 @@
             <button
               class="btn-secondary px-3.5 disabled:cursor-not-allowed disabled:opacity-60"
               type="button"
-              [disabled]="urlsGaleria.length >= maxUrlsGaleria"
+              [disabled]="auth.isLeitura() || urlsGaleria.length >= maxUrlsGaleria"
               (click)="adicionarUrlGaleria()"
             >
               Adicionar URL
@@ -332,7 +287,14 @@
                   Abrir
                 </a>
               }
-              <button class="btn-secondary shrink-0 px-3.5" type="button" (click)="removerUrlGaleria($index)">Remover</button>
+              <button
+                class="btn-secondary shrink-0 px-3.5 disabled:cursor-not-allowed disabled:opacity-60"
+                type="button"
+                [disabled]="auth.isLeitura()"
+                (click)="removerUrlGaleria($index)"
+              >
+                Remover
+              </button>
             </div>
           }
         </div>
@@ -363,8 +325,58 @@
   <div class="flex min-w-0 flex-col gap-4">
     <section class="flex flex-col gap-4 rounded-[20px] border border-brand-100 bg-white p-5 shadow-[0_1px_2px_rgba(46,26,71,0.05)]">
       <div>
-        <h2 class="text-[17px] font-bold leading-6 text-brand-900">Gestão de módulos</h2>
-        <p class="mt-1 text-sm text-brand-600">Ligue ou desligue as funcionalidades do bot desta empresa.</p>
+        <h2 class="text-[17px] font-bold leading-6 text-brand-900">Recursos da empresa</h2>
+        <p class="mt-1 text-sm text-brand-600">Ligue ou desligue a IA, a previsão do tempo, a reserva automática e as funcionalidades do bot desta empresa.</p>
+      </div>
+
+      <div>
+        <label
+          class="flex cursor-pointer items-start justify-between gap-4 rounded-[14px] border px-4 py-3.5"
+          [class.border-brand-100]="!erroReservaAutomatica()"
+          [class.border-red-300]="!!erroReservaAutomatica()"
+          [class.bg-red-50]="!!erroReservaAutomatica()"
+        >
+          <span>
+            <span class="block text-[15px] font-semibold leading-[22px]">Reserva automática pelo bot</span>
+            <span class="mt-0.5 block text-[13px] leading-[18px] text-brand-600">
+              Ligada = o WhatsApp mostra a opção de solicitar reserva. Desligada = avisa que um atendente vai responder.
+            </span>
+          </span>
+          <span class="switch">
+            <input
+              type="checkbox"
+              formControlName="permiteReservaAutomatica"
+              [attr.aria-invalid]="!!erroReservaAutomatica()"
+              [attr.aria-describedby]="erroReservaAutomatica() ? 'empresa-reserva-erro' : null"
+            />
+            <span aria-hidden="true"></span>
+          </span>
+        </label>
+        @if (erroReservaAutomatica()) {
+          <p id="empresa-reserva-erro" class="mt-1.5 text-[13px] font-semibold leading-[18px] text-red-700">
+            {{ erroReservaAutomatica() }}
+          </p>
+        }
+      </div>
+
+      <div>
+        <label
+          class="flex cursor-pointer items-center justify-between gap-4 rounded-[14px] border border-brand-100 px-4 py-3.5"
+        >
+          <span>
+            <span class="block text-[15px] font-semibold leading-[22px]">Liberar previsão do tempo</span>
+            <span class="mt-0.5 block text-[13px] leading-[18px] text-brand-600">
+              Permite que o cliente ative e visualize a previsão meteorológica e risco de chuva no painel dele.
+            </span>
+          </span>
+          <span class="switch">
+            <input
+              type="checkbox"
+              formControlName="permitePrevisaoTempo"
+            />
+            <span aria-hidden="true"></span>
+          </span>
+        </label>
       </div>
 
       <div class="flex flex-col gap-4" formGroupName="modulos">
@@ -428,4 +440,40 @@
       <p class="rounded-xl border border-accent-200 bg-accent-50 px-4 py-3 text-sm text-brand-800" role="status">{{ sucessoSenha() }}</p>
     }
   </section>
+}
+
+@if (modoEdicao() && sessaoOriginal() && auth.isSuperAdmin()) {
+  <section class="mt-4 flex flex-col gap-4 rounded-[20px] border border-red-200 bg-white p-5 shadow-[0_1px_2px_rgba(46,26,71,0.05)]" aria-labelledby="zona-exclusao-titulo">
+    <div>
+      <h2 id="zona-exclusao-titulo" class="text-[17px] font-bold leading-6 text-red-700">Excluir empresa</h2>
+      <p class="mt-1 text-sm text-brand-600">Desativa o acesso do cliente e desconecta o WhatsApp. Os registros ficam guardados.</p>
+    </div>
+    <div>
+      <button
+        type="button"
+        class="btn-secondary min-h-12 w-full px-5 text-[15px] font-bold text-red-600 hover:border-red-300 hover:bg-red-50 hover:text-red-700 sm:w-auto"
+        (click)="abrirConfirmacaoExclusao()"
+      >
+        Excluir empresa
+      </button>
+    </div>
+  </section>
+}
+
+@if (confirmacaoAberta()) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" role="dialog" aria-modal="true" aria-labelledby="modal-excluir-titulo">
+    <div class="w-full max-w-md rounded-2xl border border-brand-100 bg-white p-6 shadow-xl">
+      <h2 id="modal-excluir-titulo" class="text-lg font-bold text-brand-900">Excluir empresa</h2>
+      <p class="mt-2 text-sm text-brand-600">
+        Tem certeza que deseja excluir a empresa <strong>{{ form.controls.nome.value || sessaoOriginal() }}</strong>?
+        Esta ação desativará o acesso e desconectará o WhatsApp.
+      </p>
+      <div class="mt-6 flex justify-end gap-3">
+        <button type="button" class="btn-secondary px-4 py-2" [disabled]="excluindo()" (click)="cancelarExclusao()">Cancelar</button>
+        <button type="button" class="btn-primary border-none bg-red-600 px-4 py-2 text-white hover:bg-red-700" [disabled]="excluindo()" (click)="confirmarExclusao()">
+          {{ excluindo() ? 'Excluindo...' : 'Confirmar exclusão' }}
+        </button>
+      </div>
+    </div>
+  </div>
 }

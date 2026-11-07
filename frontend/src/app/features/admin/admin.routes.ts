@@ -1,5 +1,13 @@
-import { Routes } from '@angular/router';
+import { inject } from '@angular/core';
+import { CanActivateFn, Router, Routes } from '@angular/router';
+import { AuthService } from '../../core/services/auth.service';
 import { ShellComponent } from '../../shared/components/shell/shell.component';
+
+export const escritaAdminGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  return auth.isLeitura() ? router.createUrlTree(['/admin']) : true;
+};
 
 export const ADMIN_ROUTES: Routes = [
   {
@@ -13,6 +21,12 @@ export const ADMIN_ROUTES: Routes = [
       },
       {
         path: 'empresas/nova',
+        canActivate: [escritaAdminGuard],
+        loadComponent: () =>
+          import('./empresa-form/empresa-form.component').then((m) => m.EmpresaFormComponent)
+      },
+      {
+        path: 'empresas/:sessao/editar',
         loadComponent: () =>
           import('./empresa-form/empresa-form.component').then((m) => m.EmpresaFormComponent)
       },

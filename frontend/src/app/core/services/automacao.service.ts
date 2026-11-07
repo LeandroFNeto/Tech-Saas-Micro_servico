@@ -14,25 +14,30 @@ export interface ReservaResumoDTO {
   id: number;
   data: string;
   horario: string;
-  nomeCliente: string;
-  telefoneMascara: string;
+  titulo?: string;
+  nomeCliente: string | null;
+  telefoneMascarado: string | null;
   situacao: string;
+  riscoPerda?: boolean;
+  precisaAtencao?: boolean;
+  origem?: string;
   podeAvisar: boolean;
-  contatoId?: number;
+  contatoId?: number | null;
 }
 
 export interface ContatoResumoDTO {
   id: number;
-  nome: string;
-  telefoneMascara: string;
-  primeiraConversaEm: string;
-  ultimaConversaEm: string;
+  nome: string | null;
+  telefoneMascarado: string;
+  primeiraConversaEm: string | null;
+  ultimaConversaEm: string | null;
+  naoContatar?: boolean;
   origem: string;
 }
 
 export interface VincularContatoDTO {
   contatoId?: number;
-  numeroTelefone?: string;
+  telefone?: string;
 }
 
 export interface NumeroContatoDTO {
