@@ -27,7 +27,7 @@ Arquivo em comum da equipe. Cada agente atualiza a própria linha ao começar e 
 | [apresentacao-posicionamento-e-contato](archive/apresentacao-posicionamento-e-contato/) | deploy | `antigravity` | `openspec/archive/apresentacao-posicionamento-e-contato/` | 0 | aprovado |
 | [bot-comercial-site-login-apresentacao](archive/bot-comercial-site-login-apresentacao/) | deploy | `antigravity` | `openspec/archive/bot-comercial-site-login-apresentacao/` | 0 | aprovado |
 | [gamb-whatsapp-datas-livres-e-tom-humano](archive/gamb-whatsapp-datas-livres-e-tom-humano/) | deploy | `antigravity` | `openspec/archive/gamb-whatsapp-datas-livres-e-tom-humano/` | 0 | aprovado |
-| [migrar-wppconnect-para-baileys](changes/migrar-wppconnect-para-baileys/) | proposta | `claude-sonnet-5-5` | `openspec/changes/migrar-wppconnect-para-baileys/` | 0 | aguardando aprovado |
+| [migrar-wppconnect-para-baileys](changes/migrar-wppconnect-para-baileys/) | programacao | `gemini-3.8-flash` | `openspec/changes/migrar-wppconnect-para-baileys/` | 0 | aprovado |
 
 Estado: `em andamento`, `aprovado`, `reprovado`, `erro`, `aguardando aprovado`.
 

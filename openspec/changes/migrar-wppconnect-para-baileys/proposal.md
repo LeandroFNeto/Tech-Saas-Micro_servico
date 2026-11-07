@@ -1,33 +1,38 @@
-# Proposal
+# Proposal: Migração WPPConnect para Baileys com Preservação Integral de Comportamento
 
 ## Why
 
-O WPPConnect abre um Chromium (Puppeteer) por sessão e é o maior consumidor de RAM do servidor de 8 GB. Cada empresa nova conectada soma centenas de MB, e o `shm_size` de 2 GB do compose já é um sintoma disso. Trocar o provedor por Baileys, que fala direto por WebSocket em um único processo Node, libera memória para mais empresas por servidor e tira o Chromium da operação. A migração entra neste mês, antes de o limite de sessões virar problema.
+O WPPConnect abre uma instância de Chromium (Puppeteer) por sessão, tornando-se o gargalo crítico de consumo de memória RAM no VPS de 8 GB (exigindo `shm_size: 2gb` e limitando a adição de novas empresas clientes). A substituição do motor para a biblioteca Baileys, que conecta diretamente via WebSocket em um único processo leve Node.js, reduz drasticamente o consumo para poucas dezenas de megabytes por sessão.
+
+**Garantia Central Desta Proposta**: A migração **não pode quebrar nem regredir nenhuma funcionalidade** atualmente em produção no WPPConnect. Todos os comportamentos implementados e blindados (trava do proprietário Anti-X9 de 20 min com renovação, captura de mensagens do dono via `onselfmessage`, descarte de mensagens com atraso > 2 min, suporte a JIDs `@lid` e normalização para número móvel sem dígito 9 extra, autenticação do webhook com segredo compartilhado via header `x-webhook-token`, resposta com status `CONNECTED`, `QRCODE` e `DISCONNECTED`, envio de texto e fotos, e tolerância a ecos de mensagens disparadas pelo próprio bot) serão integralmente preservados pelo novo gateway.
 
 ## What Changes
 
-- Novo serviço `baileys-gateway` (Node), que expõe a mesma API HTTP que o backend já usa do WPPConnect (`generate-token`, `start-session`, `status-session`, `qrcode-session`, desconectar, envio de mensagem) e chama o webhook com o mesmo formato de payload (`WhatsappWebhookDTO`). O backend Java não muda de lógica; só aponta para o gateway.
-- O gateway traduz o formato do Baileys (incluindo contatos `@lid`) para o `from` e o `session` que o webhook espera.
-- Estado de autenticação de cada sessão persiste em volume Docker próprio.
-- O container `wppconnect` e o `wppconnect-server/` saem do `docker-compose.yml` ao fim da virada, depois da janela de reversão.
-- **BREAKING**: as sessões atuais do WPPConnect (`dados-wpp/tokens` e `userDataDir`) não migram. Cada empresa e a atendente da Gamb escaneiam o QR de novo.
-- A versão do Baileys fica fixada, sem atualização automática.
-- Medição de RAM antes e depois (`docker stats`) registrada como prova do ganho.
+- Criação do serviço `baileys-gateway` (Node.js + TypeScript) em container Docker independente, expondo **exatamente a mesma interface HTTP REST** que o backend Java consome do WPPConnect:
+  - `POST /api/{session}/{secret}/generate-token`: autenticação da sessão com token Bearer.
+  - `POST /api/{session}/start-session`: inicialização do socket Baileys com suporte a webhook.
+  - `GET /api/{session}/status-session`: consulta de status padronizada (`CONNECTED`, `QRCODE`, `DISCONNECTED`).
+  - `GET /api/{session}/qrcode-session`: retorno do QR Code em PNG.
+  - `POST /api/{session}/send-message`: envio de mensagens de texto.
+  - `POST /api/{session}/send-image`: envio de arquivos de imagem em base64.
+  - `POST /api/{session}/close-session`: encerramento da conexão.
+- **Preservação do Webhook e Eventos**: O gateway Baileys despacha requisições HTTP para `POST /webhook/whatsapp` com o payload exato esperado pelo backend Java (`WhatsappWebhookDTO`):
+  - Inclusão obrigatória do cabeçalho `x-webhook-token: ${WPPCONNECT_WEBHOOK_SECRET}` (atendendo ao requisito `WPP-16` / `WebhookSecretFilter`).
+  - Emissão do evento `onselfmessage` com `fromMe: true` quando o proprietário digita no celular, garantindo a ativação imediata da trava de 20 min Anti-X9 (`WPP-02`).
+  - Preservação de timestamp Unix em segundos para que o filtro de mensagens com atraso > 120s funcione com precisão cirúrgica.
+  - Suporte a mensagens recebidas com identificadores alternativos `@lid`, mapeando-os para o número correspondente ou repassando no formato que o backend já sabe tratar.
+- **Isolamento e Persistência**: Autenticação Multi-File Auth (`useMultiFileAuthState`) persistida no volume Docker dedicado `baileys-auth`, permitindo auto-reconexão e restauração automática das empresas após reinicialização do servidor (`WPP-18`).
+- **Virada Segura e Reversível**: O container `wppconnect` e seus dados são mantidos intactos durante o período de homologação, permitindo reversão imediata apenas alterando a URL no `docker-compose.yml`.
 
 ## Capabilities
 
-### New Capabilities
-
-Nenhuma. O gateway é troca de implementação por trás do contrato que já existe.
-
 ### Modified Capabilities
 
-- `whatsapp`: o requisito de conexão da sessão passa a exigir novo pareamento por QR na virada e a descrever o provedor Baileys; o contrato de webhook, o roteamento e as strategies não mudam.
+- `whatsapp`: o provedor subjacente passa a ser o Baileys; todos os requisitos existentes (`WPP-01` a `WPP-16`) mantêm-se 100% satisfeitos e válidos, e ganham a cobertura formal da nova suíte de testes de compatibilidade de gateway (`WPP-17` a `WPP-20`).
 
 ## Impact
 
-- **Novo:** diretório do gateway Node, serviço no `docker-compose.yml`, volume de autenticação, variáveis de ambiente do gateway.
-- **Java:** `ServicoMensagem` tem `http://wppconnect:21465` escrito no código e passa a ler `wppconnect.url`; `ServicoWppConnect` e `application.properties` mantêm as propriedades `wppconnect.*`. Sem mudança em strategies nem em `ControllerWhatsapp`.
-- **Operação:** reparear todas as sessões, janela combinada com cada empresa, plano de reversão para o container antigo.
-- **Dependência:** `autenticar-webhook-whatsapp` fica como está; o gateway deve enviar o cabeçalho de segredo se essa change for aplicada.
-- **Fora de escopo:** refatorar o Java para a interface `ProvedorWhatsapp`, migrar sessões existentes, suporte a mais de um provedor ao mesmo tempo.
+- **Código Java Backend**: Nenhuma regra de negócio, strategy ou controller é alterada. Apenas `ServicoMensagem` passa a ler dinamicamente `wppconnect.url` em vez de URL fixa no código.
+- **Frontend Angular**: Nenhuma alteração. Os status (`CONNECTED`, `QRCODE`, `DISCONNECTED`), polling e visualização de QR Code permanecem idênticos.
+- **Infraestrutura**: Redução drástica de consumo de RAM no VPS (de ~2-3 GB para menos de 150 MB).
+- **Operação**: Devido à mudança do formato interno de sessão do Chromium/Puppeteer para o protocolo binário do Baileys, haverá um pareamento único via QR Code na virada.
