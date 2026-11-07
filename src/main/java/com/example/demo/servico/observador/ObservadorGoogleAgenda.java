@@ -2,26 +2,23 @@ package com.example.demo.servico.observador;
 
 import com.example.demo.evento.EventoReservaConfirmada;
 import com.example.demo.model.Contato;
-import com.example.demo.model.Empresa;
 import com.example.demo.model.DadosReservaSessao;
-import com.example.demo.model.ModoLembrete;
+import com.example.demo.model.Empresa;
+import com.example.demo.model.EstadoUsuario;
 import com.example.demo.model.OrigemContato;
 import com.example.demo.model.OrigemReserva;
 import com.example.demo.model.Reserva;
 import com.example.demo.model.SituacaoReserva;
 import com.example.demo.repository.ContatoRepository;
 import com.example.demo.repository.ReservaRepository;
-import com.example.demo.util.CriptografiaCampo;
-import com.example.demo.util.WhatsappUtil;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import com.example.demo.model.EstadoUsuario;
 import com.example.demo.servico.AgendaNaoConfiguradaException;
 import com.example.demo.servico.GerenciadorSessao;
 import com.example.demo.servico.ServicoFuncionamento;
 import com.example.demo.servico.ServicoGoogleagenda;
 import com.example.demo.servico.ServicoMensagem;
 import com.example.demo.servico.ServicoReserva;
+import com.example.demo.util.CriptografiaCampo;
+import com.example.demo.util.WhatsappUtil;
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.client.http.HttpResponseException;
 import org.slf4j.Logger;
@@ -33,7 +30,9 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -48,6 +47,7 @@ public class ObservadorGoogleAgenda {
 
     private static final Logger log = LoggerFactory.getLogger(ObservadorGoogleAgenda.class);
     private static final DateTimeFormatter FORMATO_DATA = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+    private static final ZoneId FUSO_BRASILIA = ZoneId.of("America/Sao_Paulo");
     private static final int MAXIMO_TENTATIVAS = 3;
     private static final long[] ESPERA_MS = {2000L, 5000L};
     private static final String MENSAGEM_FALHA =
@@ -106,6 +106,7 @@ public class ObservadorGoogleAgenda {
                 descartarDatasComProblema(evento, desfecho.problemas());
             }
             gerenciadorSessao.concluirRegistro(
+                    evento.getEmpresa().getSessaoWhatsapp(),
                     evento.getNumeroWhatsapp(),
                     desfecho.resultado() == Resultado.DATA_OCUPADA
                             ? EstadoUsuario.RESERVA_ESPERANDO_DATA
@@ -297,7 +298,8 @@ public class ObservadorGoogleAgenda {
         if (!evento.isPorHora() || problemas.isEmpty()) {
             return;
         }
-        DadosReservaSessao reserva = gerenciadorSessao.getReserva(evento.getNumeroWhatsapp());
+        DadosReservaSessao reserva = gerenciadorSessao.getReserva(
+                evento.getEmpresa().getSessaoWhatsapp(), evento.getNumeroWhatsapp());
         if (reserva == null) {
             return;
         }
@@ -378,6 +380,7 @@ public class ObservadorGoogleAgenda {
                 return;
             }
             Empresa empresa = evento.getEmpresa();
+            LocalDateTime agora = LocalDateTime.now(FUSO_BRASILIA);
             String numeroChave = WhatsappUtil.normalizarParaChaveEstado(evento.getNumeroWhatsapp());
             String numeroIndice = CriptografiaCampo.calcularIndice(numeroChave);
             String digitos = WhatsappUtil.extrairApenasNumeros(evento.getNumeroWhatsapp());
@@ -392,61 +395,78 @@ public class ObservadorGoogleAgenda {
                         novo.setWhatsappId(evento.getNumeroWhatsapp());
                         novo.setNumeroIndice(numeroIndice);
                         novo.setFinalTelefone(finalTelefone);
-                        novo.setPrimeiraConversaEm(LocalDateTime.now());
-                        novo.setUltimaConversaEm(LocalDateTime.now());
+                        novo.setPrimeiraConversaEm(agora);
+                        novo.setUltimaConversaEm(agora);
                         novo.setOrigem(OrigemContato.CONVERSA);
                         return novo;
                     });
             if (evento.getNomeCliente() != null && !evento.getNomeCliente().isBlank()) {
                 contato.setNome(evento.getNomeCliente());
             }
-            contato.setUltimaConversaEm(LocalDateTime.now());
+            contato.setUltimaConversaEm(agora);
             contatoRepository.save(contato);
-
-            String googleEventId = desfecho.resultado() == Resultado.SUCESSO
-                    ? ServicoReserva.idEventoDoPedido(evento.getIdPedido())
-                    : null;
 
             SituacaoReserva situacao = desfecho.resultado() == Resultado.SUCESSO
                     ? SituacaoReserva.AGUARDANDO_LEMBRETE
                     : SituacaoReserva.FALHA_AGENDA;
 
-            LocalDate data = evento.getDataReserva() != null
-                    ? LocalDate.parse(evento.getDataReserva(), FORMATO_DATA)
-                    : (evento.getDatas() != null && !evento.getDatas().isEmpty()
-                    ? LocalDate.parse(evento.getDatas().get(0), FORMATO_DATA)
-                    : LocalDate.now());
-
             String horario = evento.getHorario() != null && !evento.getHorario().isBlank()
                     ? evento.getHorario()
                     : "Diária Completa";
 
-            Reserva reserva = null;
-            if (googleEventId != null) {
-                reserva = reservaRepository.findByEmpresaIdAndGoogleEventId(empresa.getId(), googleEventId).orElse(null);
+            if (evento.isPorHora() && evento.getDatas() != null && !evento.getDatas().isEmpty()) {
+                List<LocalDate> datasOrdenadas = evento.getDatas().stream()
+                        .map(texto -> LocalDate.parse(texto, FORMATO_DATA))
+                        .sorted()
+                        .toList();
+                for (int posicao = 0; posicao < datasOrdenadas.size(); posicao++) {
+                    String googleEventId = desfecho.resultado() == Resultado.SUCESSO
+                            ? ServicoReserva.idEventoDoPedido(ServicoReserva.idDaPosicao(evento.getIdPedido(), posicao))
+                            : null;
+                    salvarReservaIndividual(empresa, contato, evento, datasOrdenadas.get(posicao), horario, googleEventId, situacao, agora);
+                }
+            } else {
+                String googleEventId = desfecho.resultado() == Resultado.SUCESSO
+                        ? ServicoReserva.idEventoDoPedido(evento.getIdPedido())
+                        : null;
+                LocalDate data = evento.getDataReserva() != null
+                        ? LocalDate.parse(evento.getDataReserva(), FORMATO_DATA)
+                        : (evento.getDatas() != null && !evento.getDatas().isEmpty()
+                        ? LocalDate.parse(evento.getDatas().get(0), FORMATO_DATA)
+                        : LocalDate.now(FUSO_BRASILIA));
+                salvarReservaIndividual(empresa, contato, evento, data, horario, googleEventId, situacao, agora);
             }
-            if (reserva == null) {
-                reserva = new Reserva();
-                reserva.setEmpresa(empresa);
-                reserva.setGoogleEventId(googleEventId);
-                reserva.setOrigem(OrigemReserva.BOT);
-                reserva.setData(data);
-                reserva.setHorario(horario);
-            }
-            reserva.setContato(contato);
-            reserva.setTitulo("Reserva - " + (evento.getNomeCliente() != null ? evento.getNomeCliente() : ""));
-            reserva.setSituacao(situacao);
-            reserva.setAtualizadaEm(LocalDateTime.now());
-
-            if (situacao == SituacaoReserva.AGUARDANDO_LEMBRETE) {
-                reserva.setLembreteEnviarEm(calcularLembreteEnviarEm(empresa, data));
-            }
-
-            reservaRepository.save(reserva);
         } catch (Exception e) {
             log.error("Erro ao gravar reserva do bot (empresa {}, pedido {}): {}",
                     evento.getEmpresa().getId(), evento.getIdPedido(), e.getClass().getSimpleName());
         }
+    }
+
+    private void salvarReservaIndividual(Empresa empresa, Contato contato, EventoReservaConfirmada evento,
+                                         LocalDate data, String horario, String googleEventId,
+                                         SituacaoReserva situacao, LocalDateTime agora) {
+        Reserva reserva = null;
+        if (googleEventId != null) {
+            reserva = reservaRepository.findByEmpresaIdAndGoogleEventId(empresa.getId(), googleEventId).orElse(null);
+        }
+        if (reserva == null) {
+            reserva = new Reserva();
+            reserva.setEmpresa(empresa);
+            reserva.setGoogleEventId(googleEventId);
+            reserva.setOrigem(OrigemReserva.BOT);
+            reserva.setData(data);
+            reserva.setHorario(horario);
+        }
+        reserva.setContato(contato);
+        reserva.setTitulo("Reserva - " + (evento.getNomeCliente() != null ? evento.getNomeCliente() : ""));
+        reserva.setSituacao(situacao);
+        reserva.setAtualizadaEm(agora);
+
+        if (situacao == SituacaoReserva.AGUARDANDO_LEMBRETE) {
+            reserva.setLembreteEnviarEm(calcularLembreteEnviarEm(empresa, data));
+        }
+
+        reservaRepository.save(reserva);
     }
 
     private LocalDateTime calcularLembreteEnviarEm(Empresa empresa, LocalDate dataReserva) {
@@ -455,8 +475,7 @@ public class ObservadorGoogleAgenda {
         LocalTime horario = LocalTime.parse(horarioStr);
         LocalDate diaEnvio = dataReserva.minusDays(diasAntes);
         LocalDateTime momento = diaEnvio.atTime(horario);
-        ZoneId fuso = ZoneId.of("America/Sao_Paulo");
-        LocalDateTime agora = LocalDateTime.now(fuso);
+        LocalDateTime agora = LocalDateTime.now(FUSO_BRASILIA);
         if (momento.isBefore(agora)) {
             return null;
         }

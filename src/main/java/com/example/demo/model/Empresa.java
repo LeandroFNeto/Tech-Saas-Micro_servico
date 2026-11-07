@@ -33,9 +33,6 @@ public class Empresa {
     @Column(name = "regras_locacao", columnDefinition = "TEXT")
     private String regrasLocacao;
 
-    @OneToMany(mappedBy = "empresa", cascade = CascadeType.ALL)
-    private List<DiaReserva> diasDeReserva;
-
     @Column(columnDefinition = "TEXT")
     private String linkGoogleMaps;
 
@@ -53,6 +50,12 @@ public class Empresa {
 
     @Column(name = "google_calendar_id")
     private String googleCalendarId;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "empresa_emails_responsaveis_reuniao", joinColumns = @JoinColumn(name = "empresa_id"))
+    @Column(name = "email")
+    @OrderColumn(name = "ordem")
+    private List<String> emailsResponsaveisReuniao = new ArrayList<>();
 
 
 
@@ -282,10 +285,6 @@ public class Empresa {
         this.ramoDeAtuacao = ramoDeAtuacao;
     }
 
-    public List<DiaReserva> getDiasDeReserva() {
-        return diasDeReserva;
-    }
-
     public String getTabelaDePrecos() {
         return tabelaDePrecos;
     }
@@ -300,10 +299,6 @@ public class Empresa {
 
     public void setRegrasLocacao(String regrasLocacao) {
         this.regrasLocacao = regrasLocacao;
-    }
-
-    public void setDiasDeReserva(List<DiaReserva> diasDeReserva) {
-        this.diasDeReserva = diasDeReserva;
     }
 
     public String getLinkGoogleMaps() {
@@ -328,6 +323,29 @@ public class Empresa {
 
     public void setLinkGaleria(String linkGaleria) {
         this.linkGaleria = linkGaleria;
+    }
+
+    public List<String> getEmailsResponsaveisReuniao() {
+        if (emailsResponsaveisReuniao == null) {
+            emailsResponsaveisReuniao = new ArrayList<>();
+        }
+        return emailsResponsaveisReuniao;
+    }
+
+    public void setEmailsResponsaveisReuniao(List<String> emails) {
+        if (this.emailsResponsaveisReuniao == null) {
+            this.emailsResponsaveisReuniao = new ArrayList<>();
+        } else {
+            this.emailsResponsaveisReuniao.clear();
+        }
+        if (emails == null) {
+            return;
+        }
+        emails.stream()
+                .filter(email -> email != null && !email.isBlank())
+                .map(String::trim)
+                .distinct()
+                .forEach(this.emailsResponsaveisReuniao::add);
     }
 
     public List<String> getUrlsGaleria() {

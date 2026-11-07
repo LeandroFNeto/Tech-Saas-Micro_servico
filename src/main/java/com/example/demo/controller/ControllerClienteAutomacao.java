@@ -4,7 +4,12 @@ import com.example.demo.dto.contato.ContatoResumoDTO;
 import com.example.demo.dto.contato.NumeroContatoDTO;
 import com.example.demo.dto.reserva.ReservaResumoDTO;
 import com.example.demo.dto.reserva.VincularContatoDTO;
-import com.example.demo.model.*;
+import com.example.demo.model.AuditoriaAcessoContato;
+import com.example.demo.model.Contato;
+import com.example.demo.model.Empresa;
+import com.example.demo.model.Reserva;
+import com.example.demo.model.SituacaoReserva;
+import com.example.demo.model.Usuario;
 import com.example.demo.repository.AuditoriaAcessoContatoRepository;
 import com.example.demo.repository.ContatoRepository;
 import com.example.demo.repository.ReservaRepository;
@@ -13,7 +18,6 @@ import com.example.demo.servico.ServicoLembreteReserva;
 import com.example.demo.servico.ServicoSincronizacaoAgenda;
 import com.example.demo.util.WhatsappUtil;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -35,6 +39,8 @@ import java.util.List;
 @RequestMapping("/empresas/{sessao}")
 @Tag(name = "Automação do Cliente", description = "Endpoints de reservas, lembretes de confirmação e contatos da empresa")
 public class ControllerClienteAutomacao {
+
+    private static final ZoneId FUSO_BRASILIA = ZoneId.of("America/Sao_Paulo");
 
     @Autowired
     private ServicoAcessoEmpresa servicoAcessoEmpresa;
@@ -76,8 +82,7 @@ public class ControllerClienteAutomacao {
 
         servicoSincronizacaoAgenda.sincronizarSeNecessario(empresa, dias);
 
-        ZoneId fuso = ZoneId.of("America/Sao_Paulo");
-        LocalDate hoje = LocalDate.now(fuso);
+        LocalDate hoje = LocalDate.now(FUSO_BRASILIA);
         LocalDate fim = hoje.plusDays(dias);
 
         List<Reserva> reservas = reservaRepository.findByEmpresaIdAndDataBetweenOrderByDataAscHorarioAsc(
@@ -111,8 +116,7 @@ public class ControllerClienteAutomacao {
         Reserva reserva = reservaRepository.findByIdAndEmpresaId(id, empresa.getId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Reserva não encontrada"));
 
-        ZoneId fuso = ZoneId.of("America/Sao_Paulo");
-        LocalDate hoje = LocalDate.now(fuso);
+        LocalDate hoje = LocalDate.now(FUSO_BRASILIA);
 
         if (reserva.getContato() == null
                 || reserva.getContato().isNaoContatar()
@@ -120,7 +124,7 @@ public class ControllerClienteAutomacao {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Não é possível enviar lembrete para esta reserva");
         }
 
-        LocalDateTime agora = LocalDateTime.now(fuso);
+        LocalDateTime agora = LocalDateTime.now(FUSO_BRASILIA);
         boolean sucesso = servicoLembreteReserva.enviarLembrete(reserva, agora);
         if (!sucesso) {
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Falha no envio da mensagem via WhatsApp");
@@ -169,10 +173,10 @@ public class ControllerClienteAutomacao {
         reserva.setContato(contato);
         reserva.setSituacao(SituacaoReserva.AGUARDANDO_LEMBRETE);
         reserva.setLembreteEnviarEm(ServicoSincronizacaoAgenda.calcularLembreteEnviarEm(empresa, reserva.getData()));
-        reserva.setAtualizadaEm(LocalDateTime.now());
+        reserva.setAtualizadaEm(LocalDateTime.now(FUSO_BRASILIA));
         reservaRepository.save(reserva);
 
-        LocalDate hoje = LocalDate.now(ZoneId.of("America/Sao_Paulo"));
+        LocalDate hoje = LocalDate.now(FUSO_BRASILIA);
         return ResponseEntity.ok(paraReservaResumo(reserva, hoje));
     }
 
@@ -186,12 +190,24 @@ public class ControllerClienteAutomacao {
     })
     public ResponseEntity<List<ContatoResumoDTO>> listarContatos(
             @PathVariable String sessao,
+            @RequestParam(value = "pagina", required = false) Integer pagina,
+            @RequestParam(value = "tamanho", required = false) Integer tamanho,
             @RequestHeader(value = "x-admin-token", required = false) String adminToken) {
 
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         Empresa empresa = servicoAcessoEmpresa.validarAcessoExclusivoCliente(auth, adminToken, sessao);
 
-        List<Contato> contatos = contatoRepository.findByEmpresaIdOrderByUltimaConversaEmDesc(empresa.getId());
+        List<Contato> contatos;
+        if (pagina != null && tamanho != null) {
+            int tam = Math.min(Math.max(1, tamanho), 50);
+            int pag = Math.max(0, pagina);
+            contatos = contatoRepository.findByEmpresaIdOrderByUltimaConversaEmDesc(
+                    empresa.getId(),
+                    org.springframework.data.domain.PageRequest.of(pag, tam)
+            ).getContent();
+        } else {
+            contatos = contatoRepository.findByEmpresaIdOrderByUltimaConversaEmDesc(empresa.getId());
+        }
 
         List<ContatoResumoDTO> dtos = contatos.stream()
                 .map(this::paraContatoResumo)
@@ -207,6 +223,7 @@ public class ControllerClienteAutomacao {
             @ApiResponse(responseCode = "401", description = "Sem token de autenticação"),
             @ApiResponse(responseCode = "403", description = "Acesso negado"),
             @ApiResponse(responseCode = "404", description = "Empresa ou contato não encontrado"),
+            @ApiResponse(responseCode = "422", description = "Contato sem número discável disponível"),
             @ApiResponse(responseCode = "429", description = "Limite de visualização de números por hora atingido")
     })
     public ResponseEntity<NumeroContatoDTO> obterNumeroCompletoContato(
@@ -217,7 +234,8 @@ public class ControllerClienteAutomacao {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         Empresa empresa = servicoAcessoEmpresa.validarAcessoExclusivoCliente(auth, adminToken, sessao);
 
-        LocalDateTime umaHoraAtras = LocalDateTime.now().minusHours(1);
+        LocalDateTime agora = LocalDateTime.now(FUSO_BRASILIA);
+        LocalDateTime umaHoraAtras = agora.minusHours(1);
         long acessosNaUltimaHora = auditoriaRepository.countByEmpresaIdAndDataHoraAfter(empresa.getId(), umaHoraAtras);
         if (acessosNaUltimaHora >= 10) {
             throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Limite de 10 consultas por hora atingido");
@@ -226,12 +244,38 @@ public class ControllerClienteAutomacao {
         Contato contato = contatoRepository.findByIdAndEmpresaId(id, empresa.getId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Contato não encontrado"));
 
-        String usuarioEmail = (auth.getPrincipal() instanceof Usuario u) ? u.getEmail() : null;
-        AuditoriaAcessoContato auditoria = new AuditoriaAcessoContato(empresa, contato, LocalDateTime.now(), usuarioEmail);
+        String numeroCompleto = WhatsappUtil.extrairApenasNumeros(contato.getWhatsappId());
+        if (WhatsappUtil.isLid(contato.getWhatsappId()) || numeroCompleto.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Contato sem número de telefone disponível");
+        }
+
+        String usuarioEmail = (auth != null && auth.getPrincipal() instanceof Usuario u) ? u.getEmail() : null;
+        AuditoriaAcessoContato auditoria = new AuditoriaAcessoContato(empresa, contato, agora, usuarioEmail);
         auditoriaRepository.save(auditoria);
 
-        String numeroCompleto = WhatsappUtil.extrairApenasNumeros(contato.getWhatsappId());
         return ResponseEntity.ok(new NumeroContatoDTO(numeroCompleto));
+    }
+
+    @DeleteMapping("/contatos/{id}")
+    @Operation(summary = "Excluir contato (Direito ao esquecimento LGPD)")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Contato excluído com sucesso"),
+            @ApiResponse(responseCode = "401", description = "Sem token de autenticação"),
+            @ApiResponse(responseCode = "403", description = "Acesso negado"),
+            @ApiResponse(responseCode = "404", description = "Empresa ou contato não encontrado")
+    })
+    public ResponseEntity<Void> excluirContato(
+            @PathVariable String sessao,
+            @PathVariable Long id,
+            @RequestHeader(value = "x-admin-token", required = false) String adminToken) {
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        Empresa empresa = servicoAcessoEmpresa.validarAcessoExclusivoCliente(auth, adminToken, sessao);
+
+        Contato contato = contatoRepository.findByIdAndEmpresaId(id, empresa.getId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Contato não encontrado"));
+        contatoRepository.delete(contato);
+        return ResponseEntity.noContent().build();
     }
 
     private ReservaResumoDTO paraReservaResumo(Reserva r, LocalDate hoje) {
@@ -280,7 +324,7 @@ public class ControllerClienteAutomacao {
             return null;
         }
         String jid = contato.getWhatsappId();
-        if (jid != null && jid.contains("@lid")) {
+        if (jid != null && WhatsappUtil.isLid(jid)) {
             return "lid:*****";
         }
         String digitos = jid != null ? WhatsappUtil.extrairApenasNumeros(jid) : "";

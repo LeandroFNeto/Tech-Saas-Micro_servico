@@ -11,6 +11,10 @@ export const CLIENT_ROUTES: Routes = [
         loadComponent: () => import('./painel/painel.component').then((m) => m.PainelComponent)
       },
       {
+        path: 'contatos',
+        loadComponent: () => import('./contatos/contatos.component').then((m) => m.ContatosComponent)
+      },
+      {
         path: 'chatbot',
         loadComponent: () => import('./perfil/perfil.component').then((m) => m.PerfilComponent)
       },

@@ -1,6 +1,8 @@
 package com.example.demo.repository;
 
 import com.example.demo.model.Contato;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -19,6 +21,8 @@ public interface ContatoRepository extends JpaRepository<Contato, Long> {
     Optional<Contato> findByEmpresaIdAndNumeroIndice(Long empresaId, String numeroIndice);
 
     List<Contato> findByEmpresaIdOrderByUltimaConversaEmDesc(Long empresaId);
+
+    Page<Contato> findByEmpresaIdOrderByUltimaConversaEmDesc(Long empresaId, Pageable pageable);
 
     Optional<Contato> findByIdAndEmpresaId(Long id, Long empresaId);
 

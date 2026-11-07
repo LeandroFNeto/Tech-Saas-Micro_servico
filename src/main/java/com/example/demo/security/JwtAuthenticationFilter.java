@@ -64,7 +64,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             String email = tokenService.validarToken(token);
             Usuario usuario = usuarioRepository.findByEmailIgnoreCase(email).orElse(null);
-            if (usuario == null) {
+            if (usuario == null || (usuario.getEmpresa() != null && Boolean.FALSE.equals(usuario.getEmpresa().getAtivo()))) {
                 return;
             }
             var autenticacao = new UsernamePasswordAuthenticationToken(
@@ -78,7 +78,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private void autenticarPorHeadersLegados(HttpServletRequest request) {
         String adminToken = request.getHeader("x-admin-token");
-        if (adminToken != null && adminToken.equals(adminApiKey)) {
+        if (adminApiKey != null && !adminApiKey.isBlank() && adminToken != null && adminToken.equals(adminApiKey)) {
             var autenticacao = new UsernamePasswordAuthenticationToken(
                     "admin-api-key",
                     null,

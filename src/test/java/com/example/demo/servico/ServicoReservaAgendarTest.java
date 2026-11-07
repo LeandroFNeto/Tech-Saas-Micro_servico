@@ -4,6 +4,9 @@ import com.example.demo.model.Empresa;
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.services.calendar.Calendar;
 import com.google.api.services.calendar.model.Event;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -78,6 +81,50 @@ class ServicoReservaAgendarTest {
         assertThat(evento.getEnd().getDate().toStringRfc3339()).isEqualTo("2027-03-01");
         assertThat(evento.getStart().getDateTime()).isNull();
         assertThat(evento.getEnd().getDateTime()).isNull();
+    }
+
+    @Test
+    @DisplayName("agendarPorHora com término à meia-noite (24:00) salva data final no dia seguinte")
+    void deveAgendarPorHoraComTerminoNaMeiaNoite() throws Exception {
+        Event salvo = new Event().setId("salvo-hora-meianoite");
+        when(calendar.events().insert(anyString(), any(Event.class)).execute()).thenReturn(salvo);
+
+        LocalDate dia = LocalDate.of(2027, 3, 15);
+        String id = servicoReserva.agendarPorHora(
+                empresaComAgenda(AGENDA), dia, LocalTime.of(22, 0), LocalTime.MIDNIGHT,
+                "Carlos", "5511988887777", "pedido-h1", 0);
+
+        assertThat(id).isEqualTo("salvo-hora-meianoite");
+        ArgumentCaptor<Event> captor = ArgumentCaptor.forClass(Event.class);
+        verify(calendar.events()).insert(eq(AGENDA), captor.capture());
+        Event gerado = captor.getValue();
+        ZoneId fuso = ZoneId.of("America/Sao_Paulo");
+        long esperadoInicio = dia.atTime(22, 0).atZone(fuso).toInstant().toEpochMilli();
+        long esperadoFim = dia.plusDays(1).atStartOfDay().atZone(fuso).toInstant().toEpochMilli();
+        assertThat(gerado.getStart().getDateTime().getValue()).isEqualTo(esperadoInicio);
+        assertThat(gerado.getEnd().getDateTime().getValue()).isEqualTo(esperadoFim);
+    }
+
+    @Test
+    @DisplayName("agendarPorHora diurno salva início e término no mesmo dia")
+    void deveAgendarPorHoraDiurnoNoMesmoDia() throws Exception {
+        Event salvo = new Event().setId("salvo-hora-dia");
+        when(calendar.events().insert(anyString(), any(Event.class)).execute()).thenReturn(salvo);
+
+        LocalDate dia = LocalDate.of(2027, 3, 15);
+        String id = servicoReserva.agendarPorHora(
+                empresaComAgenda(AGENDA), dia, LocalTime.of(10, 0), LocalTime.of(12, 0),
+                "Carlos", "5511988887777", "pedido-h2", 1);
+
+        assertThat(id).isEqualTo("salvo-hora-dia");
+        ArgumentCaptor<Event> captor = ArgumentCaptor.forClass(Event.class);
+        verify(calendar.events()).insert(eq(AGENDA), captor.capture());
+        Event gerado = captor.getValue();
+        ZoneId fuso = ZoneId.of("America/Sao_Paulo");
+        long esperadoInicio = dia.atTime(10, 0).atZone(fuso).toInstant().toEpochMilli();
+        long esperadoFim = dia.atTime(12, 0).atZone(fuso).toInstant().toEpochMilli();
+        assertThat(gerado.getStart().getDateTime().getValue()).isEqualTo(esperadoInicio);
+        assertThat(gerado.getEnd().getDateTime().getValue()).isEqualTo(esperadoFim);
     }
 
     @Test

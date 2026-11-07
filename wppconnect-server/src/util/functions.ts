@@ -1,18 +1,3 @@
-/*
- * Copyright 2023 WPPConnect Team
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 import {
   CreateBucketCommand,
   PutObjectCommand,
@@ -33,7 +18,7 @@ import { convert } from '../mapper/index';
 import { ServerOptions } from '../types/ServerOptions';
 import { bucketAlreadyExists } from './bucketAlreadyExists';
 
-let mime: any, crypto: any; //, aws: any;
+let mime: any, crypto: any;
 if (config.webhook.uploadS3) {
   mime = config.webhook.uploadS3 ? mimetypes : null;
   crypto = config.webhook.uploadS3 ? Crypto : null;
@@ -65,7 +50,8 @@ export function contactToArray(
         else (localArr as any).push(`${contact}@c.us`);
     }
   } else {
-    const arrContacts = number.split(/\s*[,;]\s*/g);
+    const regexVirgulaPontoVirgula = new RegExp('\\s*[,;]\\s*', 'g');
+    const arrContacts = number.split(regexVirgulaPontoVirgula);
     for (let contact of arrContacts) {
       const original = String(contact ?? '');
       const usarLid = isLid || original.includes('@lid');
@@ -92,7 +78,8 @@ export function groupToArray(group: any) {
       if (contact !== '') (localArr as any).push(`${contact}@g.us`);
     }
   } else {
-    const arrContacts = group.split(/\s*[,;]\s*/g);
+    const regexVirgulaPontoVirgula = new RegExp('\\s*[,;]\\s*', 'g');
+    const arrContacts = group.split(regexVirgulaPontoVirgula);
     for (let contact of arrContacts) {
       contact = contact.split('@')[0];
       if (contact !== '') (localArr as any).push(`${contact}@g.us`);
@@ -109,7 +96,8 @@ export function groupNameToArray(group: any) {
       if (contact !== '') (localArr as any).push(`${contact}`);
     }
   } else {
-    const arrContacts = group.split(/\s*[,;]\s*/g);
+    const regexVirgulaPontoVirgula = new RegExp('\\s*[,;]\\s*', 'g');
+    const arrContacts = group.split(regexVirgulaPontoVirgula);
     for (const contact of arrContacts) {
       if (contact !== '') (localArr as any).push(`${contact}`);
     }
@@ -144,8 +132,13 @@ export async function callWebHook(
       data = Object.assign({ event: event, session: client.session }, data);
       if (req.serverOptions.mapper.enable)
         data = await convert(req.serverOptions.mapper.prefix, data);
+      const webhookSecret =
+        req.serverOptions.webhook?.secret || req.serverOptions.secretKey || '';
+      const requestConfig = webhookSecret
+        ? { headers: { 'x-webhook-token': webhookSecret } }
+        : undefined;
       api
-        .post(webhook, data)
+        .post(webhook, data, requestConfig)
         .then(() => {
           try {
             const events = ['unreadmessages', 'onmessage'];
@@ -311,10 +304,8 @@ async function archive(client: any, req: any) {
 
 function DaysBetween(StartDate: Date) {
   const endDate = new Date();
-  // The number of milliseconds in all UTC days (no DST)
   const oneDay = 1000 * 60 * 60 * 24;
 
-  // A day in UTC always lasts 24 hours (unlike in other time formats)
   const start = Date.UTC(
     endDate.getFullYear(),
     endDate.getMonth(),
@@ -326,7 +317,6 @@ function DaysBetween(StartDate: Date) {
     StartDate.getDate()
   );
 
-  // so it's safe to divide by 24 hours
   return (start - end) / oneDay;
 }
 

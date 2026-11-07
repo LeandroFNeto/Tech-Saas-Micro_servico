@@ -16,9 +16,19 @@ class WhatsappUtilTest {
     }
 
     @Test
-    @DisplayName("extrairApenasNumeros remove o sufixo do JID")
+    @DisplayName("extrairApenasNumeros remove o sufixo do JID e trata '@' isolado sem exceção")
     void extraiNumerosDoJid() {
         assertThat(WhatsappUtil.extrairApenasNumeros("83717620011059@lid")).isEqualTo("83717620011059");
         assertThat(WhatsappUtil.extrairApenasNumeros("5511988887777@c.us")).isEqualTo("5511988887777");
+        assertThat(WhatsappUtil.extrairApenasNumeros("@")).isEmpty();
+        assertThat(WhatsappUtil.extrairApenasNumeros(null)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("normalizarParaChaveEstado preserva todos os dígitos de @lid de 13 dígitos e remove 9º dígito só em telefones 55")
+    void normalizaChaveEstadoSemCorromperLid() {
+        assertThat(WhatsappUtil.normalizarParaChaveEstado("5511988887777@lid")).isEqualTo("5511988887777");
+        assertThat(WhatsappUtil.normalizarParaChaveEstado("5511988887777@c.us")).isEqualTo("551188887777");
+        assertThat(WhatsappUtil.normalizarParaChaveEstado("@")).isEmpty();
     }
 }

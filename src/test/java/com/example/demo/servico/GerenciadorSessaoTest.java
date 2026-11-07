@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.ZoneId;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -68,18 +69,20 @@ class GerenciadorSessaoTest {
     }
 
     @Test
-    @DisplayName("Sessão acima de 30 minutos volta para INICIO")
+    @DisplayName("Sessão acima de 30 minutos volta para INICIO e limpa reserva e datasPendentes")
     void deveResetarEstadoQuandoTtlExpirar() {
         RelogioControlado relogio = new RelogioControlado(INICIO_RELOGIO);
         GerenciadorSessao gerenciador = new GerenciadorSessao(relogio);
 
-        gerenciador.getOuCriarReserva(CLIENTE).setHorario("14:00");
-        gerenciador.atualizarEstado(CLIENTE, EstadoUsuario.RESERVA_ESPERANDO_NOME.name());
+        gerenciador.getOuCriarReserva("sessao_a", CLIENTE).setHorario("14:00");
+        gerenciador.guardarDataPendente("sessao_a", CLIENTE, LocalDate.of(2026, 12, 25), EstadoUsuario.ESPERANDO_DATA);
+        gerenciador.atualizarEstado("sessao_a", CLIENTE, EstadoUsuario.RESERVA_ESPERANDO_NOME.name());
         relogio.avancarMinutos(31);
 
-        assertThat(gerenciador.obterEstado(CLIENTE)).isEqualTo(EstadoUsuario.INICIO.name());
-        assertThat(gerenciador.getEstado(CLIENTE)).isEqualTo(EstadoUsuario.INICIO);
-        assertThat(gerenciador.getReserva(CLIENTE)).isNull();
+        assertThat(gerenciador.obterEstado("sessao_a", CLIENTE)).isEqualTo(EstadoUsuario.INICIO.name());
+        assertThat(gerenciador.getEstado("sessao_a", CLIENTE)).isEqualTo(EstadoUsuario.INICIO);
+        assertThat(gerenciador.getReserva("sessao_a", CLIENTE)).isNull();
+        assertThat(gerenciador.obterDataPendente("sessao_a", CLIENTE)).isNull();
     }
 
     @Test
@@ -164,6 +167,55 @@ class GerenciadorSessaoTest {
         assertThat(gerenciadorSessao.getEstado(CLIENTE)).isEqualTo(EstadoUsuario.RESERVA_REGISTRANDO);
     }
 
+    @Test
+    @DisplayName("Ativa trava do proprietário e expira após 20 minutos")
+    void deveAtivarTravaProprietarioEExpirarApos20Minutos() {
+        RelogioControlado relogio = new RelogioControlado(INICIO_RELOGIO);
+        GerenciadorSessao gerenciador = new GerenciadorSessao(relogio);
+
+        gerenciador.ativarTravaProprietario(CLIENTE);
+
+        assertThat(gerenciador.estaComTravaProprietarioAtiva(CLIENTE)).isTrue();
+        assertThat(gerenciador.estaComTravaProprietarioAtiva("551188887777")).isTrue();
+
+        relogio.avancarMinutos(19);
+        assertThat(gerenciador.estaComTravaProprietarioAtiva(CLIENTE)).isTrue();
+
+        relogio.avancarMinutos(1);
+        assertThat(gerenciador.estaComTravaProprietarioAtiva(CLIENTE)).isFalse();
+    }
+
+    @Test
+    @DisplayName("Remove trava do proprietário manualmente")
+    void deveRemoverTravaProprietarioManualmente() {
+        gerenciadorSessao.ativarTravaProprietario(CLIENTE);
+        assertThat(gerenciadorSessao.estaComTravaProprietarioAtiva(CLIENTE)).isTrue();
+
+        gerenciadorSessao.removerTravaProprietario(CLIENTE);
+        assertThat(gerenciadorSessao.estaComTravaProprietarioAtiva(CLIENTE)).isFalse();
+    }
+
+    @Test
+    @DisplayName("Isola estado, reserva, reunião e trava do proprietário entre sessao_a e sessao_b para o mesmo número")
+    void deveIsolarEstadoReservaETravaEntreSessoesDiferentes() {
+        gerenciadorSessao.setEstado("sessao_a", CLIENTE, EstadoUsuario.RESERVA_ESPERANDO_NOME);
+        gerenciadorSessao.getOuCriarReserva("sessao_a", CLIENTE).setNomeCliente("Cliente A");
+        gerenciadorSessao.getOuCriarReuniao("sessao_a", CLIENTE).setData(LocalDate.of(2026, 12, 10));
+        gerenciadorSessao.ativarTravaProprietario("sessao_a", CLIENTE);
+
+        assertThat(gerenciadorSessao.getEstado("sessao_b", CLIENTE)).isEqualTo(EstadoUsuario.INICIO);
+        assertThat(gerenciadorSessao.getReserva("sessao_b", CLIENTE)).isNull();
+        assertThat(gerenciadorSessao.estaComTravaProprietarioAtiva("sessao_b", CLIENTE)).isFalse();
+
+        gerenciadorSessao.setEstado("sessao_b", CLIENTE, EstadoUsuario.MENU_PRINCIPAL);
+        assertThat(gerenciadorSessao.getEstado("sessao_a", CLIENTE)).isEqualTo(EstadoUsuario.RESERVA_ESPERANDO_NOME);
+        assertThat(gerenciadorSessao.getReserva("sessao_a", CLIENTE).getNomeCliente()).isEqualTo("Cliente A");
+        assertThat(gerenciadorSessao.estaComTravaProprietarioAtiva("sessao_a", CLIENTE)).isTrue();
+
+        gerenciadorSessao.limparReuniao("sessao_a", CLIENTE);
+        assertThat(gerenciadorSessao.getOuCriarReuniao("sessao_a", CLIENTE).getData()).isNull();
+    }
+
     private static final class RelogioControlado extends Clock {
         private Instant instante;
 
@@ -189,5 +241,40 @@ class GerenciadorSessaoTest {
         public Instant instant() {
             return instante;
         }
+    }
+
+    @Test
+    @DisplayName("Trava ligada pelo @lid vale para o número do mesmo cliente e o contrário")
+    void travaValePeloApelido() {
+        gerenciadorSessao.registrarApelido("185336529469528@lid", CLIENTE);
+
+        gerenciadorSessao.ativarTravaProprietario("185336529469528@lid");
+
+        assertThat(gerenciadorSessao.estaComTravaProprietarioAtiva(CLIENTE)).isTrue();
+
+        GerenciadorSessao outro = new GerenciadorSessao();
+        outro.registrarApelido("185336529469528@lid", CLIENTE);
+        outro.ativarTravaProprietario(CLIENTE);
+        assertThat(outro.estaComTravaProprietarioAtiva("185336529469528@lid")).isTrue();
+    }
+
+    @Test
+    @DisplayName("Trava de um cliente sem apelido não vale para outro")
+    void travaNaoVazaParaOutroCliente() {
+        gerenciadorSessao.ativarTravaProprietario("185336529469528@lid");
+
+        assertThat(gerenciadorSessao.estaComTravaProprietarioAtiva(CLIENTE)).isFalse();
+    }
+
+    @Test
+    @DisplayName("Remover a trava limpa também o apelido")
+    void removerTravaLimpaOApelido() {
+        gerenciadorSessao.registrarApelido("185336529469528@lid", CLIENTE);
+        gerenciadorSessao.ativarTravaProprietario(CLIENTE);
+
+        gerenciadorSessao.removerTravaProprietario("185336529469528@lid");
+
+        assertThat(gerenciadorSessao.estaComTravaProprietarioAtiva(CLIENTE)).isFalse();
+        assertThat(gerenciadorSessao.apelidoDe(CLIENTE)).isNotNull();
     }
 }

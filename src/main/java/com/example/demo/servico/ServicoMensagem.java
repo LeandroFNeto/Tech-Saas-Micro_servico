@@ -4,9 +4,11 @@ import com.example.demo.model.Empresa;
 import com.example.demo.servico.observador.Observadorwhatsapp;
 import com.example.demo.util.WhatsappUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -20,11 +22,41 @@ public class ServicoMensagem {
 
     private static final long INTERVALO_GALERIA_MS = 2000;
 
+    @Value("${wppconnect.url:http://wppconnect:21465}")
+    private String urlBase = "http://wppconnect:21465";
+
+    private RestTemplate restTemplate = criarRestTemplatePadrao();
+
     @Autowired
     private ServicoWppConnect wppConnectService;
 
     @Autowired
     private Observadorwhatsapp observador;
+
+    @Autowired(required = false)
+    private RegistroEnviosBot registroEnviosBot;
+
+    public ServicoMensagem() {
+    }
+
+    @Autowired
+    public ServicoMensagem(
+            RestTemplate restTemplate,
+            @Value("${wppconnect.url:http://wppconnect:21465}") String urlBase) {
+        if (restTemplate != null) {
+            this.restTemplate = restTemplate;
+        }
+        if (urlBase != null && !urlBase.isBlank()) {
+            this.urlBase = urlBase;
+        }
+    }
+
+    private static RestTemplate criarRestTemplatePadrao() {
+        SimpleClientHttpRequestFactory fabrica = new SimpleClientHttpRequestFactory();
+        fabrica.setConnectTimeout(3000);
+        fabrica.setReadTimeout(5000);
+        return new RestTemplate(fabrica);
+    }
 
     public void enviarMensagemWPP(Empresa empresa, String numeroDestino, String texto) {
         String sessao = empresa.getSessaoWhatsapp();
@@ -33,7 +65,13 @@ public class ServicoMensagem {
             Map<String, Object> body = new HashMap<>();
             preencherDestino(body, numeroDestino);
             body.put("message", texto);
-            postWpp(sessao, "/send-message", body);
+            registrarTexto(sessao, numeroDestino, texto);
+            try {
+                postWpp(sessao, "/send-message", body);
+            } catch (RuntimeException falha) {
+                esquecerTexto(sessao, numeroDestino, texto);
+                throw falha;
+            }
             observador.logSucesso(sessao, numeroDestino, "[RESPOSTA ENVIADA]: " + texto);
         } catch (Exception e) {
             observador.logErro(sessao, numeroDestino, "ServicoMensagem (Envio)", e);
@@ -49,7 +87,13 @@ public class ServicoMensagem {
             Map<String, Object> body = new HashMap<>();
             preencherDestino(body, numeroDestino);
             body.put("message", texto);
-            postWpp(sessao, "/send-message", body);
+            registrarTexto(sessao, numeroDestino, texto);
+            try {
+                postWpp(sessao, "/send-message", body);
+            } catch (RuntimeException falha) {
+                esquecerTexto(sessao, numeroDestino, texto);
+                throw falha;
+            }
             observador.logSucesso(sessao, numeroDestino, "[RESPOSTA ENVIADA]: " + texto);
             return true;
         } catch (Exception e) {
@@ -76,7 +120,19 @@ public class ServicoMensagem {
             if (caption != null && !caption.isBlank()) {
                 body.put("caption", caption);
             }
-            postWpp(sessao, "/send-image", body);
+            if (registroEnviosBot != null) {
+                registroEnviosBot.registrarMidia(sessao, numeroDestino);
+                registroEnviosBot.registrarTexto(sessao, numeroDestino, caption);
+            }
+            try {
+                postWpp(sessao, "/send-image", body);
+            } catch (RuntimeException falha) {
+                if (registroEnviosBot != null) {
+                    registroEnviosBot.esquecerMidia(sessao, numeroDestino);
+                    registroEnviosBot.esquecerTexto(sessao, numeroDestino, caption);
+                }
+                throw falha;
+            }
             observador.logSucesso(sessao, numeroDestino, "[IMAGEM ENVIADA]: " + url);
         } catch (Exception e) {
             observador.logErro(sessao, numeroDestino, "ServicoMensagem (Imagem)", e);
@@ -111,15 +167,27 @@ public class ServicoMensagem {
         }
     }
 
+    private void registrarTexto(String sessao, String numeroDestino, String texto) {
+        if (registroEnviosBot != null) {
+            registroEnviosBot.registrarTexto(sessao, numeroDestino, texto);
+        }
+    }
+
+    private void esquecerTexto(String sessao, String numeroDestino, String texto) {
+        if (registroEnviosBot != null) {
+            registroEnviosBot.esquecerTexto(sessao, numeroDestino, texto);
+        }
+    }
+
     static void preencherDestino(Map<String, Object> body, String numeroDestino) {
         body.put("phone", WhatsappUtil.extrairApenasNumeros(numeroDestino));
         body.put("isGroup", false);
         body.put("isLid", WhatsappUtil.isLid(numeroDestino));
     }
 
-    private void postWpp(String sessao, String caminho, Map<String, Object> body) {
-        RestTemplate restTemplate = new RestTemplate();
-        String url = "http://wppconnect:21465/api/" + sessao + caminho;
+    void postWpp(String sessao, String caminho, Map<String, Object> body) {
+        String base = urlBase.endsWith("/") ? urlBase.substring(0, urlBase.length() - 1) : urlBase;
+        String url = base + "/api/" + sessao + caminho;
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);

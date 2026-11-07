@@ -7,5 +7,5 @@
 - Para achar arquivo, símbolo ou dependência, use sempre o Graphify (`graphify query`, `path`, `explain`) antes de Glob, Grep ou Read, e rode `graphify update .` no fim do turno quando criar ou alterar arquivo. Todo subagente recebe essa regra no prompt. Ver `.cursor/rules/graphify.mdc` e a seção "Regras de trabalho" de `.cursor/rules/papeis-ia.mdc`.
 - Proposta, change e spec: `.cursor/skills/openspec/SKILL.md`.
 - Situação do projeto (etapa, o que falta, paleta, fontes) em página web: `.cursor/skills/painel/SKILL.md`.
-- As skills `horadoshow`, `diasabatico`, `openspec` e `painel` existem em `.claude/skills/` só como ponte para `.cursor/skills/`. Mudança de conteúdo vai no arquivo do Cursor.
+- As skills `horadoshow`, `diasabatico`, `openspec`, `openspec-apply-change`, `openspec-archive-change`, `openspec-explore`, `openspec-propose`, `openspec-sync-specs`, `openspec-update-change` e `painel` existem em `.claude/skills/` só como ponte para `.cursor/skills/`. Mudança de conteúdo vai no arquivo do Cursor.
 - Tela, layout e estilo do front: `.cursor/skills/diasabatico/SKILL.md`.

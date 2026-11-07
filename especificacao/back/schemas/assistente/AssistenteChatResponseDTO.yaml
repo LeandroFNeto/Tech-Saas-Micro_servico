@@ -1,0 +1,25 @@
+type: object
+description: Resposta gerada pela IA contextualizada na base de tutoria e avisos
+required:
+- resposta
+- modo
+- dataHora
+properties:
+  resposta:
+    type: string
+    description: Resposta formulada pela IA com instruções, diagnóstico ou simulação
+    example: "Para cadastrar um novo aviso, acesse o painel master com seu x-admin-token, selecione Avisos e preencha tipo, título e conteúdo."
+  modo:
+    type: string
+    description: Modo em que a resposta foi processada
+    example: DIAGNOSTICO
+  dataHora:
+    type: string
+    format: date-time
+    description: Momento da geração da resposta
+    example: "2026-11-03T14:30:05Z"
+  sugestoes:
+    type: array
+    description: Sugestões de próximas ações ou perguntas recomendadas
+    items:
+      type: string

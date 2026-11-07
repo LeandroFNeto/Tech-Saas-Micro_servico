@@ -1,0 +1,31 @@
+post:
+  tags:
+  - Assistente Tutoria
+  summary: Interagir com o assistente IA de tutoria e diagnóstico (Admin)
+  description: Recebe dúvidas operacionais, pedidos de ajuda de configuração ou comandos de teste, respondendo com base no documento de conhecimento e avisos do sistema. Exige x-admin-token ou perfil ROLE_ADMIN.
+  operationId: conversarAssistenteTutoria
+  parameters:
+  - name: x-admin-token
+    in: header
+    description: Token administrativo do SaaS
+    required: false
+    schema:
+      type: string
+    example: sua-chave-admin
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: "#/components/schemas/AssistenteChatRequestDTO"
+  responses:
+    "200":
+      description: Resposta processada pela IA com sucesso
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/AssistenteChatResponseDTO"
+    "400":
+      description: Requisição inválida (mensagem obrigatória não fornecida)
+    "401":
+      description: Não autorizado (token administrativo ausente ou inválido)

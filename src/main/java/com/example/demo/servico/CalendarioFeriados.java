@@ -75,10 +75,6 @@ public final class CalendarioFeriados {
         return Optional.ofNullable(doEstado.get(MonthDay.from(data)));
     }
 
-    public static boolean ehFeriado(String uf, LocalDate data) {
-        return nomeDoFeriado(uf, data).isPresent();
-    }
-
     public static Optional<String> nomeNacional(LocalDate data) {
         String fixo = NACIONAIS_FIXOS.get(MonthDay.from(data));
         if (fixo != null) {

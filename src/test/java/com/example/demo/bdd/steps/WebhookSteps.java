@@ -77,11 +77,28 @@ public class WebhookSteps {
 
     @Quando("eu envio POST \\/webhook\\/whatsapp com o WhatsappWebhookDTO:")
     public void postWebhook(DataTable tabela) throws Exception {
+        enviarPostWebhook(tabela, "segredo-webhook-teste");
+    }
+
+    @Quando("eu envio POST \\/webhook\\/whatsapp sem o cabeçalho x-webhook-token com o WhatsappWebhookDTO:")
+    public void postWebhookSemToken(DataTable tabela) throws Exception {
+        enviarPostWebhook(tabela, null);
+    }
+
+    @Quando("eu envio POST \\/webhook\\/whatsapp com x-webhook-token {string} e o WhatsappWebhookDTO:")
+    public void postWebhookComToken(String token, DataTable tabela) throws Exception {
+        enviarPostWebhook(tabela, token);
+    }
+
+    private void enviarPostWebhook(DataTable tabela, String token) throws Exception {
         String json = json(tabela);
-        MvcResult resultado = mockMvc.perform(post("/webhook/whatsapp")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(json))
-                .andReturn();
+        var requisicao = post("/webhook/whatsapp")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json);
+        if (token != null) {
+            requisicao.header("x-webhook-token", token);
+        }
+        MvcResult resultado = mockMvc.perform(requisicao).andReturn();
         ctx.status = resultado.getResponse().getStatus();
         ctx.resposta = resultado.getResponse().getContentAsString();
     }
@@ -114,6 +131,11 @@ public class WebhookSteps {
     @E("a LocacaoStrategy deve ter processado a mensagem")
     public void locacaoProcessou() {
         verify(servicoMensagem, atLeastOnce()).enviarMensagemWPP(any(), anyString(), anyString());
+    }
+
+    @E("a mensagem enviada ao cliente deve conter {string}")
+    public void mensagemEnviadaContem(String trecho) {
+        verify(servicoMensagem, atLeastOnce()).enviarMensagemWPP(any(), anyString(), contains(trecho));
     }
 
     private String json(DataTable tabela) {

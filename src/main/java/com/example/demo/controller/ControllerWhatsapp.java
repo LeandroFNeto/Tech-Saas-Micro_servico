@@ -5,7 +5,9 @@ import com.example.demo.dto.whatsapp.SessaoStatusResponseDTO;
 import com.example.demo.model.Empresa;
 import com.example.demo.model.EstadoUsuario;
 import com.example.demo.repository.EmpresaRepository;
+import com.example.demo.security.WebhookSecretFilter;
 import com.example.demo.servico.GerenciadorSessao;
+import com.example.demo.servico.RegistroEnviosBot;
 import com.example.demo.servico.ServicoAcessoEmpresa;
 import com.example.demo.servico.ServicoContato;
 import com.example.demo.servico.ServicoRespostaLembrete;
@@ -24,6 +26,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -35,12 +39,15 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.Clock;
+
 @RestController
 public class ControllerWhatsapp {
 
     private static final Logger log = LoggerFactory.getLogger(ControllerWhatsapp.class);
 
     @Autowired private GerenciadorSessao gerenciadorSessao;
+    @Autowired private RegistroEnviosBot registroEnviosBot;
     @Autowired private EmpresaRepository empresaRepository;
     @Autowired private FactoryModulo moduloFactory;
     @Autowired private Observadorwhatsapp observador;
@@ -48,6 +55,12 @@ public class ControllerWhatsapp {
     @Autowired private ServicoAcessoEmpresa servicoAcessoEmpresa;
     @Autowired private ServicoContato servicoContato;
     @Autowired private ServicoRespostaLembrete servicoRespostaLembrete;
+    @Value("${wppconnect.webhook-secret:}") private String webhookSecret;
+    @Autowired(required = false) private Clock clock = Clock.systemDefaultZone();
+
+    void setClock(Clock clock) {
+        this.clock = clock == null ? Clock.systemDefaultZone() : clock;
+    }
 
     @PostMapping("/webhook/whatsapp")
     @Tag(name = "Webhook WhatsApp", description = "Recepção tipada de eventos do WPPConnect")
@@ -55,9 +68,22 @@ public class ControllerWhatsapp {
             summary = "Receber mensagem do WhatsApp",
             description = "Consome WhatsappWebhookDTO (sem Map genérico). Aplica travas Anti-X9, ignora grupos/status e encaminha o texto ao módulo da empresa."
     )
-    @ApiResponse(responseCode = "200", description = "Evento aceito. Mensagens filtradas também retornam 200 para o WPPConnect não reenviar.",
-            content = @Content(schema = @Schema(hidden = true)))
-    public ResponseEntity<Void> receberMensagem(@RequestBody WhatsappWebhookDTO payload) {
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Evento aceito. Mensagens filtradas também retornam 200 para o WPPConnect não reenviar.",
+                    content = @Content(schema = @Schema(hidden = true))),
+            @ApiResponse(responseCode = "401", description = "Cabeçalho x-webhook-token ausente, inválido ou segredo não configurado no ambiente.",
+                    content = @Content(schema = @Schema(hidden = true)))
+    })
+    public ResponseEntity<Void> receberMensagem(
+            @Parameter(description = "Segredo compartilhado enviado pelo WPPConnect")
+            @RequestHeader(value = WebhookSecretFilter.HEADER_WEBHOOK_TOKEN, required = false) String webhookToken,
+            @RequestBody WhatsappWebhookDTO payload) {
+        if (!WebhookSecretFilter.segredoValido(webhookSecret, webhookToken)) {
+            log.warn("Webhook WhatsApp recusado para sessão {}: cabeçalho {} ausente ou inválido",
+                    payload != null ? payload.session() : "desconhecida",
+                    WebhookSecretFilter.HEADER_WEBHOOK_TOKEN);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         log.debug(payload.resumoRaioX());
 
         String sessao = payload.session();
@@ -75,7 +101,20 @@ public class ControllerWhatsapp {
                 return ResponseEntity.ok().build();
             }
 
+            if (payload.ehMensagemAntiga(clock)) {
+                observador.logFiltro(sessao, rawFrom, "Mensagem antiga descartada");
+                return ResponseEntity.ok().build();
+            }
+
             if (payload.enviadaPorMim()) {
+                String contatoAlvo = payload.resolverContatoAlvo();
+                if (foiEnviadoPeloBot(sessao, contatoAlvo, textoRecebido)) {
+                    observador.logFiltro(sessao, rawFrom, "Eco do bot ignorado");
+                    return ResponseEntity.ok().build();
+                }
+                if (contatoAlvo != null && !contatoAlvo.isBlank()) {
+                    gerenciadorSessao.ativarTravaProprietario(sessao, WhatsappUtil.normalizarParaChaveEstado(contatoAlvo));
+                }
                 observador.logFiltro(sessao, rawFrom, "Dono do celular digitou (Anti-X9)");
                 return ResponseEntity.ok().build();
             }
@@ -85,17 +124,31 @@ public class ControllerWhatsapp {
                 return ResponseEntity.ok().build();
             }
 
+            String jidBruto = payload.resolverJidBruto();
+            if (jidBruto != null && !jidBruto.equals(rawFrom)) {
+                gerenciadorSessao.registrarApelido(sessao, jidBruto, rawFrom);
+            }
             String chaveEstado = WhatsappUtil.normalizarParaChaveEstado(rawFrom);
+
+            if (gerenciadorSessao.estaComTravaProprietarioAtiva(sessao, chaveEstado)) {
+                observador.logFiltro(sessao, rawFrom, "Atendimento pausado: proprietário atendeu nos últimos 20 minutos");
+                return ResponseEntity.ok().build();
+            }
             Empresa empresa = empresaRepository.buscarPorSessaoComModulos(sessao);
 
-            if (empresa == null) {
-                observador.logFiltro(sessao, rawFrom, "Empresa não encontrada para esta sessão");
+            if (empresa == null || Boolean.FALSE.equals(empresa.getAtivo())) {
+                observador.logFiltro(sessao, rawFrom, "Empresa não encontrada ou inativa para esta sessão");
                 return ResponseEntity.ok().build();
             }
 
-            servicoContato.registrarOuAtualizarContato(empresa, rawFrom);
+            servicoContato.registrarOuAtualizarContato(empresa, rawFrom, payload.resolverNomeRemetente());
 
-            EstadoUsuario estadoAtual = gerenciadorSessao.getEstado(chaveEstado);
+            if (servicoContato.processarOptOutPorMensagem(empresa, rawFrom, textoRecebido)) {
+                observador.logSucesso(sessao, rawFrom, "Opt-out processado a pedido do cliente");
+                return ResponseEntity.ok().build();
+            }
+
+            EstadoUsuario estadoAtual = gerenciadorSessao.getEstado(sessao, chaveEstado);
             if (estadoAtual == null) {
                 estadoAtual = EstadoUsuario.INICIO;
             }
@@ -115,6 +168,14 @@ public class ControllerWhatsapp {
             observador.logErro(sessao, rawFrom, "ControllerWhatsapp", e);
         }
         return ResponseEntity.ok().build();
+    }
+
+    private boolean foiEnviadoPeloBot(String sessao, String contatoAlvo, String texto) {
+        if (registroEnviosBot.foiEnviadoPeloBot(sessao, contatoAlvo, texto)) {
+            return true;
+        }
+        String apelido = gerenciadorSessao.apelidoDe(sessao, contatoAlvo);
+        return apelido != null && registroEnviosBot.foiEnviadoPeloBot(sessao, apelido, texto);
     }
 
     @GetMapping({"/whatsapp/{sessao}/status", "/whatsapp/status/{sessao}"})
@@ -137,7 +198,7 @@ public class ControllerWhatsapp {
             @Parameter(description = "Identificador da sessão WhatsApp da empresa", example = "sessao_recanto_01")
             @PathVariable String sessao) {
 
-        ResponseEntity<SessaoStatusResponseDTO> recusa = recusarSeNecessario(adminToken, sessao);
+        ResponseEntity<SessaoStatusResponseDTO> recusa = recusarSeNecessario(adminToken, sessao, false);
         if (recusa != null) {
             return recusa;
         }
@@ -164,16 +225,19 @@ public class ControllerWhatsapp {
             @Parameter(description = "Identificador da sessão WhatsApp da empresa", example = "sessao_recanto_01")
             @PathVariable String sessao) {
 
-        ResponseEntity<SessaoStatusResponseDTO> recusa = recusarSeNecessario(adminToken, sessao);
+        ResponseEntity<SessaoStatusResponseDTO> recusa = recusarSeNecessario(adminToken, sessao, true);
         if (recusa != null) {
             return recusa;
         }
         return ResponseEntity.ok(servicoWppConnect.iniciarSessao(sessao));
     }
 
-    private ResponseEntity<SessaoStatusResponseDTO> recusarSeNecessario(String adminToken, String sessao) {
+    private ResponseEntity<SessaoStatusResponseDTO> recusarSeNecessario(String adminToken, String sessao, boolean exigirEscrita) {
         Authentication autenticacao = SecurityContextHolder.getContext().getAuthentication();
         try {
+            if (exigirEscrita) {
+                servicoAcessoEmpresa.exigirNaoLeitura(autenticacao);
+            }
             servicoAcessoEmpresa.validarAcessoSessao(autenticacao, adminToken, sessao);
             return null;
         } catch (ResponseStatusException e) {

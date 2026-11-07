@@ -15,6 +15,19 @@ Arquivo em comum da equipe. Cada agente atualiza a própria linha ao começar e 
 | [aprimorar-painel-admin](archive/aprimorar-painel-admin/) | deploy | `antigravity` | `openspec/archive/aprimorar-painel-admin/` | 0 | aprovado |
 | [fechar-pendencias-reserva-por-hora](archive/fechar-pendencias-reserva-por-hora/) | deploy | `gemini-3.8-flash` | `openspec/archive/fechar-pendencias-reserva-por-hora/` | 0 | aprovado |
 | [definir-niveis-admin](archive/definir-niveis-admin/) | deploy | `antigravity` | `openspec/archive/definir-niveis-admin/` | 0 | aprovado |
+| [trava-proprietario-mensagens-antigas](archive/trava-proprietario-mensagens-antigas/) | deploy | `antigravity` | `openspec/archive/trava-proprietario-mensagens-antigas/` | 0 | aprovado |
+| [modulo-ia-conversa-humanizada](archive/modulo-ia-conversa-humanizada/) | deploy | `antigravity` | `openspec/archive/modulo-ia-conversa-humanizada/` | 0 | aprovado |
+| [modulo-assistente-tutoria-testes](archive/modulo-assistente-tutoria-testes/) | deploy | `antigravity` | `openspec/archive/modulo-assistente-tutoria-testes/` | 0 | aprovado |
+| [assistente-cliente-sandbox-modulos](archive/assistente-cliente-sandbox-modulos/) | deploy | `antigravity` | `openspec/archive/assistente-cliente-sandbox-modulos/` | 0 | aprovado |
+| [bot-whatsapp-gamb-suporte-teste](archive/bot-whatsapp-gamb-suporte-teste/) | deploy | `claude-haiku-5-5` | `openspec/archive/bot-whatsapp-gamb-suporte-teste/` | 1 | aprovado |
+| [ajustar-edicao-empresa-recursos-e-exclusao](archive/ajustar-edicao-empresa-recursos-e-exclusao/) | deploy | `antigravity` | `openspec/archive/ajustar-edicao-empresa-recursos-e-exclusao/` | 0 | aprovado |
+| [ia-cliente-refletir-base-de-conhecimento](archive/ia-cliente-refletir-base-de-conhecimento/) | deploy | `antigravity` | `openspec/archive/ia-cliente-refletir-base-de-conhecimento/` | 0 | aprovado |
+| [autenticar-webhook-whatsapp](archive/autenticar-webhook-whatsapp/) | deploy | `antigravity` | `openspec/archive/autenticar-webhook-whatsapp/` | 0 | aprovado |
+| [ajustes-visuais-chat-flutuante-tutoriais](archive/ajustes-visuais-chat-flutuante-tutoriais/) | deploy | `antigravity` | `openspec/archive/ajustes-visuais-chat-flutuante-tutoriais/` | 0 | aprovado |
+| [apresentacao-posicionamento-e-contato](archive/apresentacao-posicionamento-e-contato/) | deploy | `antigravity` | `openspec/archive/apresentacao-posicionamento-e-contato/` | 0 | aprovado |
+| [bot-comercial-site-login-apresentacao](archive/bot-comercial-site-login-apresentacao/) | deploy | `antigravity` | `openspec/archive/bot-comercial-site-login-apresentacao/` | 0 | aprovado |
+| [gamb-whatsapp-datas-livres-e-tom-humano](archive/gamb-whatsapp-datas-livres-e-tom-humano/) | deploy | `antigravity` | `openspec/archive/gamb-whatsapp-datas-livres-e-tom-humano/` | 0 | aprovado |
+| [migrar-wppconnect-para-baileys](changes/migrar-wppconnect-para-baileys/) | programacao | `gemini-3.8-flash` | `openspec/changes/migrar-wppconnect-para-baileys/` | 0 | aprovado |
 
 Estado: `em andamento`, `aprovado`, `reprovado`, `erro`, `aguardando aprovado`.
 

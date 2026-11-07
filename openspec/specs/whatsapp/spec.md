@@ -26,18 +26,81 @@ Cenário: ramo sem strategy
 - Então a API responde 200
 - E o observador registra erro contendo "Ramo de atuação não suportado"
 
-### WPP-02 Filtrar ruído sem tratar como atendimento
+### WPP-02 Filtrar ruído, mensagens antigas e silenciar o bot por intervenção do dono (Anti-X9 com trava de 20 min)
 
-O sistema deve responder 200 e não consultar a factory quando o evento não é um chat de cliente: mensagem do próprio dono (Anti-X9), grupo, tipo inválido, QR Code, status de conexão, presença e ack.
+O sistema deve responder 200 e não consultar a factory de atendimento quando o evento não é um chat de cliente a ser processado:
+1. Mensagem enviada pelo próprio número conectado (`fromMe=true`, entregue pelo gateway no evento `onselfmessage`) que tenha sido escrita por uma pessoa da empresa e não enviada pelo próprio bot: o sistema ativa a trava de 20 minutos para o cliente/contato alvo e silencia o bot (Anti-X9). Cada nova mensagem da pessoa renova os 20 minutos. A trava vale para o cliente destinatário da mensagem, também quando ele aparece com mais de um identificador (`@lid` e número), e nunca para o número da empresa. A mensagem enviada pelo bot que volta no webhook com `fromMe=true` é reconhecida por até 2 minutos, mesmo quando chega antes de o envio terminar, em qualquer ambiente, e não liga a trava.
+2. Chat de cliente enquanto a trava de 20 minutos do proprietário estiver ativa: o sistema não responde, mantendo o atendimento manual do dono sem interferência do robô.
+3. Mensagem antiga recebida pelo webhook: mensagens cujo `timestamp` possua atraso superior a 2 minutos (120 segundos) em relação ao relógio do sistema são descartadas.
+4. Ruídos gerais: grupo (`@g.us`), tipo inválido, QR Code, status de conexão, presença e ack.
 
-Contrato: `especificacao/back/paths/webhook-whatsapp.yaml`
-Prova: `src/test/resources/features/webhook.feature`, `src/test/java/com/example/demo/controller/ControllerWhatsappTest.java`
+O gateway de WhatsApp deve entregar ao webhook as mensagens escritas pelo dono; sem isso a trava não pode funcionar.
 
-Cenário: mensagem do dono
+Contrato: `especificacao/back/paths/webhook-whatsapp.yaml`, `especificacao/back/schemas/webhook/WhatsappWebhookDTO.yaml`
+Prova: `src/test/resources/features/webhook.feature`, `src/test/java/com/example/demo/controller/ControllerWhatsappTest.java`, `src/test/java/com/example/demo/dto/WhatsappWebhookDTOTest.java`, `src/test/java/com/example/demo/servico/GerenciadorSessaoTest.java`, `src/test/java/com/example/demo/servico/ServicoMensagemTest.java`, `wppconnect-server/src/tests/config.test.ts`
 
-- Quando o webhook chega com `fromMe=true`
+Cenário: mensagem do dono ativa trava de 20 minutos
+
+- Quando o webhook chega com o evento `onselfmessage` e `fromMe=true` em conversa com cliente
 - Então a API responde 200
+- E a trava de 20 minutos é ativada para aquele contato
 - E o observador registra filtro contendo "Anti-X9"
+- E a factory não é consultada
+
+Cenário: evento onselfmessage não é tratado como conexão
+
+- Quando o webhook chega com `event=onselfmessage` e sem o campo `fromMe`
+- Então a mensagem é tratada como do dono e a trava de 20 minutos é ativada para o destinatário
+- E o evento `onack` continua sendo ignorado como ruído de conexão e não liga a trava
+
+Cenário: eco do bot não liga a trava
+
+- Dado que o bot acabou de enviar uma resposta ao cliente
+- Quando o webhook chega com `fromMe=true` para o mesmo contato e com o mesmo conteúdo da resposta enviada
+- Então a API responde 200
+- E a trava de 20 minutos não é ativada
+- E o observador registra filtro contendo "Eco do bot ignorado"
+- E a próxima mensagem do cliente é atendida normalmente
+
+Cenário: eco do bot que chega antes de o envio terminar
+
+- Dado que o bot começou a enviar uma resposta e o gateway ainda não confirmou o envio
+- Quando o eco da resposta chega ao webhook com `fromMe=true`
+- Então a trava de 20 minutos não é ativada
+
+Cenário: dono escreve para cliente identificado por @lid
+
+- Dado que o cliente é identificado pelo bot como `@lid` e pelo número do celular
+- Quando a pessoa da empresa escreve para esse cliente e depois o cliente responde
+- Então a trava de 20 minutos vale para o cliente, qualquer que seja o identificador recebido
+- E a trava não é gravada no número da empresa
+- E a factory não é consultada
+
+Cenário: nova mensagem do dono renova a trava
+
+- Dado que a pessoa da empresa escreveu ao cliente há 15 minutos
+- Quando ela escreve de novo
+- Então a trava passa a valer por 20 minutos a partir da nova mensagem
+
+Cenário: cliente envia mensagem durante a pausa do proprietário
+
+- Dado que o dono respondeu ao cliente há menos de 20 minutos
+- Quando o cliente envia uma nova mensagem
+- Então a API responde 200
+- E o observador registra filtro contendo "proprietário atendeu nos últimos 20 minutos"
+- E a factory não é consultada
+
+Cenário: gateway entrega a mensagem do dono
+
+- Dado a configuração padrão do gateway
+- Quando a pessoa da empresa digita uma mensagem no celular ou no WhatsApp Web
+- Então o gateway posta no webhook o evento `onselfmessage` com `fromMe=true`, `to` do cliente e o texto
+
+Cenário: mensagem antiga descartada
+
+- Quando o webhook chega com timestamp com mais de 2 minutos de atraso
+- Então a API responde 200
+- E o observador registra filtro contendo "Mensagem antiga descartada"
 - E a factory não é consultada
 
 Cenário: grupo ou tipo que não é chat
@@ -316,3 +379,181 @@ Cenário: cliente confirma reserva
 - Dado um cliente com reserva em LEMBRETE_ENVIADO respondendo "Sim, confirmo"
 - Quando o webhook processa a mensagem
 - Então a reserva passa a CONFIRMADA_PELO_CLIENTE e o cliente recebe mensagem de confirmação
+
+### WPP-12 Sessão da atendente da Gamb no WhatsApp
+
+O sistema deve entregar a mensagem da empresa interna de ramo reservado `ATENDENTE_GAMB` à `AtendenteGambStrategy`, sem mudar o roteamento nem as strategies das empresas clientes (WPP-01). Todo contato dessa sessão é tratado como cliente. A primeira mensagem, e `0` em qualquer passo, abre o menu "Tirar uma dúvida" (`1`), "Marcar reunião" (`2`) ou "Conhecer a Gamb" (`3`). Na opção `3`, e no texto livre que pergunta do que se trata a Gamb, o que ela oferece ou como ela resolve o problema do cliente (no menu e na dúvida), o bot responde pela base comercial da Gamb: quem é, o que existe hoje e o que está em desenvolvimento, ligando o problema descrito ao que existe hoje, sem informar valor ou faixa de preço, sem prometer prazo, vaga ou garantia, sem citar cliente nem comparar com concorrente, e termina convidando a digitar *2* para marcar reunião. Assunto fora da Gamb recebe a recusa comercial. Na dúvida, o bot responde pelo Suporte de `AssistenteTutoriaService`, só com a base de conhecimento e os avisos ativos, sem enviar ao modelo nem devolver dado de empresa e sem executar ação no sistema. A resposta conversa como uma pessoa da equipe: responde primeiro o que foi perguntado, acompanha o jeito de escrever do cliente e varia a forma de falar, sem roteiro fixo, dentro do mesmo escopo. Mensagem fora do escopo recebe a recusa padrão do Suporte seguida de "Para consultar os dados da sua empresa, use o painel do app.". Mensagem filtrada, recusada ou respondida pelo bot devolve 200 ao webhook. O número sai mascarado e o texto só pelo tamanho no log (WPP-06).
+
+Contrato: `especificacao/back/paths/webhook-whatsapp.yaml`
+Prova: `src/test/java/com/example/demo/strategy/AtendenteGambStrategyTest.java`, `src/test/java/com/example/demo/strategy/GambStrategiesLogTest.java`, `src/test/resources/features/webhook.feature`, `src/test/resources/features/roteamento-strategy.feature`
+
+Cenário: primeira mensagem abre o menu
+
+- Dado uma empresa persistida com a sessão da atendente e ramo `ATENDENTE_GAMB`
+- Quando chega POST `/webhook/whatsapp` com `type=chat` e texto "Oi"
+- Então a API responde 200
+- E a `FactoryModulo` entrega a mensagem à `AtendenteGambStrategy`
+- E o bot responde o menu de dúvida e reunião
+
+Cenário: cliente tira dúvida no número da Gamb
+
+- Dado o cliente na opção de dúvida da sessão da atendente
+- Quando pergunta como conectar o WhatsApp
+- Então o bot responde com o passo a passo da base de conhecimento
+
+Cenário: cliente pede dado de empresa no número da Gamb
+
+- Dado o cliente na opção de dúvida da sessão da atendente
+- Quando pede preços, reservas ou dados de uma empresa
+- Então o bot responde a recusa padrão do Suporte e orienta a usar o painel
+- E nenhum dado de empresa é consultado nem devolvido
+
+Cenário: strategies das empresas não mudam
+
+- Dado as strategies carregadas no contexto Spring
+- Quando a `FactoryModulo` busca o ramo "Locação"
+- Então a strategy retornada continua a `LocacaoStrategy`
+
+Cenário: cliente pergunta do que se trata a Gamb
+
+- Dado o cliente no menu da sessão da atendente
+- Quando ele digita *3* ou escreve "o que vocês fazem?"
+- Então o bot responde quem é a Gamb e o que ela oferece hoje
+- E a resposta não traz valor, prazo nem nome de cliente
+- E termina convidando a digitar *2* para marcar reunião
+
+Cenário: cliente descreve o problema dele
+
+- Dado o cliente na sessão da atendente
+- Quando ele escreve "perco reservas porque demoro a responder, como vocês resolvem?"
+- Então o bot liga o problema ao assistente no WhatsApp com reserva pela Google Agenda
+- E apresenta o que está em desenvolvimento como avaliado caso a caso, sem prometer
+- E não informa preço nem prazo
+
+Cenário: pergunta do app continua no Suporte
+
+- Dado o cliente na opção de dúvida
+- Quando ele pergunta como conectar o WhatsApp no app
+- Então o bot responde pelo Suporte, com o passo a passo, e não pela resposta comercial
+
+Cenário: resposta de dúvida com tom de conversa
+
+- Dado o cliente na opção de dúvida da sessão da atendente
+- Quando a pergunta é enviada ao Suporte
+- Então o prompt orienta responder primeiro o que foi perguntado, acompanhar o tom do cliente e variar a forma de falar
+- E o prompt mantém o escopo: sem dado de empresa e sem ação no sistema
+
+### WPP-13 Reunião com a equipe da Gamb pelo WhatsApp
+
+O sistema deve, na sessão da atendente, deixar o cliente marcar reunião com a equipe informando o motivo (`AJUSTE` ou `NOVA_INOVACAO`), a data (escrita em qualquer formato usual, como `25/12/2026`, `25 de dezembro` ou `amanhã`, de hoje até o limite de dias à frente do funcionamento e em dia aberto; o bot responde sempre no formato DD-MM-AAAA) e o horário (HH:MM, entre os horários livres) e confirmando o resumo. Quando a data é duvidosa (apenas o dia, dia da semana, data sem ano que já passou neste ano ou data impossível), o bot pergunta qual data o cliente quis dizer antes de seguir, aceita *sim* ou a data corrigida e não consulta a agenda enquanto a dúvida não for resolvida. Com o horário livre na Google Agenda da empresa interna, conferido de novo na confirmação, o sistema cria o evento pelo `ServicoReserva` com o motivo no título, o número do cliente mascarado na descrição e todos os `emailsResponsaveisReuniao` daquele momento como convidados, com convite por e-mail, e responde "Reunião marcada para <data> às <horário>.". Com o horário ocupado, o bot oferece os horários livres e não cria evento; sem horário livre na data, pede outra data. Sem responsáveis cadastrados, sem agenda configurada ou com a agenda desconectada ou falhando, o bot informa que o agendamento está indisponível, não cria evento e mantém a dúvida funcionando. Ao mudar a lista de responsáveis (EMP-14), o sistema atualiza só os convidados das reuniões futuras marcadas pelo atendente (entram os e-mails novos, saem os removidos) e não cancela nem remarca reunião; reunião cancelada na agenda é ignorada. O e-mail dos responsáveis não aparece em log.
+
+Contrato: `especificacao/back/paths/webhook-whatsapp.yaml`, `especificacao/back/paths/empresas-admin.yaml`
+Prova: `src/test/java/com/example/demo/strategy/AtendenteGambStrategyTest.java`, `src/test/java/com/example/demo/servico/ServicoReservaReuniaoTest.java`, `src/test/java/com/example/demo/strategy/GambStrategiesLogTest.java`, `src/test/java/com/example/demo/controller/ControllerEmpresaTest.java`
+
+Cenário: cliente marca reunião em horário livre
+
+- Dado responsáveis cadastrados e a Google Agenda da Gamb conectada
+- Quando o cliente escolhe marcar reunião, informa motivo, data e horário livres e confirma o resumo
+- Então o evento é criado com os responsáveis convidados por e-mail
+- E o bot responde com a data e o horário da reunião
+
+Cenário: cliente escolhe horário ocupado
+
+- Dado um horário já ocupado na Google Agenda da Gamb
+- Quando o cliente informa esse horário, ou o horário fica ocupado antes da confirmação
+- Então o bot oferece outros horários
+- E nenhum evento é criado
+
+Cenário: agendamento indisponível
+
+- Dado a lista de responsáveis vazia, ou a agenda desconectada
+- Quando o cliente escolhe marcar reunião
+- Então o bot informa que o agendamento está indisponível e nenhum evento é criado
+- E a opção de dúvida continua respondendo
+
+Cenário: lista de responsáveis muda
+
+- Dado reuniões futuras marcadas pelo atendente
+- Quando o admin salva uma nova lista de responsáveis
+- Então só os convidados dessas reuniões são atualizados
+- E título, data e horário ficam como estão e nada é cancelado
+- E nenhum e-mail aparece em log
+
+Cenário: cliente escreve a data do jeito que preferir
+
+- Dado o cliente no passo de data da reunião
+- Quando ele escreve "25 de dezembro" ou "25.12" e a data cai no futuro dentro do limite
+- Então o bot segue para os horários livres daquele dia
+- E nenhuma mensagem pede o formato DD-MM-AAAA
+
+Cenário: data duvidosa pergunta antes de seguir
+
+- Dado o cliente no passo de data da reunião
+- Quando ele escreve "sábado" ou "dia 25"
+- Então o bot pergunta se ele quer dizer a data sugerida, com o dia da semana
+- E ao receber "sim", segue para os horários livres daquela data
+- E ao receber outra data, usa a data corrigida
+- E ao receber "não", volta a pedir a data
+
+### WPP-14 Limite diário de mensagens da atendente
+
+O sistema deve contar as mensagens de cada número por dia (fuso de Brasília) na sessão da atendente, com teto configurado em `gamb.atendente.limite-diario-mensagens` (padrão 30). Acima do teto, o bot responde "Você atingiu o limite de mensagens de hoje. Volte amanhã para continuarmos a conversa." e não chama o modelo nem a agenda. A contagem recomeça no dia seguinte.
+
+Contrato: `especificacao/back/paths/webhook-whatsapp.yaml`
+Prova: `src/test/java/com/example/demo/servico/LimiteDiarioMensagensTest.java`, `src/test/java/com/example/demo/strategy/AtendenteGambStrategyTest.java`
+
+Cenário: cliente passa do limite diário
+
+- Dado um número que atingiu o limite diário
+- Quando envia outra mensagem à sessão da atendente
+- Então o bot responde a mensagem fixa
+- E o modelo e a agenda não são chamados
+
+### WPP-15 Sessão de teste de módulos da Gamb
+
+O sistema deve entregar a mensagem da empresa interna de ramo reservado `TESTE_MODULOS` à `TesteModulosStrategy`, que só atende números da lista `gamb.teste-modulos.numeros-autorizados`. `/modulos` lista o nome e a descrição de cada `ModuloExperimental` registrado; `/modulo <nome> <texto>` executa o módulo e devolve a resposta simulada; outro texto recebe a ajuda dos comandos; módulo inexistente ou sem texto não executa nada. Número fora da lista recebe "Este número não está autorizado a usar o bot de teste de módulos." e lista vazia recebe "Não há número autorizado para o bot de teste de módulos. Nenhum módulo foi executado."; em ambos nenhum módulo roda. O módulo experimental responde de forma simulada e não grava em dados de empresas reais. O primeiro módulo registrado é `teste-virtual`, que reaproveita o modo `TESTE_VIRTUAL` do assistente. A mensagem devolve 200 ao webhook e o número sai mascarado no log, sem o texto do comando.
+
+Contrato: `especificacao/back/paths/webhook-whatsapp.yaml`
+Prova: `src/test/java/com/example/demo/strategy/TesteModulosStrategyTest.java`, `src/test/java/com/example/demo/strategy/experimental/RegistroModulosExperimentaisTest.java`, `src/test/java/com/example/demo/strategy/GambStrategiesLogTest.java`, `src/test/resources/features/webhook.feature`, `src/test/resources/features/roteamento-strategy.feature`
+
+Cenário: número autorizado lista os módulos
+
+- Dado um número autorizado na sessão de teste
+- Quando envia `/modulos`
+- Então o bot responde com o nome e a descrição de cada módulo registrado
+
+Cenário: número autorizado executa um módulo
+
+- Dado um módulo experimental registrado
+- Quando o número autorizado envia `/modulo <nome> <texto>`
+- Então o bot responde com a resposta simulada do módulo, sem gravar em empresa real
+
+Cenário: número não autorizado
+
+- Dado um número fora da lista de autorizados, ou a lista vazia
+- Quando envia qualquer mensagem à sessão de teste
+- Então a API responde 200
+- E o bot responde a mensagem fixa e nenhum módulo é executado
+### WPP-16 Autenticar origem do webhook com segredo compartilhado
+
+O sistema deve exigir o cabeçalho `x-webhook-token` em todas as requisições HTTP enviadas para `/webhook/*`. O valor recebido é comparado em tempo constante contra o segredo compartilhado configurado em `wppconnect.webhook-secret` (`WPPCONNECT_WEBHOOK_SECRET`). Caso o cabeçalho esteja ausente, o token seja divergente ou o segredo do sistema esteja vazio/não configurado, a requisição é recusada imediatamente com status HTTP `401 Unauthorized`. A recusa é registrada em log sem expor o segredo e sem executar nenhum módulo nem despachar mensagens.
+
+Contrato: `especificacao/back/paths/webhook-whatsapp.yaml`
+Prova: `src/test/java/com/example/demo/security/WebhookSecretFilterTest.java`, `src/test/java/com/example/demo/controller/ControllerWhatsappTest.java`, `src/test/resources/features/webhook.feature`
+
+Cenário: token válido aceito
+- Dado um webhook configurado com segredo compartilhado
+- Quando o provedor posta em `/webhook/whatsapp` com o cabeçalho `x-webhook-token` correto
+- Então a requisição é processada normalmente
+
+Cenário: requisição sem token recusada com 401
+- Dado um webhook protegido por segredo
+- Quando uma requisição chega em `/webhook/whatsapp` sem o cabeçalho `x-webhook-token`
+- Então o sistema responde 401
+- E nenhum módulo de atendimento é acionado
+
+Cenário: token incorreto recusado com 401 sem vazar segredo no log
+- Dado um webhook protegido por segredo
+- Quando uma requisição chega com token divergente
+- Então o sistema responde 401
+- E o log de recusa não expõe o token recebido nem o segredo configurado

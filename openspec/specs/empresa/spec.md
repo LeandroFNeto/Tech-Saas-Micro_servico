@@ -171,6 +171,8 @@ Cenário: sexta troca de cidade no mesmo dia
 
 O sistema deve abrir em `/cliente` um painel inicial com a conexão do WhatsApp (regra de WPP-04, sem mudança), a previsão dos próximos dias (até 8) e um atalho para a configuração do chatbot em `/cliente/chatbot`. Cada dia mostra o tempo, as temperaturas, a chance e o volume de chuva, a marcação "Reservado" quando a data está ocupada no Google Agenda da empresa e o risco de desmarcação BAIXO, MÉDIO ou ALTO. O risco é ALTO com chance de chuva de 70% ou mais, temporal ou 10 mm ou mais; MÉDIO com chance de 40% a 69% ou de 2 mm a 9,9 mm; BAIXO no resto, comparando a chance arredondada para inteiro e a chuva com 1 casa decimal. A previsão de cada cidade é renovada no máximo a cada 8 horas e a ocupação é recalculada a cada consulta, no fuso `America/Sao_Paulo`. Quando há dias na tela, aparece a atribuição "Dados meteorológicos: OpenWeather" e o horário da atualização.
 
+Quando a empresa não tem `permitePrevisaoTempo`, o painel não mostra o bloco da previsão, nem o interruptor de ativá-la, nem aviso sobre ela, e a tela não consulta a previsão.
+
 A consulta da previsão (GET `/empresas/{sessao}/previsao`) e o PUT do cliente só aceitam o admin ou o cliente da própria empresa. Quem não é admin recebe a mesma resposta 403 para sessão inexistente e para empresa alheia; o 404 de sessão inexistente sai só para o admin. O ID da agenda Google da empresa só é devolvido ao admin.
 
 Contrato: `especificacao/back/paths/empresas-previsao.yaml` (`PrevisaoTempoResponseDTO`, `PrevisaoDiaDTO`), `especificacao/back/paths/empresas-cliente.yaml` e `especificacao/back/paths/empresas-search.yaml`
@@ -183,6 +185,14 @@ Cenário: painel inicial do cliente
 - Quando ele abre `/cliente`
 - Então vê a conexão do WhatsApp, o bloco da previsão e o atalho "Configuração do chatbot"
 - E o atalho leva a `/cliente/chatbot`
+
+Cenário: painel sem a previsão liberada
+
+- Dado o cliente autenticado de uma empresa sem `permitePrevisaoTempo`
+- Quando ele abre `/cliente`
+- Então o painel não mostra o bloco da previsão nem o interruptor de ativar
+- E nenhuma consulta de previsão é feita
+- E a conexão do WhatsApp e o atalho do chatbot continuam visíveis
 
 Cenário: dia reservado com chuva forte
 
@@ -369,7 +379,7 @@ Cenário: consulta de previsão em empresa sem permissão
 O sistema deve permitir que o administrador desative logicamente uma empresa via DELETE `/empresas/{sessao}`. O registro não é excluído fisicamente para manter a integridade dos agendamentos e dos registros de auditoria (LGPD). A empresa é marcada como inativa (`ativo = false`, `dataExclusao`), tem sua sessão do WhatsApp desconectada imediatamente no serviço WPPConnect, e passa a ser omitida das listagens administrativas padrão e do acesso do cliente.
 
 Contrato: `especificacao/back/paths/empresas-sessao.yaml`
-Prova: `src/test/resources/features/empresas.feature`, `src/test/java/com/example/demo/controller/ControllerEmpresaTest.java`, `frontend/src/app/features/admin/dashboard/dashboard.component.spec.ts`
+Prova: `src/test/resources/features/empresas.feature`, `src/test/java/com/example/demo/controller/ControllerEmpresaTest.java`, `frontend/src/app/features/admin/empresa-form/empresa-form.component.spec.ts`
 
 Cenário: admin exclui empresa com sucesso
 - Dado o token de administrador válido e uma empresa ativa com sessão WhatsApp conectada
@@ -383,3 +393,83 @@ Cenário: exclusão de empresa inexistente
 - Dado o token de administrador válido
 - Quando o admin envia DELETE `/empresas/{sessao-inexistente}`
 - Então a API responde 404 Not Found
+
+### EMP-14 Admin cadastra os responsáveis da reunião da Gamb
+
+O sistema deve aceitar `emailsResponsaveisReuniao` no PUT `/empresas/{sessao}/admin` (`EmpresaUpdateAdminDTO`): até 10 e-mails válidos, gravados sem repetição e sem item em branco. E-mail inválido responde 400 e nada é gravado. Campo ausente mantém a lista; lista vazia desliga o agendamento de reunião (WPP-13). Ao salvar a lista, o sistema atualiza os convidados das reuniões futuras (WPP-13); falha na agenda não desfaz a lista salva e o e-mail não vai para o log. A lista só volta na resposta para o admin. No painel admin, o formulário da empresa mostra o campo só na empresa interna de ramo `ATENDENTE_GAMB`, bloqueia o envio com e-mail inválido e não envia a lista nas empresas de outros ramos.
+
+Contrato: `especificacao/back/paths/empresas-admin.yaml`, `especificacao/back/schemas/empresa/EmpresaUpdateAdminDTO.yaml`
+Prova: `src/test/java/com/example/demo/controller/ControllerEmpresaTest.java`, `frontend/src/app/features/admin/empresa-form/empresa-form.component.spec.ts`
+
+Cenário: admin salva os responsáveis
+
+- Dado a empresa interna da atendente e o token administrativo válido
+- Quando o admin envia PUT `/empresas/{sessao}/admin` com dois e-mails válidos
+- Então a API responde 200 com a lista salva
+- E os convidados das reuniões futuras são atualizados
+
+Cenário: e-mail inválido
+
+- Quando o PUT `/empresas/{sessao}/admin` traz um e-mail inválido na lista
+- Então a API responde 400
+- E a lista e as reuniões continuam como estavam
+
+Cenário: campo ausente
+
+- Quando o PUT `/empresas/{sessao}/admin` chega sem `emailsResponsaveisReuniao`
+- Então a lista continua a mesma e as reuniões não são tocadas
+
+### EMP-15 Admin controla os recursos da empresa na edição
+
+O sistema deve mostrar na tela de edição da empresa uma seção "Recursos da empresa" com um interruptor para cada recurso: atendente virtual com IA, previsão do tempo, reserva automática e cada módulo do bot do catálogo. Salvar a tela deve enviar todos os valores no PUT `/empresas/{sessao}/admin`. A IA é o módulo `IA_GEMINI` dentro de `modulosAtivos`; ligar ou desligar o interruptor liga ou desliga `usaIA` pelo cálculo do backend. A regra da agenda para a reserva automática (EMP-02) continua valendo.
+
+Contrato: `especificacao/back/paths/empresas-admin.yaml`
+Prova: `frontend/src/app/features/admin/empresa-form/empresa-form.component.spec.ts`
+
+Cenário: admin liga a IA
+
+- Quando o admin liga o interruptor de IA na edição e salva
+- Então o PUT do admin leva `IA_GEMINI` em `modulosAtivos`
+- E a empresa passa a ter `usaIA` verdadeiro
+
+Cenário: admin desliga a IA
+
+- Quando o admin desliga o interruptor de IA e salva
+- Então `IA_GEMINI` não vai em `modulosAtivos`
+- E a empresa passa a ter `usaIA` falso
+
+Cenário: tela carrega o estado atual
+
+- Dado uma empresa com `IA_GEMINI` ativo e previsão do tempo liberada
+- Quando o admin abre a edição dela
+- Então os interruptores de IA e de previsão aparecem ligados
+
+### EMP-16 Excluir empresa pela página de edição
+
+O sistema deve oferecer a exclusão da empresa só no fim da página de edição, em uma zona de exclusão separada do formulário e abaixo de "Redefinir senha". O botão aparece só para o super admin. O clique abre uma confirmação com o nome da empresa; a exclusão só ocorre após a confirmação e usa a mesma regra de EMP-13. Depois de excluir, a tela volta para `/admin`. A lista de empresas do dashboard não tem botão de excluir.
+
+Contrato: `especificacao/back/paths/empresas-sessao.yaml`
+Prova: `frontend/src/app/features/admin/empresa-form/empresa-form.component.spec.ts` e `frontend/src/app/features/admin/dashboard/dashboard.component.spec.ts`
+
+Cenário: super admin exclui pela edição
+
+- Dado o super admin na edição de uma empresa
+- Quando ele clica em "Excluir empresa" no fim da página e confirma
+- Então a tela envia DELETE `/empresas/{sessao}`
+- E volta para `/admin`
+
+Cenário: cancelar a confirmação
+
+- Quando o super admin abre a confirmação e cancela
+- Então nenhum DELETE é enviado e a página continua aberta
+
+Cenário: outro perfil não vê a exclusão
+
+- Dado um admin sem perfil de super admin
+- Quando ele abre a edição da empresa
+- Então a zona de exclusão não aparece
+
+Cenário: lista sem botão de excluir
+
+- Quando o admin abre o dashboard
+- Então cada empresa tem só o botão "Editar"

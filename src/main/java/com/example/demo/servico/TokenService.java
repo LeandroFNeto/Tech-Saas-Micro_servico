@@ -21,7 +21,7 @@ public class TokenService {
     private static final long EXPIRACAO_HORAS = 8;
     private final SecretKey chave;
 
-    public TokenService(@Value("${JWT_SECRET_KEY:SuaChaveSuperSecretaParaGerarOsTokensJWTDe32Caracteres}") String jwtSecret) {
+    public TokenService(@Value("${jwt.secret:${JWT_SECRET_KEY:SuaChaveSuperSecretaParaGerarOsTokensJWTDe32Caracteres}}") String jwtSecret) {
         this.chave = Keys.hmacShaKeyFor(normalizarChave(jwtSecret));
     }
 

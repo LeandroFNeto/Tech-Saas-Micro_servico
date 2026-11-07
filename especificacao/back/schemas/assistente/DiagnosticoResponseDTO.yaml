@@ -1,0 +1,25 @@
+type: object
+description: Relatório consolidado do diagnóstico de integridade de todos os módulos
+required:
+- statusGeral
+- dataHora
+- modulos
+properties:
+  statusGeral:
+    type: string
+    description: Status global consolidado da plataforma
+    enum:
+    - OPERACIONAL
+    - ATENCAO
+    - CRITICO
+    example: OPERACIONAL
+  dataHora:
+    type: string
+    format: date-time
+    description: Data e hora da execução da rotina de diagnóstico
+    example: "2026-11-03T14:30:00Z"
+  modulos:
+    type: array
+    description: Lista com os resultados individuais de cada módulo testado
+    items:
+      $ref: "#/components/schemas/DiagnosticoStatusDTO"

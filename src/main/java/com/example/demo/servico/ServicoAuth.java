@@ -48,6 +48,10 @@ public class ServicoAuth {
                 .filter(encontrado -> passwordEncoder.matches(dto.senha(), encontrado.getSenha()))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Senha incorreta"));
 
+        if (usuario.getEmpresa() != null && Boolean.FALSE.equals(usuario.getEmpresa().getAtivo())) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Empresa inativa");
+        }
+
         String nome = usuario.getEmpresa() != null ? usuario.getEmpresa().getNome() : "Administrador";
         String sessao = usuario.getEmpresa() != null ? usuario.getEmpresa().getSessaoWhatsapp() : null;
         return new LoginResponseDTO(
@@ -57,6 +61,18 @@ public class ServicoAuth {
                 nome,
                 sessao
         );
+    }
+
+    @Transactional
+    public void atualizarEmailDaSessao(String sessaoAtual, String novaSessao) {
+        String novoEmail = emailAcessoDaSessao(novaSessao);
+        usuarioRepository.findByEmpresa_SessaoWhatsapp(sessaoAtual).ifPresent(usuario -> {
+            if (!novoEmail.equalsIgnoreCase(usuario.getEmail())) {
+                garantirEmailDisponivel(novoEmail);
+                usuario.setEmail(novoEmail);
+                usuarioRepository.save(usuario);
+            }
+        });
     }
 
     @Transactional

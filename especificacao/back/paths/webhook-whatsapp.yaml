@@ -2,8 +2,24 @@ post:
   tags:
   - Webhook WhatsApp
   summary: Receber mensagem do WhatsApp
-  description: Consome WhatsappWebhookDTO (sem Map genérico). Aplica travas Anti-X9, ignora grupos/status e encaminha o texto ao módulo da empresa.
+  description: |-
+    Consome WhatsappWebhookDTO (sem Map genérico). Aplica travas Anti-X9, ativa pausa de 20 minutos quando o dono responde, descarta mensagens antigas (atraso > 2 min), ignora grupos/status e encaminha o texto ao módulo da empresa.
+
+    Sessões da Gamb: duas empresas internas, de ramos reservados, recebem a mensagem por strategy própria. Nenhuma outra strategy muda.
+
+    ATENDENTE_GAMB (atendente): todo contato é tratado como cliente. O menu oferece tirar dúvida ou marcar reunião. Na dúvida, o bot responde só com a base de conhecimento e os avisos ativos, não envia nem devolve dado de empresa e não executa ação; fora do escopo devolve a recusa padrão do Suporte. Na reunião, o cliente informa o motivo (AJUSTE ou NOVA_INOVACAO), a data e o horário e confirma o resumo. Horário livre na Google Agenda da Gamb cria o evento e convida por e-mail todos os responsáveis cadastrados naquele momento (emailsResponsaveisReuniao); horário ocupado devolve outras opções e não cria evento; lista vazia ou agenda desconectada informa que o agendamento está indisponível e mantém a dúvida funcionando. Cada número tem um limite diário de mensagens: acima dele o bot devolve uma mensagem fixa e não chama o modelo.
+
+    TESTE_MODULOS (bot de teste, uso interno): só números da lista de autorizados conversam com ele. /modulos lista os módulos experimentais registrados e /modulo <nome> <texto> executa um, com resposta simulada e sem gravar em empresa real. Número fora da lista, ou lista vazia, recebe uma mensagem fixa e nenhum módulo roda.
+
+    Número e conteúdo das mensagens saem mascarados nos logs, e o e-mail dos responsáveis não aparece em log.
   operationId: receberMensagem
+  parameters:
+  - name: x-webhook-token
+    in: header
+    description: Segredo compartilhado enviado pelo WPPConnect para autenticar a origem do webhook
+    required: true
+    schema:
+      type: string
   requestBody:
     content:
       application/json:
@@ -12,4 +28,6 @@ post:
     required: true
   responses:
     "200":
-      description: Evento aceito. Mensagens filtradas também retornam 200 para o WPPConnect não reenviar.
+      description: Evento aceito. Mensagens filtradas, descartadas, recusadas, acima do limite diário ou de número não autorizado também retornam 200 para o WPPConnect não reenviar.
+    "401":
+      description: Cabeçalho x-webhook-token ausente, inválido ou segredo não configurado no ambiente.

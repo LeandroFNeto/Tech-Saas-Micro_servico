@@ -1,0 +1,19 @@
+type: object
+description: Pergunta ou comando enviado ao assistente interno de tutoria e diagnóstico
+required:
+- mensagem
+properties:
+  mensagem:
+    type: string
+    description: Texto com a dúvida operacional, pedido de ajuda de configuração ou comando de teste
+    example: "Como faço para cadastrar um novo aviso no painel?"
+  modo:
+    type: string
+    description: Modo de atuação selecionado no painel administrativo ou do cliente
+    enum:
+    - DIAGNOSTICO
+    - ATENDIMENTO_SANDBOX
+    - SUPORTE
+    - TESTE_VIRTUAL
+    default: DIAGNOSTICO
+    example: DIAGNOSTICO

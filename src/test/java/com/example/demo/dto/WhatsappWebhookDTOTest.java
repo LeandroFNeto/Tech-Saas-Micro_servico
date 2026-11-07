@@ -3,6 +3,9 @@ package com.example.demo.dto;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -182,5 +185,131 @@ class WhatsappWebhookDTOTest {
 
         assertThat(dto.ehMensagemDeTexto()).isTrue();
         assertThat(dto.deveDescartarComoRuido()).isFalse();
+    }
+
+    @Test
+    @DisplayName("Deserializa timestamp e detecta mensagem antiga com atraso superior a 2 minutos")
+    void deveDetectarMensagemAntigaPeloTimestamp() throws Exception {
+        Instant agora = Instant.parse("2026-11-02T22:00:00Z");
+        Clock clockFixo = Clock.fixed(agora, ZoneId.of("UTC"));
+
+        String jsonRecente = """
+            {
+              "session": "RecantoBot",
+              "from": "5511999999999@c.us",
+              "type": "chat",
+              "body": "Mensagem recente",
+              "timestamp": 1793656750
+            }
+            """;
+
+        String jsonAntigo = """
+            {
+              "session": "RecantoBot",
+              "from": "5511999999999@c.us",
+              "type": "chat",
+              "body": "Mensagem histórica",
+              "timestamp": 1793656600
+            }
+            """;
+
+        WhatsappWebhookDTO recente = mapper.readValue(jsonRecente, WhatsappWebhookDTO.class);
+        WhatsappWebhookDTO antigo = mapper.readValue(jsonAntigo, WhatsappWebhookDTO.class);
+
+        assertThat(recente.ehMensagemAntiga(clockFixo)).isFalse();
+        assertThat(antigo.ehMensagemAntiga(clockFixo)).isTrue();
+    }
+
+    @Test
+    @DisplayName("Resolve contato alvo para o destinatário to quando enviada pelo dono")
+    void deveResolverContatoAlvoQuandoEnviadaPorMim() throws Exception {
+        String json = """
+            {
+              "session": "RecantoBot",
+              "from": "5511888888888@c.us",
+              "to": "5511999999999@c.us",
+              "type": "chat",
+              "fromMe": true,
+              "body": "Olá, sou o dono"
+            }
+            """;
+
+        WhatsappWebhookDTO dto = mapper.readValue(json, WhatsappWebhookDTO.class);
+        assertThat(dto.resolverContatoAlvo()).isEqualTo("5511999999999@c.us");
+    }
+
+    @Test
+    @DisplayName("Mensagem do dono para cliente @lid mira o cliente e não o número da empresa")
+    void contatoAlvoDaMensagemDoDonoEhODestinatarioLid() throws Exception {
+        String json = """
+            {
+              "session": "sessao",
+              "type": "chat",
+              "fromMe": true,
+              "from": "5511900000000@c.us",
+              "to": "185336529469528@lid",
+              "sender": { "id": "5511900000000@c.us" },
+              "body": "Oi, sou eu"
+            }
+        """;
+        WhatsappWebhookDTO dto = mapper.readValue(json, WhatsappWebhookDTO.class);
+
+        assertThat(dto.resolverContatoAlvo()).isEqualTo("185336529469528@lid");
+    }
+
+    @Test
+    @DisplayName("Jid bruto devolve o @lid mesmo quando o remetente resolvido é o número")
+    void jidBrutoMantemOLid() throws Exception {
+        String json = """
+            {
+              "session": "sessao",
+              "type": "chat",
+              "fromMe": false,
+              "from": "185336529469528@lid",
+              "sender": { "id": "5511988887777@c.us" },
+              "body": "Olá"
+            }
+        """;
+        WhatsappWebhookDTO dto = mapper.readValue(json, WhatsappWebhookDTO.class);
+
+        assertThat(dto.resolverJidBruto()).isEqualTo("185336529469528@lid");
+        assertThat(dto.resolverRemoteJid()).isEqualTo("5511988887777@c.us");
+    }
+
+    @Test
+    @DisplayName("Evento onselfmessage é mensagem do dono, mesmo sem fromMe, e não é evento de conexão")
+    void onselfmessageEhMensagemDoDono() throws Exception {
+        String json = """
+            {
+              "event": "onselfmessage",
+              "session": "sessao",
+              "type": "chat",
+              "from": "5511900000000@c.us",
+              "to": "5511999999999@c.us",
+              "body": "Oi, sou eu"
+            }
+        """;
+        WhatsappWebhookDTO dto = mapper.readValue(json, WhatsappWebhookDTO.class);
+
+        assertThat(dto.ehEventoConexao()).isFalse();
+        assertThat(dto.enviadaPorMim()).isTrue();
+        assertThat(dto.resolverContatoAlvo()).isEqualTo("5511999999999@c.us");
+    }
+
+    @Test
+    @DisplayName("Evento onack continua sendo conexão e não é mensagem do dono")
+    void onackContinuaSendoConexao() throws Exception {
+        String json = """
+            {
+              "event": "onack",
+              "session": "sessao",
+              "id": { "fromMe": true, "remote": "5511999999999@c.us", "id": "ABC" },
+              "ack": 2
+            }
+        """;
+        WhatsappWebhookDTO dto = mapper.readValue(json, WhatsappWebhookDTO.class);
+
+        assertThat(dto.ehEventoConexao()).isTrue();
+        assertThat(dto.ehEventoMensagemDoDono()).isFalse();
     }
 }

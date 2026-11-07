@@ -32,11 +32,17 @@ public class ServicoFuncionamento {
         }
 
         public boolean comporta(LocalTime inicio) {
-            if (!aberto || inicio == null) {
+            if (!aberto || inicio == null || abre == null || fecha == null) {
+                return false;
+            }
+            if (inicio.isBefore(abre)) {
                 return false;
             }
             LocalTime fim = inicio.plusMinutes(duracaoMinutos);
-            return !inicio.isBefore(abre) && !fim.isBefore(inicio) && !fim.isAfter(fecha);
+            if (fecha.equals(LocalTime.MIDNIGHT)) {
+                return fim.equals(LocalTime.MIDNIGHT) || fim.isAfter(inicio);
+            }
+            return !fim.isBefore(inicio) && !fim.isAfter(fecha);
         }
     }
 
@@ -93,7 +99,7 @@ public class ServicoFuncionamento {
         while (janela.comporta(inicio)) {
             inicios.add(inicio);
             LocalTime proximo = inicio.plusMinutes(janela.duracaoMinutos());
-            if (!proximo.isAfter(inicio)) {
+            if (proximo.equals(LocalTime.MIDNIGHT) || !proximo.isAfter(inicio)) {
                 break;
             }
             inicio = proximo;

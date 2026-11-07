@@ -10,10 +10,6 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Objects;
 
-/**
- * Leitura enxuta de empresa para a IA. Reusa o repositório já existente
- * e devolve um registro próprio, para o GraphQL serializar só os campos pedidos.
- */
 @Service
 public class ConsultaEmpresaGrafo {
 
@@ -25,13 +21,17 @@ public class ConsultaEmpresaGrafo {
 
     public List<EmpresaConsulta> listar() {
         if (isAdmin()) {
-            return empresaRepository.findAll().stream().map(ConsultaEmpresaGrafo::paraConsulta).toList();
+            return empresaRepository.findAll().stream()
+                    .filter(empresa -> !Boolean.FALSE.equals(empresa.getAtivo()))
+                    .map(ConsultaEmpresaGrafo::paraConsulta)
+                    .toList();
         }
         Long empresaId = empresaIdDoCliente();
         if (empresaId == null) {
             return List.of();
         }
         return empresaRepository.findById(empresaId)
+                .filter(empresa -> !Boolean.FALSE.equals(empresa.getAtivo()))
                 .map(ConsultaEmpresaGrafo::paraConsulta)
                 .map(List::of)
                 .orElseGet(List::of);
@@ -53,7 +53,7 @@ public class ConsultaEmpresaGrafo {
     }
 
     private EmpresaConsulta lerSePermitido(Empresa empresa) {
-        if (empresa == null || !podeLer(empresa)) {
+        if (empresa == null || Boolean.FALSE.equals(empresa.getAtivo()) || !podeLer(empresa)) {
             return null;
         }
         return paraConsulta(empresa);
@@ -82,7 +82,7 @@ public class ConsultaEmpresaGrafo {
             return null;
         }
         Empresa empresa = usuario.getEmpresa();
-        if (empresa == null) {
+        if (empresa == null || Boolean.FALSE.equals(empresa.getAtivo())) {
             return null;
         }
         return empresa.getId();

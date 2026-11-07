@@ -8,12 +8,18 @@ Este documento é a referência central e rápida de todos os comandos, skills e
 
 Controla o ciclo de vida de especificações e mudanças de funcionalidades do projeto (Domain Specs e Changes).
 
-| Comando | Descrição |
+| Comando / Skill | Descrição |
 |---|---|
-| `/openspec` | Abre o planejamento e aplicação de mudanças no OpenSpec. |
-| `/openspec proposal <nome>` | Inicia o modo **propor** (cria `proposal.md`, `design.md` e `tasks.md` dentro de `openspec/changes/<nome>/`). |
-| `/openspec apply <nome>` | Inicia o modo **aplicar** (codifica apenas após aprovação formal da pasta `changes/<nome>/`). |
-| `/openspec archive <nome>` | Conclui e consolida a funcionalidade nas especificações definitivas (`openspec/specs/`) e arquiva a change. |
+| `/openspec` | Abre o planejamento e aplicação de mudanças no OpenSpec deste repositório. |
+| `/openspec proposal <nome>` | Inicia o modo **propor** tradicional do projeto. |
+| `/openspec apply <nome>` | Inicia o modo **aplicar** tradicional do projeto. |
+| `/openspec archive <nome>` | Conclui e consolida a funcionalidade nas specs definitivas. |
+| `/opsx-propose` | Cria uma proposta completa do OpenSpec com design, specs e tasks. |
+| `/opsx-apply` | Aplica as tasks aprovadas da change gerando o código. |
+| `/opsx-archive` | Arquiva a change concluída e sincroniza com as specs vigentes. |
+| `/opsx-explore` | Explora a base de conhecimento de especificações e contexto. |
+| `/opsx-sync` | Sincroniza e reconcilia especificações do OpenSpec. |
+| `/opsx-update` | Atualiza propostas ou tasks de uma change existente. |
 
 > **Regra Importante:** Toda nova funcionalidade ou tela obrigatoriamente passa pelo gate do OpenSpec (`proposal.md` -> aprovação -> código).
 
@@ -89,7 +95,36 @@ Utilitário de navegação inteligente do código baseado em AST para evitar bus
 
 ---
 
+## 7. Testes de Caixa Branca & Robustez (`/kirito`)
+
+Especialista em teste de caixa branca e blindagem de código (Dual Wielding: Back-end Java e Front-end Angular).
+
+| Comando | Descrição |
+|---|---|
+| `/kirito` | Inicia o caçador de bugs de caixa branca para mapear branches, condições de borda e lacunas de teste. |
+| `/kirito <classe-ou-arquivo>` | Forja testes de caixa branca específicos cobrindo branches, limites numéricos/temporais e falhas simuladas. |
+| `/kirito full` | Executa auditoria e prova completa de robustez no backend (`mvn test`) e frontend (`npm test`). |
+
+- **Foco Estrito:** Cobertura de branches, valores limítrofes (`24:00`, `23:59`, `null`), resiliência a falhas externas e transições de estado.
+- **Modelos:** Roda no `Claude Sonnet 5.5 Medium` / subagente `pro` no Antigravity ou `claude-sonnet-5-5` no Cursor/Claude.
+
+---
+
 ## Manutenção deste Arquivo
 
 Conforme definido na regra do repositório em `.agents/rules/ajuda-comandos.md`:
 Sempre que uma nova skill, comando ou rotina for adicionada ou alterada no projeto Tech-SaaS, este arquivo `AJUDA.md` **deve ser mantido e atualizado no mesmo turno**.
+
+
+---
+
+## 8. Scripts e Automação Local (Scripts-First & Economia de Tokens)
+
+Diretriz mandatória: o que for passível de automação determinística local deve ser executado via script em `scripts/` em vez de re-processamento por tokens de LLM ([.agents/rules/economia-tokens-scripts.md](file:///c:/Projeto-futuro-junior/Tech-Saas-Micro_servico/.agents/rules/economia-tokens-scripts.md)).
+
+| Script / Comando | Descrição |
+|---|---|
+| `powershell -ExecutionPolicy Bypass -File scripts/verificar-codigo-limpo.ps1` | Verifica a ausência de comentários proibidos (`//` e `/* */`) nos arquivos `.java`, `.ts`, `.html` e `.css` alterados no git. Adicione `-Todos` para inspecionar todo o projeto. |
+| `powershell -ExecutionPolicy Bypass -File scripts/auditar-kirito.ps1` | Auditoria determinística do `/kirito`: detecta testes Java vazios ou sem `@Test`, unidades Angular sem `.spec.ts`, `fit`/`xit`/`@Disabled` e valida código limpo. Adicione `-ComRegressao` para rodar toda a suíte. |
+| `powershell -ExecutionPolicy Bypass -File scripts/testar-tudo.ps1` | Executa a bateria unificada de testes (Backend Maven e Frontend Karma Headless). Suporta `-ApenasBackend` e `-ApenasFrontend`. |
+| `bash scripts/deploy-hostinger.sh` | Atualiza o código no VPS Hostinger e sobe os containers com Docker Compose. Acionado via GitHub Actions (`.github/workflows/deploy.yml`) ou manualmente via SSH. |

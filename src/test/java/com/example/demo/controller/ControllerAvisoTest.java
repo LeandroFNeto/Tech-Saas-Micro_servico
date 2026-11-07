@@ -39,6 +39,9 @@ class ControllerAvisoTest {
     @MockitoBean
     private AvisoRepository avisoRepository;
 
+    @MockitoBean
+    private com.example.demo.servico.ServicoAcessoEmpresa servicoAcessoEmpresa;
+
     @Test
     @DisplayName("GET /avisos devolve só os avisos ativos, sem exigir token")
     void deveListarSomenteAtivos() throws Exception {
@@ -219,6 +222,29 @@ class ControllerAvisoTest {
                   "conteudo": "Escaneie o QR Code."
                 }
                 """;
+    }
+
+    @Test
+    @DisplayName("POST /admin/avisos recusa com 403 quando não é SUPER_ADMIN")
+    void deveRecusarCriacaoQuandoNaoForSuperAdmin() throws Exception {
+        org.mockito.Mockito.doThrow(new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.FORBIDDEN))
+                .when(servicoAcessoEmpresa).exigirSuperAdmin(any(), any());
+
+        mockMvc.perform(post("/admin/avisos")
+                        .header("x-admin-token", "sua-chave-admin")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(avisoValido()))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("DELETE /admin/avisos/{id} recusa com 403 quando não é SUPER_ADMIN")
+    void deveRecusarExclusaoQuandoNaoForSuperAdmin() throws Exception {
+        org.mockito.Mockito.doThrow(new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.FORBIDDEN))
+                .when(servicoAcessoEmpresa).exigirSuperAdmin(any(), any());
+
+        mockMvc.perform(delete("/admin/avisos/1").header("x-admin-token", "sua-chave-admin"))
+                .andExpect(status().isForbidden());
     }
 
     private static Aviso aviso(Long id, boolean ativo) {

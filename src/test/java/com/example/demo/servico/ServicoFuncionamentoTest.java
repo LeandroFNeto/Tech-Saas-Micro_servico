@@ -184,4 +184,18 @@ class ServicoFuncionamentoTest {
         assertThat(janela.comporta(LocalTime.of(21, 30))).isFalse();
         assertThat(janela.comporta(LocalTime.of(7, 0))).isFalse();
     }
+    @Test
+    @DisplayName("Janela até 24:00 comporta horário das 23:00 até meia-noite")
+    void deveComportarFechamento24Horas() {
+        ServicoFuncionamento.Janela janela = new ServicoFuncionamento.Janela(
+                true, LocalTime.of(18, 0), LocalTime.MIDNIGHT, 60, null);
+
+        assertThat(janela.comporta(LocalTime.of(23, 0))).isTrue();
+        assertThat(janela.comporta(LocalTime.of(23, 30))).isFalse();
+        assertThat(janela.comporta(LocalTime.of(17, 0))).isFalse();
+
+        List<LocalTime> inicios = ServicoFuncionamento.iniciosPossiveis(janela);
+        assertThat(inicios).contains(LocalTime.of(23, 0));
+        assertThat(inicios).doesNotContain(LocalTime.of(0, 0));
+    }
 }

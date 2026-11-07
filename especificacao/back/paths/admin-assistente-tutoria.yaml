@@ -1,0 +1,4 @@
+get:
+  $ref: ./admin-assistente-tutoria-diagnostico.yaml#/get
+post:
+  $ref: ./admin-assistente-tutoria-chat.yaml#/post

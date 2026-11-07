@@ -46,6 +46,10 @@ build/
 
 ### VS Code ###
 .vscode/
+.claude/
 
 # Graphify
 graphify-out/
+
+__pycache__/
+*.pyc

@@ -1,0 +1,24 @@
+post:
+  tags:
+  - Assistente Público
+  summary: Conversar com o assistente comercial da Gamb, sem login
+  description: Canal público do assistente comercial usado no login e na apresentação. Responde sobre a Gamb (quem é, o que oferece hoje, plano de assinatura sob consulta e como começar pelo WhatsApp) com uma base de contexto da empresa, nunca com dado de empresa, sem informar valor, prazo ou nome de cliente, e não executa ação no sistema. As sugestões devolvidas dependem do campo origem. Limite de 10 mensagens por minuto por IP, mensagem de até 500 caracteres e nenhum histórico guardado.
+  operationId: conversarSuportePublico
+  security: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: "#/components/schemas/SuportePublicoRequestDTO"
+  responses:
+    "200":
+      description: Resposta do assistente comercial
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/AssistenteChatResponseDTO"
+    "400":
+      description: Mensagem vazia, acima de 500 caracteres ou origem inválida
+    "429":
+      description: Limite de mensagens por minuto excedido para o IP

@@ -17,6 +17,15 @@ properties:
     type: boolean
     description: Indica se a mensagem foi enviada pelo próprio número conectado (dono do bot)
     example: false
+  timestamp:
+    type: integer
+    format: int64
+    description: Timestamp Unix da mensagem em segundos ou milissegundos. Mensagens com atraso superior a 2 minutos são descartadas como antigas.
+    example: 1730592000
+  to:
+    type: string
+    description: JID do destinatário no formato plano do WPPConnect (útil quando enviada pelo dono)
+    example: 5511999999999@c.us
   isGroupMsg:
     type: boolean
     description: Indica se a mensagem veio de um grupo (WPPConnect). Ausente ou false em chats privados, inclusive os que usam JID @lid.

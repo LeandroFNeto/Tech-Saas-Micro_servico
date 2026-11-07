@@ -12,6 +12,8 @@ import com.example.demo.util.MascaraLog;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.io.IOException;
+import java.time.Clock;
+import java.time.Instant;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Schema(description = "Payload tipado recebido do WPPConnect via webhook. Aceita o formato plano (from/body), o aninhado (data.key / data.message) e id/sender/content ora string, ora objeto.")
@@ -26,6 +28,15 @@ public record WhatsappWebhookDTO(
         @JsonProperty("fromMe")
         @Schema(description = "Indica se a mensagem foi enviada pelo próprio número conectado (dono do bot)", example = "false")
         Boolean fromMe,
+
+        @JsonProperty("timestamp")
+        @JsonAlias("t")
+        @Schema(description = "Timestamp Unix da mensagem em segundos ou milissegundos", example = "1730592000")
+        Long timestamp,
+
+        @JsonProperty("to")
+        @Schema(description = "JID do destinatário no formato plano do WPPConnect", example = "5511999999999@c.us")
+        String to,
 
         @JsonProperty("isGroupMsg")
         @JsonAlias("isGroup")
@@ -45,6 +56,11 @@ public record WhatsappWebhookDTO(
 
         @Schema(description = "Remetente: JID em string ou objeto Contact do WPPConnect")
         RemetenteWebhook sender,
+
+        @JsonProperty("pushname")
+        @JsonAlias({"pushName", "notifyName", "name"})
+        @Schema(description = "Nome de exibicao do remetente", example = "Joao Silva")
+        String pushname,
 
         @Schema(description = "Evento do WPPConnect quando não é mensagem de chat (qrcode, status-find, onack)", example = "qrcode")
         String event,
@@ -137,8 +153,14 @@ public record WhatsappWebhookDTO(
     @Schema(description = "Contato remetente do WPPConnect. Aceita JID string ou objeto Contact.")
     public record RemetenteWebhook(
             @Schema(description = "JID do remetente", example = "5511999999999@c.us")
-            String id
+            String id,
+            @Schema(description = "Nome do remetente", example = "Joao Silva")
+            String name
     ) {
+        public RemetenteWebhook(String id) {
+            this(id, null);
+        }
+
         public static class Deserializer extends JsonDeserializer<RemetenteWebhook> {
             @Override
             public RemetenteWebhook deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
@@ -147,13 +169,20 @@ public record WhatsappWebhookDTO(
                     return null;
                 }
                 if (node.isTextual()) {
-                    return new RemetenteWebhook(node.asText());
+                    return new RemetenteWebhook(node.asText(), null);
                 }
                 String id = textoFlexivel(node.get("id"));
                 if (id == null) {
                     id = textoFlexivel(node);
                 }
-                return new RemetenteWebhook(id);
+                String name = textoFlexivel(node.get("name"));
+                if (name == null) {
+                    name = textoFlexivel(node.get("pushname"));
+                }
+                if (name == null) {
+                    name = textoFlexivel(node.get("shortName"));
+                }
+                return new RemetenteWebhook(id, name);
             }
         }
     }
@@ -220,8 +249,59 @@ public record WhatsappWebhookDTO(
     public String resumoRaioX() {
         String idLog = id == null ? null : MascaraLog.idMensagem(temTexto(id.serialized()) ? id.serialized() : id.remoteJid());
         return String.format(
-                "Webhook ID=%s | type=%s | isGroupMsg=%s | fromMe=%s | numero=%s | texto=%s",
-                idLog, type, isGroupMsg, fromMe, MascaraLog.jid(resolverRemoteJid()), MascaraLog.tamanho(resolverTexto()));
+                "Webhook ID=%s | event=%s | type=%s | isGroupMsg=%s | fromMe=%s | numero=%s | texto=%s",
+                idLog, event, type, isGroupMsg, fromMe, MascaraLog.jid(resolverRemoteJid()), MascaraLog.tamanho(resolverTexto()));
+    }
+
+    public boolean ehMensagemAntiga(Clock clock) {
+        if (timestamp == null) {
+            return false;
+        }
+        long epochSegundos = timestamp > 100_000_000_000L ? (timestamp / 1000) : timestamp;
+        Instant agora = clock == null ? Instant.now() : clock.instant();
+        long segundosAtraso = agora.getEpochSecond() - epochSegundos;
+        return segundosAtraso > 120;
+    }
+
+    public String resolverNomeRemetente() {
+        if (temTexto(pushname)) {
+            return pushname.trim();
+        }
+        if (sender != null && temTexto(sender.name())) {
+            return sender.name().trim();
+        }
+        return null;
+    }
+
+    public String resolverContatoAlvo() {
+        if (enviadaPorMim()) {
+            if (temTexto(to)) {
+                return to;
+            }
+            if (id != null && temTexto(id.remoteJid())) {
+                return id.remoteJid();
+            }
+        }
+        return resolverRemoteJid();
+    }
+
+    public String resolverJidBruto() {
+        if (temTexto(remoteJid)) {
+            return remoteJid;
+        }
+        if (temTexto(from)) {
+            return from;
+        }
+        if (data != null && data.key() != null && temTexto(data.key().remoteJid())) {
+            return data.key().remoteJid();
+        }
+        if (id != null && temTexto(id.remoteJid())) {
+            return id.remoteJid();
+        }
+        if (sender != null && temTexto(sender.id())) {
+            return sender.id();
+        }
+        return null;
     }
 
     public boolean deveDescartarComoRuido() {
@@ -284,11 +364,18 @@ public record WhatsappWebhookDTO(
                 || valor.equals("onreactionmessage")
                 || valor.equals("onrevokedmessage")
                 || valor.equals("onpollresponse")
-                || valor.equals("onupdatelabel")
-                || valor.equals("onselfmessage");
+                || valor.equals("onupdatelabel");
+    }
+
+    public boolean ehEventoMensagemDoDono() {
+        return "onselfmessage".equalsIgnoreCase(event != null ? event.trim() : null)
+                || "onselfmessage".equalsIgnoreCase(type != null ? type.trim() : null);
     }
 
     public boolean enviadaPorMim() {
+        if (ehEventoMensagemDoDono()) {
+            return true;
+        }
         if (fromMe != null) {
             return fromMe;
         }

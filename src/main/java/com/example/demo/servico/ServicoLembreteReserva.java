@@ -1,6 +1,10 @@
 package com.example.demo.servico;
 
-import com.example.demo.model.*;
+import com.example.demo.model.Contato;
+import com.example.demo.model.Empresa;
+import com.example.demo.model.ModoLembrete;
+import com.example.demo.model.Reserva;
+import com.example.demo.model.SituacaoReserva;
 import com.example.demo.repository.AuditoriaAcessoContatoRepository;
 import com.example.demo.repository.ContatoRepository;
 import com.example.demo.repository.ReservaRepository;
@@ -27,6 +31,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class ServicoLembreteReserva {
 
     private static final Logger log = LoggerFactory.getLogger(ServicoLembreteReserva.class);
+    private static final ZoneId FUSO_BRASILIA = ZoneId.of("America/Sao_Paulo");
     private static final String TEXTO_PADRAO = "Olá, {nome}! Tudo bem? Gostaria de confirmar sua reserva para {data} às {horario}. Podemos confirmar?";
     private static final int LIMITE_DIARIO_ENVIOS = 50;
     private static final long INTERVALO_MINIMO_MS = 5000;
@@ -51,7 +56,7 @@ public class ServicoLembreteReserva {
 
     @Scheduled(cron = "0 */15 * * * *", zone = "America/Sao_Paulo")
     public void rotinaAgendada() {
-        executarCiclo(LocalDateTime.now(ZoneId.of("America/Sao_Paulo")));
+        executarCiclo(LocalDateTime.now(FUSO_BRASILIA));
     }
 
     @Transactional
@@ -94,13 +99,19 @@ public class ServicoLembreteReserva {
         List<Reserva> falhas = reservaRepository.findBySituacaoAndLembreteEnviarEmLessThanEqual(
                 SituacaoReserva.FALHA_ENVIO, agora);
         for (Reserva r : falhas) {
-            if (r.getTentativasEnvio() < 3 && r.getEmpresa().getLembreteModo() == ModoLembrete.AUTOMATICO) {
+            if (r.getEmpresa() != null
+                    && !Boolean.FALSE.equals(r.getEmpresa().getAtivo())
+                    && r.getTentativasEnvio() < 3
+                    && r.getEmpresa().getLembreteModo() == ModoLembrete.AUTOMATICO) {
                 tentarEnvioAutomatico(r, agora);
             }
         }
     }
 
     private void tratarReservaAguardando(Reserva r, LocalDateTime agora) {
+        if (r.getEmpresa() == null || Boolean.FALSE.equals(r.getEmpresa().getAtivo())) {
+            return;
+        }
         if (r.getContato() == null || r.getContato().isNaoContatar()) {
             return;
         }
@@ -124,6 +135,10 @@ public class ServicoLembreteReserva {
 
     @Transactional
     public boolean enviarLembrete(Reserva reserva, LocalDateTime agora) {
+        Empresa empresa = reserva.getEmpresa();
+        if (empresa == null || Boolean.FALSE.equals(empresa.getAtivo())) {
+            return false;
+        }
         if (reserva.getContato() == null || reserva.getContato().isNaoContatar()) {
             return false;
         }
@@ -132,7 +147,6 @@ public class ServicoLembreteReserva {
             return false;
         }
 
-        Empresa empresa = reserva.getEmpresa();
         String chaveDia = empresa.getId() + "_" + hoje;
         AtomicInteger contador = enviosPorEmpresaEDia.computeIfAbsent(chaveDia, k -> new AtomicInteger(0));
         if (contador.get() >= LIMITE_DIARIO_ENVIOS) {
@@ -141,7 +155,7 @@ public class ServicoLembreteReserva {
         }
 
         long agoraMillis = System.currentTimeMillis();
-        Long ultimo = ultimoEnvioMillisPorEmpresa.get(empresa.getId());
+        Long ultimo = empresa.getId() == null ? null : ultimoEnvioMillisPorEmpresa.get(empresa.getId());
         if (ultimo != null && (agoraMillis - ultimo) < INTERVALO_MINIMO_MS) {
             try {
                 Thread.sleep(INTERVALO_MINIMO_MS - (agoraMillis - ultimo));
@@ -180,7 +194,9 @@ public class ServicoLembreteReserva {
                 reserva.getContato().getWhatsappId(),
                 textoFinal);
 
-        ultimoEnvioMillisPorEmpresa.put(empresa.getId(), System.currentTimeMillis());
+        if (empresa.getId() != null) {
+            ultimoEnvioMillisPorEmpresa.put(empresa.getId(), System.currentTimeMillis());
+        }
 
         if (sucesso) {
             contador.incrementAndGet();
@@ -200,7 +216,7 @@ public class ServicoLembreteReserva {
     @Scheduled(cron = "0 0 3 * * *", zone = "America/Sao_Paulo")
     @Transactional
     public void rotinaRetencaoDiaria() {
-        executarRetencao(LocalDate.now(ZoneId.of("America/Sao_Paulo")), mesesRetencao);
+        executarRetencao(LocalDate.now(FUSO_BRASILIA), mesesRetencao);
     }
 
     @Transactional

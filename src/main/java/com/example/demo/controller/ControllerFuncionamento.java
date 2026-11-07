@@ -26,10 +26,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -50,6 +50,7 @@ import java.util.Set;
 public class ControllerFuncionamento {
 
     private static final Logger log = LoggerFactory.getLogger(ControllerFuncionamento.class);
+    private static final ZoneId FUSO_BRASILIA = ZoneId.of("America/Sao_Paulo");
 
     @Autowired private ServicoAcessoEmpresa servicoAcessoEmpresa;
     @Autowired private EmpresaRepository empresaRepository;
@@ -86,8 +87,11 @@ public class ControllerFuncionamento {
     public ResponseEntity<FuncionamentoDTO> atualizar(
             @RequestHeader(value = "x-admin-token", required = false) String adminToken,
             @PathVariable String sessao,
-            @RequestBody FuncionamentoUpdateDTO dto) {
-        Empresa empresa = acessar(adminToken, sessao);
+            @RequestBody(required = false) FuncionamentoUpdateDTO dto) {
+        Empresa empresa = acessarEscrita(adminToken, sessao);
+        if (dto == null) {
+            throw requisicaoInvalida("Corpo da requisição obrigatório.");
+        }
 
         if (dto.duracaoAtendimentoMinutos() != null) {
             exigirDuracao(dto.duracaoAtendimentoMinutos());
@@ -142,11 +146,14 @@ public class ControllerFuncionamento {
     public ResponseEntity<DataEspecialDTO> cadastrarDiaEspecial(
             @RequestHeader(value = "x-admin-token", required = false) String adminToken,
             @PathVariable String sessao,
-            @RequestBody DataEspecialCreateDTO dto) {
-        Empresa empresa = acessar(adminToken, sessao);
+            @RequestBody(required = false) DataEspecialCreateDTO dto) {
+        Empresa empresa = acessarEscrita(adminToken, sessao);
+        if (dto == null) {
+            throw requisicaoInvalida("Data inválida. Use o formato AAAA-MM-DD.");
+        }
 
         LocalDate data = lerData(dto.data());
-        LocalDate hoje = LocalDate.now(ZoneId.of("America/Sao_Paulo"));
+        LocalDate hoje = LocalDate.now(FUSO_BRASILIA);
         if (data.isBefore(hoje) || data.isAfter(hoje.plusDays(ServicoFuncionamento.DIAS_MAXIMOS_A_FRENTE))) {
             throw requisicaoInvalida("A data precisa estar entre hoje e " + ServicoFuncionamento.DIAS_MAXIMOS_A_FRENTE
                     + " dias à frente.");
@@ -160,9 +167,12 @@ public class ControllerFuncionamento {
         especial.setData(data);
         especial.setFechado(dto.fechado());
         if (!dto.fechado()) {
+            if ("24:00".equals(dto.abre() != null ? dto.abre().trim() : "")) {
+                throw requisicaoInvalida("Informe abertura e fechamento, com a abertura antes do fechamento.");
+            }
             LocalTime abre = lerHora(dto.abre());
             LocalTime fecha = lerHora(dto.fecha());
-            if (abre == null || fecha == null || !abre.isBefore(fecha)) {
+            if (abre == null || fecha == null || !abreAntesDeFecha(abre, fecha)) {
                 throw requisicaoInvalida("Informe abertura e fechamento, com a abertura antes do fechamento.");
             }
             exigirJanelaComporta(abre, fecha, empresa.duracaoEfetivaMinutos());
@@ -196,7 +206,7 @@ public class ControllerFuncionamento {
             @RequestHeader(value = "x-admin-token", required = false) String adminToken,
             @PathVariable String sessao,
             @PathVariable Long id) {
-        Empresa empresa = acessar(adminToken, sessao);
+        Empresa empresa = acessarEscrita(adminToken, sessao);
         DataEspecial especial = dataEspecialRepository.findByIdAndEmpresaId(id, empresa.getId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Dia especial não encontrado"));
         dataEspecialRepository.delete(especial);
@@ -208,6 +218,12 @@ public class ControllerFuncionamento {
         return servicoAcessoEmpresa.validarAcessoSessao(autenticacao, adminToken, sessao);
     }
 
+    private Empresa acessarEscrita(String adminToken, String sessao) {
+        Authentication autenticacao = SecurityContextHolder.getContext().getAuthentication();
+        servicoAcessoEmpresa.exigirNaoLeitura(autenticacao);
+        return servicoAcessoEmpresa.validarAcessoSessao(autenticacao, adminToken, sessao);
+    }
+
     private FuncionamentoDTO montar(Empresa empresa) {
         List<HorarioFuncionamentoDTO> horarios = horarioRepository.findByEmpresaId(empresa.getId()).stream()
                 .sorted(Comparator.comparing(HorarioFuncionamento::getPerfil))
@@ -215,10 +231,10 @@ public class ControllerFuncionamento {
                         h.getPerfil(),
                         h.isFechado(),
                         h.getAbre() == null ? null : h.getAbre().toString(),
-                        h.getFecha() == null ? null : h.getFecha().toString(),
+                        h.getFecha() == null ? null : (h.getFecha().equals(LocalTime.MIDNIGHT) ? "24:00" : h.getFecha().toString()),
                         h.getDuracaoMinutos()))
                 .toList();
-        LocalDate hoje = LocalDate.now(ZoneId.of("America/Sao_Paulo"));
+        LocalDate hoje = LocalDate.now(FUSO_BRASILIA);
         List<DataEspecialDTO> especiais = dataEspecialRepository
                 .findByEmpresaIdAndDataGreaterThanEqualOrderByData(empresa.getId(), hoje).stream()
                 .map(e -> paraDto(e, List.of()))
@@ -237,13 +253,16 @@ public class ControllerFuncionamento {
                 e.getData().toString(),
                 e.isFechado(),
                 e.getAbre() == null ? null : e.getAbre().toString(),
-                e.getFecha() == null ? null : e.getFecha().toString(),
+                e.getFecha() == null ? null : (e.getFecha().equals(LocalTime.MIDNIGHT) ? "24:00" : e.getFecha().toString()),
                 e.getMotivo(),
                 reservas);
     }
 
     private void exigirJanelaComporta(LocalTime abre, LocalTime fecha, int duracaoMinutos) {
-        if (Duration.between(abre, fecha).toMinutes() < duracaoMinutos) {
+        long minutosDisponiveis = fecha.equals(LocalTime.MIDNIGHT)
+                ? Duration.ofHours(24).minusMinutes(abre.getHour() * 60L + abre.getMinute()).toMinutes()
+                : Duration.between(abre, fecha).toMinutes();
+        if (minutosDisponiveis < duracaoMinutos) {
             throw requisicaoInvalida("O horário de funcionamento precisa comportar ao menos um atendimento de "
                     + duracaoMinutos + " minutos.");
         }
@@ -254,7 +273,7 @@ public class ControllerFuncionamento {
         Set<PerfilFuncionamento> vistos = EnumSet.noneOf(PerfilFuncionamento.class);
         List<HorarioFuncionamento> resultado = new ArrayList<>();
         for (HorarioFuncionamentoDTO item : itens) {
-            if (item.perfil() == null || !vistos.add(item.perfil())) {
+            if (item == null || item.perfil() == null || !vistos.add(item.perfil())) {
                 throw requisicaoInvalida("Cada perfil de horário pode aparecer uma vez.");
             }
             HorarioFuncionamento linha = new HorarioFuncionamento();
@@ -262,9 +281,12 @@ public class ControllerFuncionamento {
             linha.setPerfil(item.perfil());
             linha.setFechado(item.fechado());
             if (!item.fechado()) {
+                if ("24:00".equals(item.abre() != null ? item.abre().trim() : "")) {
+                    throw requisicaoInvalida("Informe abertura e fechamento, com a abertura antes do fechamento.");
+                }
                 LocalTime abre = lerHora(item.abre());
                 LocalTime fecha = lerHora(item.fecha());
-                if (abre == null || fecha == null || !abre.isBefore(fecha)) {
+                if (abre == null || fecha == null || !abreAntesDeFecha(abre, fecha)) {
                     throw requisicaoInvalida("Informe abertura e fechamento, com a abertura antes do fechamento.");
                 }
                 linha.setAbre(abre);
@@ -290,9 +312,12 @@ public class ControllerFuncionamento {
     }
 
     private LocalDate lerData(String texto) {
+        if (texto == null || texto.isBlank()) {
+            throw requisicaoInvalida("Data inválida. Use o formato AAAA-MM-DD.");
+        }
         try {
-            return LocalDate.parse(texto);
-        } catch (DateTimeParseException | NullPointerException e) {
+            return LocalDate.parse(texto.trim());
+        } catch (DateTimeParseException e) {
             throw requisicaoInvalida("Data inválida. Use o formato AAAA-MM-DD.");
         }
     }
@@ -301,11 +326,24 @@ public class ControllerFuncionamento {
         if (texto == null || texto.isBlank()) {
             return null;
         }
+        if ("24:00".equals(texto.trim())) {
+            return LocalTime.MIDNIGHT;
+        }
         try {
-            return LocalTime.parse(texto);
+            return LocalTime.parse(texto.trim());
         } catch (DateTimeParseException e) {
             throw requisicaoInvalida("Hora inválida. Use o formato HH:mm.");
         }
+    }
+
+    private boolean abreAntesDeFecha(LocalTime abre, LocalTime fecha) {
+        if (abre == null || fecha == null) {
+            return false;
+        }
+        if (fecha.equals(LocalTime.MIDNIGHT)) {
+            return !abre.equals(LocalTime.MIDNIGHT);
+        }
+        return abre.isBefore(fecha);
     }
 
     private List<String> reservasDaData(Empresa empresa, LocalDate data) {

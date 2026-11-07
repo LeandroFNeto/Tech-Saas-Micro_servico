@@ -30,6 +30,9 @@ public class RestauradorSessoesWhatsapp {
     @EventListener(ApplicationReadyEvent.class)
     public void restaurarSessoesExistentes() {
         for (Empresa empresa : empresaRepository.findAll()) {
+            if (Boolean.FALSE.equals(empresa.getAtivo())) {
+                continue;
+            }
             String sessao = empresa.getSessaoWhatsapp();
             if (sessao == null || sessao.isBlank()) {
                 continue;

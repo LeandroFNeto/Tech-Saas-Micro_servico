@@ -1,0 +1,18 @@
+type: object
+description: Mensagem do visitante enviada ao assistente público do login e da apresentação
+required:
+- mensagem
+properties:
+  mensagem:
+    type: string
+    minLength: 1
+    maxLength: 500
+    description: Pergunta do visitante
+    example: "Quem é a Gamb?"
+  origem:
+    type: string
+    enum:
+    - LOGIN
+    - APRESENTACAO
+    description: Tela de origem do chat; define as sugestões devolvidas. Sem valor, vale APRESENTACAO
+    example: LOGIN

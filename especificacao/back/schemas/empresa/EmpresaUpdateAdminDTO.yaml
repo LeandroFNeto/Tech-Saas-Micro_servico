@@ -46,3 +46,12 @@ properties:
     - GOOGLE_CALENDAR
     items:
       type: string
+  emailsResponsaveisReuniao:
+    type: array
+    description: E-mails dos responsáveis convidados em cada reunião marcada pelo atendente da Gamb. Usado só pela empresa interna de ramo ATENDENTE_GAMB. Ausente mantém a lista; lista vazia desliga o agendamento de reunião. E-mail inválido responde 400. Ao salvar, só os convidados das reuniões futuras já marcadas são atualizados, sem cancelar nem remarcar.
+    maxItems: 10
+    items:
+      type: string
+      format: email
+    example:
+      - suporte@gamb.com.br

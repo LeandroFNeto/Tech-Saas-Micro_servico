@@ -1,0 +1,23 @@
+get:
+  tags:
+  - Assistente Tutoria
+  summary: Diagnosticar integridade de todos os módulos (Admin)
+  description: Executa checagem de saúde não destrutiva em lote (Auth, Avisos, Agenda, Empresa, WhatsApp, IA). Exige x-admin-token ou perfil ROLE_ADMIN.
+  operationId: executarDiagnosticoModulos
+  parameters:
+  - name: x-admin-token
+    in: header
+    description: Token administrativo do SaaS
+    required: false
+    schema:
+      type: string
+    example: sua-chave-admin
+  responses:
+    "200":
+      description: Relatório de diagnóstico dos módulos gerado com sucesso
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/DiagnosticoResponseDTO"
+    "401":
+      description: Não autorizado (token administrativo ausente ou inválido)

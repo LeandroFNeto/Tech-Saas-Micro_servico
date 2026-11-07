@@ -5,6 +5,7 @@ import com.example.demo.model.Empresa;
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.client.util.DateTime;
 import com.google.api.services.calendar.model.Event;
+import com.google.api.services.calendar.model.EventAttendee;
 import com.google.api.services.calendar.model.EventDateTime;
 import com.google.api.services.calendar.model.Events;
 import org.slf4j.Logger;
@@ -15,19 +16,33 @@ import org.springframework.stereotype.Service;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
 import java.time.format.TextStyle;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 
 @Service
 public class ServicoReserva {
 
     private static final Logger log = LoggerFactory.getLogger(ServicoReserva.class);
     private static final DateTimeFormatter FORMATO_DATA = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+    private static final ZoneId FUSO_BRASILIA = ZoneId.of("America/Sao_Paulo");
+    private static final String CHAVE_REUNIAO_GAMB = "reuniaoGamb";
+    private static final String VALOR_REUNIAO_GAMB = "true";
+    public static final String MARCA_REUNIAO_GAMB = CHAVE_REUNIAO_GAMB + "=" + VALOR_REUNIAO_GAMB;
     private static final String ALFABETO_BASE32HEX = "0123456789abcdefghijklmnopqrstuv";
 
     @Autowired
@@ -67,23 +82,108 @@ public class ServicoReserva {
         }
 
         com.google.api.services.calendar.Calendar servicoAgenda = agendaService.conectarAgenda();
-        ZoneId fuso = ZoneId.of("America/Sao_Paulo");
-        String fusoTexto = fuso.getId();
+        String fusoTexto = FUSO_BRASILIA.getId();
 
         Event evento = new Event()
                 .setId(idEventoDoPedido(idDaPosicao(idPedido, posicao)))
                 .setSummary("Reserva - " + nomeCliente)
                 .setDescription("Reserva feita pelo bot. WhatsApp: " + whatsappId)
                 .setStart(new EventDateTime()
-                        .setDateTime(new DateTime(dia.atTime(inicio).atZone(fuso).toInstant().toEpochMilli()))
+                        .setDateTime(new DateTime(dia.atTime(inicio).atZone(FUSO_BRASILIA).toInstant().toEpochMilli()))
                         .setTimeZone(fusoTexto))
                 .setEnd(new EventDateTime()
-                        .setDateTime(new DateTime(dia.atTime(fim).atZone(fuso).toInstant().toEpochMilli()))
+                        .setDateTime(new DateTime((fim.equals(LocalTime.MIDNIGHT) ? dia.plusDays(1).atStartOfDay() : dia.atTime(fim)).atZone(FUSO_BRASILIA).toInstant().toEpochMilli()))
                         .setTimeZone(fusoTexto));
 
         Event criado = servicoAgenda.events().insert(calendarId, evento).execute();
         log.info("Reserva por hora salva na agenda da empresa {}", empresa.getId());
         return criado.getId();
+    }
+
+    public String agendarReuniao(Empresa empresa, LocalDate dia, LocalTime inicio, int duracaoMinutos, String titulo,
+                                 String descricao, List<String> emailsConvidados, String idReuniao) throws Exception {
+        String calendarId = empresa.getGoogleCalendarId();
+        if (calendarId == null || calendarId.isBlank()) {
+            throw new AgendaNaoConfiguradaException(empresa.getId());
+        }
+
+        com.google.api.services.calendar.Calendar servicoAgenda = agendaService.conectarAgenda();
+        String fusoTexto = FUSO_BRASILIA.getId();
+        LocalDateTime comeco = dia.atTime(inicio);
+
+        List<EventAttendee> convidados = new ArrayList<>();
+        for (String email : emailsConvidados) {
+            convidados.add(new EventAttendee().setEmail(email));
+        }
+
+        Event evento = new Event()
+                .setId(idEventoDoPedido(idReuniao))
+                .setSummary(titulo)
+                .setDescription(descricao)
+                .setAttendees(convidados)
+                .setExtendedProperties(new Event.ExtendedProperties()
+                        .setPrivate(Map.of(CHAVE_REUNIAO_GAMB, VALOR_REUNIAO_GAMB)))
+                .setStart(new EventDateTime()
+                        .setDateTime(new DateTime(comeco.atZone(FUSO_BRASILIA).toInstant().toEpochMilli()))
+                        .setTimeZone(fusoTexto))
+                .setEnd(new EventDateTime()
+                        .setDateTime(new DateTime(comeco.plusMinutes(duracaoMinutos).atZone(FUSO_BRASILIA).toInstant().toEpochMilli()))
+                        .setTimeZone(fusoTexto));
+
+        Event criado = servicoAgenda.events().insert(calendarId, evento).setSendUpdates("all").execute();
+        log.info("Reunião da Gamb salva na agenda da empresa {} com {} convidados", empresa.getId(), convidados.size());
+        return criado.getId();
+    }
+
+    public int atualizarConvidadosDeReunioesFuturas(Empresa empresa, List<String> emailsConvidados) throws Exception {
+        String calendarId = empresa.getGoogleCalendarId();
+        if (calendarId == null || calendarId.isBlank()) {
+            return 0;
+        }
+
+        com.google.api.services.calendar.Calendar servicoAgenda = agendaService.conectarAgenda();
+        Events eventos = servicoAgenda.events().list(calendarId)
+                .setTimeMin(new DateTime(System.currentTimeMillis()))
+                .setSingleEvents(true)
+                .setPrivateExtendedProperty(List.of(MARCA_REUNIAO_GAMB))
+                .setMaxResults(250)
+                .execute();
+
+        if (eventos == null || eventos.getItems() == null) {
+            return 0;
+        }
+
+        int atualizadas = 0;
+        for (Event evento : eventos.getItems()) {
+            if ("cancelled".equalsIgnoreCase(evento.getStatus())) {
+                continue;
+            }
+            List<EventAttendee> convidados = convidadosAtualizados(evento.getAttendees(), emailsConvidados);
+            servicoAgenda.events()
+                    .patch(calendarId, evento.getId(), new Event().setAttendees(convidados))
+                    .setSendUpdates("all")
+                    .execute();
+            atualizadas++;
+        }
+        log.info("Convidados atualizados em {} reuniões futuras da empresa {}", atualizadas, empresa.getId());
+        return atualizadas;
+    }
+
+    static List<EventAttendee> convidadosAtualizados(List<EventAttendee> atuais, List<String> emailsConvidados) {
+        Map<String, EventAttendee> porEmail = new LinkedHashMap<>();
+        if (atuais != null) {
+            for (EventAttendee atual : atuais) {
+                if (atual.getEmail() != null) {
+                    porEmail.put(atual.getEmail().toLowerCase(Locale.ROOT), atual);
+                }
+            }
+        }
+        List<EventAttendee> resultado = new ArrayList<>();
+        for (String email : emailsConvidados) {
+            EventAttendee existente = porEmail.get(email.toLowerCase(Locale.ROOT));
+            resultado.add(existente != null ? existente : new EventAttendee().setEmail(email));
+        }
+        return resultado;
     }
 
     public void removerEventoPorHora(Empresa empresa, String idPedido, int posicao) throws Exception {
@@ -105,7 +205,7 @@ public class ServicoReserva {
         return eventoDoPedidoExiste(empresa, idDaPosicao(idPedido, posicao));
     }
 
-    static String idDaPosicao(String idPedido, int posicao) {
+    public static String idDaPosicao(String idPedido, int posicao) {
         return idPedido + "#" + posicao;
     }
 
@@ -117,7 +217,7 @@ public class ServicoReserva {
         com.google.api.services.calendar.Calendar servicoAgenda = agendaService.conectarAgenda();
         try {
             Event existente = servicoAgenda.events().get(calendarId, idEventoDoPedido(idPedido)).execute();
-            return existente != null && !"cancelled".equals(existente.getStatus());
+            return existente != null && !"cancelled".equalsIgnoreCase(existente.getStatus());
         } catch (GoogleJsonResponseException e) {
             if (e.getStatusCode() == 404) {
                 return false;
@@ -141,12 +241,11 @@ public class ServicoReserva {
             return Collections.emptyList();
         }
         com.google.api.services.calendar.Calendar servicoGoogle = agendaService.conectarAgenda();
-        ZoneId fuso = ZoneId.of("America/Sao_Paulo");
-        LocalDate hoje = LocalDate.now(fuso);
+        LocalDate hoje = LocalDate.now(FUSO_BRASILIA);
         LocalDate fim = hoje.plusDays(dias);
 
-        DateTime timeMin = new DateTime(hoje.atStartOfDay(fuso).toInstant().toEpochMilli());
-        DateTime timeMax = new DateTime(fim.plusDays(1).atStartOfDay(fuso).toInstant().toEpochMilli());
+        DateTime timeMin = new DateTime(hoje.atStartOfDay(FUSO_BRASILIA).toInstant().toEpochMilli());
+        DateTime timeMax = new DateTime(fim.plusDays(1).atStartOfDay(FUSO_BRASILIA).toInstant().toEpochMilli());
 
         Events eventos = servicoGoogle.events().list(calendarId)
                 .setTimeMin(timeMin)
@@ -171,7 +270,7 @@ public class ServicoReserva {
                     horario = "Diária Completa";
                 } else if (item.getStart().getDateTime() != null) {
                     ZonedDateTime zdt = ZonedDateTime.ofInstant(
-                            java.time.Instant.ofEpochMilli(item.getStart().getDateTime().getValue()), fuso);
+                            Instant.ofEpochMilli(item.getStart().getDateTime().getValue()), FUSO_BRASILIA);
                     dataEvento = zdt.toLocalDate();
                     horario = zdt.toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm"));
                 }
@@ -215,13 +314,15 @@ public class ServicoReserva {
         }
     }
 
-    public List<DiaReservaDTO> listarReservas(Empresa empresa){
-        try{
+    public List<DiaReservaDTO> listarReservas(Empresa empresa) {
+        try {
             com.google.api.services.calendar.Calendar servicoGoogle = agendaService.conectarAgenda();
             DateTime agora = new DateTime(System.currentTimeMillis());
 
             String calendarId = empresa.getGoogleCalendarId();
-            if(calendarId == null) return null;
+            if (calendarId == null) {
+                return null;
+            }
 
             if (empresa.isLocacaoPorHora()) {
                 return listarReservasPorHora(empresa, calendarId);
@@ -239,24 +340,39 @@ public class ServicoReserva {
             List<DiaReservaDTO> listaDias = new ArrayList<>();
             Set<LocalDate> diasAlugados = new HashSet<>();
 
-            for (Event evento : itens){
-                var inicio = evento.getStart();
+            for (Event evento : itens) {
+                if ("cancelled".equalsIgnoreCase(evento.getStatus())) {
+                    continue;
+                }
+                EventDateTime inicio = evento.getStart();
                 if (inicio != null) {
-                    if (inicio.getDateTime() != null){
-                        ZonedDateTime dataComHora = ZonedDateTime.parse(inicio.getDateTime().toString());
-                        diasAlugados.add(dataComHora.toLocalDate());
+                    if (inicio.getDateTime() != null) {
+                        LocalDate diaComHora = Instant.ofEpochMilli(inicio.getDateTime().getValue())
+                                .atZone(ZoneOffset.UTC)
+                                .withZoneSameInstant(FUSO_BRASILIA)
+                                .toLocalDate();
+                        diasAlugados.add(diaComHora);
                     } else if (inicio.getDate() != null) {
-                        LocalDate dataSemHora = LocalDate.parse(inicio.getDate().toString());
-                        diasAlugados.add(dataSemHora);
+                        LocalDate diaInicio = LocalDate.parse(inicio.getDate().toStringRfc3339().substring(0, 10));
+                        EventDateTime fim = evento.getEnd();
+                        LocalDate diaFim = (fim != null && fim.getDate() != null)
+                                ? LocalDate.parse(fim.getDate().toStringRfc3339().substring(0, 10))
+                                : diaInicio.plusDays(1);
+                        if (!diaFim.isAfter(diaInicio)) {
+                            diaFim = diaInicio.plusDays(1);
+                        }
+                        for (LocalDate d = diaInicio; d.isBefore(diaFim); d = d.plusDays(1)) {
+                            diasAlugados.add(d);
+                        }
                     }
                 }
             }
 
             DateTimeFormatter formatadorDia = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-            LocalDate hoje = LocalDate.now(ZoneId.of("America/Sao_Paulo"));
-            Locale idiomaBrasil = new Locale("pt", "BR");
+            LocalDate hoje = LocalDate.now(FUSO_BRASILIA);
+            Locale idiomaBrasil = Locale.of("pt", "BR");
 
-            for (int i = 0; i < 30; i++){
+            for (int i = 0; i < 30; i++) {
                 LocalDate diaAtual = hoje.plusDays(i);
                 String dataFormatada = diaAtual.format(formatadorDia);
                 String nomeDiaSemana = diaAtual.getDayOfWeek().getDisplayName(TextStyle.FULL, idiomaBrasil);
@@ -276,10 +392,10 @@ public class ServicoReserva {
     }
 
     private List<DiaReservaDTO> listarReservasPorHora(Empresa empresa, String calendarId) throws Exception {
-        LocalDate hoje = LocalDate.now(ZoneId.of("America/Sao_Paulo"));
+        LocalDate hoje = LocalDate.now(FUSO_BRASILIA);
         List<ServicoGoogleagenda.Intervalo> ocupados = agendaService.ocupacoesDoPeriodo(calendarId, hoje, hoje.plusDays(30));
         DateTimeFormatter formatadorDia = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-        Locale idiomaBrasil = new Locale("pt", "BR");
+        Locale idiomaBrasil = Locale.of("pt", "BR");
         List<DiaReservaDTO> dias = new ArrayList<>();
         for (int i = 0; i < 30; i++) {
             LocalDate dia = hoje.plusDays(i);
@@ -291,51 +407,5 @@ public class ServicoReserva {
                     disponivel ? "Disponível" : "Alugado"));
         }
         return dias;
-    }
-
-    public DiaReservaDTO pesquisarData(Empresa empresa, String dataRecebida) {
-        try {
-            DateTimeFormatter formatadorEntrada = DateTimeFormatter.ofPattern("dd-MM-yyyy");
-            LocalDate dataAlvo = LocalDate.parse(dataRecebida, formatadorEntrada);
-
-            if (dataAlvo.isBefore(LocalDate.now())) {
-                throw new IllegalArgumentException("Não é possível consultar datas que já passaram.");
-            }
-
-            ZoneId fusoBrasilia = ZoneId.of("America/Sao_Paulo");
-            Locale idiomaBrasil = new Locale("pt", "BR");
-            String nomeDiaSemana = dataAlvo.getDayOfWeek().getDisplayName(TextStyle.FULL, idiomaBrasil);
-
-            ZonedDateTime inicioDoDia = dataAlvo.atStartOfDay(fusoBrasilia);
-            ZonedDateTime fimDoDia = dataAlvo.atTime(23, 59, 59).atZone(fusoBrasilia);
-
-            DateTime tempoMinimo = new DateTime(inicioDoDia.toInstant().toEpochMilli());
-            DateTime tempoMaximo = new DateTime(fimDoDia.toInstant().toEpochMilli());
-
-            com.google.api.services.calendar.Calendar servicoGoogle = agendaService.conectarAgenda();
-
-            String calendarId = empresa.getGoogleCalendarId();
-            if(calendarId == null) throw new RuntimeException("Empresa sem calendário configurado.");
-
-            Events eventos = servicoGoogle.events().list(calendarId)
-                    .setTimeMin(tempoMinimo)
-                    .setTimeMax(tempoMaximo)
-                    .setSingleEvents(true)
-                    .execute();
-
-            List<Event> itens = eventos.getItems();
-
-            if (itens == null || itens.isEmpty()) {
-                return new DiaReservaDTO(dataRecebida, nomeDiaSemana, "Disponível");
-            } else {
-                return new DiaReservaDTO(dataRecebida, nomeDiaSemana, "Alugado");
-            }
-
-        } catch (IllegalArgumentException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("Erro no Google Calendar ao pesquisar (empresa {}): {}", empresa.getId(), e.getClass().getSimpleName());
-            throw new RuntimeException("Erro ao buscar data", e);
-        }
     }
 }
