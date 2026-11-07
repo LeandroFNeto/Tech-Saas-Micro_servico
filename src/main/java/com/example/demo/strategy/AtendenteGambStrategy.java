@@ -76,6 +76,10 @@ public class AtendenteGambStrategy implements ModuloAtendimentoStrategy {
         return RAMO;
     }
 
+    private String sessao(Empresa empresa) {
+        return empresa == null ? null : empresa.getSessaoWhatsapp();
+    }
+
     @Override
     public void processarMensagem(Empresa empresa, String numeroCliente, String textoRecebido, String estadoAtual) {
         String texto = textoRecebido == null ? "" : textoRecebido.trim();
@@ -91,7 +95,7 @@ public class AtendenteGambStrategy implements ModuloAtendimentoStrategy {
             return;
         }
 
-        switch (gerenciadorSessao.getEstado(numeroCliente)) {
+        switch (gerenciadorSessao.getEstado(sessao(empresa), numeroCliente)) {
             case ATENDENTE_MENU -> tratarMenu(empresa, numeroCliente, texto);
             case ATENDENTE_DUVIDA -> responderDuvida(empresa, numeroCliente, texto);
             case ATENDENTE_SOBRE -> tratarSobre(empresa, numeroCliente, texto);
@@ -105,16 +109,17 @@ public class AtendenteGambStrategy implements ModuloAtendimentoStrategy {
     }
 
     private void mostrarMenu(Empresa empresa, String numeroCliente) {
-        gerenciadorSessao.limparReuniao(numeroCliente);
-        gerenciadorSessao.limparDataPendente(numeroCliente);
-        gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.ATENDENTE_MENU);
+        String s = sessao(empresa);
+        gerenciadorSessao.limparReuniao(s, numeroCliente);
+        gerenciadorSessao.limparDataPendente(s, numeroCliente);
+        gerenciadorSessao.setEstado(s, numeroCliente, EstadoUsuario.ATENDENTE_MENU);
         enviar(empresa, numeroCliente, MENSAGEM_MENU);
     }
 
     private void tratarMenu(Empresa empresa, String numeroCliente, String texto) {
         String normalizado = normalizar(texto);
         if (normalizado.equals("1") || normalizado.contains("duvida")) {
-            gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.ATENDENTE_DUVIDA);
+            gerenciadorSessao.setEstado(sessao(empresa), numeroCliente, EstadoUsuario.ATENDENTE_DUVIDA);
             enviar(empresa, numeroCliente, MENSAGEM_DUVIDA);
             return;
         }
@@ -139,7 +144,7 @@ public class AtendenteGambStrategy implements ModuloAtendimentoStrategy {
     }
 
     private void responderSobre(Empresa empresa, String numeroCliente, String texto) {
-        gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.ATENDENTE_SOBRE);
+        gerenciadorSessao.setEstado(sessao(empresa), numeroCliente, EstadoUsuario.ATENDENTE_SOBRE);
         String resposta = assistenteTutoriaService.responderComercialWhatsapp(texto).resposta();
         enviar(empresa, numeroCliente, resposta + CONVITE_REUNIAO);
     }
@@ -161,8 +166,9 @@ public class AtendenteGambStrategy implements ModuloAtendimentoStrategy {
             enviar(empresa, numeroCliente, MENSAGEM_REUNIAO_INDISPONIVEL);
             return;
         }
-        gerenciadorSessao.limparReuniao(numeroCliente);
-        gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.REUNIAO_MOTIVO);
+        String s = sessao(empresa);
+        gerenciadorSessao.limparReuniao(s, numeroCliente);
+        gerenciadorSessao.setEstado(s, numeroCliente, EstadoUsuario.REUNIAO_MOTIVO);
         enviar(empresa, numeroCliente, MENSAGEM_MOTIVO);
     }
 
@@ -195,8 +201,9 @@ public class AtendenteGambStrategy implements ModuloAtendimentoStrategy {
             enviar(empresa, numeroCliente, MENSAGEM_MOTIVO);
             return;
         }
-        gerenciadorSessao.getOuCriarReuniao(numeroCliente).setMotivo(motivo);
-        gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.REUNIAO_DATA);
+        String s = sessao(empresa);
+        gerenciadorSessao.getOuCriarReuniao(s, numeroCliente).setMotivo(motivo);
+        gerenciadorSessao.setEstado(s, numeroCliente, EstadoUsuario.REUNIAO_DATA);
         enviar(empresa, numeroCliente, MENSAGEM_PEDIR_DATA);
     }
 
@@ -214,8 +221,9 @@ public class AtendenteGambStrategy implements ModuloAtendimentoStrategy {
     }
 
     private void perguntarSeEssaEhAData(Empresa empresa, String numeroCliente, LocalDate sugestao) {
-        gerenciadorSessao.guardarDataPendente(numeroCliente, sugestao, EstadoUsuario.REUNIAO_DATA);
-        gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.REUNIAO_CONFIRMACAO_DATA);
+        String s = sessao(empresa);
+        gerenciadorSessao.guardarDataPendente(s, numeroCliente, sugestao, EstadoUsuario.REUNIAO_DATA);
+        gerenciadorSessao.setEstado(s, numeroCliente, EstadoUsuario.REUNIAO_CONFIRMACAO_DATA);
         enviar(empresa, numeroCliente, "Só para confirmar: você quer dizer " + descreverData(sugestao)
                 + "? Responda *sim* ou me diga a data certa.");
     }
@@ -226,29 +234,30 @@ public class AtendenteGambStrategy implements ModuloAtendimentoStrategy {
     }
 
     private void tratarConfirmacaoData(Empresa empresa, String numeroCliente, String texto) {
-        GerenciadorSessao.DataPendente pendente = gerenciadorSessao.obterDataPendente(numeroCliente);
+        String s = sessao(empresa);
+        GerenciadorSessao.DataPendente pendente = gerenciadorSessao.obterDataPendente(s, numeroCliente);
         if (pendente == null) {
-            gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.REUNIAO_DATA);
+            gerenciadorSessao.setEstado(s, numeroCliente, EstadoUsuario.REUNIAO_DATA);
             enviar(empresa, numeroCliente, MENSAGEM_PEDIR_DATA);
             return;
         }
         String resposta = normalizar(texto).replaceAll("[.! ]+$", "");
         if (resposta.matches("^(sim|s|isso|isso mesmo|ok|pode ser|pode|claro|exato|exatamente|correto|certo|confirmo|e|essa mesma)$")) {
-            gerenciadorSessao.limparDataPendente(numeroCliente);
-            gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.REUNIAO_DATA);
+            gerenciadorSessao.limparDataPendente(s, numeroCliente);
+            gerenciadorSessao.setEstado(s, numeroCliente, EstadoUsuario.REUNIAO_DATA);
             seguirComData(empresa, numeroCliente, pendente.data());
             return;
         }
         if (resposta.matches("^(nao|n|negativo|errado|nao e|nao e essa|outra)$")) {
-            gerenciadorSessao.limparDataPendente(numeroCliente);
-            gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.REUNIAO_DATA);
+            gerenciadorSessao.limparDataPendente(s, numeroCliente);
+            gerenciadorSessao.setEstado(s, numeroCliente, EstadoUsuario.REUNIAO_DATA);
             enviar(empresa, numeroCliente, "Tudo bem! Então qual é a data? " + MENSAGEM_PEDIR_DATA);
             return;
         }
         InterpretadorDeData.Resultado resultado = interpretadorDeData.interpretar(texto, LocalDate.now(FUSO_BRASILIA));
         if (resultado instanceof InterpretadorDeData.Certa certa) {
-            gerenciadorSessao.limparDataPendente(numeroCliente);
-            gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.REUNIAO_DATA);
+            gerenciadorSessao.limparDataPendente(s, numeroCliente);
+            gerenciadorSessao.setEstado(s, numeroCliente, EstadoUsuario.REUNIAO_DATA);
             seguirComData(empresa, numeroCliente, certa.data());
             return;
         }
@@ -288,14 +297,16 @@ public class AtendenteGambStrategy implements ModuloAtendimentoStrategy {
             return;
         }
 
-        gerenciadorSessao.getOuCriarReuniao(numeroCliente).setData(data);
-        gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.REUNIAO_HORARIO);
+        String s = sessao(empresa);
+        gerenciadorSessao.getOuCriarReuniao(s, numeroCliente).setData(data);
+        gerenciadorSessao.setEstado(s, numeroCliente, EstadoUsuario.REUNIAO_HORARIO);
         enviar(empresa, numeroCliente, "Horários livres em " + data.format(FORMATO_DATA) + ": " + formatar(livres)
                 + ".\nQual horário você prefere? Envie no formato HH:MM.");
     }
 
     private void tratarHorario(Empresa empresa, String numeroCliente, String texto) {
-        DadosReuniaoSessao reuniao = gerenciadorSessao.getOuCriarReuniao(numeroCliente);
+        String s = sessao(empresa);
+        DadosReuniaoSessao reuniao = gerenciadorSessao.getOuCriarReuniao(s, numeroCliente);
         LocalTime horario = lerHorario(texto);
         if (horario == null) {
             enviar(empresa, numeroCliente, "Não entendi o horário. Envie no formato HH:MM, por exemplo 14:00.");
@@ -315,7 +326,7 @@ public class AtendenteGambStrategy implements ModuloAtendimentoStrategy {
         }
 
         reuniao.setHorario(horario);
-        gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.REUNIAO_CONFIRMACAO);
+        gerenciadorSessao.setEstado(s, numeroCliente, EstadoUsuario.REUNIAO_CONFIRMACAO);
         enviar(empresa, numeroCliente, "Confirma a reunião?\n"
                 + "Motivo: " + reuniao.getMotivo().getRotulo() + "\n"
                 + "Data: " + reuniao.getData().format(FORMATO_DATA) + "\n"
@@ -334,7 +345,8 @@ public class AtendenteGambStrategy implements ModuloAtendimentoStrategy {
             return;
         }
 
-        DadosReuniaoSessao reuniao = gerenciadorSessao.getOuCriarReuniao(numeroCliente);
+        String s = sessao(empresa);
+        DadosReuniaoSessao reuniao = gerenciadorSessao.getOuCriarReuniao(s, numeroCliente);
         try {
             List<LocalTime> livres = horariosLivres(empresa, reuniao.getData());
             if (!livres.contains(reuniao.getHorario())) {
@@ -358,19 +370,21 @@ public class AtendenteGambStrategy implements ModuloAtendimentoStrategy {
 
         String resposta = "Reunião marcada para " + reuniao.getData().format(FORMATO_DATA)
                 + " às " + reuniao.getHorario().format(FORMATO_HORA) + ".";
-        gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.INICIO);
+        gerenciadorSessao.limparReuniao(s, numeroCliente);
+        gerenciadorSessao.setEstado(s, numeroCliente, EstadoUsuario.INICIO);
         enviar(empresa, numeroCliente, resposta);
     }
 
     private void oferecerOutrosHorarios(Empresa empresa, String numeroCliente, DadosReuniaoSessao reuniao,
                                         List<LocalTime> livres) {
+        String s = sessao(empresa);
         if (livres.isEmpty()) {
-            gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.REUNIAO_DATA);
+            gerenciadorSessao.setEstado(s, numeroCliente, EstadoUsuario.REUNIAO_DATA);
             enviar(empresa, numeroCliente, "Não há mais horários livres em " + reuniao.getData().format(FORMATO_DATA)
                     + ". " + MENSAGEM_PEDIR_DATA);
             return;
         }
-        gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.REUNIAO_HORARIO);
+        gerenciadorSessao.setEstado(s, numeroCliente, EstadoUsuario.REUNIAO_HORARIO);
         enviar(empresa, numeroCliente, "Esse horário não está livre. Horários livres em "
                 + reuniao.getData().format(FORMATO_DATA) + ": " + formatar(livres)
                 + ".\nQual horário você prefere? Envie no formato HH:MM.");
@@ -390,8 +404,9 @@ public class AtendenteGambStrategy implements ModuloAtendimentoStrategy {
 
     private void reuniaoFalhou(Empresa empresa, String numeroCliente, Exception e) {
         log.warn("Falha ao consultar ou criar reunião na agenda da Gamb: {}", e.getClass().getSimpleName());
-        gerenciadorSessao.limparReuniao(numeroCliente);
-        gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.ATENDENTE_MENU);
+        String s = sessao(empresa);
+        gerenciadorSessao.limparReuniao(s, numeroCliente);
+        gerenciadorSessao.setEstado(s, numeroCliente, EstadoUsuario.ATENDENTE_MENU);
         enviar(empresa, numeroCliente, MENSAGEM_REUNIAO_INDISPONIVEL);
     }
 

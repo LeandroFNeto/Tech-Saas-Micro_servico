@@ -53,4 +53,17 @@ describe('BannerAvisosComponent', () => {
     const texto = fixture.nativeElement.textContent;
     expect(texto).toContain('Nenhum aviso ativo no momento.');
   });
+
+  it('aplica rel noopener noreferrer nos links externos com target _blank', () => {
+    component.avisos = [
+      { id: 1, tipo: 'MANUTENCAO', titulo: 'Aviso', conteudo: 'Texto', link: 'https://gamb.site', ativo: true },
+      { id: 2, tipo: 'TUTORIAL', titulo: 'Guia', conteudo: 'Texto', link: 'https://gamb.site/guia', ativo: true }
+    ];
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('a[target="_blank"]')?.getAttribute('rel')).toBe('noopener noreferrer');
+
+    component.compacto = true;
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('a[target="_blank"]')?.getAttribute('rel')).toBe('noopener noreferrer');
+  });
 });

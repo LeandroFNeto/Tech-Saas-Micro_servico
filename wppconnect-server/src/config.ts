@@ -12,6 +12,7 @@ export default {
   customUserDataDir: './userDataDir/',
   webhook: {
     url: process.env.WPPCONNECT_WEBHOOK_URL || 'http://bot-java:8080/webhook/whatsapp',
+    secret: process.env.WPPCONNECT_WEBHOOK_SECRET || process.env.SECRET_KEY || '',
     autoDownload: true,
     uploadS3: false,
     readMessage: false,
@@ -40,7 +41,7 @@ export default {
     daysToArchive: 45,
   },
   log: {
-    level: 'silly', // Before open a issue, change level to silly and retry a action
+    level: 'silly',
     logger: ['console', 'file'],
   },
   createOptions: {
@@ -56,20 +57,7 @@ export default {
       '--disable-extensions',
       '--ignore-certificate-errors',
     ],
-    /**
-     * Example of configuring the linkPreview generator
-     * If you set this to 'null', it will use global servers; however, you have the option to define your own server
-     * Clone the repository https://github.com/wppconnect-team/wa-js-api-server and host it on your server with ssl
-     *
-     * Configure the attribute as follows:
-     * linkPreviewApiServers: [ 'https://www.yourserver.com/wa-js-api-server' ]
-     */
     linkPreviewApiServers: null,
-
-    /**
-     * Set specific whatsapp version
-     */
-    // whatsappVersion: '2.xxxxx',
   },
   mapper: {
     enable: false,

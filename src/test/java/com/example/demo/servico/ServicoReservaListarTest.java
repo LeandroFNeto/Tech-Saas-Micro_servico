@@ -88,6 +88,43 @@ class ServicoReservaListarTest {
     }
 
     @Test
+    @DisplayName("Ignora evento cancelled, converte UTC 01:30Z para 22:30 BRT do dia anterior e expande multi-dia all-day")
+    void deveIgnorarCanceladosConverterFusoEExpandirMultiDia() throws Exception {
+        LocalDate hoje = LocalDate.now(ZoneId.of("America/Sao_Paulo"));
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+        LocalDate diaCancelado = hoje.plusDays(1);
+        Event cancelado = new Event()
+                .setStatus("cancelled")
+                .setStart(new EventDateTime().setDate(new DateTime(diaCancelado.toString())));
+
+        LocalDate diaUtcSeguinte = hoje.plusDays(4);
+        Event utcNoiteBrt = new Event()
+                .setStatus("confirmed")
+                .setStart(new EventDateTime().setDateTime(DateTime.parseRfc3339(diaUtcSeguinte + "T01:30:00Z")));
+
+        LocalDate inicioMulti = hoje.plusDays(7);
+        LocalDate fimMultiExclusivo = hoje.plusDays(10);
+        Event multiDia = new Event()
+                .setStatus("confirmed")
+                .setStart(new EventDateTime().setDate(new DateTime(inicioMulti.toString())))
+                .setEnd(new EventDateTime().setDate(new DateTime(fimMultiExclusivo.toString())));
+
+        agendaDevolve(new Events().setItems(List.of(cancelado, utcNoiteBrt, multiDia)));
+
+        List<DiaReservaDTO> dias = servicoReserva.listarReservas(empresaComAgenda());
+
+        assertThat(dias).filteredOn(dia -> "Alugado".equals(dia.status()))
+                .extracting(DiaReservaDTO::data)
+                .containsExactly(
+                        hoje.plusDays(3).format(fmt),
+                        hoje.plusDays(7).format(fmt),
+                        hoje.plusDays(8).format(fmt),
+                        hoje.plusDays(9).format(fmt)
+                );
+    }
+
+    @Test
     @DisplayName("Erro do Google Agenda devolve nulo")
     void erroDaAgendaDevolveNulo() throws Exception {
         when(agendaService.conectarAgenda()).thenThrow(new RuntimeException("sem credencial"));
@@ -100,13 +137,13 @@ class ServicoReservaListarTest {
     void semCalendarIdDevolveNulo() {
         assertThat(servicoReserva.listarReservas(new Empresa())).isNull();
     }
+
     @Test
     @DisplayName("Por hora: dia livre fica Disponível e dia lotado/fechado fica Alugado")
     void porHoraCalculaSituacaoPorDia() throws Exception {
         Empresa empresa = empresaComAgenda();
         empresa.setLocacaoPorHora(true);
 
-        LocalDate hoje = LocalDate.now(ZoneId.of("America/Sao_Paulo"));
         when(agendaService.ocupacoesDoPeriodo(anyString(), any(), any())).thenReturn(List.of());
 
         ServicoFuncionamento.Janela janelaAberta = new ServicoFuncionamento.Janela(true, java.time.LocalTime.of(8, 0), java.time.LocalTime.of(18, 0), 60, null);

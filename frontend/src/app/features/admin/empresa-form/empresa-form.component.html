@@ -199,7 +199,12 @@
               </svg>
             </span>
           }
-          <button class="btn-primary flex-1 px-3.5" type="button" (click)="abrirWidgetCloudinary('principal')">
+          <button
+            class="btn-primary flex-1 px-3.5 disabled:cursor-not-allowed disabled:opacity-60"
+            type="button"
+            [disabled]="auth.isLeitura()"
+            (click)="abrirWidgetCloudinary('principal')"
+          >
             Enviar foto principal
           </button>
         </div>
@@ -227,9 +232,9 @@
           <span class="text-sm font-semibold text-brand-800">Galeria (até {{ maxUrlsGaleria }} URLs)</span>
           <span class="flex flex-wrap gap-2">
             <button
-              class="btn-primary px-3.5"
+              class="btn-primary px-3.5 disabled:cursor-not-allowed disabled:opacity-60"
               type="button"
-              [disabled]="galeriaCheia"
+              [disabled]="auth.isLeitura() || galeriaCheia"
               (click)="abrirWidgetCloudinary('galeria')"
             >
               Enviar fotos
@@ -237,7 +242,7 @@
             <button
               class="btn-secondary px-3.5 disabled:cursor-not-allowed disabled:opacity-60"
               type="button"
-              [disabled]="urlsGaleria.length >= maxUrlsGaleria"
+              [disabled]="auth.isLeitura() || urlsGaleria.length >= maxUrlsGaleria"
               (click)="adicionarUrlGaleria()"
             >
               Adicionar URL
@@ -282,7 +287,14 @@
                   Abrir
                 </a>
               }
-              <button class="btn-secondary shrink-0 px-3.5" type="button" (click)="removerUrlGaleria($index)">Remover</button>
+              <button
+                class="btn-secondary shrink-0 px-3.5 disabled:cursor-not-allowed disabled:opacity-60"
+                type="button"
+                [disabled]="auth.isLeitura()"
+                (click)="removerUrlGaleria($index)"
+              >
+                Remover
+              </button>
             </div>
           }
         </div>

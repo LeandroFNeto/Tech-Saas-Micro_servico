@@ -5,12 +5,11 @@ import com.example.demo.model.DadosReservaSessao;
 import com.example.demo.model.Empresa;
 import com.example.demo.model.EstadoUsuario;
 import com.example.demo.servico.GerenciadorSessao;
+import com.example.demo.servico.InterpretadorDeData;
 import com.example.demo.servico.ServicoFuncionamento;
 import com.example.demo.servico.ServicoGoogleagenda;
 import com.example.demo.servico.ServicoIA;
 import com.example.demo.servico.ServicoMensagem;
-import java.util.Optional;
-import com.example.demo.servico.InterpretadorDeData;
 import com.example.demo.servico.ServicoMenu;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,11 +27,12 @@ import java.time.format.DateTimeParseException;
 import java.time.format.TextStyle;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 public class LocacaoStrategy implements ModuloAtendimentoStrategy {
@@ -67,20 +67,25 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
         return "LOCACAO";
     }
 
+    private String sessao(Empresa empresa) {
+        return empresa == null ? null : empresa.getSessaoWhatsapp();
+    }
+
     @Override
     public void processarMensagem(Empresa empresa, String numeroCliente, String textoRecebido, String estadoAtual) {
         String texto = textoRecebido == null ? "" : textoRecebido.trim();
-        if (gerenciadorSessao.getEstado(numeroCliente) == EstadoUsuario.RESERVA_REGISTRANDO) {
+        String s = sessao(empresa);
+        if (gerenciadorSessao.getEstado(s, numeroCliente) == EstadoUsuario.RESERVA_REGISTRANDO) {
             servicoMensagem.enviarMensagemWPP(empresa, numeroCliente, MENSAGEM_AINDA_REGISTRANDO);
             return;
         }
         if (ehComandoMenuPrincipal(texto)) {
-            gerenciadorSessao.atualizarEstado(numeroCliente, EstadoUsuario.INICIO.name());
+            gerenciadorSessao.atualizarEstado(s, numeroCliente, EstadoUsuario.INICIO.name());
             tratarInicio(empresa, numeroCliente, texto);
             return;
         }
 
-        EstadoUsuario estado = gerenciadorSessao.getEstado(numeroCliente);
+        EstadoUsuario estado = gerenciadorSessao.getEstado(s, numeroCliente);
         if (estado == null) {
             estado = EstadoUsuario.INICIO;
         }
@@ -110,16 +115,17 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
         if (tratouDataDigitadaLivre(empresa, numeroCliente, texto)) {
             return;
         }
+        String s = sessao(empresa);
         if (servicoIA != null) {
             Optional<String> respostaIa = servicoIA.responderAtendimento(empresa, texto, servicoMenu.montarMenuPrincipal(empresa));
             if (respostaIa.isPresent()) {
                 servicoMensagem.enviarMensagemWPP(empresa, numeroCliente, respostaIa.get());
-                gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.MENU_PRINCIPAL);
+                gerenciadorSessao.setEstado(s, numeroCliente, EstadoUsuario.MENU_PRINCIPAL);
                 return;
             }
         }
         servicoMensagem.enviarMensagemWPP(empresa, numeroCliente, servicoMenu.montarMenuPrincipal(empresa));
-        gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.MENU_PRINCIPAL);
+        gerenciadorSessao.setEstado(s, numeroCliente, EstadoUsuario.MENU_PRINCIPAL);
     }
 
     private void tratarInicio(Empresa empresa, String numeroCliente) {
@@ -139,7 +145,7 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
             case "SOLICITAR_RESERVA" -> tratarSolicitacaoReserva(empresa, numeroCliente);
             case "PESQUISAR_DATA" -> {
                 servicoMensagem.enviarMensagemWPP(empresa, numeroCliente, textoPedidoDataEspecifica());
-                gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.ESPERANDO_DATA);
+                gerenciadorSessao.setEstado(sessao(empresa), numeroCliente, EstadoUsuario.ESPERANDO_DATA);
             }
             case "GOOGLE_CALENDAR" -> tratarAgendaProximosDias(empresa, numeroCliente);
             case "MENU_CARDAPIO" -> tratarCardapio(empresa, numeroCliente);
@@ -182,7 +188,7 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
                     empresa, numeroCliente, "Ainda não cadastramos a foto principal deste espaço.");
         }
         servicoMensagem.enviarMensagemWPP(empresa, numeroCliente, textoConviteGaleria(empresa));
-        gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.ESPERANDO_RESPOSTA_GALERIA);
+        gerenciadorSessao.setEstado(sessao(empresa), numeroCliente, EstadoUsuario.ESPERANDO_RESPOSTA_GALERIA);
     }
 
     private String textoConviteGaleria(Empresa empresa) {
@@ -200,8 +206,9 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
 
     private void tratarRespostaGaleria(Empresa empresa, String numeroCliente, String texto) {
         String resposta = texto.toLowerCase(Locale.of("pt", "BR"));
+        String s = sessao(empresa);
         if (respostaAfirmativa(resposta)) {
-            gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.INICIO);
+            gerenciadorSessao.setEstado(s, numeroCliente, EstadoUsuario.INICIO);
             List<String> urls = List.copyOf(empresa.getUrlsGaleria());
             if (urls.isEmpty()) {
                 servicoMensagem.enviarMensagemWPP(
@@ -214,7 +221,7 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
             return;
         }
         if (respostaNegativa(resposta)) {
-            gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.INICIO);
+            gerenciadorSessao.setEstado(s, numeroCliente, EstadoUsuario.INICIO);
             tratarInicio(empresa, numeroCliente, texto);
             return;
         }
@@ -263,11 +270,12 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
             servicoMensagem.enviarMensagemWPP(empresa, numeroCliente, MENSAGEM_RESERVA_MANUAL);
             return;
         }
-        gerenciadorSessao.limparReserva(numeroCliente);
-        gerenciadorSessao.getOuCriarReserva(numeroCliente);
+        String s = sessao(empresa);
+        gerenciadorSessao.limparReserva(s, numeroCliente);
+        gerenciadorSessao.getOuCriarReserva(s, numeroCliente);
         servicoMensagem.enviarMensagemWPP(
                 empresa, numeroCliente, "Por favor, me diga qual data você deseja reservar.");
-        gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.RESERVA_ESPERANDO_DATA);
+        gerenciadorSessao.setEstado(s, numeroCliente, EstadoUsuario.RESERVA_ESPERANDO_DATA);
     }
 
     private void tratarReservaData(Empresa empresa, String numeroCliente, String texto) {
@@ -290,14 +298,15 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
             return;
         }
 
-        DadosReservaSessao reserva = gerenciadorSessao.getOuCriarReserva(numeroCliente);
+        DadosReservaSessao reserva = gerenciadorSessao.getOuCriarReserva(sessao(empresa), numeroCliente);
         reserva.setData(data);
         reserva.setHorario(DadosReservaSessao.HORARIO_DIARIA);
         pedirNome(empresa, numeroCliente);
     }
 
     private void tratarReservaDataPorHora(Empresa empresa, String numeroCliente, LocalDate data) {
-        DadosReservaSessao reserva = gerenciadorSessao.getOuCriarReserva(numeroCliente);
+        String s = sessao(empresa);
+        DadosReservaSessao reserva = gerenciadorSessao.getOuCriarReserva(s, numeroCliente);
         LocalDate hoje = LocalDate.now(FUSO_BRASILIA);
         if (data.isAfter(hoje.plusDays(ServicoFuncionamento.DIAS_MAXIMOS_A_FRENTE))) {
             servicoMensagem.enviarMensagemWPP(empresa, numeroCliente,
@@ -356,7 +365,7 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
                 "Horários livres em " + data.format(FORMATO_DATA) + ":\n" + formatarHorarios(livres)
                         + "\n\nQual horário você deseja? Envie no formato HH:MM, por exemplo "
                         + livres.get(0).format(DateTimeFormatter.ofPattern("HH:mm")) + ".");
-        gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.RESERVA_ESPERANDO_HORARIO);
+        gerenciadorSessao.setEstado(s, numeroCliente, EstadoUsuario.RESERVA_ESPERANDO_HORARIO);
     }
 
     private void informarDataFechada(Empresa empresa, String numeroCliente, LocalDate data,
@@ -506,7 +515,8 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
                     empresa, numeroCliente, "Não entendi esse horário. Envie no formato HH:MM, por exemplo 14:00.");
             return;
         }
-        DadosReservaSessao reserva = gerenciadorSessao.getOuCriarReserva(numeroCliente);
+        String s = sessao(empresa);
+        DadosReservaSessao reserva = gerenciadorSessao.getOuCriarReserva(s, numeroCliente);
         LocalDate dataReserva = reserva.getData();
         if (dataReserva != null && dataReserva.equals(LocalDate.now(FUSO_BRASILIA))
                 && hora.isBefore(LocalTime.now(FUSO_BRASILIA))) {
@@ -514,7 +524,7 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
             return;
         }
         if (dataReserva == null) {
-            gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.RESERVA_ESPERANDO_DATA);
+            gerenciadorSessao.setEstado(s, numeroCliente, EstadoUsuario.RESERVA_ESPERANDO_DATA);
             servicoMensagem.enviarMensagemWPP(empresa, numeroCliente, "Por favor, me diga qual data você deseja reservar.");
             return;
         }
@@ -540,16 +550,17 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
                 "✅ Anotado: " + listarDatas(reserva) + " às " + reserva.getHorario() + ".\n\n"
                         + "Quer reservar mais alguma data no mesmo horário? Responda *SIM* ou *NÃO*.\n"
                         + "Para tirar uma data, envie *TIRAR DD-MM-AAAA*.");
-        gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.RESERVA_MAIS_DATAS);
+        gerenciadorSessao.setEstado(sessao(empresa), numeroCliente, EstadoUsuario.RESERVA_MAIS_DATAS);
     }
 
     private void tratarMaisDatas(Empresa empresa, String numeroCliente, String texto) {
-        DadosReservaSessao reserva = gerenciadorSessao.getOuCriarReserva(numeroCliente);
+        String s = sessao(empresa);
+        DadosReservaSessao reserva = gerenciadorSessao.getOuCriarReserva(s, numeroCliente);
         String resposta = texto.toLowerCase(Locale.of("pt", "BR"));
         if (respostaAfirmativa(resposta)) {
             servicoMensagem.enviarMensagemWPP(empresa, numeroCliente,
                     "Qual a próxima data? Envie no formato DD-MM-AAAA, por exemplo 16-09-2026.");
-            gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.RESERVA_ESPERANDO_DATA);
+            gerenciadorSessao.setEstado(s, numeroCliente, EstadoUsuario.RESERVA_ESPERANDO_DATA);
             return;
         }
         if (respostaNegativa(resposta)) {
@@ -583,7 +594,7 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
             reserva.setHorario(null);
             servicoMensagem.enviarMensagemWPP(empresa, numeroCliente,
                     "Sem datas no pedido. Envie uma data, no formato DD-MM-AAAA.");
-            gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.RESERVA_ESPERANDO_DATA);
+            gerenciadorSessao.setEstado(sessao(empresa), numeroCliente, EstadoUsuario.RESERVA_ESPERANDO_DATA);
             return true;
         }
         perguntarMaisDatas(empresa, numeroCliente, reserva);
@@ -605,7 +616,7 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
     private void pedirNome(Empresa empresa, String numeroCliente) {
         servicoMensagem.enviarMensagemWPP(
                 empresa, numeroCliente, "Para seguir, me diga o nome do responsável pela reserva.");
-        gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.RESERVA_ESPERANDO_NOME);
+        gerenciadorSessao.setEstado(sessao(empresa), numeroCliente, EstadoUsuario.RESERVA_ESPERANDO_NOME);
     }
 
     private void tratarReservaNome(Empresa empresa, String numeroCliente, String texto) {
@@ -614,7 +625,7 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
                     empresa, numeroCliente, "Preciso do nome do responsável para continuar.");
             return;
         }
-        DadosReservaSessao reserva = gerenciadorSessao.getOuCriarReserva(numeroCliente);
+        DadosReservaSessao reserva = gerenciadorSessao.getOuCriarReserva(sessao(empresa), numeroCliente);
         String nome = texto.replaceAll("\\s+", " ").trim();
         reserva.setNomeCliente(nome.length() > 80 ? nome.substring(0, 80) : nome);
         enviarRegrasEPedirConfirmacao(empresa, numeroCliente, reserva);
@@ -623,17 +634,18 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
     private void enviarRegrasEPedirConfirmacao(Empresa empresa, String numeroCliente, DadosReservaSessao reserva) {
         servicoMensagem.enviarMensagemWPP(empresa, numeroCliente, textoRegras(empresa));
         servicoMensagem.enviarMensagemWPP(empresa, numeroCliente, montarResumoConfirmacao(reserva));
-        gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.RESERVA_CONFIRMACAO);
+        gerenciadorSessao.setEstado(sessao(empresa), numeroCliente, EstadoUsuario.RESERVA_CONFIRMACAO);
     }
 
     private void tratarReservaConfirmacao(Empresa empresa, String numeroCliente, String texto) {
+        String s = sessao(empresa);
         String resposta = texto.toLowerCase(Locale.of("pt", "BR"));
         if (resposta.startsWith("tirar") && empresa.isLocacaoPorHora()
-                && tentarTirarData(empresa, numeroCliente, gerenciadorSessao.getOuCriarReserva(numeroCliente), resposta)) {
+                && tentarTirarData(empresa, numeroCliente, gerenciadorSessao.getOuCriarReserva(s, numeroCliente), resposta)) {
             return;
         }
         if (resposta.matches("sim|s|confirmar|1")) {
-            DadosReservaSessao reserva = gerenciadorSessao.getOuCriarReserva(numeroCliente);
+            DadosReservaSessao reserva = gerenciadorSessao.getOuCriarReserva(s, numeroCliente);
             boolean porHora = empresa.isLocacaoPorHora() && !reserva.getDatas().isEmpty();
             String data = porHora ? listarDatas(reserva) : formatarData(reserva.getData());
             List<String> datasEvento = porHora
@@ -647,7 +659,7 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
                     numeroCliente,
                     UUID.randomUUID().toString(),
                     porHora);
-            gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.RESERVA_REGISTRANDO);
+            gerenciadorSessao.setEstado(s, numeroCliente, EstadoUsuario.RESERVA_REGISTRANDO);
             servicoMensagem.enviarMensagemWPP(
                     empresa,
                     numeroCliente,
@@ -657,7 +669,7 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
         }
         if (resposta.matches("n[aã]o|n|cancelar|2")) {
             servicoMensagem.enviarMensagemWPP(empresa, numeroCliente, "Reserva cancelada. Se quiser, é só chamar de novo.");
-            gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.INICIO);
+            gerenciadorSessao.setEstado(s, numeroCliente, EstadoUsuario.INICIO);
             return;
         }
         servicoMensagem.enviarMensagemWPP(
@@ -708,8 +720,9 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
     }
 
     private void perguntarSeEssaEhAData(Empresa empresa, String numeroCliente, LocalDate sugestao, EstadoUsuario retorno) {
-        gerenciadorSessao.guardarDataPendente(numeroCliente, sugestao, retorno);
-        gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.ESPERANDO_CONFIRMACAO_DATA);
+        String s = sessao(empresa);
+        gerenciadorSessao.guardarDataPendente(s, numeroCliente, sugestao, retorno);
+        gerenciadorSessao.setEstado(s, numeroCliente, EstadoUsuario.ESPERANDO_CONFIRMACAO_DATA);
         servicoMensagem.enviarMensagemWPP(
                 empresa,
                 numeroCliente,
@@ -737,15 +750,16 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
         if (resultado instanceof InterpretadorDeData.Duvidosa duvidosa && duvidosa.sugestao() == null) {
             return false;
         }
-        gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.ESPERANDO_DATA);
+        gerenciadorSessao.setEstado(sessao(empresa), numeroCliente, EstadoUsuario.ESPERANDO_DATA);
         tratarDataInformada(empresa, numeroCliente, texto);
         return true;
     }
 
     private void tratarConfirmacaoData(Empresa empresa, String numeroCliente, String texto) {
-        GerenciadorSessao.DataPendente pendente = gerenciadorSessao.obterDataPendente(numeroCliente);
+        String s = sessao(empresa);
+        GerenciadorSessao.DataPendente pendente = gerenciadorSessao.obterDataPendente(s, numeroCliente);
         if (pendente == null) {
-            gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.ESPERANDO_DATA);
+            gerenciadorSessao.setEstado(s, numeroCliente, EstadoUsuario.ESPERANDO_DATA);
             servicoMensagem.enviarMensagemWPP(empresa, numeroCliente, "Qual data você quer consultar?");
             return;
         }
@@ -755,8 +769,8 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
             return;
         }
         if (ehNegacao(resposta)) {
-            gerenciadorSessao.limparDataPendente(numeroCliente);
-            gerenciadorSessao.setEstado(numeroCliente, pendente.retorno());
+            gerenciadorSessao.limparDataPendente(s, numeroCliente);
+            gerenciadorSessao.setEstado(s, numeroCliente, pendente.retorno());
             servicoMensagem.enviarMensagemWPP(empresa, numeroCliente, "Tudo bem! Então qual é a data? Pode escrever do seu jeito.");
             return;
         }
@@ -776,8 +790,9 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
     }
 
     private void aplicarDataConfirmada(Empresa empresa, String numeroCliente, LocalDate data, EstadoUsuario retorno) {
-        gerenciadorSessao.limparDataPendente(numeroCliente);
-        gerenciadorSessao.setEstado(numeroCliente, retorno);
+        String s = sessao(empresa);
+        gerenciadorSessao.limparDataPendente(s, numeroCliente);
+        gerenciadorSessao.setEstado(s, numeroCliente, retorno);
         if (retorno == EstadoUsuario.RESERVA_ESPERANDO_DATA) {
             processarReservaData(empresa, numeroCliente, data, data.format(FORMATO_DATA));
             return;
@@ -810,7 +825,7 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
             if (!servicoGoogleagenda.dataEstaLivre(calendarId, data)) {
                 servicoMensagem.enviarMensagemWPP(
                         empresa, numeroCliente, "❌ Infelizmente esta data já está reservada.");
-                gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.INICIO);
+                gerenciadorSessao.setEstado(sessao(empresa), numeroCliente, EstadoUsuario.INICIO);
                 return false;
             }
             return true;
@@ -899,7 +914,7 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
                     empresa,
                     numeroCliente,
                     "O calendário ainda não foi configurado. Peça ao administrador para cadastrar o ID da agenda.");
-            gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.INICIO);
+            gerenciadorSessao.setEstado(sessao(empresa), numeroCliente, EstadoUsuario.INICIO);
             return;
         }
 
@@ -917,7 +932,7 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
                     empresa,
                     numeroCliente,
                     "O calendário ainda não foi configurado. Peça ao administrador para cadastrar o ID da agenda.");
-            gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.INICIO);
+            gerenciadorSessao.setEstado(sessao(empresa), numeroCliente, EstadoUsuario.INICIO);
             return;
         }
         consultarDataNaAgenda(empresa, numeroCliente, data, calendarId);
@@ -945,6 +960,6 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
                     numeroCliente,
                     "Não consegui consultar a agenda agora. Tente novamente em instantes.");
         }
-        gerenciadorSessao.setEstado(numeroCliente, EstadoUsuario.INICIO);
+        gerenciadorSessao.setEstado(sessao(empresa), numeroCliente, EstadoUsuario.INICIO);
     }
 }

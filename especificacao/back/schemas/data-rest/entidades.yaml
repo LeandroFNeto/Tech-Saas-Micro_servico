@@ -85,6 +85,9 @@ EntityModelEmpresa:
     permiteReservaAutomatica:
       type: boolean
       default: false
+    permitePrevisaoTempo:
+      type: boolean
+      default: false
     cidadePrevisao:
       type: string
     cidadePrevisaoResolvida:
@@ -92,6 +95,8 @@ EntityModelEmpresa:
     previsaoTempoAtiva:
       type: boolean
       default: false
+    lembreteConfirmacao:
+      $ref: "#/components/schemas/LembreteConfirmacaoDTO"
     modulosAtivos:
       type: array
       items:

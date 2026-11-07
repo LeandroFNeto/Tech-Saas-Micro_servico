@@ -1,6 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { mensagemHttp } from '../../../core/interceptors/auth.interceptor';
 import { AuthService } from '../../../core/services/auth.service';
@@ -8,7 +8,15 @@ import { ChatFlutuanteComponent } from '../../../shared/components/chat-flutuant
 import contentData from '../../../../../../especificacao/front/login.content.json';
 import designData from '../../../../../../especificacao/front/telas.design.json';
 
-const EMAIL_GAMB = /^[a-zA-Z0-9._%+-]+@gamb\.com\.br$/;
+const PADRAO_EMAIL = /^[a-z0-9._%+-]+@[a-z0-9-]+(\.[a-z0-9-]+)+$/i;
+
+function emailValido(controle: AbstractControl): ValidationErrors | null {
+  const valor = String(controle.value ?? '').trim();
+  if (!valor) {
+    return { required: true };
+  }
+  return PADRAO_EMAIL.test(valor) ? null : { email: true };
+}
 
 @Component({
   selector: 'app-login',
@@ -28,7 +36,7 @@ export class LoginComponent {
   enviando = false;
 
   readonly form = this.fb.nonNullable.group({
-    email: ['', [Validators.required, Validators.pattern(EMAIL_GAMB)]],
+    email: ['', [emailValido]],
     senha: ['', [Validators.required, Validators.minLength(6)]]
   });
 
@@ -53,8 +61,9 @@ export class LoginComponent {
       return;
     }
 
+    const bruto = this.form.getRawValue();
     this.enviando = true;
-    this.auth.login(this.form.getRawValue()).subscribe({
+    this.auth.login({ email: bruto.email.trim(), senha: bruto.senha }).subscribe({
       next: () => {
         this.enviando = false;
         void this.router.navigateByUrl(this.auth.rotaInicial());

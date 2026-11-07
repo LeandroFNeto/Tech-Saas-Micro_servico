@@ -36,7 +36,7 @@ export interface EmpresaUpdateDTO {
   modulosMenu?: ModuloMenuDTO[];
   cidadePrevisao?: string;
   previsaoTempoAtiva?: boolean;
-  lembrete?: LembreteConfirmacaoDTO;
+  lembreteConfirmacao?: LembreteConfirmacaoDTO;
 }
 
 export interface EmpresaUpdateAdminDTO {
@@ -69,7 +69,8 @@ export interface EmpresaResponseDTO {
   cidadePrevisao?: string;
   cidadePrevisaoResolvida?: string;
   previsaoTempoAtiva?: boolean;
-  lembrete?: LembreteConfirmacaoDTO;
+  ativo?: boolean;
+  lembreteConfirmacao?: LembreteConfirmacaoDTO;
   atualizadoEm: string;
 }
 
@@ -113,7 +114,7 @@ export interface EmpresaView {
   cidadePrevisao?: string;
   cidadePrevisaoResolvida?: string;
   previsaoTempoAtiva?: boolean;
-  lembrete?: LembreteConfirmacaoDTO;
+  lembreteConfirmacao?: LembreteConfirmacaoDTO;
   atualizadoEm?: string;
 }
 

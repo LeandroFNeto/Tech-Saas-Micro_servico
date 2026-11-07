@@ -4,15 +4,14 @@ import com.example.demo.dto.empresa.ColecaoEmpresaHalDTO;
 import com.example.demo.dto.empresa.EmpresaCreateDTO;
 import com.example.demo.dto.empresa.EmpresaPainelDTO;
 import com.example.demo.dto.empresa.EmpresaResponseDTO;
-import com.example.demo.dto.empresa.LembreteConfirmacaoDTO;
-import com.example.demo.model.ModoLembrete;
-import com.example.demo.util.CriptografiaCampo;
 import com.example.demo.dto.empresa.EmpresaUpdateAdminDTO;
 import com.example.demo.dto.empresa.EmpresaUpdateDTO;
+import com.example.demo.dto.empresa.LembreteConfirmacaoDTO;
 import com.example.demo.dto.empresa.ModuloMenuDTO;
 import com.example.demo.dto.empresa.ResetSenhaAdminDTO;
 import com.example.demo.dto.previsao.PrevisaoTempoResponseDTO;
 import com.example.demo.model.Empresa;
+import com.example.demo.model.ModoLembrete;
 import com.example.demo.model.ModuloEmpresa;
 import com.example.demo.repository.EmpresaRepository;
 import com.example.demo.servico.CatalogoModulos;
@@ -23,6 +22,7 @@ import com.example.demo.servico.ServicoWppConnect;
 import com.example.demo.servico.previsao.ProvedorIndisponivelException;
 import com.example.demo.servico.previsao.ProvedorPrevisao;
 import com.example.demo.servico.previsao.ServicoPrevisaoTempo;
+import com.example.demo.util.CriptografiaCampo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -44,6 +44,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 
 @RestController
@@ -52,6 +53,7 @@ import java.util.List;
 public class ControllerEmpresa {
 
     private static final Logger log = LoggerFactory.getLogger(ControllerEmpresa.class);
+    private static final ZoneId FUSO_BRASILIA = ZoneId.of("America/Sao_Paulo");
 
     @Autowired private EmpresaRepository empresaRepository;
     @Autowired private ServicoAuth servicoAuth;
@@ -75,7 +77,7 @@ public class ControllerEmpresa {
         if (possuiPapel("ROLE_ADMIN")) {
             return false;
         }
-        return token == null || !token.equals(adminApiKey);
+        return adminApiKey == null || adminApiKey.isBlank() || token == null || !token.equals(adminApiKey);
     }
 
     private void exigirAdminEscrita(String token) {
@@ -206,6 +208,7 @@ public class ControllerEmpresa {
             @Valid @RequestBody EmpresaUpdateDTO dto) {
 
         Authentication autenticacao = SecurityContextHolder.getContext().getAuthentication();
+        servicoAcessoEmpresa.exigirNaoLeitura(autenticacao);
         Empresa empresa = servicoAcessoEmpresa.validarAcessoSessao(autenticacao, null, sessao);
 
         if (dto.permiteReservaAutomatica() != null
@@ -240,7 +243,7 @@ public class ControllerEmpresa {
         if (dto.previsaoTempoAtiva() != null) {
             if (Boolean.TRUE.equals(dto.previsaoTempoAtiva()) && !Boolean.TRUE.equals(empresa.getPermitePrevisaoTempo())) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                        "A previsão do tempo precisa ser liberada pelo administrador.");
+                        "A previsão do tempo não está liberada para esta empresa pelo administrador.");
             }
             empresa.setPrevisaoTempoAtiva(dto.previsaoTempoAtiva());
         }
@@ -338,7 +341,7 @@ public class ControllerEmpresa {
         exigirAdminEscrita(token);
 
         Empresa empresa = empresaRepository.buscarPorSessaoComModulos(sessao);
-        if (empresa == null) {
+        if (empresa == null || Boolean.FALSE.equals(empresa.getAtivo())) {
             return ResponseEntity.notFound().build();
         }
 
@@ -348,6 +351,15 @@ public class ControllerEmpresa {
                     ? (dto.googleCalendarId().isBlank() ? null : dto.googleCalendarId().trim())
                     : empresa.getGoogleCalendarId();
             exigirAgendaParaReservaAutomatica(true, agendaFinal);
+        }
+
+        boolean mudouSessao = dto.sessaoWhatsapp() != null && !dto.sessaoWhatsapp().equals(empresa.getSessaoWhatsapp());
+        if (mudouSessao) {
+            Empresa existente = empresaRepository.findBySessaoWhatsapp(dto.sessaoWhatsapp());
+            if (existente != null && (empresa.getId() == null || !empresa.getId().equals(existente.getId()))) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Sessão já ocupada");
+            }
+            servicoAuth.atualizarEmailDaSessao(sessao, dto.sessaoWhatsapp());
         }
 
         if (dto.sessaoWhatsapp() != null) empresa.setSessaoWhatsapp(dto.sessaoWhatsapp());
@@ -388,7 +400,8 @@ public class ControllerEmpresa {
 
         exigirSuperAdmin(token);
 
-        if (empresaRepository.findBySessaoWhatsapp(sessao) == null) {
+        Empresa empresa = empresaRepository.findBySessaoWhatsapp(sessao);
+        if (empresa == null || Boolean.FALSE.equals(empresa.getAtivo())) {
             return ResponseEntity.notFound().build();
         }
 
@@ -470,7 +483,7 @@ public class ControllerEmpresa {
                 Boolean.TRUE.equals(empresa.getPrevisaoTempoAtiva()),
                 Boolean.TRUE.equals(empresa.getAtivo()),
                 lembreteDTO,
-                LocalDateTime.now()
+                LocalDateTime.now(FUSO_BRASILIA)
         );
     }
 
@@ -485,6 +498,13 @@ public class ControllerEmpresa {
                         modulo.getOrdemExibicao(),
                         modulo.getAtivo()))
                 .toList();
+
+        LembreteConfirmacaoDTO lembreteDTO = new LembreteConfirmacaoDTO(
+                empresa.getLembreteModo(),
+                empresa.getLembreteDiasAntes(),
+                empresa.getLembreteHorarioEnvio(),
+                empresa.getLembreteTexto()
+        );
 
         return new EmpresaPainelDTO(
                 empresa.getId(),
@@ -503,12 +523,14 @@ public class ControllerEmpresa {
                 admin ? empresa.getGoogleCalendarId() : null,
                 empresa.getLocacaoPorHora(),
                 Boolean.TRUE.equals(empresa.getPermiteReservaAutomatica()),
+                Boolean.TRUE.equals(empresa.getPermitePrevisaoTempo()),
                 modulos,
                 admin ? List.copyOf(empresa.getEmailsResponsaveisReuniao()) : List.of(),
                 empresa.getCidadePrevisao(),
                 empresa.getCidadePrevisaoResolvida(),
                 Boolean.TRUE.equals(empresa.getPrevisaoTempoAtiva()),
-                LocalDateTime.now()
+                lembreteDTO,
+                LocalDateTime.now(FUSO_BRASILIA)
         );
     }
 
@@ -537,7 +559,7 @@ public class ControllerEmpresa {
         }
 
         empresa.setAtivo(false);
-        empresa.setDataExclusao(LocalDateTime.now());
+        empresa.setDataExclusao(LocalDateTime.now(FUSO_BRASILIA));
         empresaRepository.save(empresa);
 
         try {

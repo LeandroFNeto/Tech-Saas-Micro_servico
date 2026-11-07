@@ -8,6 +8,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -18,6 +19,7 @@ public class RegistroEnviosBot {
     static final int MAXIMO_POR_CONTATO = 30;
     static final int MAXIMO_CONTATOS = 5000;
     private static final String MARCA_MIDIA = "\u0000midia";
+    private static final String SESSAO_PADRAO = "_global";
 
     private record Envio(String conteudo, Instant momento) {
     }
@@ -34,40 +36,43 @@ public class RegistroEnviosBot {
     }
 
     public void registrarTexto(String contato, String texto) {
-        registrar(contato, normalizar(texto));
+        registrarTexto(SESSAO_PADRAO, contato, texto);
+    }
+
+    public void registrarTexto(String sessaoWhatsapp, String contato, String texto) {
+        registrar(sessaoWhatsapp, contato, normalizar(texto));
     }
 
     public void registrarMidia(String contato) {
-        registrar(contato, MARCA_MIDIA);
+        registrarMidia(SESSAO_PADRAO, contato);
+    }
+
+    public void registrarMidia(String sessaoWhatsapp, String contato) {
+        registrar(sessaoWhatsapp, contato, MARCA_MIDIA);
     }
 
     public void esquecerTexto(String contato, String texto) {
-        esquecer(contato, normalizar(texto));
+        esquecerTexto(SESSAO_PADRAO, contato, texto);
+    }
+
+    public void esquecerTexto(String sessaoWhatsapp, String contato, String texto) {
+        esquecer(sessaoWhatsapp, contato, normalizar(texto));
     }
 
     public void esquecerMidia(String contato) {
-        esquecer(contato, MARCA_MIDIA);
+        esquecerMidia(SESSAO_PADRAO, contato);
     }
 
-    private void esquecer(String contato, String conteudo) {
-        String chave = chave(contato);
-        Deque<Envio> fila = chave.isEmpty() ? null : envios.get(chave);
-        if (fila == null || conteudo.isEmpty()) {
-            return;
-        }
-        synchronized (fila) {
-            java.util.Iterator<Envio> it = fila.descendingIterator();
-            while (it.hasNext()) {
-                if (it.next().conteudo().equals(conteudo)) {
-                    it.remove();
-                    return;
-                }
-            }
-        }
+    public void esquecerMidia(String sessaoWhatsapp, String contato) {
+        esquecer(sessaoWhatsapp, contato, MARCA_MIDIA);
     }
 
     public boolean foiEnviadoPeloBot(String contato, String texto) {
-        String chave = chave(contato);
+        return foiEnviadoPeloBot(SESSAO_PADRAO, contato, texto);
+    }
+
+    public boolean foiEnviadoPeloBot(String sessaoWhatsapp, String contato, String texto) {
+        String chave = chave(sessaoWhatsapp, contato);
         if (chave.isEmpty()) {
             return false;
         }
@@ -91,8 +96,25 @@ public class RegistroEnviosBot {
         return false;
     }
 
-    private void registrar(String contato, String conteudo) {
-        String chave = chave(contato);
+    private void esquecer(String sessaoWhatsapp, String contato, String conteudo) {
+        String chave = chave(sessaoWhatsapp, contato);
+        Deque<Envio> fila = chave.isEmpty() ? null : envios.get(chave);
+        if (fila == null || conteudo.isEmpty()) {
+            return;
+        }
+        synchronized (fila) {
+            Iterator<Envio> it = fila.descendingIterator();
+            while (it.hasNext()) {
+                if (it.next().conteudo().equals(conteudo)) {
+                    it.remove();
+                    return;
+                }
+            }
+        }
+    }
+
+    private void registrar(String sessaoWhatsapp, String contato, String conteudo) {
+        String chave = chave(sessaoWhatsapp, contato);
         if (chave.isEmpty() || conteudo.isEmpty()) {
             return;
         }
@@ -130,11 +152,18 @@ public class RegistroEnviosBot {
         }
     }
 
-    private String chave(String contato) {
+    private String chave(String sessaoWhatsapp, String contato) {
         if (contato == null || contato.isBlank()) {
             return "";
         }
-        return WhatsappUtil.normalizarParaChaveEstado(contato);
+        String norm = WhatsappUtil.normalizarParaChaveEstado(contato);
+        if (norm.isEmpty()) {
+            return "";
+        }
+        String sessaoNorm = (sessaoWhatsapp == null || sessaoWhatsapp.isBlank())
+                ? SESSAO_PADRAO
+                : sessaoWhatsapp.trim();
+        return sessaoNorm + "|" + norm;
     }
 
     private String normalizar(String texto) {

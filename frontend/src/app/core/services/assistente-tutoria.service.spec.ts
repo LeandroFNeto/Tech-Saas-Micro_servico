@@ -92,4 +92,22 @@ describe('AssistenteTutoriaService', () => {
     expect(req.request.body).toEqual(payload);
     req.flush(mockResp);
   });
+
+  it('conversarPublico faz requisicao POST para endpoint publico de suporte', () => {
+    const payload = { mensagem: 'Quem é a Gamb?', origem: 'LOGIN' as const };
+    const mockResp: AssistenteChatResponseDTO = {
+      resposta: 'Somos uma plataforma de automação.',
+      modo: 'SUPORTE',
+      dataHora: '2026-11-03T14:30:05Z'
+    };
+
+    service.conversarPublico(payload).subscribe((res) => {
+      expect(res.resposta).toBe('Somos uma plataforma de automação.');
+    });
+
+    const req = httpMock.expectOne(`${environment.apiUrl}/api/publico/assistente/suporte`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual(payload);
+    req.flush(mockResp);
+  });
 });

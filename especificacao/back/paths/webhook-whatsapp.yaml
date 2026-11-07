@@ -13,6 +13,13 @@ post:
 
     Número e conteúdo das mensagens saem mascarados nos logs, e o e-mail dos responsáveis não aparece em log.
   operationId: receberMensagem
+  parameters:
+  - name: x-webhook-token
+    in: header
+    description: Segredo compartilhado enviado pelo WPPConnect para autenticar a origem do webhook
+    required: true
+    schema:
+      type: string
   requestBody:
     content:
       application/json:
@@ -22,3 +29,5 @@ post:
   responses:
     "200":
       description: Evento aceito. Mensagens filtradas, descartadas, recusadas, acima do limite diário ou de número não autorizado também retornam 200 para o WPPConnect não reenviar.
+    "401":
+      description: Cabeçalho x-webhook-token ausente, inválido ou segredo não configurado no ambiente.

@@ -5,7 +5,10 @@ import com.example.demo.servico.observador.Observadorwhatsapp;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.MediaType;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.test.web.client.MockRestServiceServer;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -17,6 +20,9 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
 class ServicoMensagemTest {
 
@@ -42,14 +48,14 @@ class ServicoMensagemTest {
     void registraAntesDeEnviar() {
         AtomicBoolean registradoDuranteOEnvio = new AtomicBoolean();
         doAnswer(invocacao -> {
-            registradoDuranteOEnvio.set(registro.foiEnviadoPeloBot(CONTATO, "Olá!"));
+            registradoDuranteOEnvio.set(registro.foiEnviadoPeloBot("sessao", CONTATO, "Olá!"));
             return null;
         }).when(servico).postWpp(eq("sessao"), eq("/send-message"), anyMap());
 
         servico.enviarMensagemWPP(empresa, CONTATO, "Olá!");
 
         assertThat(registradoDuranteOEnvio).isTrue();
-        assertThat(registro.foiEnviadoPeloBot(CONTATO, "Olá!")).isTrue();
+        assertThat(registro.foiEnviadoPeloBot("sessao", CONTATO, "Olá!")).isTrue();
     }
 
     @Test
@@ -59,7 +65,7 @@ class ServicoMensagemTest {
 
         servico.enviarMensagemWPP(empresa, CONTATO, "Olá!");
 
-        assertThat(registro.foiEnviadoPeloBot(CONTATO, "Olá!")).isFalse();
+        assertThat(registro.foiEnviadoPeloBot("sessao", CONTATO, "Olá!")).isFalse();
     }
 
     @Test
@@ -67,13 +73,33 @@ class ServicoMensagemTest {
     void registraImagemAntesDeEnviar() {
         AtomicBoolean registradoDuranteOEnvio = new AtomicBoolean();
         doAnswer(invocacao -> {
-            registradoDuranteOEnvio.set(registro.foiEnviadoPeloBot(CONTATO, "legenda"));
+            registradoDuranteOEnvio.set(registro.foiEnviadoPeloBot("sessao", CONTATO, "legenda"));
             throw new RuntimeException("falha");
         }).when(servico).postWpp(eq("sessao"), eq("/send-image"), anyMap());
 
         servico.enviarImagemWPP(empresa, CONTATO, "https://x.com/a.png", "legenda");
 
         assertThat(registradoDuranteOEnvio).isTrue();
-        assertThat(registro.foiEnviadoPeloBot(CONTATO, "legenda")).isFalse();
+        assertThat(registro.foiEnviadoPeloBot("sessao", CONTATO, "legenda")).isFalse();
+    }
+
+    @Test
+    @DisplayName("Usa wppconnect.url configurável e RestTemplate injetado no envio HTTP")
+    void usaUrlConfiguravelERestTemplateInjetado() {
+        RestTemplate rt = new RestTemplate();
+        MockRestServiceServer server = MockRestServiceServer.createServer(rt);
+        ServicoWppConnect wpp = mock(ServicoWppConnect.class);
+        when(wpp.obterToken("sessao")).thenReturn("tok-123");
+
+        ServicoMensagem real = new ServicoMensagem(rt, "http://gateway-custom:9999/");
+        ReflectionTestUtils.setField(real, "registroEnviosBot", registro);
+        ReflectionTestUtils.setField(real, "observador", mock(Observadorwhatsapp.class));
+        ReflectionTestUtils.setField(real, "wppConnectService", wpp);
+
+        server.expect(requestTo("http://gateway-custom:9999/api/sessao/send-message"))
+                .andRespond(withSuccess("{}", MediaType.APPLICATION_JSON));
+
+        assertThat(real.tentarEnviarMensagemWPP(empresa, CONTATO, "Teste")).isTrue();
+        server.verify();
     }
 }

@@ -8,10 +8,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Catálogo dos códigos enviados em modulosIniciais / modulosAtivos.
- * Preenche texto de menu e usaIA sem expor a entidade no JSON.
- */
 public final class CatalogoModulos {
 
     private static final Map<String, String> TEXTOS = new LinkedHashMap<>();
@@ -58,7 +54,7 @@ public final class CatalogoModulos {
             empresa.getModulosAtivos().add(modulo);
         }
 
-        empresa.setUsaIA(codigos.stream().anyMatch(c -> "IA_GEMINI".equals(c)));
+        empresa.setUsaIA(codigos.stream().anyMatch(c -> c != null && "IA_GEMINI".equals(c.trim())));
     }
 
     public static boolean isCodigoMenuBot(String codigo) {
@@ -72,9 +68,6 @@ public final class CatalogoModulos {
         return TEXTOS.getOrDefault(codigo.trim(), codigo.trim());
     }
 
-    /**
-     * Atualiza texto e ativo de um item do menu do bot sem apagar módulos de infraestrutura.
-     */
     public static void upsertItemMenu(Empresa empresa, String codigoAcao, String textoMenu, Boolean ativo) {
         if (!isCodigoMenuBot(codigoAcao)) {
             return;

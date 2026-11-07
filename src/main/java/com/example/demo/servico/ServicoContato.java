@@ -11,9 +11,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 @Service
 public class ServicoContato {
+
+    private static final ZoneId FUSO_BRASILIA = ZoneId.of("America/Sao_Paulo");
 
     @Autowired
     private ContatoRepository contatoRepository;
@@ -30,7 +33,7 @@ public class ServicoContato {
         String digitos = WhatsappUtil.extrairApenasNumeros(whatsappId);
         String finalTelefone = digitos.length() >= 4 ? digitos.substring(digitos.length() - 4) : digitos;
 
-        LocalDateTime agora = LocalDateTime.now();
+        LocalDateTime agora = LocalDateTime.now(FUSO_BRASILIA);
 
         Contato contato = contatoRepository.findByEmpresaIdAndNumeroIndice(empresa.getId(), numeroIndice)
                 .orElseGet(() -> {

@@ -23,7 +23,7 @@ public class LimitadorPorIp {
     }
 
     LimitadorPorIp(Clock clock) {
-        this.clock = clock;
+        this.clock = clock == null ? Clock.systemUTC() : clock;
     }
 
     public boolean permitir(String ip) {
@@ -44,7 +44,8 @@ public class LimitadorPorIp {
         });
 
         if (acessos.size() > 10_000) {
-            acessos.values().removeIf(fila -> fila.isEmpty() || fila.peekLast() <= inicioJanela);
+            acessos.forEach((chave, ignorado) -> acessos.computeIfPresent(chave, (ch, fila) ->
+                    (fila.isEmpty() || fila.peekLast() <= inicioJanela) ? null : fila));
         }
         return permitido[0];
     }

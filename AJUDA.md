@@ -125,5 +125,6 @@ Diretriz mandatória: o que for passível de automação determinística local d
 | Script / Comando | Descrição |
 |---|---|
 | `powershell -ExecutionPolicy Bypass -File scripts/verificar-codigo-limpo.ps1` | Verifica a ausência de comentários proibidos (`//` e `/* */`) nos arquivos `.java`, `.ts`, `.html` e `.css` alterados no git. Adicione `-Todos` para inspecionar todo o projeto. |
+| `powershell -ExecutionPolicy Bypass -File scripts/auditar-kirito.ps1` | Auditoria determinística do `/kirito`: detecta testes Java vazios ou sem `@Test`, unidades Angular sem `.spec.ts`, `fit`/`xit`/`@Disabled` e valida código limpo. Adicione `-ComRegressao` para rodar toda a suíte. |
 | `powershell -ExecutionPolicy Bypass -File scripts/testar-tudo.ps1` | Executa a bateria unificada de testes (Backend Maven e Frontend Karma Headless). Suporta `-ApenasBackend` e `-ApenasFrontend`. |
 | `bash scripts/deploy-hostinger.sh` | Atualiza o código no VPS Hostinger e sobe os containers com Docker Compose. Acionado via GitHub Actions (`.github/workflows/deploy.yml`) ou manualmente via SSH. |

@@ -91,6 +91,13 @@ class ControllerWhatsappTest {
                 "admin-api-key", null, List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))));
     }
 
+    private void autenticarComoAdminLeitura() {
+        Usuario usuario = new Usuario();
+        usuario.setRole(Role.ADMIN_LEITURA);
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(usuario, null, usuario.getAuthorities()));
+    }
+
     @Test
     @DisplayName("Deve ignorar mensagem quando for enviada pelo dono (Anti-X9)")
     void deveIgnorarMensagemDono() throws Exception {
@@ -105,19 +112,20 @@ class ControllerWhatsappTest {
         """;
 
         mockMvc.perform(post("/webhook/whatsapp")
+                        .header("x-webhook-token", "segredo-webhook-teste")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload))
                 .andExpect(status().isOk());
 
         verify(observador).logFiltro(eq("teste-sessao"), anyString(), contains("Anti-X9"));
-        verify(gerenciadorSessao).ativarTravaProprietario("551188887777");
+        verify(gerenciadorSessao).ativarTravaProprietario("teste-sessao", "551188887777");
         verifyNoInteractions(moduloFactory);
     }
 
     @Test
     @DisplayName("Resposta enviada pelo bot que volta com fromMe=true não liga a trava")
     void naoDeveLigarTravaQuandoEcoDoBot() throws Exception {
-        when(registroEnviosBot.foiEnviadoPeloBot(anyString(), anyString())).thenReturn(true);
+        when(registroEnviosBot.foiEnviadoPeloBot(anyString(), anyString(), anyString())).thenReturn(true);
 
         String payload = """
             {
@@ -130,12 +138,13 @@ class ControllerWhatsappTest {
         """;
 
         mockMvc.perform(post("/webhook/whatsapp")
+                        .header("x-webhook-token", "segredo-webhook-teste")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload))
                 .andExpect(status().isOk());
 
         verify(observador).logFiltro(eq("teste-sessao"), anyString(), contains("Eco do bot ignorado"));
-        verify(gerenciadorSessao, never()).ativarTravaProprietario(anyString());
+        verify(gerenciadorSessao, never()).ativarTravaProprietario(anyString(), anyString());
         verifyNoInteractions(moduloFactory);
     }
 
@@ -155,12 +164,13 @@ class ControllerWhatsappTest {
         """;
 
         mockMvc.perform(post("/webhook/whatsapp")
+                        .header("x-webhook-token", "segredo-webhook-teste")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload))
                 .andExpect(status().isOk());
 
-        verify(gerenciadorSessao).ativarTravaProprietario("185336529469528");
-        verify(gerenciadorSessao, never()).ativarTravaProprietario("551100000000");
+        verify(gerenciadorSessao).ativarTravaProprietario("teste-sessao", "185336529469528");
+        verify(gerenciadorSessao, never()).ativarTravaProprietario("teste-sessao", "551100000000");
     }
 
     @Test
@@ -178,17 +188,18 @@ class ControllerWhatsappTest {
         """;
 
         mockMvc.perform(post("/webhook/whatsapp")
+                        .header("x-webhook-token", "segredo-webhook-teste")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload))
                 .andExpect(status().isOk());
 
-        verify(gerenciadorSessao).registrarApelido("185336529469528@lid", "5511988887777@c.us");
+        verify(gerenciadorSessao).registrarApelido("teste-sessao", "185336529469528@lid", "5511988887777@c.us");
     }
 
     @Test
     @DisplayName("Deve pausar atendimento e não responder quando trava do proprietário estiver ativa")
     void devePausarAtendimentoQuandoTravaProprietarioEstiverAtiva() throws Exception {
-        when(gerenciadorSessao.estaComTravaProprietarioAtiva("551188887777")).thenReturn(true);
+        when(gerenciadorSessao.estaComTravaProprietarioAtiva("teste-sessao", "551188887777")).thenReturn(true);
 
         String payload = """
             {
@@ -201,6 +212,7 @@ class ControllerWhatsappTest {
         """;
 
         mockMvc.perform(post("/webhook/whatsapp")
+                        .header("x-webhook-token", "segredo-webhook-teste")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload))
                 .andExpect(status().isOk());
@@ -225,6 +237,7 @@ class ControllerWhatsappTest {
         """, timestampMuitoAntigo);
 
         mockMvc.perform(post("/webhook/whatsapp")
+                        .header("x-webhook-token", "segredo-webhook-teste")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload))
                 .andExpect(status().isOk());
@@ -245,6 +258,7 @@ class ControllerWhatsappTest {
         """;
 
         mockMvc.perform(post("/webhook/whatsapp")
+                        .header("x-webhook-token", "segredo-webhook-teste")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload))
                 .andExpect(status().isOk());
@@ -265,6 +279,7 @@ class ControllerWhatsappTest {
         """;
 
         mockMvc.perform(post("/webhook/whatsapp")
+                        .header("x-webhook-token", "segredo-webhook-teste")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload))
                 .andExpect(status().isOk());
@@ -292,11 +307,40 @@ class ControllerWhatsappTest {
         """;
 
         mockMvc.perform(post("/webhook/whatsapp")
+                        .header("x-webhook-token", "segredo-webhook-teste")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload))
                 .andExpect(status().isOk());
 
-        verify(gerenciadorSessao).getEstado("551188887777");
+        verify(gerenciadorSessao).getEstado("teste-sessao", "551188887777");
+    }
+
+    @Test
+    @DisplayName("Deve ignorar mensagem no webhook quando empresa estiver inativa (ativo=false)")
+    void deveIgnorarMensagemQuandoEmpresaInativa() throws Exception {
+        Empresa inativa = new Empresa();
+        inativa.setSessaoWhatsapp("teste-sessao");
+        inativa.setAtivo(false);
+        when(empresaRepository.buscarPorSessaoComModulos("teste-sessao")).thenReturn(inativa);
+
+        String payload = """
+            {
+                "session": "teste-sessao",
+                "from": "5511988887777@c.us",
+                "body": "Quero alugar",
+                "type": "chat",
+                "fromMe": false
+            }
+        """;
+
+        mockMvc.perform(post("/webhook/whatsapp")
+                        .header("x-webhook-token", "segredo-webhook-teste")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload))
+                .andExpect(status().isOk());
+
+        verifyNoInteractions(moduloFactory);
+        verifyNoInteractions(servicoMensagem);
     }
 
     @Test
@@ -323,6 +367,7 @@ class ControllerWhatsappTest {
             """;
 
         mockMvc.perform(post("/webhook/whatsapp")
+                        .header("x-webhook-token", "segredo-webhook-teste")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload))
                 .andExpect(status().isOk());
@@ -356,10 +401,12 @@ class ControllerWhatsappTest {
             """;
 
         mockMvc.perform(post("/webhook/whatsapp")
+                        .header("x-webhook-token", "segredo-webhook-teste")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(presenca))
                 .andExpect(status().isOk());
         mockMvc.perform(post("/webhook/whatsapp")
+                        .header("x-webhook-token", "segredo-webhook-teste")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(ack))
                 .andExpect(status().isOk());
@@ -378,7 +425,7 @@ class ControllerWhatsappTest {
         empresa.setNome("Recanto Teste");
 
         when(empresaRepository.buscarPorSessaoComModulos("teste-sessao")).thenReturn(empresa);
-        when(gerenciadorSessao.getEstado(anyString())).thenReturn(EstadoUsuario.INICIO);
+        when(gerenciadorSessao.getEstado(anyString(), anyString())).thenReturn(EstadoUsuario.INICIO);
         when(moduloFactory.obterEstrategia("LOCACAO")).thenReturn(locacaoStrategy);
         when(servicoMenu.montarMenuPrincipal(any())).thenReturn("Olá! Digite 1, 2 ou 3.");
 
@@ -404,12 +451,13 @@ class ControllerWhatsappTest {
             """;
 
         mockMvc.perform(post("/webhook/whatsapp")
+                        .header("x-webhook-token", "segredo-webhook-teste")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload))
                 .andExpect(status().isOk());
 
         verify(servicoMensagem).enviarMensagemWPP(any(), anyString(), contains("Digite 1, 2 ou 3"));
-        verify(gerenciadorSessao).setEstado(anyString(), eq(EstadoUsuario.MENU_PRINCIPAL));
+        verify(gerenciadorSessao).setEstado(eq("teste-sessao"), anyString(), eq(EstadoUsuario.MENU_PRINCIPAL));
     }
 
     @Test
@@ -422,7 +470,7 @@ class ControllerWhatsappTest {
         empresa.setNome("Recanto Teste");
 
         when(empresaRepository.buscarPorSessaoComModulos("RecantoBot")).thenReturn(empresa);
-        when(gerenciadorSessao.getEstado(anyString())).thenReturn(EstadoUsuario.INICIO);
+        when(gerenciadorSessao.getEstado(anyString(), anyString())).thenReturn(EstadoUsuario.INICIO);
         when(moduloFactory.obterEstrategia("LOCACAO")).thenReturn(locacaoStrategy);
         when(servicoMenu.montarMenuPrincipal(any())).thenReturn("Olá! Digite 1, 2 ou 3.");
 
@@ -441,13 +489,14 @@ class ControllerWhatsappTest {
             """;
 
         mockMvc.perform(post("/webhook/whatsapp")
+                        .header("x-webhook-token", "segredo-webhook-teste")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload))
                 .andExpect(status().isOk());
 
         verify(moduloFactory).obterEstrategia("LOCACAO");
         verify(servicoMensagem).enviarMensagemWPP(any(), eq("276974622781686@lid"), contains("Digite 1, 2 ou 3"));
-        verify(gerenciadorSessao).setEstado(anyString(), eq(EstadoUsuario.MENU_PRINCIPAL));
+        verify(gerenciadorSessao).setEstado(eq("RecantoBot"), anyString(), eq(EstadoUsuario.MENU_PRINCIPAL));
         verify(observador).logSucesso(eq("RecantoBot"), eq("276974622781686@lid"), contains("Oi, quero reservar"));
     }
 
@@ -461,7 +510,7 @@ class ControllerWhatsappTest {
         empresa.setNome("Recanto Teste");
 
         when(empresaRepository.buscarPorSessaoComModulos("teste-sessao")).thenReturn(empresa);
-        when(gerenciadorSessao.getEstado(anyString())).thenReturn(EstadoUsuario.INICIO);
+        when(gerenciadorSessao.getEstado(anyString(), anyString())).thenReturn(EstadoUsuario.INICIO);
         when(moduloFactory.obterEstrategia("LOCACAO")).thenReturn(locacaoStrategy);
         when(servicoMenu.montarMenuPrincipal(any())).thenReturn("Olá! Digite 1, 2 ou 3.");
 
@@ -475,12 +524,13 @@ class ControllerWhatsappTest {
             """;
 
         mockMvc.perform(post("/webhook/whatsapp")
+                        .header("x-webhook-token", "segredo-webhook-teste")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload))
                 .andExpect(status().isOk());
 
         verify(servicoMensagem).enviarMensagemWPP(any(), anyString(), contains("Digite 1, 2 ou 3"));
-        verify(gerenciadorSessao).setEstado(anyString(), eq(EstadoUsuario.MENU_PRINCIPAL));
+        verify(gerenciadorSessao).setEstado(eq("teste-sessao"), anyString(), eq(EstadoUsuario.MENU_PRINCIPAL));
     }
 
     @Test
@@ -493,7 +543,7 @@ class ControllerWhatsappTest {
         empresa.setNome("Recanto Teste");
 
         when(empresaRepository.buscarPorSessaoComModulos("teste-sessao")).thenReturn(empresa);
-        when(gerenciadorSessao.getEstado(anyString())).thenReturn(EstadoUsuario.INICIO);
+        when(gerenciadorSessao.getEstado(anyString(), anyString())).thenReturn(EstadoUsuario.INICIO);
         when(moduloFactory.obterEstrategia("LOCACAO")).thenReturn(locacaoStrategy);
         when(servicoMenu.montarMenuPrincipal(any())).thenReturn("Olá! Digite 1, 2 ou 3.");
 
@@ -508,12 +558,13 @@ class ControllerWhatsappTest {
         """;
 
         mockMvc.perform(post("/webhook/whatsapp")
+                        .header("x-webhook-token", "segredo-webhook-teste")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload))
                 .andExpect(status().isOk());
 
         verify(servicoMensagem).enviarMensagemWPP(any(), anyString(), contains("Digite 1, 2 ou 3"));
-        verify(gerenciadorSessao).setEstado(anyString(), eq(EstadoUsuario.MENU_PRINCIPAL));
+        verify(gerenciadorSessao).setEstado(eq("teste-sessao"), anyString(), eq(EstadoUsuario.MENU_PRINCIPAL));
     }
 
     @Test
@@ -555,6 +606,27 @@ class ControllerWhatsappTest {
 
         verify(servicoWppConnect).consultarStatus("sessao_recanto_01");
         verify(servicoWppConnect).iniciarSessao("sessao_recanto_01");
+    }
+
+    @Test
+    @DisplayName("POST /whatsapp/{sessao}/iniciar recusa ADMIN_LEITURA com 403 enquanto GET /status permite")
+    void deveBloquearIniciarSessaoParaAdminLeitura() throws Exception {
+        Empresa empresa = new Empresa();
+        empresa.setSessaoWhatsapp("sessao_recanto_01");
+        when(empresaRepository.findBySessaoWhatsapp("sessao_recanto_01")).thenReturn(empresa);
+        when(servicoWppConnect.consultarStatus("sessao_recanto_01"))
+                .thenReturn(new SessaoStatusResponseDTO("sessao_recanto_01", "CONNECTED", null));
+        autenticarComoAdminLeitura();
+
+        mockMvc.perform(get("/whatsapp/sessao_recanto_01/status"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("CONNECTED"));
+
+        mockMvc.perform(post("/whatsapp/sessao_recanto_01/iniciar"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.status").value("DISCONNECTED"));
+
+        verify(servicoWppConnect, never()).iniciarSessao(anyString());
     }
 
     @Test
@@ -694,12 +766,13 @@ class ControllerWhatsappTest {
         """;
 
         mockMvc.perform(post("/webhook/whatsapp")
+                        .header("x-webhook-token", "segredo-webhook-teste")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload))
                 .andExpect(status().isOk());
 
         verify(observador).logFiltro(eq("teste-sessao"), anyString(), contains("Anti-X9"));
-        verify(gerenciadorSessao).ativarTravaProprietario("551188887777");
+        verify(gerenciadorSessao).ativarTravaProprietario("teste-sessao", "551188887777");
         verifyNoInteractions(moduloFactory);
     }
 
@@ -718,17 +791,18 @@ class ControllerWhatsappTest {
         """;
 
         mockMvc.perform(post("/webhook/whatsapp")
+                        .header("x-webhook-token", "segredo-webhook-teste")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload))
                 .andExpect(status().isOk());
 
-        verify(gerenciadorSessao).ativarTravaProprietario("551188887777");
+        verify(gerenciadorSessao).ativarTravaProprietario("teste-sessao", "551188887777");
     }
 
     @Test
     @DisplayName("Eco do bot em onselfmessage não liga a trava")
     void ecoDoBotEmOnselfmessageNaoLigaATrava() throws Exception {
-        when(registroEnviosBot.foiEnviadoPeloBot(anyString(), anyString())).thenReturn(true);
+        when(registroEnviosBot.foiEnviadoPeloBot(anyString(), anyString(), anyString())).thenReturn(true);
         String payload = """
             {
                 "event": "onselfmessage",
@@ -742,10 +816,58 @@ class ControllerWhatsappTest {
         """;
 
         mockMvc.perform(post("/webhook/whatsapp")
+                        .header("x-webhook-token", "segredo-webhook-teste")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload))
                 .andExpect(status().isOk());
 
-        verify(gerenciadorSessao, never()).ativarTravaProprietario(anyString());
+        verify(gerenciadorSessao, never()).ativarTravaProprietario(anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("POST /webhook/whatsapp sem cabeçalho x-webhook-token retorna 401")
+    void deveRecusarWebhookSemTokenCom401() throws Exception {
+        String payload = """
+            {
+                "session": "teste-sessao",
+                "from": "5511988887777@c.us",
+                "body": "Oi",
+                "type": "chat",
+                "fromMe": false
+            }
+        """;
+
+        mockMvc.perform(post("/webhook/whatsapp")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload))
+                .andExpect(status().isUnauthorized());
+
+        verifyNoInteractions(moduloFactory);
+        verifyNoInteractions(servicoWppConnect);
+        verifyNoInteractions(empresaRepository);
+    }
+
+    @Test
+    @DisplayName("POST /webhook/whatsapp com cabeçalho x-webhook-token incorreto retorna 401")
+    void deveRecusarWebhookComTokenIncorretoCom401() throws Exception {
+        String payload = """
+            {
+                "session": "teste-sessao",
+                "from": "5511988887777@c.us",
+                "body": "Oi",
+                "type": "chat",
+                "fromMe": false
+            }
+        """;
+
+        mockMvc.perform(post("/webhook/whatsapp")
+                        .header("x-webhook-token", "token-errado")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload))
+                .andExpect(status().isUnauthorized());
+
+        verifyNoInteractions(moduloFactory);
+        verifyNoInteractions(servicoWppConnect);
+        verifyNoInteractions(empresaRepository);
     }
 }

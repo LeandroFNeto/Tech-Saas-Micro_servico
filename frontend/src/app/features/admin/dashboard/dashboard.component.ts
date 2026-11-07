@@ -1,7 +1,7 @@
 import { DatePipe } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { Subject, catchError, forkJoin, of, switchMap, takeUntil, timer } from 'rxjs';
+import { Subject, catchError, forkJoin, merge, of, switchMap, takeUntil, timer } from 'rxjs';
 import { mensagemHttp } from '../../../core/interceptors/auth.interceptor';
 import { AuthService } from '../../../core/services/auth.service';
 import { EmpresaService } from '../../../core/services/empresa.service';
@@ -19,6 +19,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private readonly empresasApi = inject(EmpresaService);
   private readonly whatsapp = inject(WhatsappConnectionService);
   private readonly destroy$ = new Subject<void>();
+  private readonly atualizarStatus$ = new Subject<void>();
 
   readonly empresas = signal<EmpresaView[]>([]);
   readonly statusPorSessao = signal<Record<string, StatusSessaoWhatsapp>>({});
@@ -26,8 +27,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   readonly erro = signal('');
 
   ngOnInit(): void {
-    this.carregar();
-    timer(0, 5000)
+    merge(this.atualizarStatus$, timer(5000, 5000))
       .pipe(
         takeUntil(this.destroy$),
         switchMap(() => this.consultarSessoes())
@@ -39,6 +39,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         }
         this.statusPorSessao.set(mapa);
       });
+    this.carregar();
   }
 
   ngOnDestroy(): void {
@@ -56,6 +57,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         next: (lista) => {
           this.empresas.set(lista);
           this.carregando.set(false);
+          this.atualizarStatus$.next();
         },
         error: (err) => {
           this.erro.set(mensagemHttp(err));

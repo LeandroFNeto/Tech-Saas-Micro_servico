@@ -24,6 +24,10 @@ export class AuthService {
   ) {}
 
   token(): string | null {
+    if (!this.isAuthenticated()) {
+      this.limparStorage();
+      return null;
+    }
     return localStorage.getItem(CHAVE_JWT);
   }
 
@@ -73,15 +77,38 @@ export class AuthService {
   }
 
   logout(): void {
+    this.limparStorage();
+    void this.router.navigateByUrl('/login');
+  }
+
+  decodificarPayload(token: string): Record<string, unknown> | null {
+    try {
+      const parte = token.split('.')[1];
+      if (!parte) {
+        return null;
+      }
+      const base64 = parte.replace(/-/g, '+').replace(/_/g, '/');
+      const pad = base64.length % 4 === 0 ? '' : '='.repeat(4 - (base64.length % 4));
+      const binario = atob(base64 + pad);
+      const bytes = Uint8Array.from(binario, (c) => c.charCodeAt(0));
+      const json = new TextDecoder('utf-8').decode(bytes);
+      return JSON.parse(json) as Record<string, unknown>;
+    } catch {
+      return null;
+    }
+  }
+
+  private limparStorage(): void {
     localStorage.removeItem(CHAVE_JWT);
     localStorage.removeItem(CHAVE_SESSAO);
-    this.sessao.set(null);
-    void this.router.navigateByUrl('/login');
+    if (this.sessao() !== null) {
+      this.sessao.set(null);
+    }
   }
 
   private persistir(resposta: LoginResponse): void {
     localStorage.setItem(CHAVE_JWT, resposta.token);
-    const claims = this.decodificarJwt(resposta.token);
+    const claims = this.decodificarPayload(resposta.token);
     const payload: SessaoUsuario = {
       sub: resposta.email,
       nome: resposta.nome ?? String(claims?.['nome'] ?? resposta.email),
@@ -93,19 +120,6 @@ export class AuthService {
     this.sessao.set(payload);
   }
 
-  private decodificarJwt(token: string): Record<string, unknown> | null {
-    try {
-      const parte = token.split('.')[1];
-      if (!parte) {
-        return null;
-      }
-      const json = atob(parte.replace(/-/g, '+').replace(/_/g, '/'));
-      return JSON.parse(json) as Record<string, unknown>;
-    } catch {
-      return null;
-    }
-  }
-
   private lerSessao(): SessaoUsuario | null {
     const bruto = localStorage.getItem(CHAVE_SESSAO);
     if (!bruto) {
@@ -114,13 +128,15 @@ export class AuthService {
 
     try {
       const parsed = JSON.parse(bruto) as SessaoUsuario;
-      if (parsed.exp <= Date.now()) {
+      if (!parsed || typeof parsed.exp !== 'number' || parsed.exp <= Date.now()) {
         localStorage.removeItem(CHAVE_JWT);
         localStorage.removeItem(CHAVE_SESSAO);
         return null;
       }
       return parsed;
     } catch {
+      localStorage.removeItem(CHAVE_JWT);
+      localStorage.removeItem(CHAVE_SESSAO);
       return null;
     }
   }

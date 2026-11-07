@@ -1,12 +1,15 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, HostListener, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { mensagemHttp } from '../../../core/interceptors/auth.interceptor';
 import { AuthService } from '../../../core/services/auth.service';
 import { AutomacaoService, ContatoResumoDTO, ReservaResumoDTO } from '../../../core/services/automacao.service';
 import { EmpresaService } from '../../../core/services/empresa.service';
 import contentData from '../../../../../../especificacao/front/cliente-automacao.content.json';
 
 type AbaAtiva = 'lembrete' | 'reservas' | 'contatos';
+
+const PADRAO_HORARIO = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 @Component({
   selector: 'app-automacao',
@@ -40,15 +43,24 @@ export class AutomacaoComponent implements OnInit {
   readonly contatoIdSelecionado = signal<number | null>(null);
   readonly novoTelefone = signal<string>('');
   readonly vinculandoContato = signal<boolean>(false);
+  readonly erroModalContato = signal<string | null>(null);
 
   readonly contatos = signal<ContatoResumoDTO[]>([]);
   readonly carregandoContatos = signal<boolean>(false);
+  readonly erroContatos = signal<string | null>(null);
   readonly numerosRevelados = signal<Record<number, string>>({});
   readonly revelandoContatoId = signal<number | null>(null);
   readonly avisoLimite = signal<string | null>(null);
 
   ngOnInit(): void {
     this.carregarDadosEmpresa();
+  }
+
+  @HostListener('document:keydown.escape')
+  aoPressionarEscape(): void {
+    if (this.modalContatoAberto()) {
+      this.fecharModalContato();
+    }
   }
 
   sessao(): string {
@@ -67,14 +79,19 @@ export class AutomacaoComponent implements OnInit {
   carregarDadosEmpresa(): void {
     const s = this.sessao();
     if (!s) return;
+    this.lembreteMensagemErro.set(null);
     this.empresaService.buscarPorSessao(s).subscribe({
       next: (emp) => {
-        if (emp.lembrete) {
-          this.lembreteModo.set(emp.lembrete.modo ?? 'DESLIGADO');
-          this.lembreteDiasAntes.set(emp.lembrete.diasAntes ?? 1);
-          this.lembreteHorarioEnvio.set(emp.lembrete.horarioEnvio ?? '10:00');
-          this.lembreteTexto.set(emp.lembrete.texto ?? '');
+        const cfg = emp.lembreteConfirmacao;
+        if (cfg) {
+          this.lembreteModo.set(cfg.modo ?? 'DESLIGADO');
+          this.lembreteDiasAntes.set(cfg.diasAntes ?? 1);
+          this.lembreteHorarioEnvio.set(cfg.horarioEnvio ?? '10:00');
+          this.lembreteTexto.set(cfg.texto ?? '');
         }
+      },
+      error: (err: unknown) => {
+        this.lembreteMensagemErro.set(mensagemHttp(err));
       }
     });
   }
@@ -82,12 +99,23 @@ export class AutomacaoComponent implements OnInit {
   salvarLembrete(): void {
     const s = this.sessao();
     if (!s) return;
-    this.lembreteSalvando.set(true);
     this.lembreteMensagemSucesso.set(null);
     this.lembreteMensagemErro.set(null);
 
+    if (this.lembreteModo() !== 'DESLIGADO') {
+      if (!PADRAO_HORARIO.test(this.lembreteHorarioEnvio())) {
+        this.lembreteMensagemErro.set('Informe um horário de envio válido no formato HH:mm.');
+        return;
+      }
+      if (this.lembreteTexto().length > 1000) {
+        this.lembreteMensagemErro.set('O texto do lembrete deve ter no máximo 1000 caracteres.');
+        return;
+      }
+    }
+
+    this.lembreteSalvando.set(true);
     this.empresaService.atualizarPeloCliente(s, {
-      lembrete: {
+      lembreteConfirmacao: {
         modo: this.lembreteModo(),
         diasAntes: Number(this.lembreteDiasAntes()),
         horarioEnvio: this.lembreteHorarioEnvio(),
@@ -125,14 +153,16 @@ export class AutomacaoComponent implements OnInit {
   avisarAgora(reserva: ReservaResumoDTO): void {
     const s = this.sessao();
     if (!s) return;
+    this.erroReservas.set(null);
     this.enviandoLembreteId.set(reserva.id);
     this.automacao.enviarLembrete(s, reserva.id).subscribe({
       next: () => {
         this.enviandoLembreteId.set(null);
         this.carregarReservas();
       },
-      error: () => {
+      error: (err: unknown) => {
         this.enviandoLembreteId.set(null);
+        this.erroReservas.set(mensagemHttp(err));
       }
     });
   }
@@ -141,6 +171,7 @@ export class AutomacaoComponent implements OnInit {
     this.reservaParaVincular.set(reserva);
     this.contatoIdSelecionado.set(null);
     this.novoTelefone.set('');
+    this.erroModalContato.set(null);
     this.modalContatoAberto.set(true);
     if (this.contatos().length === 0) {
       this.carregarContatos();
@@ -150,6 +181,7 @@ export class AutomacaoComponent implements OnInit {
   fecharModalContato(): void {
     this.modalContatoAberto.set(false);
     this.reservaParaVincular.set(null);
+    this.erroModalContato.set(null);
   }
 
   confirmarVinculoContato(): void {
@@ -157,18 +189,33 @@ export class AutomacaoComponent implements OnInit {
     const r = this.reservaParaVincular();
     if (!s || !r) return;
 
+    this.erroModalContato.set(null);
+    const contatoId = this.contatoIdSelecionado() ?? undefined;
+    const telefoneTexto = this.novoTelefone().trim();
+    const digitos = telefoneTexto.replace(/\D/g, '');
+
+    if (!contatoId && !telefoneTexto) {
+      this.erroModalContato.set('Selecione um contato existente ou informe um telefone válido.');
+      return;
+    }
+    if (telefoneTexto && (digitos.length < 10 || digitos.length > 13)) {
+      this.erroModalContato.set('Informe um número de telefone válido com DDD.');
+      return;
+    }
+
     this.vinculandoContato.set(true);
     this.automacao.vincularContato(s, r.id, {
-      contatoId: this.contatoIdSelecionado() ?? undefined,
-      numeroTelefone: this.novoTelefone().trim() || undefined
+      contatoId,
+      telefone: telefoneTexto || undefined
     }).subscribe({
       next: () => {
         this.vinculandoContato.set(false);
         this.fecharModalContato();
         this.carregarReservas();
       },
-      error: () => {
+      error: (err: unknown) => {
         this.vinculandoContato.set(false);
+        this.erroModalContato.set(mensagemHttp(err));
       }
     });
   }
@@ -177,13 +224,15 @@ export class AutomacaoComponent implements OnInit {
     const s = this.sessao();
     if (!s) return;
     this.carregandoContatos.set(true);
+    this.erroContatos.set(null);
     this.automacao.listarContatos(s).subscribe({
       next: (dados) => {
         this.contatos.set(dados);
         this.carregandoContatos.set(false);
       },
-      error: () => {
+      error: (err: unknown) => {
         this.carregandoContatos.set(false);
+        this.erroContatos.set(mensagemHttp(err));
       }
     });
   }
@@ -193,23 +242,26 @@ export class AutomacaoComponent implements OnInit {
     if (!s) return;
     this.revelandoContatoId.set(contatoId);
     this.avisoLimite.set(null);
+    this.erroContatos.set(null);
 
     this.automacao.obterNumeroContato(s, contatoId).subscribe({
       next: (res) => {
         this.numerosRevelados.update((ant) => ({ ...ant, [contatoId]: res.numero }));
         this.revelandoContatoId.set(null);
       },
-      error: (err) => {
+      error: (err: { status?: number }) => {
         this.revelandoContatoId.set(null);
-        if (err.status === 429) {
+        if (err?.status === 429) {
           this.avisoLimite.set(this.textos.contatos.avisoLimite);
+        } else {
+          this.erroContatos.set(mensagemHttp(err));
         }
       }
     });
   }
 
   obterTelefoneExibicao(contato: ContatoResumoDTO): string {
-    return this.numerosRevelados()[contato.id] || contato.telefoneMascara;
+    return this.numerosRevelados()[contato.id] || contato.telefoneMascarado;
   }
 
   descricaoSituacao(chave: string): string {

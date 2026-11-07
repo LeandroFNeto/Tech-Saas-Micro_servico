@@ -24,6 +24,7 @@ export interface ServerOptions {
     onPollResponse: boolean;
     onRevokedMessage: boolean;
     onSelfMessage: boolean;
+    secret?: string;
     ignore: string[];
   };
   websocket: {

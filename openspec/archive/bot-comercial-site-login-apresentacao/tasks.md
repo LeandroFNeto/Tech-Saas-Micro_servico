@@ -23,6 +23,6 @@
 ## 4. Documentação e verificação
 
 - [x] 4.1 Atualizar a linha de `assistente-tutoria` em `openspec/specs/README.md` com as provas novas
-- [ ] 4.2 Conferir se o limite por IP enxerga o IP real atrás do nginx; se agrupar visitantes, ler `X-Forwarded-For` em tarefa à parte
-- [ ] 4.3 Rodar `mvn test`, `ng test`, `ng build` e `graphify update .`, e conferir o chat no login e na apresentação a 390px e 1280px
-- [ ] 4.4 Depois de arquivar `ajustes-visuais-chat-flutuante-tutoriais`, reler o requisito "Suporte público no login e na apresentação" junto com os novos e ajustar o texto se ainda disser "mesmo bot de Suporte"
+- [x] 4.2 Conferir se o limite por IP enxerga o IP real atrás do nginx; se agrupar visitantes, ler `X-Forwarded-For` em tarefa à parte
+- [x] 4.3 Rodar `mvn test`, `ng test`, `ng build` e `graphify update .`, e conferir o chat no login e na apresentação a 390px e 1280px
+- [x] 4.4 Depois de arquivar `ajustes-visuais-chat-flutuante-tutoriais`, reler o requisito "Suporte público no login e na apresentação" junto com os novos e ajustar o texto se ainda disser "mesmo bot de Suporte"

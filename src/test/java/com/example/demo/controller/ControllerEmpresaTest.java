@@ -1,6 +1,7 @@
 package com.example.demo.controller;
 
 import com.example.demo.model.Empresa;
+import com.example.demo.model.ModoLembrete;
 import com.example.demo.model.Role;
 import com.example.demo.model.Usuario;
 import com.example.demo.repository.EmpresaRepository;
@@ -29,10 +30,10 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -326,7 +327,7 @@ class ControllerEmpresaTest {
         when(empresaRepository.buscarPorSessaoComModulos("sessao_recanto_01")).thenReturn(empresa);
 
         mockMvc.perform(put("/empresas/sessao_recanto_01/cliente")
-                                                .contentType(MediaType.APPLICATION_JSON)
+                        .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                             {
                               "nome": "Recanto Vista Alegre",
@@ -353,7 +354,7 @@ class ControllerEmpresaTest {
         when(empresaRepository.save(any(Empresa.class))).thenAnswer(invocacao -> invocacao.getArgument(0));
 
         mockMvc.perform(put("/empresas/sessao_recanto_01/cliente")
-                                                .contentType(MediaType.APPLICATION_JSON)
+                        .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                             {
                               "nome": "Recanto Vista Alegre",
@@ -379,7 +380,7 @@ class ControllerEmpresaTest {
         when(empresaRepository.save(any(Empresa.class))).thenAnswer(invocacao -> invocacao.getArgument(0));
 
         mockMvc.perform(put("/empresas/sessao_recanto_01/cliente")
-                                                .contentType(MediaType.APPLICATION_JSON)
+                        .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                             {
                               "nome": "Recanto Vista Alegre"
@@ -716,7 +717,7 @@ class ControllerEmpresaTest {
         when(empresaRepository.save(any(Empresa.class))).thenAnswer(invocacao -> invocacao.getArgument(0));
 
         mockMvc.perform(put("/empresas/sessao_recanto_01/cliente")
-                                                .contentType(MediaType.APPLICATION_JSON)
+                        .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                             {
                               "nome": "Recanto Vista Alegre",
@@ -767,7 +768,7 @@ class ControllerEmpresaTest {
         when(empresaRepository.save(any(Empresa.class))).thenAnswer(invocacao -> invocacao.getArgument(0));
 
         mockMvc.perform(put("/empresas/sessao_recanto_01/cliente")
-                                                .contentType(MediaType.APPLICATION_JSON)
+                        .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                             {
                               "nome": "Recanto Vista Alegre",
@@ -850,7 +851,7 @@ class ControllerEmpresaTest {
     private static final String CORPO_CIDADE = "{\"cidadePrevisao\":\"Atibaia\",\"previsaoTempoAtiva\":true}";
 
     @Test
-    @DisplayName("PUT /empresas/{sessao}/cliente com token legado retorna 403 sem geocodificar, gravar nem gastar contador")
+    @DisplayName("PUT /empresas/{sessao}/cliente com token legado retorna 401 sem geocodificar, gravar nem gastar contador")
     void deveRecusarPutDoClienteComTokenLegado() throws Exception {
         Empresa alvo = empresaDe(10L, "sessao_alvo");
         when(empresaRepository.buscarPorSessaoComModulos("sessao_alvo")).thenReturn(alvo);
@@ -928,7 +929,7 @@ class ControllerEmpresaTest {
     }
 
     @Test
-    @DisplayName("GET /empresas/search/findBySessaoWhatsapp: cliente de outra empresa e token legado recebem 403")
+    @DisplayName("GET /empresas/search/findBySessaoWhatsapp: cliente de outra empresa e token legado recebem 403/401")
     void deveRecusarBuscaPorSessaoDeOutraEmpresa() throws Exception {
         Empresa alvo = empresaDe(10L, "sessao_alvo");
         Empresa intruso = empresaDe(20L, "sessao_intruso");
@@ -946,16 +947,25 @@ class ControllerEmpresaTest {
     }
 
     @Test
-    @DisplayName("GET /empresas/search/findBySessaoWhatsapp: googleCalendarId ausente para o cliente e presente para o admin")
-    void deveEsconderGoogleCalendarIdDoCliente() throws Exception {
+    @DisplayName("GET /empresas/search/findBySessaoWhatsapp: googleCalendarId ausente para o cliente, presente com permitePrevisaoTempo e lembreteConfirmacao")
+    void deveEsconderGoogleCalendarIdDoClienteEDevolverContratoDoPainel() throws Exception {
         Empresa empresa = empresaDe(10L, "sessao_recanto_01");
+        empresa.setPermitePrevisaoTempo(true);
+        empresa.setLembreteModo(ModoLembrete.SUGERIDO);
+        empresa.setLembreteDiasAntes(2);
+        empresa.setLembreteHorarioEnvio("09:30");
         when(empresaRepository.buscarPorSessaoComModulos("sessao_recanto_01")).thenReturn(empresa);
+        when(empresaRepository.findBySessaoWhatsapp("sessao_recanto_01")).thenReturn(empresa);
 
         autenticarComoClienteDe(empresa);
         mockMvc.perform(get("/empresas/search/findBySessaoWhatsapp").param("sessaoWhatsapp", "sessao_recanto_01"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.googleCalendarId").doesNotExist())
-                .andExpect(jsonPath("$.latitude").doesNotExist());
+                .andExpect(jsonPath("$.latitude").doesNotExist())
+                .andExpect(jsonPath("$.permitePrevisaoTempo").value(true))
+                .andExpect(jsonPath("$.lembreteConfirmacao.modo").value("SUGERIDO"))
+                .andExpect(jsonPath("$.lembreteConfirmacao.diasAntes").value(2))
+                .andExpect(jsonPath("$.lembreteConfirmacao.horarioEnvio").value("09:30"));
 
         SecurityContextHolder.clearContext();
         mockMvc.perform(get("/empresas/search/findBySessaoWhatsapp")
@@ -1057,7 +1067,7 @@ class ControllerEmpresaTest {
     }
 
     @Test
-    @DisplayName("PUT /empresas/{sessao}/cliente: rejeita ativar previsão quando admin não liberou")
+    @DisplayName("PUT /empresas/{sessao}/cliente: rejeita ativar previsão quando admin não liberou (EMP-12)")
     void deveRejeitarAtivacaoPrevisaoSemPermissaoDoAdmin() throws Exception {
         Empresa empresa = empresaDe(1L, "sessao_recanto_01");
         empresa.setPermitePrevisaoTempo(false);
@@ -1074,7 +1084,7 @@ class ControllerEmpresaTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
                 .andExpect(status().isBadRequest())
-                .andExpect(status().reason("A previsão do tempo precisa ser liberada pelo administrador."));
+                .andExpect(status().reason("A previsão do tempo não está liberada para esta empresa pelo administrador."));
     }
 
     @Test
@@ -1097,8 +1107,7 @@ class ControllerEmpresaTest {
                         .content(json))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.previsaoTempoAtiva").value(true))
-                .andExpect(jsonPath("$.permitePrevisaoTempo").value(true))
-                .andExpect(jsonPath("$.ativo").value(true));
+                .andExpect(jsonPath("$.permitePrevisaoTempo").value(true));
     }
 
     @Test
@@ -1110,12 +1119,73 @@ class ControllerEmpresaTest {
     }
 
     @Test
-    @DisplayName("POST /empresas recusa com 403 para ADMIN_LEITURA")
-    void deveRecusarCriacaoParaAdminLeitura() throws Exception {
+    @DisplayName("POST /empresas e PUT /empresas/{sessao}/cliente recusam com 403 para ADMIN_LEITURA")
+    void deveRecusarEscritaParaAdminLeitura() throws Exception {
         autenticarComoRole(Role.ADMIN_LEITURA);
         mockMvc.perform(post("/empresas")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(corpoPost("")))
                 .andExpect(status().isForbidden());
+
+        Empresa empresa = empresaDe(1L, "sessao_recanto_01");
+        when(empresaRepository.findBySessaoWhatsapp("sessao_recanto_01")).thenReturn(empresa);
+        when(empresaRepository.buscarPorSessaoComModulos("sessao_recanto_01")).thenReturn(empresa);
+
+        mockMvc.perform(put("/empresas/sessao_recanto_01/cliente")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"nome\":\"Tentativa Leitura\"}"))
+                .andExpect(status().isForbidden());
+
+        verify(empresaRepository, never()).save(any(Empresa.class));
+    }
+
+    @Test
+    @DisplayName("PUT /empresas/{sessao}/admin recusa sessaoWhatsapp duplicada com 400 e sincroniza e-mail ao trocar para livre")
+    void deveValidarUnicidadeDaSessaoAoEditarPeloAdmin() throws Exception {
+        Empresa empresa = empresaDe(1L, "sessao_atual");
+        Empresa outra = empresaDe(2L, "sessao_ocupada");
+        when(empresaRepository.buscarPorSessaoComModulos("sessao_atual")).thenReturn(empresa);
+        when(empresaRepository.findBySessaoWhatsapp("sessao_ocupada")).thenReturn(outra);
+        when(empresaRepository.findBySessaoWhatsapp("sessao_livre")).thenReturn(null);
+        when(empresaRepository.save(any(Empresa.class))).thenAnswer(i -> i.getArgument(0));
+
+        mockMvc.perform(put("/empresas/sessao_atual/admin")
+                        .header("x-admin-token", "sua-chave-admin")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"sessaoWhatsapp\":\"sessao_ocupada\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(status().reason("Sessão já ocupada"));
+
+        verify(empresaRepository, never()).save(any(Empresa.class));
+
+        mockMvc.perform(put("/empresas/sessao_atual/admin")
+                        .header("x-admin-token", "sua-chave-admin")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"sessaoWhatsapp\":\"sessao_livre\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.sessaoWhatsapp").value("sessao_livre"));
+
+        verify(servicoAuth).atualizarEmailDaSessao("sessao_atual", "sessao_livre");
+    }
+
+    @Test
+    @DisplayName("PUT /empresas/{sessao}/admin e reset-senha retornam 404 quando empresa está inativa")
+    void deveRetornar404EmAdminEResetParaEmpresaInativa() throws Exception {
+        Empresa inativa = empresaDe(3L, "sessao_inativa");
+        inativa.setAtivo(false);
+        when(empresaRepository.buscarPorSessaoComModulos("sessao_inativa")).thenReturn(inativa);
+        when(empresaRepository.findBySessaoWhatsapp("sessao_inativa")).thenReturn(inativa);
+
+        mockMvc.perform(put("/empresas/sessao_inativa/admin")
+                        .header("x-admin-token", "sua-chave-admin")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"nome\":\"Novo\"}"))
+                .andExpect(status().isNotFound());
+
+        mockMvc.perform(put("/empresas/sessao_inativa/reset-senha")
+                        .header("x-admin-token", "sua-chave-admin")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"novaSenha\":\"NovaSenha456\"}"))
+                .andExpect(status().isNotFound());
     }
 }

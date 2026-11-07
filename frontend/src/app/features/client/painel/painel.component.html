@@ -4,6 +4,13 @@
 </div>
 
 <div [class]="design.pagina.pilha">
+  @if (erroCarregamentoInicial()) {
+    <div [class]="design.alerta.erro" role="alert">
+      <strong>{{ conteudo.previsao.estados.erroTitulo }}</strong>
+      {{ conteudo.previsao.estados.erroDica }}
+    </div>
+  }
+
   <div [class]="design.pagina.linha">
     <div [class]="design.pagina.itemLinha">
       <app-conexao-whatsapp [sessao]="sessao" [compacto]="true" />
@@ -198,7 +205,7 @@
           } @else {
             <span></span>
           }
-          <a [class]="design.linkAtribuicao" [href]="conteudo.previsao.atribuicaoUrl" target="_blank" rel="noopener">
+          <a [class]="design.linkAtribuicao" [href]="conteudo.previsao.atribuicaoUrl" target="_blank" rel="noopener noreferrer">
             {{ conteudo.previsao.atribuicao }}
             <span class="sr-only">{{ conteudo.previsao.atribuicaoNovaAba }}</span>
           </a>

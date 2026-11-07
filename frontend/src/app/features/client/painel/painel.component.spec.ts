@@ -213,3 +213,50 @@ describe('PainelComponent', () => {
     expect(raiz.querySelector('a[href="/cliente/chatbot"]')).not.toBeNull();
   });
 });
+
+describe('PainelComponent, resiliencia no carregamento inicial', () => {
+  it('protege carregar() quando sessao esta vazia e exibe alerta de erro inicial', () => {
+    const buscarPorSessao = jasmine.createSpy('buscarPorSessao');
+    TestBed.configureTestingModule({
+      imports: [PainelComponent],
+      providers: [
+        provideRouter([]),
+        { provide: AuthService, useValue: { sessao: () => ({ sessaoWhatsapp: '', sub: 'x@gamb.com.br', papel: 'CLIENTE' }) } },
+        { provide: WhatsappConnectionService, useValue: { consultarStatus: () => NEVER, iniciar: () => NEVER } },
+        { provide: EmpresaService, useValue: { buscarPorSessao, atualizarPeloCliente: () => NEVER } },
+        { provide: PrevisaoService, useValue: { buscar: () => NEVER } },
+        { provide: AssistenteTutoriaService, useValue: { conversarCliente: () => NEVER } }
+      ]
+    });
+    const fixture = TestBed.createComponent(PainelComponent);
+    fixture.detectChanges();
+
+    expect(buscarPorSessao).not.toHaveBeenCalled();
+    expect((fixture.nativeElement as HTMLElement).querySelector('[role="alert"]')).not.toBeNull();
+  });
+
+  it('exibe alerta de erro inicial quando buscarPorSessao falha mesmo com permitePrevisaoTempo ainda false', () => {
+    TestBed.configureTestingModule({
+      imports: [PainelComponent],
+      providers: [
+        provideRouter([]),
+        { provide: AuthService, useValue: { sessao: () => ({ sessaoWhatsapp: 'quadra', sub: 'q@gamb.com.br', papel: 'CLIENTE' }) } },
+        { provide: WhatsappConnectionService, useValue: { consultarStatus: () => NEVER, iniciar: () => NEVER } },
+        {
+          provide: EmpresaService,
+          useValue: {
+            buscarPorSessao: () => throwError(() => new HttpErrorResponse({ status: 500 })),
+            atualizarPeloCliente: () => NEVER
+          }
+        },
+        { provide: PrevisaoService, useValue: { buscar: () => NEVER } },
+        { provide: AssistenteTutoriaService, useValue: { conversarCliente: () => NEVER } }
+      ]
+    });
+    const fixture = TestBed.createComponent(PainelComponent);
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.permitePrevisaoTempo()).toBeFalse();
+    expect((fixture.nativeElement as HTMLElement).querySelector('[role="alert"]')).not.toBeNull();
+  });
+});

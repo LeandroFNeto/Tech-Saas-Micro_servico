@@ -334,3 +334,50 @@ describe('FuncionamentoComponent', () => {
     });
   });
 });
+
+describe('FuncionamentoComponent, reabertura de dia fechado e mensagens HTTP 403/409/422', () => {
+  const base = `${environment.apiUrl}/empresas/quadra`;
+
+  it('reabrir um dia que veio fechado preenche abre e fecha padrao e extrai mensagem 409', () => {
+    TestBed.configureTestingModule({
+      imports: [FuncionamentoComponent],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: AuthService, useValue: { sessao: () => ({ sessaoWhatsapp: 'quadra' }) } }
+      ]
+    });
+    const http = TestBed.inject(HttpTestingController);
+    const fixture = TestBed.createComponent(FuncionamentoComponent);
+    fixture.detectChanges();
+
+    http.expectOne(`${base}/funcionamento`).flush({
+      duracaoAtendimentoMinutos: 60,
+      intervaloEntreAtendimentosMinutos: 0,
+      uf: 'SP',
+      horarios: [
+        { perfil: 'SEGUNDA', fechado: false, abre: '09:00', fecha: '21:00', duracaoMinutos: null },
+        { perfil: 'DOMINGO', fechado: true, abre: null, fecha: null, duracaoMinutos: null }
+      ],
+      diasEspeciais: []
+    });
+    fixture.detectChanges();
+
+    const comp = fixture.componentInstance;
+    comp.atualizarDia('DOMINGO', { aberto: true });
+    const domingo = comp.horarios().find((d) => d.codigo === 'DOMINGO')!;
+    expect(domingo.aberto).toBeTrue();
+    expect(domingo.abre).toBe('09:00');
+    expect(domingo.fecha).toBe('21:00');
+    expect(comp.diaInvalido(domingo)).toBeFalse();
+
+    comp.salvar(new Event('submit'));
+    http
+      .expectOne(`${base}/funcionamento`)
+      .flush({ message: 'Conflito de agenda detectado' }, { status: 409, statusText: 'Conflict' });
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Conflito de agenda detectado');
+    http.verify();
+  });
+});

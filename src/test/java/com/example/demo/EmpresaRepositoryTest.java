@@ -2,36 +2,61 @@ package com.example.demo;
 
 import com.example.demo.model.Empresa;
 import com.example.demo.repository.EmpresaRepository;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest
-public class EmpresaRepositoryTest {
+@Transactional
+class EmpresaRepositoryTest {
 
     @Autowired
     private EmpresaRepository repository;
 
-    public void deveSalvarEBuscarEmpresaComSucesso() {
-        // 1. PREPARAÇÃO (Arrange): Criamos uma empresa falsa na memória
+    @Test
+    @DisplayName("Salva e busca empresa por sessão WhatsApp no repositório")
+    void deveSalvarEBuscarEmpresaComSucesso() {
         Empresa novaEmpresa = new Empresa();
         novaEmpresa.setNome("Cliente Teste SaaS");
-        novaEmpresa.setSessaoWhatsapp("ClienteBot");
+        novaEmpresa.setSessaoWhatsapp("ClienteBotUnicoRepo");
         novaEmpresa.setMensagemSaudacao("Bem-vindo ao Cliente Teste!");
         novaEmpresa.setRamoDeAtuacao("LOCACAO");
 
-        // 2. AÇÃO (Act): Mandamos o Java salvar no PostgreSQL e depois buscar de volta
         repository.save(novaEmpresa);
-        Empresa empresaEncontrada = repository.findBySessaoWhatsapp("ClienteBot");
+        Empresa empresaEncontrada = repository.findBySessaoWhatsapp("ClienteBotUnicoRepo");
 
-        // 3. VERIFICAÇÃO (Assert): É aqui que o teste passa ou falha!
-        // Verificamos se ele realmente achou algo (não é nulo) e se o nome bate com o que salvamos.
-        assertNotNull(empresaEncontrada, "A empresa deveria ter sido encontrada no banco!");
-        assertEquals("Cliente Teste SaaS", empresaEncontrada.getNome(), "O nome salvo está incorreto!");
-
-        System.out.println("✅ Teste passou! A empresa " + empresaEncontrada.getNome() + " foi salva e lida no PostgreSQL.");
+        assertNotNull(empresaEncontrada);
+        assertEquals("Cliente Teste SaaS", empresaEncontrada.getNome());
+        assertEquals("LOCACAO", empresaEncontrada.getRamoDeAtuacao());
     }
 
+    @Test
+    @DisplayName("listarComModulos inclui empresas ativas e omite empresas com ativo=false")
+    void deveOmitirEmpresasInativasEmListarComModulos() {
+        Empresa ativa = new Empresa();
+        ativa.setNome("Empresa Ativa Repo");
+        ativa.setSessaoWhatsapp("sessao_ativa_repo_test");
+        ativa.setAtivo(true);
+        repository.save(ativa);
+
+        Empresa inativa = new Empresa();
+        inativa.setNome("Empresa Inativa Repo");
+        inativa.setSessaoWhatsapp("sessao_inativa_repo_test");
+        inativa.setAtivo(false);
+        repository.save(inativa);
+
+        List<Empresa> listadas = repository.listarComModulos();
+
+        assertTrue(listadas.stream().anyMatch(e -> "sessao_ativa_repo_test".equals(e.getSessaoWhatsapp())));
+        assertFalse(listadas.stream().anyMatch(e -> "sessao_inativa_repo_test".equals(e.getSessaoWhatsapp())));
+    }
 }

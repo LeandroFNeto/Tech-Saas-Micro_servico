@@ -6,11 +6,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
@@ -43,7 +43,9 @@ public class ServicoIA {
             @Value("${gemini.api.url:https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent}") String geminiApiUrl,
             @Value("${gemini.api.key:}") String geminiApiKey,
             @Value("${gemini.timeout-ms:3000}") int timeoutMs) {
-        if (restTemplate == null) {
+        if (restTemplate == null
+                || (restTemplate.getClass() == RestTemplate.class
+                && restTemplate.getRequestFactory() instanceof SimpleClientHttpRequestFactory)) {
             SimpleClientHttpRequestFactory fabrica = new SimpleClientHttpRequestFactory();
             fabrica.setConnectTimeout(timeoutMs);
             fabrica.setReadTimeout(timeoutMs);
@@ -131,14 +133,18 @@ public class ServicoIA {
         if (atual != null) {
             return atual;
         }
-        try (InputStream entrada = new ClassPathResource("assistente/atendimento-empresa.md").getInputStream()) {
-            atual = new String(entrada.readAllBytes(), StandardCharsets.UTF_8).trim();
-        } catch (Exception e) {
-            log.warn("Orientação de atendimento indisponível; usando instruções básicas");
-            atual = ORIENTACAO_BASICA;
-        }
+        atual = carregarOrientacaoDoRecurso("assistente/atendimento-empresa.md");
         orientacaoAtendimento = atual;
         return atual;
+    }
+
+    String carregarOrientacaoDoRecurso(String caminhoRecurso) {
+        try (InputStream entrada = new ClassPathResource(caminhoRecurso).getInputStream()) {
+            return new String(entrada.readAllBytes(), StandardCharsets.UTF_8).trim();
+        } catch (Exception e) {
+            log.warn("Orientação de atendimento indisponível; usando instruções básicas");
+            return ORIENTACAO_BASICA;
+        }
     }
 
     public String gerarRespostaHumanizada(String prompt) {
@@ -180,7 +186,7 @@ public class ServicoIA {
             String texto = textNode.asText().trim();
             return texto.isEmpty() ? null : texto;
         } catch (Exception e) {
-            log.warn("Erro ao fazer parse da resposta da IA: {}", e.getMessage());
+            log.warn("Erro ao fazer parse da resposta da IA: {}", e.getClass().getSimpleName());
             return null;
         }
     }

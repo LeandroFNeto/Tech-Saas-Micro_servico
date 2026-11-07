@@ -78,3 +78,30 @@ Funcionalidade: Webhook WhatsApp tipado
     Então o status HTTP deve ser 200
     E a FactoryModulo deve ter resolvido o ramo "TESTE_MODULOS"
     E a mensagem enviada ao cliente deve conter "Não há número autorizado"
+
+
+  Cenário: chamada ao webhook sem o segredo compartilhado é recusada com 401
+    Dado uma empresa persistida com sessão "sessao_recanto_01" e ramo "LOCACAO"
+    Quando eu envio POST /webhook/whatsapp sem o cabeçalho x-webhook-token com o WhatsappWebhookDTO:
+      | session | sessao_recanto_01      |
+      | type    | chat                   |
+      | fromMe  | false                  |
+      | from    | 5511999999999@c.us     |
+      | body    | Tentativa sem token    |
+    Então o status HTTP deve ser 401
+    E a FactoryModulo não deve ser consultada
+
+  Cenário: chamada ao webhook com segredo incorreto é recusada com 401 sem vazar segredo nem mensagem no log
+    Dado que a saída de log está sendo capturada
+    E uma empresa persistida com sessão "sessao_recanto_01" e ramo "LOCACAO"
+    Quando eu envio POST /webhook/whatsapp com x-webhook-token "token-invasor-999" e o WhatsappWebhookDTO:
+      | session | sessao_recanto_01         |
+      | type    | chat                      |
+      | fromMe  | false                     |
+      | from    | 5511999999999@c.us        |
+      | body    | Mensagem forjada secreta  |
+    Então o status HTTP deve ser 401
+    E a FactoryModulo não deve ser consultada
+    E a saída de log não deve conter "token-invasor-999"
+    E a saída de log não deve conter "segredo-webhook-teste"
+    E a saída de log não deve conter "Mensagem forjada secreta"

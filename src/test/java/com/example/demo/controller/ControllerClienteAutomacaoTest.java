@@ -1,6 +1,14 @@
 package com.example.demo.controller;
 
-import com.example.demo.model.*;
+import com.example.demo.model.AuditoriaAcessoContato;
+import com.example.demo.model.Contato;
+import com.example.demo.model.Empresa;
+import com.example.demo.model.OrigemContato;
+import com.example.demo.model.OrigemReserva;
+import com.example.demo.model.Reserva;
+import com.example.demo.model.Role;
+import com.example.demo.model.SituacaoReserva;
+import com.example.demo.model.Usuario;
 import com.example.demo.repository.AuditoriaAcessoContatoRepository;
 import com.example.demo.repository.ContatoRepository;
 import com.example.demo.repository.EmpresaRepository;
@@ -24,13 +32,11 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
@@ -121,6 +127,19 @@ class ControllerClienteAutomacaoTest {
 
         mockMvc.perform(get("/empresas/sessao-automacao/reservas"))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("CLIENTE tentando acessar sessão inexistente de outra empresa recebe 403 sem enumeração (AUTH-04)")
+    void listarReservas_clienteEmSessaoInexistente_retorna403SemConsultarBanco() throws Exception {
+        autenticarComoCliente();
+        when(empresaRepository.buscarPorSessaoComModulos("sessao-fantasma")).thenReturn(null);
+        when(empresaRepository.findBySessaoWhatsapp("sessao-fantasma")).thenReturn(null);
+
+        mockMvc.perform(get("/empresas/sessao-fantasma/reservas"))
+                .andExpect(status().isForbidden());
+
+        verify(empresaRepository, never()).buscarPorSessaoComModulos("sessao-fantasma");
     }
 
     @Test
@@ -447,6 +466,24 @@ class ControllerClienteAutomacaoTest {
 
         mockMvc.perform(post("/empresas/sessao-automacao/contatos/999/numero"))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("Obter numero completo de contato @lid retorna 422 sem consumir auditoria")
+    void obterNumeroCompleto_contatoLid_retorna422SemAuditar() throws Exception {
+        autenticarComoCliente();
+
+        Contato lid = new Contato();
+        lid.setId(26L);
+        lid.setWhatsappId("185336529469528@lid");
+
+        when(auditoriaRepository.countByEmpresaIdAndDataHoraAfter(anyLong(), any())).thenReturn(0L);
+        when(contatoRepository.findByIdAndEmpresaId(26L, 10L)).thenReturn(Optional.of(lid));
+
+        mockMvc.perform(post("/empresas/sessao-automacao/contatos/26/numero"))
+                .andExpect(status().isUnprocessableEntity());
+
+        verify(auditoriaRepository, never()).save(any(AuditoriaAcessoContato.class));
     }
 
     @Test

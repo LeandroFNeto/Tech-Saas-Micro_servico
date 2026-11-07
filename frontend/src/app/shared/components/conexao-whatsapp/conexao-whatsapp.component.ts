@@ -1,4 +1,5 @@
-import { Component, Input, OnChanges, SimpleChanges, inject, signal } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
+import { Component, DestroyRef, Input, OnChanges, SimpleChanges, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { EMPTY, ReplaySubject, catchError, filter, of, switchMap, takeWhile, tap, timer } from 'rxjs';
 import { mensagemHttp } from '../../../core/interceptors/auth.interceptor';
@@ -11,10 +12,10 @@ import { SessaoStatusResponseDTO, StatusSessaoWhatsapp } from '../../models/what
 })
 export class ConexaoWhatsappComponent implements OnChanges {
   @Input({ required: true }) sessao = '';
-  /** Só visual: esconde a frase de instrução (cartão curto do perfil). */
   @Input() compacto = false;
 
   private readonly api = inject(WhatsappConnectionService);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly sessao$ = new ReplaySubject<string>(1);
 
   readonly status = signal<StatusSessaoWhatsapp>('DISCONNECTED');
@@ -47,18 +48,21 @@ export class ConexaoWhatsappComponent implements OnChanges {
     this.iniciando.set(true);
     this.erro.set('');
     this.ignorarDesconectadoAte = Date.now() + 45_000;
-    this.api.iniciar(this.sessao).subscribe({
-      next: (dto) => {
-        this.aplicar(dto);
-        this.iniciando.set(false);
-        this.sessao$.next(this.sessao);
-      },
-      error: (err) => {
-        this.ignorarDesconectadoAte = 0;
-        this.erro.set(mensagemHttp(err));
-        this.iniciando.set(false);
-      }
-    });
+    this.api
+      .iniciar(this.sessao)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (dto) => {
+          this.aplicar(dto);
+          this.iniciando.set(false);
+          this.sessao$.next(this.sessao);
+        },
+        error: (err) => {
+          this.ignorarDesconectadoAte = 0;
+          this.erro.set(mensagemHttp(err));
+          this.iniciando.set(false);
+        }
+      });
   }
 
   srcQrcode(): string | null {
@@ -77,22 +81,27 @@ export class ConexaoWhatsappComponent implements OnChanges {
     if (this.status() !== 'CONNECTED' && this.status() !== 'QRCODE') {
       this.carregando.set(true);
     }
+    let erroPermanente = false;
     return timer(0, 1500).pipe(
       switchMap(() =>
         this.api.consultarStatus(sessao).pipe(
-          catchError((err) => {
+          catchError((err: unknown) => {
             this.erro.set(mensagemHttp(err));
             this.carregando.set(false);
+            const codigo = err instanceof HttpErrorResponse ? err.status : (err as { status?: number })?.status;
+            if (codigo === 401 || codigo === 403 || codigo === 404) {
+              erroPermanente = true;
+            }
             return of(null);
           })
         )
       ),
+      takeWhile((dto) => !erroPermanente && dto?.status !== 'CONNECTED', true),
       filter((dto): dto is SessaoStatusResponseDTO => dto != null),
       tap((dto) => {
         this.aplicar(dto);
         this.carregando.set(false);
-      }),
-      takeWhile((dto) => dto.status !== 'CONNECTED', true)
+      })
     );
   }
 

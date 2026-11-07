@@ -1,12 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { AssistenteTutoriaService } from '../../../core/services/assistente-tutoria.service';
 import {
   AssistenteChatResponseDTO,
-  DiagnosticoResponseDTO,
-  DiagnosticoStatusDTO
+  DiagnosticoResponseDTO
 } from '../../../shared/models/assistente.models';
 
 interface MensagemChat {
@@ -23,6 +24,8 @@ interface MensagemChat {
 })
 export class LaboratorioTestesComponent implements OnInit {
   private readonly assistenteService = inject(AssistenteTutoriaService);
+  private readonly destroyRef = inject(DestroyRef);
+  private chatSub: Subscription | null = null;
 
   modo = signal<'DIAGNOSTICO' | 'ATENDIMENTO_SANDBOX'>('DIAGNOSTICO');
   carregandoDiagnostico = signal(false);
@@ -51,6 +54,9 @@ export class LaboratorioTestesComponent implements OnInit {
   }
 
   alternarModo(novoModo: 'DIAGNOSTICO' | 'ATENDIMENTO_SANDBOX'): void {
+    this.chatSub?.unsubscribe();
+    this.chatSub = null;
+    this.enviandoMensagem.set(false);
     this.modo.set(novoModo);
     if (novoModo === 'ATENDIMENTO_SANDBOX') {
       this.sugestoes.set([
@@ -71,16 +77,19 @@ export class LaboratorioTestesComponent implements OnInit {
   executarDiagnostico(): void {
     this.carregandoDiagnostico.set(true);
     this.erroDiagnostico.set(null);
-    this.assistenteService.executarDiagnostico().subscribe({
-      next: (resp) => {
-        this.diagnostico.set(resp);
-        this.carregandoDiagnostico.set(false);
-      },
-      error: (err) => {
-        this.erroDiagnostico.set('Não foi possível obter o diagnóstico dos módulos.');
-        this.carregandoDiagnostico.set(false);
-      }
-    });
+    this.assistenteService
+      .executarDiagnostico()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (resp) => {
+          this.diagnostico.set(resp);
+          this.carregandoDiagnostico.set(false);
+        },
+        error: () => {
+          this.erroDiagnostico.set('Não foi possível obter o diagnóstico dos módulos.');
+          this.carregandoDiagnostico.set(false);
+        }
+      });
   }
 
   enviarMensagem(): void {
@@ -98,29 +107,35 @@ export class LaboratorioTestesComponent implements OnInit {
     this.mensagemInput = '';
     this.enviandoMensagem.set(true);
 
-    this.assistenteService.conversar({ mensagem: texto, modo: this.modo() }).subscribe({
-      next: (resp: AssistenteChatResponseDTO) => {
-        const novaMsgIA: MensagemChat = {
-          origem: 'ia',
-          texto: resp.resposta,
-          dataHora: new Date()
-        };
-        this.mensagens.update((msgs) => [...msgs, novaMsgIA]);
-        if (resp.sugestoes && resp.sugestoes.length > 0) {
-          this.sugestoes.set(resp.sugestoes);
+    this.chatSub?.unsubscribe();
+    this.chatSub = this.assistenteService
+      .conversar({ mensagem: texto, modo: this.modo() })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (resp: AssistenteChatResponseDTO) => {
+          const novaMsgIA: MensagemChat = {
+            origem: 'ia',
+            texto: resp.resposta,
+            dataHora: new Date()
+          };
+          this.mensagens.update((msgs) => [...msgs, novaMsgIA]);
+          if (resp.sugestoes && resp.sugestoes.length > 0) {
+            this.sugestoes.set(resp.sugestoes);
+          }
+          this.enviandoMensagem.set(false);
+          this.chatSub = null;
+        },
+        error: () => {
+          const msgErro: MensagemChat = {
+            origem: 'ia',
+            texto: 'Desculpe, ocorreu uma instabilidade momentânea ao consultar a IA.',
+            dataHora: new Date()
+          };
+          this.mensagens.update((msgs) => [...msgs, msgErro]);
+          this.enviandoMensagem.set(false);
+          this.chatSub = null;
         }
-        this.enviandoMensagem.set(false);
-      },
-      error: () => {
-        const msgErro: MensagemChat = {
-          origem: 'ia',
-          texto: 'Desculpe, ocorreu uma instabilidade momentânea ao consultar a IA.',
-          dataHora: new Date()
-        };
-        this.mensagens.update((msgs) => [...msgs, msgErro]);
-        this.enviandoMensagem.set(false);
-      }
-    });
+      });
   }
 
   selecionarSugestao(sugestao: string): void {
@@ -132,6 +147,7 @@ export class LaboratorioTestesComponent implements OnInit {
     switch (status) {
       case 'OPERACIONAL':
         return 'border-emerald-200 bg-emerald-50 text-emerald-800';
+      case 'ATENCAO':
       case 'DEGRADADO':
         return 'border-amber-200 bg-amber-50 text-amber-800';
       default:
@@ -143,6 +159,7 @@ export class LaboratorioTestesComponent implements OnInit {
     switch (status) {
       case 'OPERACIONAL':
         return 'bg-emerald-500';
+      case 'ATENCAO':
       case 'DEGRADADO':
         return 'bg-amber-500';
       default:

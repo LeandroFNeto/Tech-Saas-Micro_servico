@@ -4,6 +4,7 @@ import org.springframework.stereotype.Component;
 
 import java.text.Normalizer;
 import java.util.List;
+import java.util.Locale;
 import java.util.regex.Pattern;
 
 @Component
@@ -28,6 +29,10 @@ public class InterpretadorPorPalavras implements InterpretadorRespostaLembrete {
             "combinado",
             "combinada",
             "ok"
+    );
+
+    private static final Pattern PADRAO_NEGACAO_CONFIRMA = Pattern.compile(
+            "\\b(?:nao|nem|nunca|jamais)\\s+(?:\\w+\\s+){0,2}(?:pode ser|tudo certo|estarei la|estarei presente|vou sim|com certeza|sim|confirmo|confirmado|confirmada|confirmar|confirma|combinado|combinada|ok)\\b"
     );
 
     private static final List<String> FRASES_REMARCA = List.of(
@@ -73,8 +78,11 @@ public class InterpretadorPorPalavras implements InterpretadorRespostaLembrete {
 
         boolean temEmojiJoinha = texto.contains("👍") || texto.contains("\uD83D\uDC4D");
         String normalizado = normalizar(texto);
+        String semNegacaoConfirma = PADRAO_NEGACAO_CONFIRMA.matcher(normalizado).replaceAll(" ").trim();
+        boolean temNegacaoDireta = !semNegacaoConfirma.equals(normalizado) || normalizado.matches("^nao\\b.*");
 
-        boolean confirma = temEmojiJoinha || casarExpressao(normalizado, FRASES_CONFIRMA, PALAVRAS_CONFIRMA);
+        boolean confirma = (temEmojiJoinha && !temNegacaoDireta)
+                || casarExpressao(semNegacaoConfirma, FRASES_CONFIRMA, PALAVRAS_CONFIRMA);
         boolean remarca = casarExpressao(normalizado, FRASES_REMARCA, PALAVRAS_REMARCA);
         boolean parar = casarExpressao(normalizado, FRASES_PARAR, PALAVRAS_PARAR);
 
@@ -93,6 +101,9 @@ public class InterpretadorPorPalavras implements InterpretadorRespostaLembrete {
     }
 
     private boolean casarExpressao(String normalizado, List<String> frases, List<String> palavras) {
+        if (normalizado == null || normalizado.isEmpty()) {
+            return false;
+        }
         for (String frase : frases) {
             if (normalizado.contains(frase)) {
                 return true;
@@ -110,7 +121,7 @@ public class InterpretadorPorPalavras implements InterpretadorRespostaLembrete {
     private String normalizar(String texto) {
         String semAcento = Normalizer.normalize(texto, Normalizer.Form.NFD)
                 .replaceAll("\\p{M}", "");
-        return semAcento.toLowerCase()
+        return semAcento.toLowerCase(Locale.ROOT)
                 .replaceAll("[^a-z0-9\\s]", " ")
                 .replaceAll("\\s+", " ")
                 .trim();

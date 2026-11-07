@@ -45,13 +45,14 @@
 
     <div class="space-y-4 max-w-2xl">
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">
+        <label for="lembrete-modo" class="block text-sm font-medium text-gray-700 mb-1">
           {{ textos.lembrete.modo.rotulo }}
         </label>
         <select
+          id="lembrete-modo"
           [ngModel]="lembreteModo()"
           (ngModelChange)="lembreteModo.set($event)"
-          class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+          class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-base">
           <option value="DESLIGADO">{{ textos.lembrete.modo.desligado }}</option>
           <option value="SUGERIDO">{{ textos.lembrete.modo.sugerido }}</option>
           <option value="AUTOMATICO">{{ textos.lembrete.modo.automatico }}</option>
@@ -60,13 +61,14 @@
 
       <div *ngIf="lembreteModo() !== 'DESLIGADO'" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">
+          <label for="lembrete-dias-antes" class="block text-sm font-medium text-gray-700 mb-1">
             {{ textos.lembrete.diasAntes.rotulo }}
           </label>
           <select
+            id="lembrete-dias-antes"
             [ngModel]="lembreteDiasAntes()"
             (ngModelChange)="lembreteDiasAntes.set($event)"
-            class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+            class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-base">
             <option [value]="1">{{ textos.lembrete.diasAntes.umDia }}</option>
             <option [value]="2">{{ textos.lembrete.diasAntes.doisDias }}</option>
             <option [value]="3">{{ textos.lembrete.diasAntes.tresDias }}</option>
@@ -74,34 +76,37 @@
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">
+          <label for="lembrete-horario-envio" class="block text-sm font-medium text-gray-700 mb-1">
             {{ textos.lembrete.horarioEnvio.rotulo }}
           </label>
           <input
+            id="lembrete-horario-envio"
             type="time"
             [ngModel]="lembreteHorarioEnvio()"
             (ngModelChange)="lembreteHorarioEnvio.set($event)"
-            class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm" />
+            class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-base" />
         </div>
       </div>
 
       <div *ngIf="lembreteModo() !== 'DESLIGADO'">
-        <label class="block text-sm font-medium text-gray-700 mb-1">
+        <label for="lembrete-texto" class="block text-sm font-medium text-gray-700 mb-1">
           {{ textos.lembrete.texto.rotulo }}
         </label>
         <textarea
+          id="lembrete-texto"
           rows="4"
+          maxlength="1000"
           [ngModel]="lembreteTexto()"
           (ngModelChange)="lembreteTexto.set($event)"
           [placeholder]="textos.lembrete.texto.placeholder"
-          class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"></textarea>
+          class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-base"></textarea>
         <p class="text-xs text-gray-500 mt-1">{{ textos.lembrete.texto.dica }}</p>
       </div>
 
-      <div *ngIf="lembreteMensagemSucesso()" class="p-3 bg-green-50 text-green-700 text-sm rounded-md">
+      <div *ngIf="lembreteMensagemSucesso()" role="status" class="p-3 bg-green-50 text-green-700 text-sm rounded-md">
         {{ lembreteMensagemSucesso() }}
       </div>
-      <div *ngIf="lembreteMensagemErro()" class="p-3 bg-red-50 text-red-700 text-sm rounded-md">
+      <div *ngIf="lembreteMensagemErro()" role="alert" class="p-3 bg-red-50 text-red-700 text-sm rounded-md">
         {{ lembreteMensagemErro() }}
       </div>
 
@@ -123,7 +128,7 @@
       <p class="text-sm text-gray-500">{{ textos.reservas.descricao }}</p>
     </div>
 
-    <div *ngIf="erroReservas()" class="p-3 bg-yellow-50 text-yellow-800 text-sm rounded-md">
+    <div *ngIf="erroReservas()" role="alert" class="p-3 bg-yellow-50 text-yellow-800 text-sm rounded-md">
       {{ erroReservas() }}
     </div>
 
@@ -152,7 +157,7 @@
             <td class="px-4 py-3 whitespace-nowrap text-gray-900">{{ r.data }}</td>
             <td class="px-4 py-3 whitespace-nowrap text-gray-500">{{ r.horario }}</td>
             <td class="px-4 py-3 text-gray-900 font-medium">{{ r.nomeCliente }}</td>
-            <td class="px-4 py-3 text-gray-500">{{ r.telefoneMascara || '-' }}</td>
+            <td class="px-4 py-3 text-gray-500">{{ r.telefoneMascarado || '-' }}</td>
             <td class="px-4 py-3 whitespace-nowrap">
               <span
                 [class.bg-red-100]="r.situacao === 'SEM_RESPOSTA' || r.situacao === 'FALHA_ENVIO'"
@@ -196,8 +201,12 @@
       <p class="text-sm text-gray-500">{{ textos.contatos.descricao }}</p>
     </div>
 
-    <div *ngIf="avisoLimite()" class="p-3 bg-yellow-50 text-yellow-800 text-sm rounded-md">
+    <div *ngIf="avisoLimite()" role="alert" class="p-3 bg-yellow-50 text-yellow-800 text-sm rounded-md">
       {{ avisoLimite() }}
+    </div>
+
+    <div *ngIf="erroContatos()" role="alert" class="p-3 bg-red-50 text-red-700 text-sm rounded-md">
+      {{ erroContatos() }}
     </div>
 
     <div *ngIf="carregandoContatos()" class="text-sm text-gray-500 py-6 text-center">
@@ -247,37 +256,47 @@
 
   <div
     *ngIf="modalContatoAberto()"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="modal-contato-titulo"
+    (keydown.escape)="fecharModalContato()"
     class="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-40 flex items-center justify-center p-4">
     <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6 space-y-4">
-      <h3 class="text-lg font-bold text-gray-900">{{ textos.reservas.modalContato.titulo }}</h3>
+      <h3 id="modal-contato-titulo" class="text-lg font-bold text-gray-900">{{ textos.reservas.modalContato.titulo }}</h3>
       <p class="text-sm text-gray-500">{{ textos.reservas.modalContato.descricao }}</p>
+
+      <div *ngIf="erroModalContato()" role="alert" class="p-3 bg-red-50 text-red-700 text-sm rounded-md">
+        {{ erroModalContato() }}
+      </div>
 
       <div class="space-y-3">
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">
+          <label for="modal-contato-select" class="block text-sm font-medium text-gray-700 mb-1">
             {{ textos.reservas.modalContato.escolherExistente }}
           </label>
           <select
+            id="modal-contato-select"
             [ngModel]="contatoIdSelecionado()"
             (ngModelChange)="contatoIdSelecionado.set($event)"
-            class="w-full rounded-md border-gray-300 shadow-sm text-sm">
+            class="w-full rounded-md border-gray-300 shadow-sm text-base">
             <option [ngValue]="null">-- Nenhum --</option>
             <option *ngFor="let c of contatos()" [ngValue]="c.id">
-              {{ c.nome }} ({{ c.telefoneMascara }})
+              {{ c.nome }} ({{ c.telefoneMascarado }})
             </option>
           </select>
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">
+          <label for="modal-novo-telefone" class="block text-sm font-medium text-gray-700 mb-1">
             {{ textos.reservas.modalContato.novoTelefone }}
           </label>
           <input
+            id="modal-novo-telefone"
             type="text"
             [ngModel]="novoTelefone()"
             (ngModelChange)="novoTelefone.set($event)"
             placeholder="(11) 99999-9999"
-            class="w-full rounded-md border-gray-300 shadow-sm text-sm" />
+            class="w-full rounded-md border-gray-300 shadow-sm text-base" />
         </div>
       </div>
 

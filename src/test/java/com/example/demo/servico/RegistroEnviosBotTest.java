@@ -122,4 +122,16 @@ class RegistroEnviosBotTest {
         assertFalse(registro.foiEnviadoPeloBot(CONTATO, "Olá!"));
         assertFalse(registro.foiEnviadoPeloBot(CONTATO, ""));
     }
+
+    @Test
+    @DisplayName("Isola envios do bot entre sessao_a e sessao_b para o mesmo número")
+    void isolaEnviosEntreSessoesDiferentes() {
+        registro.registrarTexto("sessao_a", CONTATO, "Olá!");
+        registro.registrarMidia("sessao_a", CONTATO);
+
+        assertTrue(registro.foiEnviadoPeloBot("sessao_a", CONTATO, "Olá!"));
+        assertTrue(registro.foiEnviadoPeloBot("sessao_a", CONTATO, ""));
+        assertFalse(registro.foiEnviadoPeloBot("sessao_b", CONTATO, "Olá!"));
+        assertFalse(registro.foiEnviadoPeloBot("sessao_b", CONTATO, ""));
+    }
 }

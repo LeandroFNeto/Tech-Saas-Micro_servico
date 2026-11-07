@@ -425,3 +425,90 @@ describe('EmpresaFormComponent, recursos e exclusao', () => {
     expect(botao(fixture, 'Excluir empresa')).toBeUndefined();
   });
 });
+
+import { escritaAdminGuard } from '../admin.routes';
+
+describe('EmpresaFormComponent, renomeacao de sessao e bloqueio ADMIN_LEITURA', () => {
+  it('atualiza a URL do router com replaceUrl ao renomear sessaoWhatsapp na edicao', () => {
+    const atualizarPeloAdmin = jasmine.createSpy('atualizarPeloAdmin').and.returnValue(of({}));
+    TestBed.configureTestingModule({
+      imports: [EmpresaFormComponent],
+      providers: [
+        provideRouter([]),
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ sessao: 'quadra' }) } } },
+        {
+          provide: EmpresaService,
+          useValue: {
+            buscarPorSessao: () =>
+              of({
+                nome: 'Quadra Teste',
+                sessaoWhatsapp: 'quadra',
+                ramoDeAtuacao: 'locacao',
+                urlsGaleria: [],
+                modulosAtivos: []
+              }),
+            atualizarPeloAdmin
+          }
+        },
+        { provide: WhatsappConnectionService, useValue: { consultarStatus: () => NEVER, iniciar: () => NEVER } },
+        { provide: AuthService, useValue: mockAuth }
+      ]
+    });
+    const fixture = TestBed.createComponent(EmpresaFormComponent);
+    fixture.detectChanges();
+    const navSpy = spyOn(TestBed.inject(Router), 'navigateByUrl').and.resolveTo(true);
+
+    fixture.componentInstance.form.patchValue({ sessaoWhatsapp: 'quadra_nova' });
+    fixture.componentInstance.salvar();
+
+    expect(fixture.componentInstance.sessaoOriginal()).toBe('quadra_nova');
+    expect(navSpy).toHaveBeenCalledWith('/admin/empresas/quadra_nova/editar', { replaceUrl: true });
+  });
+
+  it('escritaAdminGuard redireciona ADMIN_LEITURA para /admin', () => {
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter([]),
+        { provide: AuthService, useValue: { isLeitura: () => true } }
+      ]
+    });
+
+    const resultado = TestBed.runInInjectionContext(() => escritaAdminGuard({} as any, {} as any));
+    expect(TestBed.inject(Router).serializeUrl(resultado as any)).toBe('/admin');
+  });
+
+  it('ADMIN_LEITURA na edicao fica com controles desabilitados e salvar() bloqueado', () => {
+    const atualizarPeloAdmin = jasmine.createSpy('atualizarPeloAdmin').and.returnValue(of({}));
+    TestBed.configureTestingModule({
+      imports: [EmpresaFormComponent],
+      providers: [
+        provideRouter([]),
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ sessao: 'quadra' }) } } },
+        {
+          provide: EmpresaService,
+          useValue: {
+            buscarPorSessao: () =>
+              of({
+                nome: 'Quadra Teste',
+                sessaoWhatsapp: 'quadra',
+                ramoDeAtuacao: 'locacao',
+                urlsGaleria: [],
+                modulosAtivos: []
+              }),
+            atualizarPeloAdmin
+          }
+        },
+        { provide: WhatsappConnectionService, useValue: { consultarStatus: () => NEVER, iniciar: () => NEVER } },
+        { provide: AuthService, useValue: { isAdmin: () => true, isSuperAdmin: () => false, isLeitura: () => true, possuiPapel: () => true } }
+      ]
+    });
+
+    const fixture = TestBed.createComponent(EmpresaFormComponent);
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.form.disabled).toBeTrue();
+    fixture.componentInstance.salvar();
+    expect(atualizarPeloAdmin).not.toHaveBeenCalled();
+    expect((fixture.nativeElement as HTMLElement).querySelector('button[type="submit"]')).toBeNull();
+  });
+});

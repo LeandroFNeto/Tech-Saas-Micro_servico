@@ -11,6 +11,7 @@ Diretriz: **Scripts-First** ([.agents/rules/economia-tokens-scripts.md](file:///
 | Script | Finalidade | Como Executar |
 |---|---|---|
 | `verificar-codigo-limpo.ps1` | Valida se há comentários proibidos (`//` ou `/* */`) em arquivos `.java`, `.ts`, `.html` e `.css`. Por padrão inspeciona apenas arquivos alterados/novos do git. | `powershell -ExecutionPolicy Bypass -File scripts/verificar-codigo-limpo.ps1` (ou com `-Todos`) |
+| `auditar-kirito.ps1` | Auditoria estática de caixa branca: detecta métodos `@Test` vazios, métodos de teste Java sem `@Test`, unidades Angular sem `.spec.ts`, `fit`/`xit`/`@Disabled` esquecidos e valida código limpo (opcionalmente roda regressão com `-ComRegressao`). | `powershell -ExecutionPolicy Bypass -File scripts/auditar-kirito.ps1` (ou com `-ComRegressao`) |
 | `testar-tudo.ps1` | Roda as suítes de testes do Backend (Maven/JUnit/BDD) e Frontend (Karma/Jasmine Headless) em sequência. | `powershell -ExecutionPolicy Bypass -File scripts/testar-tudo.ps1` (ou `-ApenasBackend` / `-ApenasFrontend`) |
 | `deploy-hostinger.sh` | Atualiza o código no VPS Hostinger via Git e sobe os containers com Docker Compose (`bot-java`, `postgres`, `wppconnect`). | `bash scripts/deploy-hostinger.sh` (executado no VPS ou acionado pelo GitHub Actions) |
 

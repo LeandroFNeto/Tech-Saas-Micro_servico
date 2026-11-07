@@ -23,4 +23,12 @@ describe('config.webhook.onSelfMessage', () => {
     const config = require('../config').default;
     expect(config.webhook.onSelfMessage).toBe(false);
   });
+
+  it('lê o segredo do webhook de WPPCONNECT_WEBHOOK_SECRET', () => {
+    process.env.WPPCONNECT_WEBHOOK_SECRET = 'segredo-proprio';
+    jest.resetModules();
+    const config = require('../config').default;
+    expect(config.webhook.secret).toBe('segredo-proprio');
+    delete process.env.WPPCONNECT_WEBHOOK_SECRET;
+  });
 });

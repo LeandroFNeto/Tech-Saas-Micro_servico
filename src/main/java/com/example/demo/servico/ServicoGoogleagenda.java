@@ -22,6 +22,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -33,6 +34,7 @@ public class ServicoGoogleagenda {
 
     private static final Logger log = LoggerFactory.getLogger(ServicoGoogleagenda.class);
     private static final String ARQUIVO_CREDENCIAL = "/credencial.json";
+    private static final ZoneId FUSO_BRASILIA = ZoneId.of("America/Sao_Paulo");
 
     private Calendar servicoGoogleEmMemoria;
 
@@ -79,9 +81,8 @@ public class ServicoGoogleagenda {
 
     public Set<LocalDate> datasOcupadas(String calendarId, LocalDate inicio, LocalDate fimExclusivo) throws IOException {
         Calendar servico = conectarAgenda();
-        ZoneId fusoBrasilia = ZoneId.of("America/Sao_Paulo");
-        DateTime tempoMinimo = new DateTime(inicio.atStartOfDay(fusoBrasilia).toInstant().toEpochMilli());
-        DateTime tempoMaximo = new DateTime(fimExclusivo.atStartOfDay(fusoBrasilia).toInstant().toEpochMilli());
+        DateTime tempoMinimo = new DateTime(inicio.atStartOfDay(FUSO_BRASILIA).toInstant().toEpochMilli());
+        DateTime tempoMaximo = new DateTime(fimExclusivo.atStartOfDay(FUSO_BRASILIA).toInstant().toEpochMilli());
 
         Events eventos = servico.events().list(calendarId)
                 .setTimeMin(tempoMinimo)
@@ -96,9 +97,35 @@ public class ServicoGoogleagenda {
             return ocupadas;
         }
         for (Event evento : itens) {
-            LocalDate dia = extrairData(evento.getStart());
-            if (dia != null) {
-                ocupadas.add(dia);
+            if ("cancelled".equalsIgnoreCase(evento.getStatus())) {
+                continue;
+            }
+            EventDateTime comeco = evento.getStart();
+            if (comeco == null) {
+                continue;
+            }
+            if (comeco.getDateTime() != null) {
+                LocalDate dia = Instant.ofEpochMilli(comeco.getDateTime().getValue())
+                        .atZone(ZoneOffset.UTC)
+                        .withZoneSameInstant(FUSO_BRASILIA)
+                        .toLocalDate();
+                if (!dia.isBefore(inicio) && dia.isBefore(fimExclusivo)) {
+                    ocupadas.add(dia);
+                }
+            } else if (comeco.getDate() != null) {
+                LocalDate diaInicio = LocalDate.parse(comeco.getDate().toStringRfc3339().substring(0, 10));
+                EventDateTime fim = evento.getEnd();
+                LocalDate diaFim = (fim != null && fim.getDate() != null)
+                        ? LocalDate.parse(fim.getDate().toStringRfc3339().substring(0, 10))
+                        : diaInicio.plusDays(1);
+                if (!diaFim.isAfter(diaInicio)) {
+                    diaFim = diaInicio.plusDays(1);
+                }
+                for (LocalDate d = diaInicio; d.isBefore(diaFim); d = d.plusDays(1)) {
+                    if (!d.isBefore(inicio) && d.isBefore(fimExclusivo)) {
+                        ocupadas.add(d);
+                    }
+                }
             }
         }
         return ocupadas;
@@ -124,9 +151,8 @@ public class ServicoGoogleagenda {
 
     public List<Intervalo> ocupacoesDoPeriodo(String calendarId, LocalDate inicio, LocalDate fimExclusivo) throws IOException {
         Calendar servico = conectarAgenda();
-        ZoneId fuso = ZoneId.of("America/Sao_Paulo");
-        DateTime tempoMinimo = new DateTime(inicio.atStartOfDay(fuso).toInstant().toEpochMilli());
-        DateTime tempoMaximo = new DateTime(fimExclusivo.atStartOfDay(fuso).toInstant().toEpochMilli());
+        DateTime tempoMinimo = new DateTime(inicio.atStartOfDay(FUSO_BRASILIA).toInstant().toEpochMilli());
+        DateTime tempoMaximo = new DateTime(fimExclusivo.atStartOfDay(FUSO_BRASILIA).toInstant().toEpochMilli());
 
         Events eventos = servico.events().list(calendarId)
                 .setTimeMin(tempoMinimo)
@@ -141,10 +167,10 @@ public class ServicoGoogleagenda {
             return ocupados;
         }
         for (Event evento : itens) {
-            if ("cancelled".equals(evento.getStatus())) {
+            if ("cancelled".equalsIgnoreCase(evento.getStatus())) {
                 continue;
             }
-            Intervalo intervalo = paraIntervalo(evento, fuso);
+            Intervalo intervalo = paraIntervalo(evento, FUSO_BRASILIA);
             if (intervalo != null) {
                 ocupados.add(intervalo);
             }
@@ -154,10 +180,9 @@ public class ServicoGoogleagenda {
 
     public List<String> resumosDoDia(String calendarId, LocalDate data) throws IOException {
         Calendar servico = conectarAgenda();
-        ZoneId fuso = ZoneId.of("America/Sao_Paulo");
         Events eventos = servico.events().list(calendarId)
-                .setTimeMin(new DateTime(data.atStartOfDay(fuso).toInstant().toEpochMilli()))
-                .setTimeMax(new DateTime(data.plusDays(1).atStartOfDay(fuso).toInstant().toEpochMilli()))
+                .setTimeMin(new DateTime(data.atStartOfDay(FUSO_BRASILIA).toInstant().toEpochMilli()))
+                .setTimeMax(new DateTime(data.plusDays(1).atStartOfDay(FUSO_BRASILIA).toInstant().toEpochMilli()))
                 .setSingleEvents(true)
                 .setMaxResults(50)
                 .execute();
@@ -166,10 +191,10 @@ public class ServicoGoogleagenda {
             return resumos;
         }
         for (Event evento : eventos.getItems()) {
-            if ("cancelled".equals(evento.getStatus())) {
+            if ("cancelled".equalsIgnoreCase(evento.getStatus())) {
                 continue;
             }
-            Intervalo intervalo = paraIntervalo(evento, fuso);
+            Intervalo intervalo = paraIntervalo(evento, FUSO_BRASILIA);
             String titulo = evento.getSummary() == null ? "Evento" : evento.getSummary();
             if (intervalo == null || evento.getStart().getDate() != null) {
                 resumos.add("Dia inteiro - " + titulo);
@@ -213,6 +238,9 @@ public class ServicoGoogleagenda {
             LocalDate ultimo = fim != null && fim.getDate() != null
                     ? LocalDate.parse(fim.getDate().toStringRfc3339().substring(0, 10))
                     : dia.plusDays(1);
+            if (!ultimo.isAfter(dia)) {
+                ultimo = dia.plusDays(1);
+            }
             return new Intervalo(dia.atStartOfDay(), ultimo.atStartOfDay());
         }
         if (inicio.getDateTime() == null) {
@@ -223,20 +251,5 @@ public class ServicoGoogleagenda {
                 ? Instant.ofEpochMilli(fim.getDateTime().getValue()).atZone(fuso).toLocalDateTime()
                 : comeco.plusHours(1);
         return new Intervalo(comeco, termino);
-    }
-
-    private LocalDate extrairData(EventDateTime inicio) {
-        if (inicio == null) {
-            return null;
-        }
-        if (inicio.getDate() != null) {
-            return LocalDate.parse(inicio.getDate().toStringRfc3339().substring(0, 10));
-        }
-        if (inicio.getDateTime() != null) {
-            return Instant.ofEpochMilli(inicio.getDateTime().getValue())
-                    .atZone(ZoneId.of("America/Sao_Paulo"))
-                    .toLocalDate();
-        }
-        return null;
     }
 }

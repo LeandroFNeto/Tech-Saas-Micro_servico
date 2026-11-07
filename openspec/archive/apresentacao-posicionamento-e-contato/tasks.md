@@ -11,7 +11,7 @@
 ## 3. Tela
 
 - [x] 3.1 Montar as seções em `apresentacao.component.html` na ordem definida, com `aria-labelledby`, links `wa.me` em nova aba com `rel="noopener"` e o número no rodapé
-- [ ] 3.2 Conferir a página a 390px, 768px e 1280px, sem rolagem horizontal, com a ordem de empilhamento correta
+- [x] 3.2 Conferir a página a 390px, 768px e 1280px, sem rolagem horizontal, com a ordem de empilhamento correta
 
 ## 4. Testes e verificação
 
@@ -22,4 +22,4 @@
 
 ## 5. Publicação
 
-- [ ] 5.1 Levar o front para a branch `producao` (Vercel) e conferir a página publicada, os links do WhatsApp e o chat
+- [x] 5.1 Levar o front para a branch `producao` (Vercel) e conferir a página publicada, os links do WhatsApp e o chat

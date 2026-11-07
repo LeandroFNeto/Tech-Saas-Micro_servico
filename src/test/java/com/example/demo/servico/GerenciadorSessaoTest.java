@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.ZoneId;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -68,18 +69,20 @@ class GerenciadorSessaoTest {
     }
 
     @Test
-    @DisplayName("Sessão acima de 30 minutos volta para INICIO")
+    @DisplayName("Sessão acima de 30 minutos volta para INICIO e limpa reserva e datasPendentes")
     void deveResetarEstadoQuandoTtlExpirar() {
         RelogioControlado relogio = new RelogioControlado(INICIO_RELOGIO);
         GerenciadorSessao gerenciador = new GerenciadorSessao(relogio);
 
-        gerenciador.getOuCriarReserva(CLIENTE).setHorario("14:00");
-        gerenciador.atualizarEstado(CLIENTE, EstadoUsuario.RESERVA_ESPERANDO_NOME.name());
+        gerenciador.getOuCriarReserva("sessao_a", CLIENTE).setHorario("14:00");
+        gerenciador.guardarDataPendente("sessao_a", CLIENTE, LocalDate.of(2026, 12, 25), EstadoUsuario.ESPERANDO_DATA);
+        gerenciador.atualizarEstado("sessao_a", CLIENTE, EstadoUsuario.RESERVA_ESPERANDO_NOME.name());
         relogio.avancarMinutos(31);
 
-        assertThat(gerenciador.obterEstado(CLIENTE)).isEqualTo(EstadoUsuario.INICIO.name());
-        assertThat(gerenciador.getEstado(CLIENTE)).isEqualTo(EstadoUsuario.INICIO);
-        assertThat(gerenciador.getReserva(CLIENTE)).isNull();
+        assertThat(gerenciador.obterEstado("sessao_a", CLIENTE)).isEqualTo(EstadoUsuario.INICIO.name());
+        assertThat(gerenciador.getEstado("sessao_a", CLIENTE)).isEqualTo(EstadoUsuario.INICIO);
+        assertThat(gerenciador.getReserva("sessao_a", CLIENTE)).isNull();
+        assertThat(gerenciador.obterDataPendente("sessao_a", CLIENTE)).isNull();
     }
 
     @Test
@@ -190,6 +193,27 @@ class GerenciadorSessaoTest {
 
         gerenciadorSessao.removerTravaProprietario(CLIENTE);
         assertThat(gerenciadorSessao.estaComTravaProprietarioAtiva(CLIENTE)).isFalse();
+    }
+
+    @Test
+    @DisplayName("Isola estado, reserva, reunião e trava do proprietário entre sessao_a e sessao_b para o mesmo número")
+    void deveIsolarEstadoReservaETravaEntreSessoesDiferentes() {
+        gerenciadorSessao.setEstado("sessao_a", CLIENTE, EstadoUsuario.RESERVA_ESPERANDO_NOME);
+        gerenciadorSessao.getOuCriarReserva("sessao_a", CLIENTE).setNomeCliente("Cliente A");
+        gerenciadorSessao.getOuCriarReuniao("sessao_a", CLIENTE).setData(LocalDate.of(2026, 12, 10));
+        gerenciadorSessao.ativarTravaProprietario("sessao_a", CLIENTE);
+
+        assertThat(gerenciadorSessao.getEstado("sessao_b", CLIENTE)).isEqualTo(EstadoUsuario.INICIO);
+        assertThat(gerenciadorSessao.getReserva("sessao_b", CLIENTE)).isNull();
+        assertThat(gerenciadorSessao.estaComTravaProprietarioAtiva("sessao_b", CLIENTE)).isFalse();
+
+        gerenciadorSessao.setEstado("sessao_b", CLIENTE, EstadoUsuario.MENU_PRINCIPAL);
+        assertThat(gerenciadorSessao.getEstado("sessao_a", CLIENTE)).isEqualTo(EstadoUsuario.RESERVA_ESPERANDO_NOME);
+        assertThat(gerenciadorSessao.getReserva("sessao_a", CLIENTE).getNomeCliente()).isEqualTo("Cliente A");
+        assertThat(gerenciadorSessao.estaComTravaProprietarioAtiva("sessao_a", CLIENTE)).isTrue();
+
+        gerenciadorSessao.limparReuniao("sessao_a", CLIENTE);
+        assertThat(gerenciadorSessao.getOuCriarReuniao("sessao_a", CLIENTE).getData()).isNull();
     }
 
     private static final class RelogioControlado extends Clock {

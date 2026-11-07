@@ -197,4 +197,16 @@ class ServicoIATest {
         empresa.setLocacaoPorHora(true);
         assertThat(servicoIA.construirPromptEmpresa(empresa, "Oi", null)).contains("cobrada por hora");
     }
+
+    @Test
+    @DisplayName("Recurso ausente cai nas instruções básicas corrigidas sem quebrar o atendimento")
+    void recursoAusenteCaiNasInstrucoesBasicasCorrigidas() {
+        String orientacao = servicoIA.carregarOrientacaoDoRecurso("assistente/recurso-inexistente.md");
+
+        assertThat(orientacao)
+                .contains("Converse como uma pessoa")
+                .contains("Use só os dados cadastrados")
+                .contains("nunca confirme reserva")
+                .doesNotContain("1 para ver a agenda");
+    }
 }

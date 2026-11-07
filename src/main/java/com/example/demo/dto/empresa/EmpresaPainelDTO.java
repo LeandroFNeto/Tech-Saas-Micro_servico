@@ -3,7 +3,6 @@ package com.example.demo.dto.empresa;
 import java.time.LocalDateTime;
 import java.util.List;
 
-/** Visão HAL da empresa para o painel (GET). Não é a entidade JPA. */
 public record EmpresaPainelDTO(
         Long id,
         String nome,
@@ -21,11 +20,13 @@ public record EmpresaPainelDTO(
         String googleCalendarId,
         Boolean locacaoPorHora,
         Boolean permiteReservaAutomatica,
+        Boolean permitePrevisaoTempo,
         List<ModuloPainelDTO> modulosAtivos,
         List<String> emailsResponsaveisReuniao,
         String cidadePrevisao,
         String cidadePrevisaoResolvida,
         Boolean previsaoTempoAtiva,
+        LembreteConfirmacaoDTO lembreteConfirmacao,
         LocalDateTime atualizadoEm
 ) {
     public record ModuloPainelDTO(

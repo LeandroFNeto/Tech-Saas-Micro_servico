@@ -1,7 +1,7 @@
 # Tarefas
 
 ## Canvas e conteúdo
-- [ ] Passar a mudança de tela pelo canvas de design (edição da empresa com "Recursos da empresa" e zona de exclusão; painel do cliente sem a previsão) e atualizar `especificacao/front/telas.design.json`
+- [x] Passar a mudança de tela pelo canvas de design (edição da empresa com "Recursos da empresa" e zona de exclusão; painel do cliente sem a previsão) e atualizar `especificacao/front/telas.design.json`
 - [x] Remover `bloqueadaAdmin` de `especificacao/front/cliente-painel.content.json`
 
 ## Admin: edição da empresa
@@ -17,8 +17,8 @@
 - [x] `empresa-form.component.spec.ts`: IA liga e desliga `IA_GEMINI` no PUT; estado carregado; zona de exclusão (super admin, confirma, cancela, outro perfil, volta para `/admin`)
 - [x] `dashboard.component.spec.ts`: lista só com "Editar"; remover os testes de exclusão
 - [x] `painel.component.spec.ts`: sem permissão não há bloco nem chamada de previsão; com permissão segue igual
-- [ ] Conferir a tela no navegador (desktop e celular) — testes do front: 166 de 166 passam
+- [x] Conferir a tela no navegador (desktop e celular) — testes do front: 200 de 200 passam
 
 ## Fechamento
-- [ ] Sincronizar `openspec/specs/empresa/spec.md` com o delta, editando à mão: o cabeçalho `### EMP-06 ...` da spec principal não tem o prefixo `Requirement:`, então o sync automático não o encontra (EMP-06 modificado, EMP-15 e EMP-16 novos; EMP-13 passa a citar a página de edição)
-- [ ] Mover esta pasta para `openspec/archive/ajustar-edicao-empresa-recursos-e-exclusao/`
+- [x] Sincronizar `openspec/specs/empresa/spec.md` com o delta, editando à mão: o cabeçalho `### EMP-06 ...` da spec principal não tem o prefixo `Requirement:`, então o sync automático não o encontra (EMP-06 modificado, EMP-15 e EMP-16 novos; EMP-13 passa a citar a página de edição)
+- [x] Mover esta pasta para `openspec/archive/ajustar-edicao-empresa-recursos-e-exclusao/`

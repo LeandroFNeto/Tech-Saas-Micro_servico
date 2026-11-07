@@ -89,4 +89,21 @@ describe('ConexaoWhatsappComponent', () => {
     expect(apiSpy.consultarStatus).toHaveBeenCalledWith('nova_sessao');
     expect(component.status()).toBe('CONNECTED');
   }));
+
+  it('interrompe polling quando consultarStatus retorna erro permanente 401, 403 ou 404', fakeAsync(() => {
+    component.sessao = 'sessao_proibida';
+    apiSpy.consultarStatus.and.returnValue(
+      throwError(() => new HttpErrorResponse({ status: 403, error: { message: 'Acesso negado' } }))
+    );
+
+    component.ngOnChanges({
+      sessao: new SimpleChange(null, 'sessao_proibida', true)
+    });
+    tick(0);
+    expect(apiSpy.consultarStatus).toHaveBeenCalledTimes(1);
+    expect(component.erro()).toBe('Acesso negado');
+
+    tick(6000);
+    expect(apiSpy.consultarStatus).toHaveBeenCalledTimes(1);
+  }));
 });

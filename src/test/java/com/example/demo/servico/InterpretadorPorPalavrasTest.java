@@ -1,9 +1,11 @@
 package com.example.demo.servico;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 class InterpretadorPorPalavrasTest {
 
@@ -15,6 +17,7 @@ class InterpretadorPorPalavrasTest {
     }
 
     @Test
+    @DisplayName("Reconhece confirmações afirmativas")
     void deveReconhecerConfirmacao() {
         assertEquals(IntencaoResposta.CONFIRMA, interpretador.interpretar("Sim, confirmo"));
         assertEquals(IntencaoResposta.CONFIRMA, interpretador.interpretar("Pode ser"));
@@ -25,6 +28,17 @@ class InterpretadorPorPalavrasTest {
     }
 
     @Test
+    @DisplayName("Expressões negadas jamais retornam CONFIRMA")
+    void naoDeveClassificarNegacoesComoConfirmacao() {
+        assertNotEquals(IntencaoResposta.CONFIRMA, interpretador.interpretar("Não confirmo"));
+        assertNotEquals(IntencaoResposta.CONFIRMA, interpretador.interpretar("nao confirmo"));
+        assertNotEquals(IntencaoResposta.CONFIRMA, interpretador.interpretar("Infelizmente não está confirmado"));
+        assertNotEquals(IntencaoResposta.CONFIRMA, interpretador.interpretar("Não está ok"));
+        assertNotEquals(IntencaoResposta.CONFIRMA, interpretador.interpretar("nao esta ok"));
+    }
+
+    @Test
+    @DisplayName("Reconhece cancelamento ou remarcação")
     void deveReconhecerCancelamentoOuRemarcacao() {
         assertEquals(IntencaoResposta.REMARCA, interpretador.interpretar("Não posso ir"));
         assertEquals(IntencaoResposta.REMARCA, interpretador.interpretar("Preciso cancelar"));
@@ -34,6 +48,7 @@ class InterpretadorPorPalavrasTest {
     }
 
     @Test
+    @DisplayName("Reconhece pedido de parar notificações")
     void deveReconhecerParar() {
         assertEquals(IntencaoResposta.PARAR, interpretador.interpretar("parar"));
         assertEquals(IntencaoResposta.PARAR, interpretador.interpretar("pare"));
@@ -42,6 +57,7 @@ class InterpretadorPorPalavrasTest {
     }
 
     @Test
+    @DisplayName("Retorna OUTRO quando mensagem não corresponde a nenhuma intenção")
     void deveReconhecerOutroQuandoMensagemNaoCorresponde() {
         assertEquals(IntencaoResposta.OUTRO, interpretador.interpretar("Quanto custa o serviço?"));
         assertEquals(IntencaoResposta.OUTRO, interpretador.interpretar("Onde fica o local?"));

@@ -73,8 +73,8 @@ public class ObserverSteps {
 
     @E("o cliente está com a reserva em registro")
     public void clienteRegistrando() {
-        gerenciadorSessao.setEstado(NUMERO, EstadoUsuario.RESERVA_REGISTRANDO);
-        gerenciadorSessao.getOuCriarReserva(NUMERO).setNomeCliente("Maria Silva");
+        gerenciadorSessao.setEstado(ctx.sessao, NUMERO, EstadoUsuario.RESERVA_REGISTRANDO);
+        gerenciadorSessao.getOuCriarReserva(ctx.sessao, NUMERO).setNomeCliente("Maria Silva");
     }
 
     @E("o Google responde 409 ao inserir o evento")
@@ -137,8 +137,8 @@ public class ObserverSteps {
 
     @Quando("duas confirmações da mesma data {string} são publicadas")
     public void duasConfirmacoes(String data) {
-        gerenciadorSessao.setEstado(NUMERO, EstadoUsuario.RESERVA_REGISTRANDO);
-        gerenciadorSessao.setEstado(OUTRO_NUMERO, EstadoUsuario.RESERVA_REGISTRANDO);
+        gerenciadorSessao.setEstado(ctx.sessao, NUMERO, EstadoUsuario.RESERVA_REGISTRANDO);
+        gerenciadorSessao.setEstado(ctx.sessao, OUTRO_NUMERO, EstadoUsuario.RESERVA_REGISTRANDO);
         Empresa empresa = empresaRepository.findBySessaoWhatsapp(ctx.sessao);
         publisher.publishEvent(new EventoReservaConfirmada(
                 empresa, data, "Diária Completa", "Maria Silva", NUMERO, "pedido-a"));
@@ -183,7 +183,7 @@ public class ObserverSteps {
     @E("a conversa do cliente deve estar em {string}")
     public void conversaEm(String estado) {
         await().atMost(Duration.ofSeconds(20)).untilAsserted(() ->
-                org.assertj.core.api.Assertions.assertThat(gerenciadorSessao.getEstado(NUMERO).name()).isEqualTo(estado));
+                org.assertj.core.api.Assertions.assertThat(gerenciadorSessao.getEstado(ctx.sessao, NUMERO).name()).isEqualTo(estado));
     }
 
     @E("a agenda aceita o horário em todas as datas")
@@ -207,7 +207,7 @@ public class ObserverSteps {
     @Quando("o evento por hora é publicado para as datas {string} às {string}")
     public void publicaEventoPorHora(String datas, String horario) {
         Empresa empresa = empresaRepository.findBySessaoWhatsapp(ctx.sessao);
-        gerenciadorSessao.setEstado(NUMERO, EstadoUsuario.RESERVA_REGISTRANDO);
+        gerenciadorSessao.setEstado(ctx.sessao, NUMERO, EstadoUsuario.RESERVA_REGISTRANDO);
         long inicio = System.nanoTime();
         publisher.publishEvent(new EventoReservaConfirmada(
                 empresa, List.of(datas.split(",")), horario, "Maria Silva", NUMERO, "pedido-hora", true));

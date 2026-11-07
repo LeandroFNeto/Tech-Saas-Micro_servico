@@ -1,6 +1,12 @@
 package com.example.demo.servico;
 
-import com.example.demo.model.*;
+import com.example.demo.model.Contato;
+import com.example.demo.model.Empresa;
+import com.example.demo.model.ModoLembrete;
+import com.example.demo.model.OrigemContato;
+import com.example.demo.model.OrigemReserva;
+import com.example.demo.model.Reserva;
+import com.example.demo.model.SituacaoReserva;
 import com.example.demo.repository.ContatoRepository;
 import com.example.demo.repository.EmpresaRepository;
 import com.example.demo.repository.ReservaRepository;
@@ -17,7 +23,11 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -26,6 +36,7 @@ import java.util.regex.Pattern;
 public class ServicoSincronizacaoAgenda {
 
     private static final Logger log = LoggerFactory.getLogger(ServicoSincronizacaoAgenda.class);
+    private static final ZoneId FUSO_BRASILIA = ZoneId.of("America/Sao_Paulo");
     private static final Pattern PADRAO_TELEFONE_BR = Pattern.compile(
             "(?:\\+?55\\s*)?(?:\\(?([1-9][0-9])\\)?\\s*)(?:(9[0-9]{4}|[2-9][0-9]{3})[-.\\s]?([0-9]{4}))\\b"
     );
@@ -48,6 +59,9 @@ public class ServicoSincronizacaoAgenda {
     public void sincronizarDeHoraEmHora() {
         List<Empresa> empresas = empresaRepository.findAll();
         for (Empresa empresa : empresas) {
+            if (Boolean.FALSE.equals(empresa.getAtivo())) {
+                continue;
+            }
             if (empresa.getGoogleCalendarId() != null && !empresa.getGoogleCalendarId().isBlank()
                     && empresa.getLembreteModo() != ModoLembrete.DESLIGADO) {
                 try {
@@ -61,8 +75,11 @@ public class ServicoSincronizacaoAgenda {
     }
 
     public boolean sincronizarSeNecessario(Empresa empresa, int dias) {
+        if (empresa == null || Boolean.FALSE.equals(empresa.getAtivo())) {
+            return false;
+        }
         LocalDateTime ultima = ultimaSincronizacaoPorEmpresa.get(empresa.getId());
-        LocalDateTime agora = LocalDateTime.now();
+        LocalDateTime agora = LocalDateTime.now(FUSO_BRASILIA);
         if (ultima != null && agora.isBefore(ultima.plusMinutes(5))) {
             return true;
         }
@@ -71,6 +88,9 @@ public class ServicoSincronizacaoAgenda {
 
     @Transactional
     public boolean sincronizarAgenda(Empresa empresa, int dias, boolean forcado) {
+        if (empresa == null || Boolean.FALSE.equals(empresa.getAtivo())) {
+            return false;
+        }
         String calendarId = empresa.getGoogleCalendarId();
         if (calendarId == null || calendarId.isBlank()) {
             return true;
@@ -89,9 +109,9 @@ public class ServicoSincronizacaoAgenda {
             return false;
         }
 
-        ZoneId fuso = ZoneId.of("America/Sao_Paulo");
-        LocalDate hoje = LocalDate.now(fuso);
+        LocalDate hoje = LocalDate.now(FUSO_BRASILIA);
         LocalDate fim = hoje.plusDays(dias);
+        LocalDateTime agora = LocalDateTime.now(FUSO_BRASILIA);
 
         Set<String> idsEventosAtivos = new HashSet<>();
 
@@ -114,24 +134,26 @@ public class ServicoSincronizacaoAgenda {
                     && local.getSituacao() != SituacaoReserva.CANCELADA_NA_AGENDA
                     && local.getSituacao() != SituacaoReserva.ENCERRADA) {
                 local.setSituacao(SituacaoReserva.CANCELADA_NA_AGENDA);
-                local.setAtualizadaEm(LocalDateTime.now());
+                local.setAtualizadaEm(agora);
                 reservaRepository.save(local);
             }
         }
 
-        ultimaSincronizacaoPorEmpresa.put(empresa.getId(), LocalDateTime.now());
+        if (empresa.getId() != null) {
+            ultimaSincronizacaoPorEmpresa.put(empresa.getId(), LocalDateTime.now(FUSO_BRASILIA));
+        }
         return true;
     }
 
     private void tratarEventoCancelado(Empresa empresa, String googleEventId) {
         reservaRepository.findByEmpresaIdAndGoogleEventId(empresa.getId(), googleEventId)
                 .ifPresent(reserva -> {
-                    LocalDate hoje = LocalDate.now(ZoneId.of("America/Sao_Paulo"));
+                    LocalDate hoje = LocalDate.now(FUSO_BRASILIA);
                     if (!reserva.getData().isBefore(hoje)
                             && reserva.getSituacao() != SituacaoReserva.CANCELADA_NA_AGENDA
                             && reserva.getSituacao() != SituacaoReserva.ENCERRADA) {
                         reserva.setSituacao(SituacaoReserva.CANCELADA_NA_AGENDA);
-                        reserva.setAtualizadaEm(LocalDateTime.now());
+                        reserva.setAtualizadaEm(LocalDateTime.now(FUSO_BRASILIA));
                         reservaRepository.save(reserva);
                     }
                 });
@@ -155,7 +177,7 @@ public class ServicoSincronizacaoAgenda {
         reserva.setData(evento.data());
         reserva.setHorario(evento.horario());
         reserva.setTitulo(evento.titulo() != null ? evento.titulo() : "");
-        reserva.setAtualizadaEm(LocalDateTime.now());
+        reserva.setAtualizadaEm(LocalDateTime.now(FUSO_BRASILIA));
 
         if (nova || reserva.getContato() == null) {
             String textoBusca = (evento.titulo() != null ? evento.titulo() : "") + " "
@@ -226,8 +248,7 @@ public class ServicoSincronizacaoAgenda {
         LocalTime horario = LocalTime.parse(horarioStr);
         LocalDate diaEnvio = dataReserva.minusDays(diasAntes);
         LocalDateTime momento = diaEnvio.atTime(horario);
-        ZoneId fuso = ZoneId.of("America/Sao_Paulo");
-        LocalDateTime agora = LocalDateTime.now(fuso);
+        LocalDateTime agora = LocalDateTime.now(FUSO_BRASILIA);
         if (momento.isBefore(agora)) {
             return null;
         }

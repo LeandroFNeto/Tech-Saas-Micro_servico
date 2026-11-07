@@ -18,8 +18,8 @@
 - [x] `AtendenteGambStrategyTest`: *3* e "o que vocês fazem?" respondem pela base comercial e convidam a digitar *2*; pergunta do app na dúvida continua no Suporte; `1` e `2` seguem iguais
 - [x] `AssistenteTutoriaServiceTest`: prompt e fallback do canal WhatsApp não mandam para o WhatsApp da Gamb, trazem o pedido de ligar o problema ao que existe hoje e mantêm os limites (sem valor, prazo, cliente, concorrente); canal SITE não muda
 - [x] Rodar `mvn test` (660 testes passam)
-- [ ] Conferir uma conversa real no número da Gamb: marcar reunião escrevendo a data de vários jeitos, perguntar "o que vocês fazem?", descrever um problema e fazer uma pergunta de dúvida em tom informal
+- [x] Conferir uma conversa real no número da Gamb: marcar reunião escrevendo a data de vários jeitos, perguntar "o que vocês fazem?", descrever um problema e fazer uma pergunta de dúvida em tom informal
 
 ## Fechamento
-- [ ] Sincronizar `openspec/specs/whatsapp/spec.md` (WPP-12 e WPP-13) com o delta, à mão
-- [ ] Mover esta pasta para `openspec/archive/gamb-whatsapp-datas-livres-e-tom-humano/`
+- [x] Sincronizar `openspec/specs/whatsapp/spec.md` (WPP-12 e WPP-13) com o delta, à mão
+- [x] Mover esta pasta para `openspec/archive/gamb-whatsapp-datas-livres-e-tom-humano/`

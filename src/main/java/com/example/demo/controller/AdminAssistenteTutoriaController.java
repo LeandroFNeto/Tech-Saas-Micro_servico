@@ -51,7 +51,7 @@ public class AdminAssistenteTutoriaController {
                 .anyMatch("ROLE_ADMIN"::equals)) {
             return false;
         }
-        return token == null || !token.equals(adminApiKey);
+        return adminApiKey == null || adminApiKey.isBlank() || token == null || !token.equals(adminApiKey);
     }
 
     @GetMapping("/diagnostico")

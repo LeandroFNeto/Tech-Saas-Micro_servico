@@ -28,6 +28,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -251,6 +252,7 @@ class ControllerFuncionamentoTest {
         mockMvc.perform(delete(BASE + "/dias-especiais/99")).andExpect(status().isNotFound());
         verify(dataEspecialRepository, never()).delete(any());
     }
+
     @Test
     @DisplayName("PUT /funcionamento aceita fecha 24:00 e recusa abre 24:00")
     void deveTratar24HorasNoFuncionamento() throws Exception {
@@ -273,5 +275,40 @@ class ControllerFuncionamentoTest {
                         .content("{\"data\":\"" + hoje(3) + "\",\"fechado\":false,\"abre\":\"18:00\",\"fecha\":\"24:00\"}"))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.fecha").value("24:00"));
+    }
+
+    @Test
+    @DisplayName("PUT /funcionamento, POST /dias-especiais e DELETE /dias-especiais/{id} bloqueiam ADMIN_LEITURA com 403")
+    void deveBloquearAdminLeituraEmMutacoesDeFuncionamento() throws Exception {
+        doThrow(new ResponseStatusException(HttpStatus.FORBIDDEN, "Perfil de somente leitura"))
+                .when(servicoAcessoEmpresa).exigirNaoLeitura(any());
+
+        mockMvc.perform(put(BASE + "/funcionamento")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"uf\":\"SP\"}"))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(post(BASE + "/dias-especiais")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"data\":\"" + hoje(3) + "\",\"fechado\":true}"))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(delete(BASE + "/dias-especiais/5"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("PUT /funcionamento sem corpo e POST /dias-especiais com data nula retornam 400 sem NPE")
+    void deveRetornar400EmPayloadNuloOuDataNula() throws Exception {
+        mockMvc.perform(put(BASE + "/funcionamento").contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest());
+
+        mockMvc.perform(post(BASE + "/dias-especiais")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"data\":null,\"fechado\":true}"))
+                .andExpect(status().isBadRequest());
+
+        mockMvc.perform(post(BASE + "/dias-especiais").contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest());
     }
 }
