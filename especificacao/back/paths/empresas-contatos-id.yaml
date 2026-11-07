@@ -1,0 +1,31 @@
+delete:
+  tags:
+  - Gerenciamento de Contatos
+  summary: Excluir ou anonimizar contato (Direito ao esquecimento LGPD)
+  description: Remove definitivamente o contato e seus índices da base da empresa em atendimento ao direito ao esquecimento e opt-out.
+  operationId: excluirContato
+  parameters:
+  - name: sessao
+    in: path
+    description: Identificador da sessão WhatsApp da empresa
+    required: true
+    schema:
+      type: string
+    example: sessao_recanto_01
+  - name: id
+    in: path
+    description: Identificador do contato a ser excluído
+    required: true
+    schema:
+      type: integer
+      format: int64
+    example: 1
+  responses:
+    "204":
+      description: Contato excluído com sucesso
+    "401":
+      description: Sem token de autenticação
+    "403":
+      description: Acesso negado (admin ou cliente de outra empresa)
+    "404":
+      description: Empresa ou contato não encontrado

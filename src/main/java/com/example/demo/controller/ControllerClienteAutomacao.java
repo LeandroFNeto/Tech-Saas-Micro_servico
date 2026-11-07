@@ -190,12 +190,24 @@ public class ControllerClienteAutomacao {
     })
     public ResponseEntity<List<ContatoResumoDTO>> listarContatos(
             @PathVariable String sessao,
+            @RequestParam(value = "pagina", required = false) Integer pagina,
+            @RequestParam(value = "tamanho", required = false) Integer tamanho,
             @RequestHeader(value = "x-admin-token", required = false) String adminToken) {
 
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         Empresa empresa = servicoAcessoEmpresa.validarAcessoExclusivoCliente(auth, adminToken, sessao);
 
-        List<Contato> contatos = contatoRepository.findByEmpresaIdOrderByUltimaConversaEmDesc(empresa.getId());
+        List<Contato> contatos;
+        if (pagina != null && tamanho != null) {
+            int tam = Math.min(Math.max(1, tamanho), 50);
+            int pag = Math.max(0, pagina);
+            contatos = contatoRepository.findByEmpresaIdOrderByUltimaConversaEmDesc(
+                    empresa.getId(),
+                    org.springframework.data.domain.PageRequest.of(pag, tam)
+            ).getContent();
+        } else {
+            contatos = contatoRepository.findByEmpresaIdOrderByUltimaConversaEmDesc(empresa.getId());
+        }
 
         List<ContatoResumoDTO> dtos = contatos.stream()
                 .map(this::paraContatoResumo)
@@ -242,6 +254,28 @@ public class ControllerClienteAutomacao {
         auditoriaRepository.save(auditoria);
 
         return ResponseEntity.ok(new NumeroContatoDTO(numeroCompleto));
+    }
+
+    @DeleteMapping("/contatos/{id}")
+    @Operation(summary = "Excluir contato (Direito ao esquecimento LGPD)")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Contato excluído com sucesso"),
+            @ApiResponse(responseCode = "401", description = "Sem token de autenticação"),
+            @ApiResponse(responseCode = "403", description = "Acesso negado"),
+            @ApiResponse(responseCode = "404", description = "Empresa ou contato não encontrado")
+    })
+    public ResponseEntity<Void> excluirContato(
+            @PathVariable String sessao,
+            @PathVariable Long id,
+            @RequestHeader(value = "x-admin-token", required = false) String adminToken) {
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        Empresa empresa = servicoAcessoEmpresa.validarAcessoExclusivoCliente(auth, adminToken, sessao);
+
+        Contato contato = contatoRepository.findByIdAndEmpresaId(id, empresa.getId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Contato não encontrado"));
+        contatoRepository.delete(contato);
+        return ResponseEntity.noContent().build();
     }
 
     private ReservaResumoDTO paraReservaResumo(Reserva r, LocalDate hoje) {

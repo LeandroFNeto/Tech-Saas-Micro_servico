@@ -15,6 +15,14 @@
     <path d="M6 9a6 6 0 1 1 12 0c0 5 2 6 2 6H4s2-1 2-6M10 19a2 2 0 0 0 4 0" />
   </svg>
 </ng-template>
+<ng-template #iconeContatos>
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+    <circle cx="9" cy="7" r="4" />
+    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+  </svg>
+</ng-template>
 <ng-template #iconePainel>
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
     <path d="M3 11.5 12 4l9 7.5" />
@@ -116,6 +124,15 @@
           {{ conteudo.menuCliente.painel }}
         </a>
         <a
+          routerLink="/cliente/contatos"
+          routerLinkActive="!bg-accent-500/20 !text-accent-300"
+          ariaCurrentWhenActive="page"
+          [class]="linkLateral"
+        >
+          <ng-container [ngTemplateOutlet]="iconeContatos" />
+          {{ conteudo.menuCliente.contatos }}
+        </a>
+        <a
           routerLink="/cliente/automacao"
           routerLinkActive="!bg-accent-500/20 !text-accent-300"
           ariaCurrentWhenActive="page"
@@ -209,6 +226,15 @@
       >
         <ng-container [ngTemplateOutlet]="iconePainel" />
         {{ conteudo.menuCliente.painel }}
+      </a>
+      <a
+        routerLink="/cliente/contatos"
+        routerLinkActive="!text-accent-800 shadow-[inset_0_3px_0_#F7931E]"
+        ariaCurrentWhenActive="page"
+        [class]="abaInferior"
+      >
+        <ng-container [ngTemplateOutlet]="iconeContatos" />
+        {{ conteudo.menuCliente.contatos }}
       </a>
       <a
         routerLink="/cliente/automacao"

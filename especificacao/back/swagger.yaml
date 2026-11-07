@@ -36,6 +36,8 @@ paths:
     $ref: ./paths/empresas-reservas-contato.yaml
   /empresas/{sessao}/contatos:
     $ref: ./paths/empresas-contatos.yaml
+  /empresas/{sessao}/contatos/{id}:
+    $ref: ./paths/empresas-contatos-id.yaml
   /empresas/{sessao}/contatos/{id}/numero:
     $ref: ./paths/empresas-contatos-numero.yaml
   /empresas/search/findBySessaoWhatsapp:

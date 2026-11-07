@@ -141,7 +141,12 @@ public class ControllerWhatsapp {
                 return ResponseEntity.ok().build();
             }
 
-            servicoContato.registrarOuAtualizarContato(empresa, rawFrom);
+            servicoContato.registrarOuAtualizarContato(empresa, rawFrom, payload.resolverNomeRemetente());
+
+            if (servicoContato.processarOptOutPorMensagem(empresa, rawFrom, textoRecebido)) {
+                observador.logSucesso(sessao, rawFrom, "Opt-out processado a pedido do cliente");
+                return ResponseEntity.ok().build();
+            }
 
             EstadoUsuario estadoAtual = gerenciadorSessao.getEstado(sessao, chaveEstado);
             if (estadoAtual == null) {

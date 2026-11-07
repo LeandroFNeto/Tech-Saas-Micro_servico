@@ -57,6 +57,11 @@ public record WhatsappWebhookDTO(
         @Schema(description = "Remetente: JID em string ou objeto Contact do WPPConnect")
         RemetenteWebhook sender,
 
+        @JsonProperty("pushname")
+        @JsonAlias({"pushName", "notifyName", "name"})
+        @Schema(description = "Nome de exibicao do remetente", example = "Joao Silva")
+        String pushname,
+
         @Schema(description = "Evento do WPPConnect quando não é mensagem de chat (qrcode, status-find, onack)", example = "qrcode")
         String event,
 
@@ -148,8 +153,14 @@ public record WhatsappWebhookDTO(
     @Schema(description = "Contato remetente do WPPConnect. Aceita JID string ou objeto Contact.")
     public record RemetenteWebhook(
             @Schema(description = "JID do remetente", example = "5511999999999@c.us")
-            String id
+            String id,
+            @Schema(description = "Nome do remetente", example = "Joao Silva")
+            String name
     ) {
+        public RemetenteWebhook(String id) {
+            this(id, null);
+        }
+
         public static class Deserializer extends JsonDeserializer<RemetenteWebhook> {
             @Override
             public RemetenteWebhook deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
@@ -158,13 +169,20 @@ public record WhatsappWebhookDTO(
                     return null;
                 }
                 if (node.isTextual()) {
-                    return new RemetenteWebhook(node.asText());
+                    return new RemetenteWebhook(node.asText(), null);
                 }
                 String id = textoFlexivel(node.get("id"));
                 if (id == null) {
                     id = textoFlexivel(node);
                 }
-                return new RemetenteWebhook(id);
+                String name = textoFlexivel(node.get("name"));
+                if (name == null) {
+                    name = textoFlexivel(node.get("pushname"));
+                }
+                if (name == null) {
+                    name = textoFlexivel(node.get("shortName"));
+                }
+                return new RemetenteWebhook(id, name);
             }
         }
     }
@@ -243,6 +261,16 @@ public record WhatsappWebhookDTO(
         Instant agora = clock == null ? Instant.now() : clock.instant();
         long segundosAtraso = agora.getEpochSecond() - epochSegundos;
         return segundosAtraso > 120;
+    }
+
+    public String resolverNomeRemetente() {
+        if (temTexto(pushname)) {
+            return pushname.trim();
+        }
+        if (sender != null && temTexto(sender.name())) {
+            return sender.name().trim();
+        }
+        return null;
     }
 
     public String resolverContatoAlvo() {

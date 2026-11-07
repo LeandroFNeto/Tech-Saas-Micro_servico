@@ -1,5 +1,6 @@
 package com.example.demo.dto.contato;
 
+import com.example.demo.model.Contato;
 import com.example.demo.model.OrigemContato;
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -28,4 +29,30 @@ public record ContatoResumoDTO(
         @Schema(description = "Origem de registro do contato", example = "CONVERSA")
         OrigemContato origem
 ) {
+    public static ContatoResumoDTO fromEntity(Contato contato) {
+        if (contato == null) {
+            return null;
+        }
+        String mascara = formatarMascara(contato.getFinalTelefone());
+        String nomeExibicao = contato.getNome();
+        if (nomeExibicao == null || nomeExibicao.isBlank()) {
+            nomeExibicao = "Contato " + mascara;
+        }
+        return new ContatoResumoDTO(
+                contato.getId(),
+                nomeExibicao,
+                mascara,
+                contato.getPrimeiraConversaEm(),
+                contato.getUltimaConversaEm(),
+                contato.isNaoContatar(),
+                contato.getOrigem()
+        );
+    }
+
+    private static String formatarMascara(String finalTelefone) {
+        if (finalTelefone == null || finalTelefone.isBlank()) {
+            return "(**) *****-****";
+        }
+        return "(**) *****-" + finalTelefone;
+    }
 }
