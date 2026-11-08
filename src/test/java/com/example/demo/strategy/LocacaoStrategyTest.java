@@ -914,7 +914,7 @@ class LocacaoStrategyTest {
     void deveResponderSaudacaoHumanizadaComIAQuandoEmpresaUsaIA() {
         Empresa empresa = empresaComMenu();
         empresa.setUsaIA(true);
-        when(servicoIA.responderAtendimento(eq(empresa), eq("Bom dia!"), anyString()))
+        when(servicoIA.conversar(eq(empresa), eq(REMETENTE), eq("Bom dia!"), anyString()))
                 .thenReturn(Optional.of("Olá! Bem-vindo ao Recanto das Palmeiras!"));
 
         locacaoStrategy.processarMensagem(empresa, REMETENTE, "Bom dia!", "INICIO");
@@ -924,11 +924,24 @@ class LocacaoStrategyTest {
     }
 
     @Test
+    @DisplayName("Texto livre no menu com IA ligada e sem resposta do modelo convida a digitar menu")
+    void deveConvidarParaMenuQuandoIaLigadaSemResposta() {
+        Empresa empresa = empresaComMenu();
+        empresa.setUsaIA(true);
+        when(servicoIA.conversar(eq(empresa), eq(REMETENTE), anyString(), anyString())).thenReturn(Optional.empty());
+        gerenciadorSessao.setEstado(REMETENTE, EstadoUsuario.MENU_PRINCIPAL);
+
+        locacaoStrategy.processarMensagem(empresa, REMETENTE, "vocês aceitam pet no local?", "MENU_PRINCIPAL");
+
+        verify(servicoMensagem).enviarMensagemWPP(eq(empresa), eq(REMETENTE), eq(ServicoIA.MENSAGEM_SEM_MODELO));
+    }
+
+    @Test
     @DisplayName("Fallback para menu principal quando IA retornar empty")
     void deveCairNoMenuDeterministicoEmFallbackQuandoIANaoRetornarResposta() {
         Empresa empresa = empresaComMenu();
         empresa.setUsaIA(true);
-        when(servicoIA.responderAtendimento(eq(empresa), anyString(), anyString())).thenReturn(Optional.empty());
+        when(servicoIA.conversar(eq(empresa), eq(REMETENTE), anyString(), anyString())).thenReturn(Optional.empty());
 
         locacaoStrategy.processarMensagem(empresa, REMETENTE, "Olá", "INICIO");
 

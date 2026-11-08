@@ -4,6 +4,7 @@ import com.example.demo.model.DadosReuniaoSessao;
 import com.example.demo.model.Empresa;
 import com.example.demo.model.EstadoUsuario;
 import com.example.demo.model.MotivoReuniao;
+import com.example.demo.servico.ConversaCurta;
 import com.example.demo.servico.GerenciadorSessao;
 import com.example.demo.servico.InterpretadorDeData;
 import com.example.demo.servico.LimiteDiarioMensagens;
@@ -25,6 +26,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -70,6 +72,7 @@ public class AtendenteGambStrategy implements ModuloAtendimentoStrategy {
     @Autowired private ServicoReserva servicoReserva;
     @Autowired private LimiteDiarioMensagens limiteDiarioMensagens;
     private final InterpretadorDeData interpretadorDeData = new InterpretadorDeData();
+    private final ConversaCurta conversaCurta = new ConversaCurta();
 
     @Override
     public String getRamoDeAtuacao() {
@@ -95,7 +98,12 @@ public class AtendenteGambStrategy implements ModuloAtendimentoStrategy {
             return;
         }
 
-        switch (gerenciadorSessao.getEstado(sessao(empresa), numeroCliente)) {
+        EstadoUsuario estado = gerenciadorSessao.getEstado(sessao(empresa), numeroCliente);
+        if (tratouConversaCurta(empresa, numeroCliente, texto, estado)) {
+            return;
+        }
+
+        switch (estado) {
             case ATENDENTE_MENU -> tratarMenu(empresa, numeroCliente, texto);
             case ATENDENTE_DUVIDA -> responderDuvida(empresa, numeroCliente, texto);
             case ATENDENTE_SOBRE -> tratarSobre(empresa, numeroCliente, texto);
@@ -106,6 +114,38 @@ public class AtendenteGambStrategy implements ModuloAtendimentoStrategy {
             case REUNIAO_CONFIRMACAO -> tratarConfirmacao(empresa, numeroCliente, texto);
             default -> mostrarMenu(empresa, numeroCliente);
         }
+    }
+
+    private boolean tratouConversaCurta(Empresa empresa, String numeroCliente, String texto, EstadoUsuario estado) {
+        boolean noMenu = estado == EstadoUsuario.ATENDENTE_MENU || !emFluxoDaAtendente(estado);
+        if (!noMenu && estado != EstadoUsuario.ATENDENTE_DUVIDA && estado != EstadoUsuario.ATENDENTE_SOBRE) {
+            return false;
+        }
+        Optional<ConversaCurta.Resposta> curta = conversaCurta.responder(numeroCliente, texto);
+        if (curta.isEmpty()) {
+            return false;
+        }
+        ConversaCurta.Resposta resposta = curta.get();
+        boolean abreMenu = noMenu && (resposta.tipo() == ConversaCurta.Tipo.CUMPRIMENTO
+                || resposta.tipo() == ConversaCurta.Tipo.BEM_ESTAR);
+        if (abreMenu) {
+            String s = sessao(empresa);
+            gerenciadorSessao.limparReuniao(s, numeroCliente);
+            gerenciadorSessao.limparDataPendente(s, numeroCliente);
+            gerenciadorSessao.setEstado(s, numeroCliente, EstadoUsuario.ATENDENTE_MENU);
+            enviar(empresa, numeroCliente, resposta.texto() + "\n\n" + MENSAGEM_MENU);
+            return true;
+        }
+        enviar(empresa, numeroCliente, resposta.texto());
+        return true;
+    }
+
+    private boolean emFluxoDaAtendente(EstadoUsuario estado) {
+        return switch (estado) {
+            case ATENDENTE_MENU, ATENDENTE_DUVIDA, ATENDENTE_SOBRE, REUNIAO_MOTIVO, REUNIAO_DATA,
+                    REUNIAO_CONFIRMACAO_DATA, REUNIAO_HORARIO, REUNIAO_CONFIRMACAO -> true;
+            default -> false;
+        };
     }
 
     private void mostrarMenu(Empresa empresa, String numeroCliente) {
@@ -131,7 +171,11 @@ public class AtendenteGambStrategy implements ModuloAtendimentoStrategy {
             responderSobre(empresa, numeroCliente, normalizado.equals("3") ? "Quem é a Gamb e como vocês podem ajudar o meu negócio?" : texto);
             return;
         }
-        enviar(empresa, numeroCliente, MENSAGEM_MENU);
+        if (normalizado.matches("^[0-9]+$") || normalizado.length() < 3) {
+            enviar(empresa, numeroCliente, MENSAGEM_MENU);
+            return;
+        }
+        responderSobre(empresa, numeroCliente, texto);
     }
 
     private void tratarSobre(Empresa empresa, String numeroCliente, String texto) {

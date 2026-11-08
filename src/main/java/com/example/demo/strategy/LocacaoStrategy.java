@@ -117,7 +117,7 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
         }
         String s = sessao(empresa);
         if (servicoIA != null) {
-            Optional<String> respostaIa = servicoIA.responderAtendimento(empresa, texto, servicoMenu.montarMenuPrincipal(empresa));
+            Optional<String> respostaIa = servicoIA.conversar(empresa, numeroCliente, texto, servicoMenu.montarMenuPrincipal(empresa));
             if (respostaIa.isPresent()) {
                 servicoMensagem.enviarMensagemWPP(empresa, numeroCliente, respostaIa.get());
                 gerenciadorSessao.setEstado(s, numeroCliente, EstadoUsuario.MENU_PRINCIPAL);
@@ -156,14 +156,16 @@ public class LocacaoStrategy implements ModuloAtendimentoStrategy {
                     return;
                 }
                 if (servicoIA != null) {
-                    Optional<String> respostaIa = servicoIA.responderAtendimento(empresa, texto, servicoMenu.montarMenuPrincipal(empresa));
+                    Optional<String> respostaIa = servicoIA.conversar(empresa, numeroCliente, texto, servicoMenu.montarMenuPrincipal(empresa));
                     if (respostaIa.isPresent()) {
                         servicoMensagem.enviarMensagemWPP(empresa, numeroCliente, respostaIa.get());
                         return;
                     }
                 }
-                servicoMensagem.enviarMensagemWPP(
-                        empresa, numeroCliente, "Opção inválida. Digite o número de uma das opções do menu.");
+                String semResposta = servicoIA != null && Boolean.TRUE.equals(empresa.getUsaIA())
+                        ? ServicoIA.MENSAGEM_SEM_MODELO
+                        : "Opção inválida. Digite o número de uma das opções do menu.";
+                servicoMensagem.enviarMensagemWPP(empresa, numeroCliente, semResposta);
                 return;
             }
         }

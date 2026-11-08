@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpEntity;
@@ -32,11 +33,18 @@ public class ServicoIA {
                     + "respondendo primeiro o que foi perguntado. Use só os dados cadastrados, nunca confirme reserva e, "
                     + "sem a informação, diga que um atendente vai responder.";
 
+    public static final String MENSAGEM_SEM_MODELO =
+            "Não consegui te responder direito agora. Digite *menu* para ver as opções ou o número de uma delas.";
+    public static final String CONVITE_MENU = " Como posso te ajudar? Se quiser ver as opções, é só digitar *menu*.";
+
     private final String geminiApiUrl;
     private final String geminiApiKey;
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
+    private final ConversaCurta conversaCurta = new ConversaCurta();
     private volatile String orientacaoAtendimento;
+    private GuardaCotaIA guardaCota;
+    private CacheRespostaIA cacheResposta;
 
     public ServicoIA(
             RestTemplate restTemplate,
@@ -56,6 +64,36 @@ public class ServicoIA {
         this.geminiApiUrl = geminiApiUrl;
         this.geminiApiKey = geminiApiKey;
         this.objectMapper = new ObjectMapper();
+    }
+
+    @Autowired(required = false)
+    void setGuardaCota(GuardaCotaIA guardaCota) {
+        this.guardaCota = guardaCota;
+    }
+
+    @Autowired(required = false)
+    void setCacheResposta(CacheRespostaIA cacheResposta) {
+        this.cacheResposta = cacheResposta;
+    }
+
+    public Optional<String> conversar(Empresa empresa, String contato, String mensagemUsuario, String menuDaEmpresa) {
+        if (empresa == null || !Boolean.TRUE.equals(empresa.getUsaIA())) {
+            return Optional.empty();
+        }
+        if (mensagemUsuario == null || mensagemUsuario.isBlank()) {
+            return Optional.empty();
+        }
+        if (ehComandoOuOpcao(mensagemUsuario.trim().toLowerCase())) {
+            return Optional.empty();
+        }
+        Optional<ConversaCurta.Resposta> curta = conversaCurta.responder(contato, mensagemUsuario);
+        if (curta.isPresent()) {
+            ConversaCurta.Resposta resposta = curta.get();
+            boolean comConvite = resposta.tipo() == ConversaCurta.Tipo.CUMPRIMENTO
+                    || resposta.tipo() == ConversaCurta.Tipo.BEM_ESTAR;
+            return Optional.of(comConvite ? resposta.texto() + CONVITE_MENU : resposta.texto());
+        }
+        return responderAtendimento(empresa, mensagemUsuario, menuDaEmpresa);
     }
 
     public Optional<String> responderAtendimento(Empresa empresa, String mensagemUsuario) {
@@ -148,6 +186,16 @@ public class ServicoIA {
     }
 
     public String gerarRespostaHumanizada(String prompt) {
+        if (cacheResposta != null) {
+            Optional<String> guardada = cacheResposta.obter(prompt);
+            if (guardada.isPresent()) {
+                return guardada.get();
+            }
+        }
+        if (guardaCota != null && !guardaCota.reservar()) {
+            log.info("Chamada a IA suspensa pela guarda de cota");
+            return null;
+        }
         try {
             String url = geminiApiUrl + "?key=" + geminiApiKey;
 
@@ -162,15 +210,42 @@ public class ServicoIA {
             HttpEntity<String> request = new HttpEntity<>(jsonBody, headers);
             ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
 
-            return extrairTextoDaResposta(response.getBody());
+            registrarConsumo(response.getBody());
+            String texto = extrairTextoDaResposta(response.getBody());
+            if (texto != null && cacheResposta != null) {
+                cacheResposta.guardar(prompt, texto);
+            }
+            return texto;
 
         } catch (HttpClientErrorException.TooManyRequests e) {
-            log.warn("Cota gratuita da IA atingida (429)");
+            log.warn("Cota da IA atingida (429)");
+            if (guardaCota != null) {
+                guardaCota.registrarCotaEsgotada();
+            }
             return null;
         } catch (Exception e) {
             log.warn("Erro ao comunicar com a IA: {}", e.getClass().getSimpleName());
             return null;
         }
+    }
+
+    private void registrarConsumo(String jsonResposta) {
+        if (guardaCota == null) {
+            return;
+        }
+        Integer entrada = null;
+        Integer saida = null;
+        try {
+            JsonNode uso = objectMapper.readTree(jsonResposta == null ? "{}" : jsonResposta).path("usageMetadata");
+            if (uso.has("promptTokenCount") && uso.has("candidatesTokenCount")) {
+                entrada = uso.path("promptTokenCount").asInt();
+                saida = uso.path("candidatesTokenCount").asInt() + uso.path("thoughtsTokenCount").asInt(0);
+            }
+        } catch (Exception e) {
+            entrada = null;
+            saida = null;
+        }
+        guardaCota.registrarUso(entrada, saida);
     }
 
     private String extrairTextoDaResposta(String jsonResposta) {

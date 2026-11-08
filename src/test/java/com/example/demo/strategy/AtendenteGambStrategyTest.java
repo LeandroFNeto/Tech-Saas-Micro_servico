@@ -121,6 +121,43 @@ class AtendenteGambStrategyTest {
     }
 
     @Test
+    @DisplayName("Cumprimento é respondido na hora, com o menu, sem chamar o modelo")
+    void deveCumprimentarEMostrarMenuSemModelo() {
+        enviar("bom dia");
+
+        assertThat(ultimaResposta()).startsWith("Bom dia").contains("Tirar uma dúvida");
+        verify(servicoIA, org.mockito.Mockito.never()).gerarRespostaHumanizada(anyString());
+    }
+
+    @Test
+    @DisplayName("Agradecimento no menu é respondido sem repetir o menu nem chamar o modelo")
+    void deveAgradecerSemRepetirMenu() {
+        ate("oi", "obrigado");
+
+        assertThat(ultimaResposta()).doesNotContain("Tirar uma dúvida");
+        verify(servicoIA, org.mockito.Mockito.never()).gerarRespostaHumanizada(anyString());
+    }
+
+    @Test
+    @DisplayName("Texto livre no menu segue a conversa comercial em vez de repetir o menu")
+    void deveSeguirConversaLivreNoMenu() {
+        when(servicoIA.gerarRespostaHumanizada(anyString())).thenReturn("Dá para montar isso para a sua clínica.");
+
+        ate("oi", "tenho uma clínica de estética e perco horários marcados");
+
+        assertThat(gerenciadorSessao.getEstado(CLIENTE)).isEqualTo(EstadoUsuario.ATENDENTE_SOBRE);
+        assertThat(ultimaResposta()).contains("clínica").contains("Digite *2*");
+    }
+
+    @Test
+    @DisplayName("Cumprimento no meio do agendamento não derruba o fluxo")
+    void naoInterceptaCumprimentoNoFluxoDeReuniao() {
+        ate("oi", "2", "oi");
+
+        assertThat(gerenciadorSessao.getEstado(CLIENTE)).isEqualTo(EstadoUsuario.REUNIAO_MOTIVO);
+    }
+
+    @Test
     @DisplayName("Dúvida sobre o app é respondida pela base de conhecimento do Suporte")
     void deveResponderDuvidaComABase() {
         ate("oi", "1", "Como conectar o WhatsApp pelo QR Code?");
