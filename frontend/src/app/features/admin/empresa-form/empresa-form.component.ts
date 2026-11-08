@@ -60,7 +60,7 @@ export class EmpresaFormComponent implements OnInit {
   readonly imagemSelecionada = signal('');
 
   readonly formResetSenha = this.fb.nonNullable.group({
-    novaSenha: ['', [Validators.required, Validators.minLength(6)]]
+    novaSenha: ['', [Validators.required, Validators.minLength(10)]]
   });
 
   readonly form = this.fb.group({
@@ -106,7 +106,7 @@ export class EmpresaFormComponent implements OnInit {
         return;
       }
       this.form.controls.email.setValidators([Validators.required, Validators.email]);
-      this.form.controls.senha.setValidators([Validators.required, Validators.minLength(6)]);
+      this.form.controls.senha.setValidators([Validators.required, Validators.minLength(10)]);
       this.form.controls.email.updateValueAndValidity();
       this.form.controls.senha.updateValueAndValidity();
       this.observarSessaoParaEmail();
