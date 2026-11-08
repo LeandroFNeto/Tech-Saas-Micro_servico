@@ -28,7 +28,7 @@ Arquivo em comum da equipe. Cada agente atualiza a própria linha ao começar e 
 | [bot-comercial-site-login-apresentacao](archive/bot-comercial-site-login-apresentacao/) | deploy | `antigravity` | `openspec/archive/bot-comercial-site-login-apresentacao/` | 0 | aprovado |
 | [gamb-whatsapp-datas-livres-e-tom-humano](archive/gamb-whatsapp-datas-livres-e-tom-humano/) | deploy | `antigravity` | `openspec/archive/gamb-whatsapp-datas-livres-e-tom-humano/` | 0 | aprovado |
 | [migrar-wppconnect-para-baileys](changes/migrar-wppconnect-para-baileys/) | programacao | `gemini-3.8-flash` | `openspec/changes/migrar-wppconnect-para-baileys/` | 0 | aprovado |
-| [fechar-pendencias-de-seguranca](changes/fechar-pendencias-de-seguranca/) | revisao | `claude-opus-5-5` | `openspec/changes/fechar-pendencias-de-seguranca/` | 3 | aprovado |
+| [fechar-pendencias-de-seguranca](changes/fechar-pendencias-de-seguranca/) | deploy | `claude-haiku-5-5` | `openspec/changes/fechar-pendencias-de-seguranca/` | 3 | aguardando aprovado |
 
 Estado: `em andamento`, `aprovado`, `reprovado`, `erro`, `aguardando aprovado`.
 
