@@ -5,11 +5,11 @@ properties:
     type: string
     format: password
     description: Senha atual em texto puro
-    example: SenhaMaster123
+    example: ExemploSenha2026
   novaSenha:
     type: string
     format: password
-    minLength: 6
+    minLength: 10
     description: Nova senha; o servidor persiste o hash BCrypt
     example: NovaSenha456
 required:

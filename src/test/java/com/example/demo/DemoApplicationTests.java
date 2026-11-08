@@ -7,7 +7,7 @@ import org.springframework.test.context.TestPropertySource;
 @SpringBootTest
 @TestPropertySource(properties = {
 		"ADMIN_API_KEY=mock-admin-key",
-		"JWT_SECRET_KEY=SuaChaveSuperSecretaParaGerarOsTokensJWTDe32Caracteres",
+		"jwt.secret=ChaveFalsaDeTesteComMaisDeTrintaEDoisBytes0123456789",
 		"GEMINI_API_KEY=mock-gemini-key",
 		"WPPCONNECT_SECRET_KEY=mock-wpp-key",
 		"WPPCONNECT_URL=http://localhost:21465",

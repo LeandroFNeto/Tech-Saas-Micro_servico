@@ -60,7 +60,7 @@ properties:
     type: string
     format: password
     writeOnly: true
-    minLength: 6
+    minLength: 10
     description: Senha inicial do cliente; o servidor persiste apenas o hash BCrypt
     example: SenhaCliente123
   modulosIniciais:

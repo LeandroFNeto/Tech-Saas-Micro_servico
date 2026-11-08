@@ -66,8 +66,8 @@ export class PerfilComponent implements OnInit {
   readonly formSenha = this.fb.nonNullable.group(
     {
       senhaAtual: ['', [Validators.required, Validators.minLength(6)]],
-      novaSenha: ['', [Validators.required, Validators.minLength(6)]],
-      confirmarSenha: ['', [Validators.required, Validators.minLength(6)]]
+      novaSenha: ['', [Validators.required, Validators.minLength(10)]],
+      confirmarSenha: ['', [Validators.required, Validators.minLength(10)]]
     },
     { validators: senhasIguais }
   );

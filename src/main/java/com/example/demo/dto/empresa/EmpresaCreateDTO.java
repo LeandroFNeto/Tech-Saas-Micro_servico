@@ -52,7 +52,7 @@ public record EmpresaCreateDTO(
         String email,
 
         @NotBlank
-        @Size(min = 6)
+        @Size(min = 10)
         @Schema(description = "Senha inicial do cliente; o servidor persiste apenas o hash BCrypt",
                 example = "SenhaCliente123")
         String senha,

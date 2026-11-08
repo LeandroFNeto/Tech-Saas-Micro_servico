@@ -95,6 +95,8 @@ components:
       $ref: ./schemas/auth/LoginResponseDTO.yaml
     AlterarSenhaDTO:
       $ref: ./schemas/auth/AlterarSenhaDTO.yaml
+    ErroDTO:
+      $ref: ./schemas/auth/ErroDTO.yaml
     AvisoDTO:
       $ref: ./schemas/aviso/AvisoDTO.yaml
     EmpresaCreateDTO:

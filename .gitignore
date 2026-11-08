@@ -3,6 +3,7 @@ src/main/resources/*.json
 
 # Ignorar variáveis de ambiente (Senhas do Docker)
 .env
+docker-compose.override.yml
 
 # Ignorar pastas de dados do Docker
 postgres_data/

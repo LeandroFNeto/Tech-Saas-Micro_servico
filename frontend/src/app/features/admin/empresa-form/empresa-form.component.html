@@ -149,7 +149,7 @@
             type="password"
             formControlName="senha"
             autocomplete="new-password"
-            placeholder="mínimo 6 caracteres"
+            placeholder="mínimo 10 caracteres"
           />
         </div>
       }
@@ -425,7 +425,7 @@
           type="password"
           formControlName="novaSenha"
           autocomplete="new-password"
-          placeholder="mínimo 6 caracteres"
+          placeholder="mínimo 10 caracteres"
         />
       </div>
       <button class="btn-primary min-h-12 w-full shrink-0 px-5 text-[15px] font-bold sm:w-auto" type="submit" [disabled]="salvandoSenha()">
@@ -434,7 +434,7 @@
     </form>
 
     @if (formResetSenha.controls.novaSenha.touched && formResetSenha.controls.novaSenha.invalid) {
-      <p class="text-xs text-red-600" role="alert">Use ao menos 6 caracteres.</p>
+      <p class="text-xs text-red-600" role="alert">Use ao menos 10 caracteres.</p>
     }
     @if (sucessoSenha()) {
       <p class="rounded-xl border border-accent-200 bg-accent-50 px-4 py-3 text-sm text-brand-800" role="status">{{ sucessoSenha() }}</p>

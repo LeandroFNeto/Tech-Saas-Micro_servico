@@ -1,6 +1,7 @@
 package com.example.demo.controller;
 
 import com.example.demo.dto.assistente.AssistenteChatResponseDTO;
+import com.example.demo.servico.IpDoCliente;
 import com.example.demo.servico.LimitadorPorIp;
 import com.example.demo.servico.assistente.AssistenteTutoriaService;
 import org.junit.jupiter.api.DisplayName;
@@ -30,7 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(PublicoAssistenteSuporteController.class)
 @AutoConfigureMockMvc(addFilters = false)
-@Import(LimitadorPorIp.class)
+@Import({LimitadorPorIp.class, IpDoCliente.class})
 class PublicoAssistenteSuporteTest {
 
     private static final String ROTA = "/api/publico/assistente/suporte";

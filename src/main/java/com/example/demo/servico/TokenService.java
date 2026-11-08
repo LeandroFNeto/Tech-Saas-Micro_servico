@@ -9,8 +9,6 @@ import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
@@ -19,10 +17,11 @@ import java.util.Date;
 public class TokenService {
 
     private static final long EXPIRACAO_HORAS = 8;
+    private static final int TAMANHO_MINIMO_CHAVE = 32;
     private final SecretKey chave;
 
-    public TokenService(@Value("${jwt.secret:${JWT_SECRET_KEY:SuaChaveSuperSecretaParaGerarOsTokensJWTDe32Caracteres}}") String jwtSecret) {
-        this.chave = Keys.hmacShaKeyFor(normalizarChave(jwtSecret));
+    public TokenService(@Value("${jwt.secret:}") String jwtSecret) {
+        this.chave = Keys.hmacShaKeyFor(validarChave(jwtSecret));
     }
 
     public String gerarToken(Usuario usuario) {
@@ -56,15 +55,14 @@ public class TokenService {
                 .getPayload();
     }
 
-    private byte[] normalizarChave(String secret) {
+    private byte[] validarChave(String secret) {
+        if (secret == null || secret.isBlank()) {
+            throw new IllegalStateException("JWT_SECRET_KEY ausente: a aplicação não sobe sem a chave do JWT");
+        }
         byte[] bytes = secret.getBytes(StandardCharsets.UTF_8);
-        if (bytes.length >= 32) {
-            return bytes;
+        if (bytes.length < TAMANHO_MINIMO_CHAVE) {
+            throw new IllegalStateException("JWT_SECRET_KEY precisa ter ao menos 32 bytes");
         }
-        try {
-            return MessageDigest.getInstance("SHA-256").digest(bytes);
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException("SHA-256 indisponível para derivar JWT_SECRET_KEY", e);
-        }
+        return bytes;
     }
 }

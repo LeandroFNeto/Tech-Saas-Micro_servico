@@ -16,7 +16,7 @@
 
 import { NextFunction, Request, Response } from 'express';
 
-import { contactToArray } from '../util/functions';
+import { contactToArray, descreverErroSeguro } from '../util/functions';
 
 export default async function statusConnection(
   req: Request,
@@ -38,13 +38,18 @@ export default async function statusConnection(
       for (const contact of localArr) {
         if (req.body.isGroup || req.body.isNewsletter) {
           localArr[index] = contact;
-        } else if (String(contact).endsWith('@lid')) {
-          console.log(contact);
-        } else if (numbers.indexOf(contact) < 0) {
-          console.log(contact);
+        } else if (
+          !String(contact).endsWith('@lid') &&
+          numbers.indexOf(contact) < 0
+        ) {
           const profile: any = await req.client
             .checkNumberStatus(contact)
-            .catch((error) => console.log(error));
+            .catch((error) => {
+              console.warn(
+                `Falha ao consultar número: ${error?.name || 'erro'}`
+              );
+              return null;
+            });
           if (!profile?.numberExists) {
             const num = (contact as any).split('@')[0];
             res.status(400).json({
@@ -71,7 +76,7 @@ export default async function statusConnection(
       });
     }
   } catch (error) {
-    req.logger.error(error);
+    req.logger.error(descreverErroSeguro(error));
     if (!res.headersSent) {
       res.status(404).json({
         response: null,

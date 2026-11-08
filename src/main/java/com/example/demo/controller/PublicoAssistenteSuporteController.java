@@ -2,6 +2,7 @@ package com.example.demo.controller;
 
 import com.example.demo.dto.assistente.AssistenteChatResponseDTO;
 import com.example.demo.dto.assistente.SuportePublicoRequestDTO;
+import com.example.demo.servico.IpDoCliente;
 import com.example.demo.servico.LimitadorPorIp;
 import com.example.demo.servico.assistente.AssistenteTutoriaService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -27,10 +28,13 @@ public class PublicoAssistenteSuporteController {
 
     private final AssistenteTutoriaService assistenteTutoriaService;
     private final LimitadorPorIp limitador;
+    private final IpDoCliente ipDoCliente;
 
-    public PublicoAssistenteSuporteController(AssistenteTutoriaService assistenteTutoriaService, LimitadorPorIp limitador) {
+    public PublicoAssistenteSuporteController(
+            AssistenteTutoriaService assistenteTutoriaService, LimitadorPorIp limitador, IpDoCliente ipDoCliente) {
         this.assistenteTutoriaService = assistenteTutoriaService;
         this.limitador = limitador;
+        this.ipDoCliente = ipDoCliente;
     }
 
     @PostMapping("/suporte")
@@ -44,7 +48,7 @@ public class PublicoAssistenteSuporteController {
     })
     public ResponseEntity<AssistenteChatResponseDTO> conversar(
             @Valid @RequestBody SuportePublicoRequestDTO requisicao, HttpServletRequest http) {
-        if (!limitador.permitir(http.getRemoteAddr())) {
+        if (!limitador.permitir(ipDoCliente.resolver(http))) {
             throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Limite de mensagens excedido");
         }
         return ResponseEntity.ok(assistenteTutoriaService.responderComercial(requisicao.mensagem(), requisicao.origem()));

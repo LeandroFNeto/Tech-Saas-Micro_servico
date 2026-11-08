@@ -16,17 +16,16 @@
 
 import { Request, Response } from 'express';
 
-import { unlinkAsync } from '../util/functions';
+import { descreverErroSeguro, unlinkAsync } from '../util/functions';
 
 function returnError(req: Request, res: Response, error: any) {
-  req.logger.error(error);
+  req.logger.error(descreverErroSeguro(error));
   if (res.headersSent) {
     return;
   }
   res.status(500).json({
     status: 'Error',
     message: 'Erro ao enviar a mensagem.',
-    error: error,
   });
 }
 
@@ -915,11 +914,10 @@ export async function sendMentioned(req: Request, res: Response) {
 
     res.status(201).json({ status: 'success', response: response });
   } catch (error) {
-    req.logger.error(error);
+    req.logger.error(descreverErroSeguro(error));
     res.status(500).json({
       status: 'error',
       message: 'Error on send message mentioned',
-      error: error,
     });
   }
 }

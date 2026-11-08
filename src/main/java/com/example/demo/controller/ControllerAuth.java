@@ -4,6 +4,8 @@ import com.example.demo.dto.auth.AlterarSenhaDTO;
 import com.example.demo.dto.auth.LoginRequestDTO;
 import com.example.demo.dto.auth.LoginResponseDTO;
 import com.example.demo.model.Usuario;
+import com.example.demo.servico.IpDoCliente;
+import com.example.demo.servico.LimiteTentativasLogin;
 import com.example.demo.servico.ServicoAuth;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -11,6 +13,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -28,9 +31,13 @@ import org.springframework.web.server.ResponseStatusException;
 public class ControllerAuth {
 
     private final ServicoAuth servicoAuth;
+    private final LimiteTentativasLogin limiteTentativasLogin;
+    private final IpDoCliente ipDoCliente;
 
-    public ControllerAuth(ServicoAuth servicoAuth) {
+    public ControllerAuth(ServicoAuth servicoAuth, LimiteTentativasLogin limiteTentativasLogin, IpDoCliente ipDoCliente) {
         this.servicoAuth = servicoAuth;
+        this.limiteTentativasLogin = limiteTentativasLogin;
+        this.ipDoCliente = ipDoCliente;
     }
 
     @PostMapping("/login")
@@ -39,10 +46,22 @@ public class ControllerAuth {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Autenticação bem-sucedida",
                     content = @Content(schema = @Schema(implementation = LoginResponseDTO.class))),
-            @ApiResponse(responseCode = "401", description = "E-mail ou senha inválidos")
+            @ApiResponse(responseCode = "401", description = "E-mail ou senha inválidos"),
+            @ApiResponse(responseCode = "429", description = "Mais de 5 falhas do mesmo e-mail e IP em 15 minutos; veja o cabeçalho Retry-After")
     })
-    public ResponseEntity<LoginResponseDTO> login(@Valid @RequestBody LoginRequestDTO dto) {
-        return ResponseEntity.ok(servicoAuth.login(dto));
+    public ResponseEntity<LoginResponseDTO> login(@Valid @RequestBody LoginRequestDTO dto, HttpServletRequest http) {
+        String ip = ipDoCliente.resolver(http);
+        limiteTentativasLogin.exigirLivre(dto.email(), ip);
+        try {
+            LoginResponseDTO resposta = servicoAuth.login(dto);
+            limiteTentativasLogin.zerar(dto.email(), ip);
+            return ResponseEntity.ok(resposta);
+        } catch (ResponseStatusException erro) {
+            if (erro.getStatusCode().value() == HttpStatus.UNAUTHORIZED.value()) {
+                limiteTentativasLogin.registrarFalha(dto.email(), ip);
+            }
+            throw erro;
+        }
     }
 
     @PutMapping("/alterar-senha")

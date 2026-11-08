@@ -106,6 +106,26 @@ export function groupNameToArray(group: any) {
   return localArr;
 }
 
+export function descreverErroSeguro(e: any): string {
+  const tipo = e?.name || e?.constructor?.name || 'erro';
+  const partes = [String(tipo)];
+  if (typeof e?.code === 'string' || typeof e?.code === 'number') {
+    partes.push(`code ${e.code}`);
+  }
+  if (e?.response?.status) {
+    partes.push(`HTTP ${e.response.status}`);
+  }
+  return partes.join(' ');
+}
+
+export function descreverFalhaDoWebhook(e: any): string {
+  const status = e?.response?.status;
+  if (status) {
+    return `Error calling Webhook. HTTP ${status}`;
+  }
+  return `Error calling Webhook. ${e?.code || 'falha de rede'}`;
+}
+
 export async function callWebHook(
   client: any,
   req: Request,
@@ -147,10 +167,10 @@ export async function callWebHook(
           } catch (e) {}
         })
         .catch((e) => {
-          req.logger.warn('Error calling Webhook.', e);
+          req.logger.warn(descreverFalhaDoWebhook(e));
         });
     } catch (e) {
-      req.logger.error(e);
+      req.logger.error(descreverErroSeguro(e));
     }
   }
 }
@@ -230,7 +250,7 @@ export async function autoDownload(client: any, req: any, message: any) {
       }
     }
   } catch (e) {
-    req.logger.error(e);
+    req.logger.error(descreverErroSeguro(e));
   }
 }
 
@@ -240,7 +260,7 @@ export async function startAllSessions(config: any, logger: any) {
       `${config.host}:${config.port}/api/${config.secretKey}/start-all`
     );
   } catch (e) {
-    logger.error(e);
+    logger.error(descreverErroSeguro(e));
   }
 }
 
@@ -265,7 +285,7 @@ async function sendUnread(client: any, req: any) {
 
     req.logger.info(`${client.session} : Fim enviar mensagens não lidas`);
   } catch (ex) {
-    req.logger.error(ex);
+    req.logger.error(descreverErroSeguro(ex));
   }
 }
 
@@ -298,7 +318,7 @@ async function archive(client: any, req: any) {
     }
     req.logger.info(`${client.session} : Fim arquivando chats`);
   } catch (ex) {
-    req.logger.error(ex);
+    req.logger.error(descreverErroSeguro(ex));
   }
 }
 

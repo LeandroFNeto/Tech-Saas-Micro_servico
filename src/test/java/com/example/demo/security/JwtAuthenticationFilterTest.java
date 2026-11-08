@@ -95,6 +95,18 @@ class JwtAuthenticationFilterTest {
     }
 
     @Test
+    @DisplayName("O x-admin-token de tamanho diferente da chave não autentica")
+    void xAdminTokenDeTamanhoDiferenteNaoAutentica() throws ServletException, IOException {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader("x-admin-token", "sua-chave");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        filter.doFilterInternal(request, response, filterChain);
+
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
+    }
+
+    @Test
     @DisplayName("JWT válido autentica com o usuário e autoridade ROLE_CLIENTE")
     void jwtValidoAutenticaUsuario() throws ServletException, IOException {
         MockHttpServletRequest request = new MockHttpServletRequest();

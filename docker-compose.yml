@@ -8,8 +8,6 @@ services:
       POSTGRES_USER: ${MEU_POSTGRES_USER}
       POSTGRES_PASSWORD: ${MEU_POSTGRES_PASSWORD}
       POSTGRES_DB: ${MEU_POSTGRES_DB}
-    ports:
-      - "5432:5432"
     volumes:
       - ./postgres_data:/var/lib/postgresql/data
     networks:
@@ -20,8 +18,6 @@ services:
     build: ./wppconnect-server
     container_name: wppconnect_server
     restart: always
-    ports:
-      - "21465:21465"
     environment:
       - PORT=21465
       - SECRET_KEY=${WPP_SECRET_KEY}
@@ -55,7 +51,6 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db-bot:5432/${MEU_POSTGRES_DB}
       - SPRING_DATASOURCE_USERNAME=${MEU_POSTGRES_USER}
       - SPRING_DATASOURCE_PASSWORD=${MEU_POSTGRES_PASSWORD}
-      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
       - WPPCONNECT_URL=http://wppconnect:21465
       - WPPCONNECT_SECRET_KEY=${WPP_SECRET_KEY}
       - WPPCONNECT_WEBHOOK_SECRET=${WPPCONNECT_WEBHOOK_SECRET:-${WPP_SECRET_KEY}}
@@ -65,12 +60,16 @@ services:
       - API_AUTH_TOKEN=${API_AUTH_TOKEN}
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
       - ADMIN_DEFAULT_EMAIL=${ADMIN_DEFAULT_EMAIL:-usuario@gamb.com}
-      - ADMIN_DEFAULT_PASSWORD=${ADMIN_DEFAULT_PASSWORD:-SenhaMaster123}
-      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-*}
+      - ADMIN_DEFAULT_PASSWORD=${ADMIN_DEFAULT_PASSWORD:-}
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-}
       - OPENWEATHER_API_KEY=${OPENWEATHER_API_KEY:-}
       - CONTATOS_CHAVE_CRIPTO=${CONTATOS_CHAVE_CRIPTO:-}
       - CONTATOS_CHAVE_INDICE=${CONTATOS_CHAVE_INDICE:-}
       - RETENCAO_MESES=${RETENCAO_MESES:-12}
+      - SWAGGER_HABILITADO=${SWAGGER_HABILITADO:-false}
+      - PROXIES_CONFIAVEIS=${PROXIES_CONFIAVEIS:-}
+      - SENHA_LEGADA_A_BLOQUEAR=${SENHA_LEGADA_A_BLOQUEAR:-}
+      - GAMB_CONTATO_WHATSAPP=${GAMB_CONTATO_WHATSAPP:-}
     networks:
       - bot-network
     logging:

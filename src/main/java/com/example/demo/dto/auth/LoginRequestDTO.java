@@ -12,7 +12,7 @@ public record LoginRequestDTO(
         String email,
 
         @NotBlank
-        @Schema(description = "Senha em texto puro; o servidor compara com o hash BCrypt", example = "SenhaMaster123")
+        @Schema(description = "Senha em texto puro; o servidor compara com o hash BCrypt", example = "ExemploSenha2026")
         String senha
 ) {
 }

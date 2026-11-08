@@ -22,4 +22,16 @@ post:
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/LoginResponseDTO"
+            $ref: "#/components/schemas/ErroDTO"
+    "429":
+      description: Mais de 5 falhas de login do mesmo e-mail e IP em 15 minutos
+      headers:
+        Retry-After:
+          description: Segundos até a janela de tentativas passar
+          schema:
+            type: integer
+            example: 600
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErroDTO"
