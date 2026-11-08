@@ -1,5 +1,6 @@
 package com.example.demo.servico;
 
+import org.springframework.web.client.ResourceAccessException;
 import com.example.demo.model.Empresa;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -130,5 +131,23 @@ class ServicoIAConversaTest {
                 .contains("Informar valor ou faixa de preço")
                 .contains("Prometer prazo de implantação, vaga ou garantia")
                 .contains("Citar nome de empresa cliente");
+    }
+
+    @Test
+    @DisplayName("Timeout soma o custo estimado fixo e devolve vazio")
+    void timeoutSomaCustoFixo() {
+        when(restTemplate.postForEntity(anyString(), any(HttpEntity.class), eq(String.class)))
+                .thenThrow(new ResourceAccessException("tempo esgotado"));
+
+        assertThat(servicoIA.conversar(empresa, "5511", "qual o horário de vocês?", "menu")).isEmpty();
+        assertThat(guarda.gastoDoDiaReais()).isEqualTo(0.01);
+    }
+
+    @Test
+    @DisplayName("Situação da cota reflete a pausa após 429")
+    void situacaoDaCota() {
+        assertThat(servicoIA.situacaoCota()).isEqualTo(GuardaCotaIA.Situacao.LIVRE);
+        guarda.registrarCotaEsgotada();
+        assertThat(servicoIA.situacaoCota()).isEqualTo(GuardaCotaIA.Situacao.PAUSADA_APOS_429);
     }
 }

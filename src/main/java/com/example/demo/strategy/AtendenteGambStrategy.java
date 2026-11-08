@@ -27,6 +27,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -74,6 +75,9 @@ public class AtendenteGambStrategy implements ModuloAtendimentoStrategy {
     private final InterpretadorDeData interpretadorDeData = new InterpretadorDeData();
     private final ConversaCurta conversaCurta = new ConversaCurta();
 
+    private static final Set<String> COMANDOS_VOLTA_MENU = Set.of("menu", "voltar");
+    private static final Set<String> COMANDOS_REPETEM_MENU = Set.of("sim", "nao", "sair", "cancelar", "ok");
+
     @Override
     public String getRamoDeAtuacao() {
         return RAMO;
@@ -93,7 +97,7 @@ public class AtendenteGambStrategy implements ModuloAtendimentoStrategy {
             return;
         }
 
-        if (texto.equals("0")) {
+        if (texto.equals("0") || COMANDOS_VOLTA_MENU.contains(comando(texto))) {
             mostrarMenu(empresa, numeroCliente);
             return;
         }
@@ -171,8 +175,12 @@ public class AtendenteGambStrategy implements ModuloAtendimentoStrategy {
             responderSobre(empresa, numeroCliente, normalizado.equals("3") ? "Quem é a Gamb e como vocês podem ajudar o meu negócio?" : texto);
             return;
         }
-        if (normalizado.matches("^[0-9]+$") || normalizado.length() < 3) {
+        if (normalizado.matches("^[0-9]+$") || normalizado.length() < 3 || COMANDOS_REPETEM_MENU.contains(comando(texto))) {
             enviar(empresa, numeroCliente, MENSAGEM_MENU);
+            return;
+        }
+        if (AssistenteTutoriaService.ehPerguntaDoApp(texto)) {
+            responderDuvida(empresa, numeroCliente, texto);
             return;
         }
         responderSobre(empresa, numeroCliente, texto);
@@ -472,6 +480,10 @@ public class AtendenteGambStrategy implements ModuloAtendimentoStrategy {
                 .limit(MAXIMO_OPCOES)
                 .map(h -> h.format(FORMATO_HORA))
                 .collect(Collectors.joining(", "));
+    }
+
+    private String comando(String texto) {
+        return normalizar(texto).replaceAll("[^a-z0-9 ]", " ").replaceAll("\\s+", " ").trim();
     }
 
     private String normalizar(String texto) {

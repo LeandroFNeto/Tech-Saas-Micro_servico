@@ -1,5 +1,7 @@
 package com.example.demo.strategy;
 
+import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.ParameterizedTest;
 import com.example.demo.model.Empresa;
 import com.example.demo.model.EstadoUsuario;
 import com.example.demo.repository.AvisoRepository;
@@ -445,5 +447,50 @@ class AtendenteGambStrategyTest {
 
         assertThat(gerenciadorSessao.getEstado(CLIENTE)).isEqualTo(EstadoUsuario.ATENDENTE_DUVIDA);
         assertThat(ultimaResposta()).contains("QR Code").doesNotContain("Digite *2*");
+    }
+
+    @Test
+    @DisplayName("Menu ou voltar reabre o menu em qualquer passo sem chamar o modelo")
+    void menuOuVoltarReabreOMenu() {
+        ate("oi", "2");
+        assertThat(gerenciadorSessao.getEstado(CLIENTE)).isEqualTo(EstadoUsuario.REUNIAO_MOTIVO);
+
+        enviar("Menu");
+        assertThat(gerenciadorSessao.getEstado(CLIENTE)).isEqualTo(EstadoUsuario.ATENDENTE_MENU);
+        assertThat(ultimaResposta()).contains("Tirar uma dúvida");
+
+        ate("1", "voltar.");
+        assertThat(gerenciadorSessao.getEstado(CLIENTE)).isEqualTo(EstadoUsuario.ATENDENTE_MENU);
+        verify(servicoIA, never()).gerarRespostaHumanizada(anyString());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"sim", "não", "ok", "sair", "cancelar"})
+    @DisplayName("Resposta curta no menu repete o menu sem chamar o modelo")
+    void respostaCurtaNoMenuRepeteOMenu(String texto) {
+        ate("oi", texto);
+
+        assertThat(ultimaResposta()).contains("Tirar uma dúvida");
+        assertThat(gerenciadorSessao.getEstado(CLIENTE)).isEqualTo(EstadoUsuario.ATENDENTE_MENU);
+        verify(servicoIA, never()).gerarRespostaHumanizada(anyString());
+    }
+
+    @Test
+    @DisplayName("Pergunta do app escrita no menu vai ao Suporte e o cliente fica no menu")
+    void perguntaDoAppNoMenuVaiAoSuporte() {
+        ate("oi", "Como conectar o WhatsApp pelo QR Code?");
+
+        assertThat(ultimaResposta()).contains("QR Code").doesNotContain("Digite *2*");
+        assertThat(gerenciadorSessao.getEstado(CLIENTE)).isEqualTo(EstadoUsuario.ATENDENTE_MENU);
+    }
+
+    @Test
+    @DisplayName("Obrigado na dúvida recebe a conversa curta sem chamar o modelo")
+    void obrigadoNaDuvidaRespondeLocal() {
+        ate("oi", "1", "obrigado!");
+
+        assertThat(ultimaResposta()).doesNotContain("Tirar uma dúvida");
+        assertThat(gerenciadorSessao.getEstado(CLIENTE)).isEqualTo(EstadoUsuario.ATENDENTE_DUVIDA);
+        verify(servicoIA, never()).gerarRespostaHumanizada(anyString());
     }
 }

@@ -1,5 +1,6 @@
 package com.example.demo.servico.assistente;
 
+import com.example.demo.servico.GuardaCotaIA;
 import com.example.demo.dto.assistente.DiagnosticoResponseDTO;
 import com.example.demo.repository.AvisoRepository;
 import com.example.demo.repository.EmpresaRepository;
@@ -111,5 +112,25 @@ class DiagnosticoModulosServiceTest {
                 .filter(m -> "WhatsApp".equals(m.modulo()))
                 .findFirst()
                 .orElseThrow().status()).isEqualTo("DEGRADADO");
+    }
+
+    @Test
+    @DisplayName("Mostra a IA como degradada quando a guarda de cota suspende o modelo")
+    void iaSuspensaPelaGuardaFicaDegradada() {
+        when(usuarioRepository.count()).thenReturn(5L);
+        when(avisoRepository.count()).thenReturn(2L);
+        when(reservaRepository.count()).thenReturn(10L);
+        when(empresaRepository.count()).thenReturn(1L);
+        when(servicoIA.situacaoCota()).thenReturn(GuardaCotaIA.Situacao.TETO_GASTO_DIARIO);
+
+        DiagnosticoResponseDTO resultado = service.executarDiagnostico();
+
+        assertThat(resultado.statusGeral()).isEqualTo("ATENCAO");
+        assertThat(resultado.modulos()).filteredOn(m -> "IA".equals(m.modulo()))
+                .singleElement()
+                .satisfies(m -> {
+                    assertThat(m.status()).isEqualTo("DEGRADADO");
+                    assertThat(m.mensagem()).contains("Teto diário de gasto");
+                });
     }
 }

@@ -1015,4 +1015,16 @@ class LocacaoStrategyTest {
         verify(servicoMensagem, never()).enviarMensagemWPP(eq(empresa), eq(REMETENTE), contains("Só para confirmar"));
         assertThat(gerenciadorSessao.getEstado(REMETENTE)).isEqualTo(EstadoUsuario.MENU_PRINCIPAL);
     }
+
+    @Test
+    @DisplayName("No meio da reserva a mensagem segue o fluxo sem conversa livre")
+    void naoUsaConversaLivreNoMeioDaReserva() {
+        Empresa empresa = empresaComMenu();
+        empresa.setUsaIA(true);
+        gerenciadorSessao.setEstado(REMETENTE, EstadoUsuario.RESERVA_ESPERANDO_DATA);
+
+        locacaoStrategy.processarMensagem(empresa, REMETENTE, "obrigado", "RESERVA_ESPERANDO_DATA");
+
+        verify(servicoIA, never()).conversar(any(), anyString(), anyString(), anyString());
+    }
 }

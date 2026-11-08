@@ -1,5 +1,11 @@
 package com.example.demo.servico;
 
+import java.util.concurrent.atomic.AtomicReference;
+import java.time.ZoneOffset;
+import java.time.ZoneId;
+import java.time.Instant;
+import java.time.Duration;
+import java.time.Clock;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -68,5 +74,37 @@ class ConversaCurtaTest {
             String b = conversa.responder("5511", "oi").get().texto();
             assertThat(b).isNotEqualTo(a);
         }
+    }
+
+    @Test
+    @DisplayName("A lembrança da frase vence em 6 horas e sai da memória quando ela enche")
+    void lembrancaVence() {
+        AtomicReference<Instant> agora = new AtomicReference<>(Instant.parse("2026-11-07T12:00:00Z"));
+        Clock relogio = new Clock() {
+            @Override
+            public ZoneId getZone() {
+                return ZoneOffset.UTC;
+            }
+
+            @Override
+            public Clock withZone(ZoneId zone) {
+                return this;
+            }
+
+            @Override
+            public Instant instant() {
+                return agora.get();
+            }
+        };
+        ConversaCurta curta = new ConversaCurta(relogio);
+        for (int i = 0; i < 2000; i++) {
+            curta.responder("55" + i, "oi");
+        }
+        assertThat(curta.tamanhoMemoria()).isEqualTo(2000);
+
+        agora.set(agora.get().plus(Duration.ofHours(6)));
+        curta.responder("novo", "oi");
+
+        assertThat(curta.tamanhoMemoria()).isEqualTo(1);
     }
 }

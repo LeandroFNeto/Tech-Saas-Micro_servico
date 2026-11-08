@@ -15,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.InputStream;
@@ -74,6 +75,10 @@ public class ServicoIA {
     @Autowired(required = false)
     void setCacheResposta(CacheRespostaIA cacheResposta) {
         this.cacheResposta = cacheResposta;
+    }
+
+    public GuardaCotaIA.Situacao situacaoCota() {
+        return guardaCota == null ? GuardaCotaIA.Situacao.LIVRE : guardaCota.situacao();
     }
 
     public Optional<String> conversar(Empresa empresa, String contato, String mensagemUsuario, String menuDaEmpresa) {
@@ -217,6 +222,12 @@ public class ServicoIA {
             }
             return texto;
 
+        } catch (ResourceAccessException e) {
+            log.warn("Tempo esgotado ao comunicar com a IA");
+            if (guardaCota != null) {
+                guardaCota.registrarChamadaSemResposta();
+            }
+            return null;
         } catch (HttpClientErrorException.TooManyRequests e) {
             log.warn("Cota da IA atingida (429)");
             if (guardaCota != null) {

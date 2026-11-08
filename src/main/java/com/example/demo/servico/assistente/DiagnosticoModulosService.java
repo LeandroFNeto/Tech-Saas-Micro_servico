@@ -6,6 +6,7 @@ import com.example.demo.repository.AvisoRepository;
 import com.example.demo.repository.EmpresaRepository;
 import com.example.demo.repository.ReservaRepository;
 import com.example.demo.repository.UsuarioRepository;
+import com.example.demo.servico.GuardaCotaIA;
 import com.example.demo.servico.ServicoIA;
 import com.example.demo.servico.ServicoWppConnect;
 import org.springframework.stereotype.Service;
@@ -121,12 +122,29 @@ public class DiagnosticoModulosService {
             if (servicoIA == null) {
                 return new DiagnosticoStatusDTO("IA", "DEGRADADO", "Serviço IA não configurado", System.currentTimeMillis() - inicio);
             }
+            String suspensao = motivoSuspensao(servicoIA.situacaoCota());
             long duracao = System.currentTimeMillis() - inicio;
+            if (suspensao != null) {
+                return new DiagnosticoStatusDTO("IA", "DEGRADADO", suspensao, duracao);
+            }
             return new DiagnosticoStatusDTO("IA", "OPERACIONAL", "Serviço IA operacional com modelo Gemini", duracao);
         } catch (Exception e) {
             long duracao = System.currentTimeMillis() - inicio;
             return new DiagnosticoStatusDTO("IA", "DEGRADADO", "Falha no serviço IA: " + e.getMessage(), duracao);
         }
+    }
+
+    private String motivoSuspensao(GuardaCotaIA.Situacao situacao) {
+        if (situacao == null) {
+            return null;
+        }
+        return switch (situacao) {
+            case LIVRE -> null;
+            case PAUSADA_APOS_429 -> "Modelo pausado após erro de cota (429); o atendimento segue pelo fallback";
+            case TETO_GASTO_DIARIO -> "Teto diário de gasto da IA atingido; o modelo volta no próximo dia";
+            case TETO_CHAMADAS_DIA -> "Teto diário de chamadas da IA atingido; o modelo volta no próximo dia";
+            case TETO_CHAMADAS_MINUTO -> "Teto de chamadas por minuto da IA atingido; o modelo volta no minuto seguinte";
+        };
     }
 
     private String calcularStatusGeral(List<DiagnosticoStatusDTO> modulos) {

@@ -1,5 +1,10 @@
 package com.example.demo.servico;
 
+import org.slf4j.LoggerFactory;
+import ch.qos.logback.core.read.ListAppender;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.Level;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -121,5 +126,53 @@ class GuardaCotaIATest {
         g.registrarUso(1_000_000, 1_000_000);
 
         assertThat(g.gastoDoDiaReais()).isEqualTo((0.30 + 2.50) * 5.50);
+    }
+
+    @Test
+    @DisplayName("Informa a situação da guarda sem consumir chamada")
+    void informaSituacao() {
+        GuardaCotaIA g = guarda(relogio(), 1, 10, 100);
+        assertThat(g.situacao()).isEqualTo(GuardaCotaIA.Situacao.LIVRE);
+        assertThat(g.situacao()).isEqualTo(GuardaCotaIA.Situacao.LIVRE);
+
+        assertThat(g.reservar()).isTrue();
+        assertThat(g.situacao()).isEqualTo(GuardaCotaIA.Situacao.TETO_CHAMADAS_MINUTO);
+
+        g.registrarCotaEsgotada();
+        assertThat(g.situacao()).isEqualTo(GuardaCotaIA.Situacao.PAUSADA_APOS_429);
+
+        GuardaCotaIA porDia = guarda(relogio(), 5, 1, 100);
+        porDia.reservar();
+        assertThat(porDia.situacao()).isEqualTo(GuardaCotaIA.Situacao.TETO_CHAMADAS_DIA);
+
+        assertThat(guarda(relogio(), 5, 5, 0).situacao()).isEqualTo(GuardaCotaIA.Situacao.TETO_GASTO_DIARIO);
+    }
+
+    @Test
+    @DisplayName("Chamada sem resposta soma o custo estimado fixo")
+    void chamadaSemRespostaSomaCustoFixo() {
+        GuardaCotaIA g = guarda(relogio(), 5, 5, 100);
+        g.registrarChamadaSemResposta();
+        assertThat(g.gastoDoDiaReais()).isEqualTo(0.01);
+    }
+
+    @Test
+    @DisplayName("No teto de gasto registra um aviso no log, uma vez por dia e sem dado de cliente")
+    void avisaNoLogNoTetoDeGasto() {
+        Logger logger = (Logger) LoggerFactory.getLogger(GuardaCotaIA.class);
+        ListAppender<ILoggingEvent> captura = new ListAppender<>();
+        captura.start();
+        logger.addAppender(captura);
+        try {
+            GuardaCotaIA g = guarda(relogio(), 5, 5, 0);
+            assertThat(g.reservar()).isFalse();
+            assertThat(g.reservar()).isFalse();
+
+            assertThat(captura.list).hasSize(1);
+            assertThat(captura.list.get(0).getLevel()).isEqualTo(Level.WARN);
+            assertThat(captura.list.get(0).getFormattedMessage()).contains("Teto diario de gasto").doesNotContainPattern("\\d{8,}");
+        } finally {
+            logger.detachAppender(captura);
+        }
     }
 }

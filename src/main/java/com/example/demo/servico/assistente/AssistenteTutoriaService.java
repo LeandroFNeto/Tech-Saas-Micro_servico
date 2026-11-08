@@ -36,6 +36,11 @@ public class AssistenteTutoriaService {
 
     static final String RECUSA_COMERCIAL_WHATSAPP = "Só posso falar sobre a Gamb: quem somos, o que oferecemos hoje, como podemos ajudar o seu negócio e como funciona o plano de assinatura. Sobre outros assuntos ou dados de empresas não consigo ajudar.";
 
+    private static final Pattern PADRAO_PERGUNTA_COMO = Pattern.compile(
+            "\\b(como|onde|cade|configur\\w*|conect\\w*|cadastr\\w*|nao consigo|nao aparece)\\b");
+    private static final Pattern PADRAO_FUNCAO_DO_APP = Pattern.compile(
+            "\\b(app|aplicativo|painel|whatsapp|qr ?code|qr|agenda|calendario|foto\\w*|aviso\\w*|tutoria\\w*|senha|login|cardapio)\\b");
+
     private static final Pattern PADRAO_INTENCAO_COMERCIAL = Pattern.compile(
             "(quem|o que|sobre|conhecer|saber).{0,20}\\bgamb\\b"
                     + "|o que (voces|vcs|voce|a empresa|a gamb) (faz|fazem|oferece|oferecem|vende|vendem)"
@@ -247,6 +252,16 @@ public class AssistenteTutoriaService {
 
     public AssistenteChatResponseDTO responderComercialWhatsapp(String mensagem) {
         return responderComercialNoCanal(mensagem, List.of(), true);
+    }
+
+    public static boolean ehPerguntaDoApp(String mensagem) {
+        if (mensagem == null || mensagem.isBlank()) {
+            return false;
+        }
+        String texto = Normalizer.normalize(mensagem, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}+", "")
+                .toLowerCase(Locale.ROOT);
+        return PADRAO_PERGUNTA_COMO.matcher(texto).find() && PADRAO_FUNCAO_DO_APP.matcher(texto).find();
     }
 
     public static boolean temIntencaoComercial(String mensagem) {

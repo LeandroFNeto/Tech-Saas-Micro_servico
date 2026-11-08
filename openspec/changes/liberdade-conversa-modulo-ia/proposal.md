@@ -19,10 +19,11 @@ O módulo de IA conversa com pouca liberdade: "oi", "bom dia" ou "obrigado" caem
 
 ### Modified Capabilities
 - `ia`: IA-06 (guarda de cota, pausa após 429) e novo IA-09 (conversa livre com conversa curta local).
-- `whatsapp`: WPP-12 (texto livre no menu da atendente da Gamb segue a conversa livre do IA-09).
+- `whatsapp`: WPP-12 (conversa curta no menu da atendente da Gamb; texto livre no menu vai ao Suporte; "menu" e "voltar" reabrem o menu).
+- `assistente-tutoria`: o diagnóstico mostra a IA como degradada quando a guarda de cota suspende o modelo.
 
 ## Impact
 
-- Código: `ServicoIA` (guarda de cota, cache, conversa curta), novo componente de conversa curta, `LocacaoStrategy` e `AtendenteGambStrategy` (usar a conversa livre antes do menu/"Opção inválida"), `atendimento-empresa.md` e `base-comercial.md`, `application.properties`.
+- Código: `ServicoIA` (guarda de cota, cache, conversa curta), `DiagnosticoModulosService` (situação da guarda), novo componente de conversa curta, `LocacaoStrategy` e `AtendenteGambStrategy` (usar a conversa livre antes do menu/"Opção inválida"), `atendimento-empresa.md` e `base-comercial.md`, `application.properties`.
 - Sem mudança de API HTTP nem de banco.
 - Fora de escopo: trocar de provedor, plano pago, memória longa da conversa, empresas sem o módulo IA ligado (continuam no menu).

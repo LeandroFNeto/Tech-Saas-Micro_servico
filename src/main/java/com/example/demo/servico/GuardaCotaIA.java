@@ -17,6 +17,8 @@ public class GuardaCotaIA {
     private static final Logger log = LoggerFactory.getLogger(GuardaCotaIA.class);
     private static final ZoneId FUSO_BRASILIA = ZoneId.of("America/Sao_Paulo");
 
+    public enum Situacao { LIVRE, PAUSADA_APOS_429, TETO_GASTO_DIARIO, TETO_CHAMADAS_DIA, TETO_CHAMADAS_MINUTO }
+
     private final int maximoPorMinuto;
     private final int maximoPorDia;
     private final double tetoGastoDiarioReais;
@@ -43,7 +45,7 @@ public class GuardaCotaIA {
             @Value("${gemini.preco-entrada-usd-por-milhao:0.30}") double precoEntradaUsdPorMilhao,
             @Value("${gemini.preco-saida-usd-por-milhao:2.50}") double precoSaidaUsdPorMilhao,
             @Value("${gemini.cotacao-usd-brl:5.50}") double cotacaoUsdBrl,
-            @Value("${gemini.custo-estimado-chamada-reais:0.01}") double custoEstimadoPorChamadaReais,
+            @Value("${gemini.custo-estimado-chamada-reais:0.005}") double custoEstimadoPorChamadaReais,
             @Value("${gemini.pausa-apos-429-segundos:300}") long pausaAposCotaSegundos) {
         this(maximoPorMinuto, maximoPorDia, tetoGastoDiarioReais, precoEntradaUsdPorMilhao, precoSaidaUsdPorMilhao,
                 cotacaoUsdBrl, custoEstimadoPorChamadaReais, pausaAposCotaSegundos, Clock.system(FUSO_BRASILIA));
@@ -64,20 +66,34 @@ public class GuardaCotaIA {
     }
 
     public synchronized boolean reservar() {
+        Situacao atual = situacaoAgora();
+        if (atual == Situacao.TETO_GASTO_DIARIO && !avisouTetoDoDia) {
+            avisouTetoDoDia = true;
+            log.warn("Teto diario de gasto da IA atingido; modelo suspenso ate o proximo dia");
+        }
+        if (atual != Situacao.LIVRE) {
+            return false;
+        }
+        chamadasNoMinuto++;
+        chamadasNoDia++;
+        return true;
+    }
+
+    public synchronized Situacao situacao() {
+        return situacaoAgora();
+    }
+
+    private Situacao situacaoAgora() {
         Instant agora = relogio.instant();
         virarDiaSeNecessario();
         if (pausadoAte != null && agora.isBefore(pausadoAte)) {
-            return false;
+            return Situacao.PAUSADA_APOS_429;
         }
         if (gastoNoDia >= tetoGastoDiarioReais) {
-            if (!avisouTetoDoDia) {
-                avisouTetoDoDia = true;
-                log.warn("Teto diario de gasto da IA atingido; modelo suspenso ate o proximo dia");
-            }
-            return false;
+            return Situacao.TETO_GASTO_DIARIO;
         }
         if (chamadasNoDia >= maximoPorDia) {
-            return false;
+            return Situacao.TETO_CHAMADAS_DIA;
         }
         long minuto = agora.getEpochSecond() / 60;
         if (minuto != minutoAtual) {
@@ -85,11 +101,9 @@ public class GuardaCotaIA {
             chamadasNoMinuto = 0;
         }
         if (chamadasNoMinuto >= maximoPorMinuto) {
-            return false;
+            return Situacao.TETO_CHAMADAS_MINUTO;
         }
-        chamadasNoMinuto++;
-        chamadasNoDia++;
-        return true;
+        return Situacao.LIVRE;
     }
 
     public synchronized void registrarUso(Integer tokensEntrada, Integer tokensSaida) {
@@ -100,6 +114,11 @@ public class GuardaCotaIA {
         }
         double usd = (tokensEntrada * precoEntradaUsdPorMilhao + tokensSaida * precoSaidaUsdPorMilhao) / 1_000_000d;
         gastoNoDia += usd * cotacaoUsdBrl;
+    }
+
+    public synchronized void registrarChamadaSemResposta() {
+        virarDiaSeNecessario();
+        gastoNoDia += custoEstimadoPorChamadaReais;
     }
 
     public synchronized void registrarCotaEsgotada() {

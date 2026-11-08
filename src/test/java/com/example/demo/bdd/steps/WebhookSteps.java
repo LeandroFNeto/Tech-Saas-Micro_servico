@@ -26,6 +26,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.matches;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -136,6 +137,12 @@ public class WebhookSteps {
     @E("a mensagem enviada ao cliente deve conter {string}")
     public void mensagemEnviadaContem(String trecho) {
         verify(servicoMensagem, atLeastOnce()).enviarMensagemWPP(any(), anyString(), contains(trecho));
+    }
+
+    @E("a mensagem enviada ao cliente deve começar com um cumprimento")
+    public void mensagemComecaComCumprimento() {
+        verify(servicoMensagem, atLeastOnce()).enviarMensagemWPP(any(), anyString(),
+                matches("(?s)^(Oi|Olá|E aí|Bom dia|Boa tarde|Boa noite)[!,. ].*"));
     }
 
     private String json(DataTable tabela) {

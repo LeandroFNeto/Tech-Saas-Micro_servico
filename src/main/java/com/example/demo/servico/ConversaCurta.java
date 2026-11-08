@@ -1,6 +1,9 @@
 package com.example.demo.servico;
 
 import java.text.Normalizer;
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -18,6 +21,7 @@ public class ConversaCurta {
 
     private static final int TAMANHO_MAXIMO_TEXTO = 60;
     private static final int LIMITE_MEMORIA = 2000;
+    private static final Duration VALIDADE_MEMORIA = Duration.ofHours(6);
 
     private static final Pattern BOM_DIA = Pattern.compile("\\bbom ?dia\\b");
     private static final Pattern BOA_TARDE = Pattern.compile("\\bboa ?tarde\\b");
@@ -64,7 +68,19 @@ public class ConversaCurta {
             "Até logo! Estou por aqui quando precisar.",
             "Valeu, até a próxima!");
 
-    private final Map<String, Integer> ultimaFrase = new HashMap<>();
+    private record Lembranca(int indice, Instant em) {
+    }
+
+    private final Map<String, Lembranca> ultimaFrase = new HashMap<>();
+    private final Clock relogio;
+
+    public ConversaCurta() {
+        this(Clock.systemUTC());
+    }
+
+    ConversaCurta(Clock relogio) {
+        this.relogio = relogio;
+    }
 
     public Optional<Resposta> responder(String contato, String texto) {
         if (texto == null || texto.isBlank()) {
@@ -120,17 +136,29 @@ public class ConversaCurta {
     }
 
     private synchronized String escolher(String contato, String grupo, List<String> frases) {
-        if (ultimaFrase.size() > LIMITE_MEMORIA) {
-            ultimaFrase.clear();
+        Instant agora = relogio.instant();
+        if (ultimaFrase.size() >= LIMITE_MEMORIA) {
+            ultimaFrase.values().removeIf(l -> expirou(l, agora));
+            if (ultimaFrase.size() >= LIMITE_MEMORIA) {
+                ultimaFrase.clear();
+            }
         }
         String chave = contato + "|" + grupo;
-        Integer anterior = ultimaFrase.get(chave);
+        Lembranca anterior = ultimaFrase.get(chave);
         int indice = ThreadLocalRandom.current().nextInt(frases.size());
-        if (anterior != null && indice == anterior) {
+        if (anterior != null && !expirou(anterior, agora) && indice == anterior.indice()) {
             indice = (indice + 1) % frases.size();
         }
-        ultimaFrase.put(chave, indice);
+        ultimaFrase.put(chave, new Lembranca(indice, agora));
         return frases.get(indice);
+    }
+
+    private boolean expirou(Lembranca lembranca, Instant agora) {
+        return !agora.isBefore(lembranca.em().plus(VALIDADE_MEMORIA));
+    }
+
+    synchronized int tamanhoMemoria() {
+        return ultimaFrase.size();
     }
 
     private String normalizar(String texto) {

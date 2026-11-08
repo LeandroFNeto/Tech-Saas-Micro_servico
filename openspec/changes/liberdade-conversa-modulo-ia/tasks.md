@@ -22,6 +22,15 @@
 
 - [x] 4.1 Rodar a suíte completa e `openspec validate liberdade-conversa-modulo-ia`, e atualizar `docs`/painel se listarem o módulo de IA
 
+## 5. Revisão
+
+- [x] 5.1 Tratar "menu" e "voltar" como *0* na Gamb e repetir o menu para "sim", "não", "ok", "sair" e "cancelar", verificando em `AtendenteGambStrategyTest` que o modelo não é chamado
+- [x] 5.2 Mandar ao Suporte a pergunta de uso do app escrita no menu da Gamb, mantendo o restante do texto livre na base comercial, e verificar que o cliente fica no menu
+- [x] 5.3 Expor a situação da guarda de cota e mostrar a IA como degradada no diagnóstico, verificando em `DiagnosticoModulosServiceTest` e `GuardaCotaIATest`
+- [x] 5.4 Somar o custo estimado fixo no timeout, com padrão de R$ 0,005 configurável por variável, e verificar em `ServicoIAConversaTest`
+- [x] 5.5 Dar validade de 6 horas à lembrança da `ConversaCurta`, verificar em `ConversaCurtaTest`, e cobrir o aviso de teto no log, o início da Locação sem modelo, o "obrigado" na dúvida da Gamb e o cumprimento no cenário "Oi" do `webhook.feature`
+- [x] 5.6 Listar as propriedades `gemini.*` no design (tarefa 1.3) e ajustar IA-06, IA-09, WPP-12 e o diagnóstico em `assistente-tutoria`
+
 ## Workflow follow-up
 
 - Arquivar a change e sincronizar `ia` e `whatsapp` depois da revisão.
