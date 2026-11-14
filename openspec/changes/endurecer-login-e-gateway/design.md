@@ -76,6 +76,7 @@ Os dados afetados são `contatos.whatsapp_id`, `contatos.nome`, `contatos.numero
   2. Valor com `v1:` que abre com a chave antiga é cifrado com a nova, e o índice é recalculado.
   3. Valor sem `v1:`, gravado antes da cifra, é cifrado com a nova, e o índice é recalculado.
   4. Valor que não abre com nenhuma das chaves interrompe o boot. O log traz só a tabela e o `id`.
+  5. Linha de `contatos` com `whatsapp_id` nulo (opt-out, change `expurgar-contato-no-opt-out`) recebe `numero_indice` aleatório no mesmo formato, mantém `nao_contatar` e entra no log só como quantidade.
 - O log final traz só as quantidades por tabela. A falha para a subida e a próxima tentativa continua de onde parou.
 - `@Value` de `CriptografiaCampo` perde as chaves padrão do código (regra 2.2).
 

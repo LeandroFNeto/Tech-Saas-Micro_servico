@@ -221,3 +221,48 @@ Cenário: change sem cumprir uma regra
 - Quando passa pela etapa de Segurança
 - Então a exceção está nos Riscos do `design.md` com motivo e prazo
 - Ou a etapa de Segurança reprova
+
+### DEV-13 API acessível só pelo proxy
+
+A API deve ficar inalcançável diretamente pela porta `8080` no IP público do servidor, e `PROXIES_CONFIAVEIS` em produção deve listar só o IP exato do proxy.
+
+Contrato: nenhum.
+Prova: ainda não escrita; prevista em `docker compose config` e conferência no deploy (change `endurecer-login-e-gateway`).
+
+Cenário: acesso direto à porta
+- Dado o servidor de produção
+- Quando alguém chama a porta `8080` pelo IP público
+- Então a conexão é recusada
+- E a API continua respondendo pelo proxy com HTTPS
+
+Cenário: atualização do ambiente sem IP do proxy
+- Dado o script de atualização do `.env`
+- Quando a pessoa aperta Enter na pergunta do IP do proxy
+- Então o script mantém o valor atual e não grava a faixa inteira da rede Docker
+
+### DEV-14 Scripts de ambiente validam o que gravam e não exibem segredo
+
+Os scripts de ambiente devem gravar o número da Gamb somente com dígitos, começando em 55, com 12 ou 13 dígitos, e o script de rotação deve trocar as chaves de contatos sem exibir nenhum valor.
+
+Contrato: nenhum.
+Prova: ainda não escrita; prevista na execução dos scripts contra um `.env` temporário (change `endurecer-login-e-gateway`).
+
+Cenário: número da Gamb inválido
+- Dado um número com letras, sem 55 ou com tamanho errado
+- Quando a pessoa o informa ao script
+- Então o script pergunta de novo e não grava o valor
+
+Cenário: valor inválido já gravado
+- Dado um `.env` com `GAMB_CONTATO_WHATSAPP` inválido
+- Quando o script roda
+- Então lista uma pendência sem exibir o valor
+
+Cenário: rotação de chaves preparada
+- Dado um `.env` com as chaves atuais
+- Quando o script de rotação roda
+- Então as chaves atuais vão para as variáveis `_ANTIGA`, as novas são geradas e nenhum valor aparece na tela
+
+Cenário: rotação já preparada
+- Dado um `.env` que já traz variáveis `_ANTIGA`
+- Quando o script de rotação roda
+- Então o script para sem alterar o arquivo

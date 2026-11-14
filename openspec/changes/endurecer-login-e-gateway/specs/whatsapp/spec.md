@@ -2,7 +2,7 @@
 
 ## ADDED Requirements
 
-### Requirement: WPP-22 Erro do gateway sem o objeto bruto
+### Requirement: WPP-23 Erro do gateway sem o objeto bruto
 O gateway WPPConnect em uso SHALL registrar erros somente por tipo, código e status HTTP, com caracteres e tamanho limitados, e o `deviceController` SHALL responder sem o objeto do erro.
 
 Prova: testes em `wppconnect-server/src/tests`

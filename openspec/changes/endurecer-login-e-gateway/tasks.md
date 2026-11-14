@@ -14,7 +14,7 @@
 - [ ] 3.5 `LiteralDeIp` e uso em `IpDoCliente`, sem `InetAddress.getByName`, com aviso no boot para lista vazia; verificar com `LiteralDeIpTest` e `IpDoClienteTest` (`cafe.de`, `1.2.3`, `010.0.0.1`, `::ffff:10.0.0.1`, IPv6 comprimido, zona `%`)
 
 ## 4. Chaves de contatos
-- [ ] 4.1 `RotacaoChavesContatos` com as variáveis `_ANTIGA`, antes de o servidor web subir, por `JdbcTemplate`, uma transação por linha; verificar com `RotacaoChavesContatosTest` em banco real de teste (rotação de `contatos` e `reservas`, índice recalculado, busca pelo índice novo, retomada, valor sem `v1:`, chave errada interrompe, configuração incompleta não sobe, log só com quantidades, tabela e `id`)
+- [ ] 4.1 `RotacaoChavesContatos` com as variáveis `_ANTIGA`, antes de o servidor web subir, por `JdbcTemplate`, uma transação por linha; verificar com `RotacaoChavesContatosTest` em banco real de teste (rotação de `contatos` e `reservas`, índice recalculado, busca pelo índice novo, linha expurgada com índice aleatório, retomada, valor sem `v1:`, chave errada interrompe, configuração incompleta não sobe, log só com quantidades, tabela e `id`)
 - [ ] 4.2 `CriptografiaCampo` sem chave padrão no `@Value`; `application.properties`, `docker-compose.yml` e `.env.example` com as variáveis `_ANTIGA` sem valor; verificar com `CriptografiaCampoTest` e `ServicoContatoTest`
 - [ ] 4.3 `scripts/rotacionar-chaves-contatos.sh`: cópia do `.env` com `chmod 600`, chaves atuais movidas para `_ANTIGA`, chaves novas geradas (AES com 32 bytes em base64), recusa se já houver `_ANTIGA`, nenhum valor na tela; `atualizar-env-producao.sh` aponta para ele; verificar contra um `.env` temporário
 
