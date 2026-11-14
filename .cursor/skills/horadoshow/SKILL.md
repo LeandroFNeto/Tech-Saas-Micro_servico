@@ -88,7 +88,7 @@ Um agente por papel, no modelo da tabela. O próximo só começa se o anterior p
 1. **Programação**. Abre a skill do assunto em `acopladas.md`, se houver linha, e cumpre `tasks.md`. Se a API muda, o YAML vem antes do Java.
 2. **Testes**. Escreve a prova citada e roda a regressão com `mvn test`. A suíte que já passava tem de continuar passando. Se a tarefa alterou `frontend/`, rode também `npm test -- --watch=false --browsers=ChromeHeadless` nessa pasta. Se algo falhar, grave `openspec/changes/<nome>/teste-erro.md` com o comando, o teste que quebrou e o trecho do erro, marque a central como `erro` e pare. Se passar, apague `teste-erro.md` se existir.
 3. **Qualidade**. Confere spec, contrato, código e prova juntos. Se reprovar, devolva para a programação e some 1 em Voltas, se ainda houver volta. Não chame a segurança.
-4. **Segurança**. Olhe os arquivos da tarefa.
+4. **Segurança**. Olhe os arquivos da tarefa contra `.cursor/rules/seguranca.mdc`, seção por seção, e registre na central o que foi conferido.
 
 Tela só de texto, layout ou estilo (`frontend/` visual, `especificacao/front/*.content.json`, `telas.design.json`), sem rota, autenticação, senha, token ou dado persistido: marque `aprovado` com a nota `tela` e siga para a revisão. Não chame o subagente.
 

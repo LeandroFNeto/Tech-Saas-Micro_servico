@@ -870,4 +870,144 @@ class ControllerWhatsappTest {
         verifyNoInteractions(servicoWppConnect);
         verifyNoInteractions(empresaRepository);
     }
+
+    @Test
+    @DisplayName("GET /whatsapp/{sessao}/status repassa INITIALIZING sem QR durante a reconexão")
+    void deveRepassarStatusInitializing() throws Exception {
+        Empresa empresa = new Empresa();
+        empresa.setSessaoWhatsapp("sessao_recanto_01");
+        when(empresaRepository.findBySessaoWhatsapp("sessao_recanto_01")).thenReturn(empresa);
+        when(servicoWppConnect.consultarStatus("sessao_recanto_01"))
+                .thenReturn(new SessaoStatusResponseDTO("sessao_recanto_01", "INITIALIZING", null));
+
+        mockMvc.perform(get("/whatsapp/sessao_recanto_01/status")
+                        .header("x-admin-token", "sua-chave-admin"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("INITIALIZING"))
+                .andExpect(jsonPath("$.qrcodeBase64").doesNotExist());
+    }
+
+    private static final String CORPO_CODIGO = "{\"telefone\":\"5511999990000\"}";
+
+    private Empresa empresaComSessao(String sessao) {
+        Empresa empresa = new Empresa();
+        empresa.setSessaoWhatsapp(sessao);
+        when(empresaRepository.findBySessaoWhatsapp(sessao)).thenReturn(empresa);
+        return empresa;
+    }
+
+    @Test
+    @DisplayName("POST /whatsapp/{sessao}/codigo-pareamento devolve o código para o cliente da própria sessão")
+    void deveGerarCodigoParaClienteDaPropriaSessao() throws Exception {
+        autenticarComoClienteDe(empresaComSessao("sessao_recanto_01"));
+        when(servicoWppConnect.solicitarCodigoPareamento("sessao_recanto_01", "5511999990000"))
+                .thenReturn(new com.example.demo.dto.whatsapp.CodigoPareamentoResponseDTO("sessao_recanto_01", "ABCD-EFGH"));
+
+        mockMvc.perform(post("/whatsapp/sessao_recanto_01/codigo-pareamento")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(CORPO_CODIGO))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.sessao").value("sessao_recanto_01"))
+                .andExpect(jsonPath("$.codigo").value("ABCD-EFGH"));
+    }
+
+    @Test
+    @DisplayName("POST /whatsapp/{sessao}/codigo-pareamento aceita o admin")
+    void deveGerarCodigoParaAdmin() throws Exception {
+        empresaComSessao("sessao_recanto_01");
+        autenticarComoAdmin();
+        when(servicoWppConnect.solicitarCodigoPareamento("sessao_recanto_01", "5511999990000"))
+                .thenReturn(new com.example.demo.dto.whatsapp.CodigoPareamentoResponseDTO("sessao_recanto_01", "ABCD-EFGH"));
+
+        mockMvc.perform(post("/whatsapp/sessao_recanto_01/codigo-pareamento")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(CORPO_CODIGO))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.codigo").value("ABCD-EFGH"));
+    }
+
+    @Test
+    @DisplayName("POST /whatsapp/{sessao}/codigo-pareamento recusa telefone fora de 12 ou 13 dígitos com DDI 55 sem chamar o gateway")
+    void deveRecusarTelefoneInvalidoNoCodigoDePareamento() throws Exception {
+        autenticarComoClienteDe(empresaComSessao("sessao_recanto_01"));
+
+        for (String telefone : new String[] {"11999990000", "55119999900", "55119999900001", "5511999a0000", "", "+5511999990000"}) {
+            mockMvc.perform(post("/whatsapp/sessao_recanto_01/codigo-pareamento")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"telefone\":\"" + telefone + "\"}"))
+                    .andExpect(status().isBadRequest());
+        }
+
+        mockMvc.perform(post("/whatsapp/sessao_recanto_01/codigo-pareamento")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(servicoWppConnect);
+    }
+
+    @Test
+    @DisplayName("POST /whatsapp/{sessao}/codigo-pareamento sem autenticação retorna 401")
+    void deveRecusarCodigoSemAutenticacao() throws Exception {
+        mockMvc.perform(post("/whatsapp/sessao_recanto_01/codigo-pareamento")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(CORPO_CODIGO))
+                .andExpect(status().isUnauthorized());
+
+        verifyNoInteractions(servicoWppConnect);
+    }
+
+    @Test
+    @DisplayName("POST /whatsapp/{sessao}/codigo-pareamento de cliente em sessão de outra empresa retorna 403")
+    void deveRecusarCodigoEmSessaoDeOutraEmpresa() throws Exception {
+        Empresa propria = new Empresa();
+        propria.setSessaoWhatsapp("sessao_propria");
+        empresaComSessao("sessao_outra");
+        autenticarComoClienteDe(propria);
+
+        mockMvc.perform(post("/whatsapp/sessao_outra/codigo-pareamento")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(CORPO_CODIGO))
+                .andExpect(status().isForbidden());
+
+        verifyNoInteractions(servicoWppConnect);
+    }
+
+    @Test
+    @DisplayName("POST /whatsapp/{sessao}/codigo-pareamento recusa ADMIN_LEITURA com 403")
+    void deveRecusarCodigoParaAdminLeitura() throws Exception {
+        empresaComSessao("sessao_recanto_01");
+        autenticarComoAdminLeitura();
+
+        mockMvc.perform(post("/whatsapp/sessao_recanto_01/codigo-pareamento")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(CORPO_CODIGO))
+                .andExpect(status().isForbidden());
+
+        verifyNoInteractions(servicoWppConnect);
+    }
+
+    @Test
+    @DisplayName("POST /whatsapp/{sessao}/codigo-pareamento repassa 409, 429 e 503 do serviço")
+    void deveRepassarConflitoLimiteEIndisponibilidadeNoCodigo() throws Exception {
+        autenticarComoClienteDe(empresaComSessao("sessao_recanto_01"));
+        when(servicoWppConnect.solicitarCodigoPareamento("sessao_recanto_01", "5511999990000"))
+                .thenThrow(new org.springframework.web.server.ResponseStatusException(
+                        org.springframework.http.HttpStatus.CONFLICT, "Sessão não está aguardando pareamento"))
+                .thenThrow(new org.springframework.web.server.ResponseStatusException(
+                        org.springframework.http.HttpStatus.TOO_MANY_REQUESTS, "Limite de pedidos de código atingido"))
+                .thenThrow(new org.springframework.web.server.ResponseStatusException(
+                        org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE, "pareamento por código indisponível"));
+
+        mockMvc.perform(post("/whatsapp/sessao_recanto_01/codigo-pareamento")
+                        .contentType(MediaType.APPLICATION_JSON).content(CORPO_CODIGO))
+                .andExpect(status().isConflict());
+        mockMvc.perform(post("/whatsapp/sessao_recanto_01/codigo-pareamento")
+                        .contentType(MediaType.APPLICATION_JSON).content(CORPO_CODIGO))
+                .andExpect(status().isTooManyRequests());
+        mockMvc.perform(post("/whatsapp/sessao_recanto_01/codigo-pareamento")
+                        .contentType(MediaType.APPLICATION_JSON).content(CORPO_CODIGO))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.message").value("pareamento por código indisponível"));
+    }
 }

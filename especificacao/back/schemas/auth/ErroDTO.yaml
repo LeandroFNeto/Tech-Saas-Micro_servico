@@ -1,0 +1,9 @@
+type: object
+description: Corpo de erro devolvido pela API, sem mensagem interna nem rastro de pilha.
+properties:
+  message:
+    type: string
+    description: Texto pensado para o usuário
+    example: Erro interno
+required:
+  - message

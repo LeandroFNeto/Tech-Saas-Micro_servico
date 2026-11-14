@@ -10,7 +10,7 @@ properties:
     type: string
     format: password
     description: Senha em texto puro; o servidor compara com o hash BCrypt
-    example: SenhaMaster123
+    example: ExemploSenha2026
 required:
   - email
   - senha

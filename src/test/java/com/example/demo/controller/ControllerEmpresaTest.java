@@ -815,6 +815,20 @@ class ControllerEmpresaTest {
     }
 
     @Test
+    @DisplayName("PUT /empresas/{sessao}/reset-senha com menos de 10 caracteres retorna 400")
+    void deveRecusarResetDeSenhaCurta() throws Exception {
+        mockMvc.perform(put("/empresas/sessao_recanto_01/reset-senha")
+                        .header("x-admin-token", "sua-chave-admin")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            { "novaSenha": "Curta123" }
+                            """))
+                .andExpect(status().isBadRequest());
+
+        verify(servicoAuth, never()).resetarSenhaDoCliente(any(), any());
+    }
+
+    @Test
     @DisplayName("PUT /empresas/{sessao}/reset-senha sem token administrativo retorna 401")
     void deveRecusarResetDeSenhaSemToken() throws Exception {
         mockMvc.perform(put("/empresas/sessao_recanto_01/reset-senha")
@@ -1084,7 +1098,7 @@ class ControllerEmpresaTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
                 .andExpect(status().isBadRequest())
-                .andExpect(status().reason("A previsão do tempo não está liberada para esta empresa pelo administrador."));
+                .andExpect(jsonPath("$.message").value("A previsão do tempo não está liberada para esta empresa pelo administrador."));
     }
 
     @Test
@@ -1154,7 +1168,7 @@ class ControllerEmpresaTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"sessaoWhatsapp\":\"sessao_ocupada\"}"))
                 .andExpect(status().isBadRequest())
-                .andExpect(status().reason("Sessão já ocupada"));
+                .andExpect(jsonPath("$.message").value("Sessão já ocupada"));
 
         verify(empresaRepository, never()).save(any(Empresa.class));
 

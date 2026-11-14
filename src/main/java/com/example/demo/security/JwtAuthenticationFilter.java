@@ -17,6 +17,8 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.List;
 
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -76,9 +78,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
     }
 
+    private static boolean tokensIguais(String recebido, String esperado) {
+        return MessageDigest.isEqual(
+                recebido.getBytes(StandardCharsets.UTF_8),
+                esperado.getBytes(StandardCharsets.UTF_8));
+    }
+
     private void autenticarPorHeadersLegados(HttpServletRequest request) {
         String adminToken = request.getHeader("x-admin-token");
-        if (adminApiKey != null && !adminApiKey.isBlank() && adminToken != null && adminToken.equals(adminApiKey)) {
+        if (adminApiKey != null && !adminApiKey.isBlank() && adminToken != null && tokensIguais(adminToken, adminApiKey)) {
             var autenticacao = new UsernamePasswordAuthenticationToken(
                     "admin-api-key",
                     null,

@@ -1,6 +1,6 @@
 type: object
 description: >
-  Identificador da mensagem no formato objeto Baileys/WPPConnect (evento onack).
+  Identificador da mensagem no formato objeto Baileys/gateway (evento onack).
   No Java o mesmo tipo também aceita a string serializada dos eventos onmessage e onpresencechanged.
 properties:
   fromMe:
@@ -12,7 +12,7 @@ properties:
     description: JID associado ao identificador (alias Java de remote)
     example: 5511999999999@c.us
   remote:
-    description: JID do chat. O WPPConnect envia string ou objeto Wid com _serialized
+    description: JID do chat. gateway envia string ou objeto Wid com _serialized
     oneOf:
       - type: string
         example: 5511999999999@c.us

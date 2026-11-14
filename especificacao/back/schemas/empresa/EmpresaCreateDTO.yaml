@@ -7,7 +7,7 @@ properties:
     example: Recanto Vista Alegre
   sessaoWhatsapp:
     type: string
-    description: Identificador único da sessão no WPPConnect
+    description: Identificador único da sessão no gateway
     example: sessao_recanto_01
   ramoDeAtuacao:
     type: string
@@ -60,7 +60,7 @@ properties:
     type: string
     format: password
     writeOnly: true
-    minLength: 6
+    minLength: 10
     description: Senha inicial do cliente; o servidor persiste apenas o hash BCrypt
     example: SenhaCliente123
   modulosIniciais:

@@ -1,13 +1,13 @@
 type: object
 description: >
-  Payload tipado recebido do WPPConnect via webhook. Aceita o formato plano (from/body),
+  Payload tipado recebido do gateway via webhook. Aceita o formato plano (from/body),
   o aninhado (data.key / data.message) e os tipos mistos do Node (id/sender/content
   ora string, ora objeto).
 additionalProperties: true
 properties:
   session:
     type: string
-    description: Nome da sessão WPPConnect da empresa
+    description: Nome da sessão gateway da empresa
     example: sessao_recanto_01
   type:
     type: string
@@ -24,19 +24,19 @@ properties:
     example: 1730592000
   to:
     type: string
-    description: JID do destinatário no formato plano do WPPConnect (útil quando enviada pelo dono)
+    description: JID do destinatário no formato plano do gateway (útil quando enviada pelo dono)
     example: 5511999999999@c.us
   isGroupMsg:
     type: boolean
-    description: Indica se a mensagem veio de um grupo (WPPConnect). Ausente ou false em chats privados, inclusive os que usam JID @lid.
+    description: Indica se a mensagem veio de um grupo (gateway). Ausente ou false em chats privados, inclusive os que usam JID @lid.
     example: false
   from:
     type: string
-    description: JID do remetente no formato plano do WPPConnect
+    description: JID do remetente no formato plano do gateway
     example: 5511999999999@c.us
   body:
     type: string
-    description: Texto da mensagem no formato plano do WPPConnect
+    description: Texto da mensagem no formato plano do gateway
     example: "Olá, gostaria de reservar"
   remoteJid:
     type: string
@@ -44,7 +44,7 @@ properties:
     example: 5511999999999@c.us
   sender:
     description: >
-      Remetente. String com JID ou objeto Contact do WPPConnect
+      Remetente. String com JID ou objeto Contact do gateway
       (`sender.id` pode ser string ou Wid com `_serialized`).
     oneOf:
       - type: string
@@ -52,14 +52,14 @@ properties:
       - $ref: "#/components/schemas/RemetenteWebhook"
   event:
     type: string
-    description: Evento do WPPConnect quando não é mensagem de chat (qrcode, status-find, onack)
+    description: Evento do gateway quando não é mensagem de chat (qrcode, status-find, onack)
     example: qrcode
   qrcode:
     type: string
     description: Base64 do QR Code enviado no webhook de conexão
   urlcode:
     type: string
-    description: Conteúdo bruto do QR Code (urlcode) quando o WPPConnect envia o evento qrcode
+    description: Conteúdo bruto do QR Code (urlcode) quando o gateway envia o evento qrcode
   id:
     description: >
       Identificador da mensagem. String serializada nos eventos onmessage/onpresencechanged
@@ -71,7 +71,7 @@ properties:
   data:
     $ref: "#/components/schemas/DadosWebhook"
   content:
-    description: Texto da mensagem como string (WPPConnect) ou objeto com body
+    description: Texto da mensagem como string (gateway) ou objeto com body
     oneOf:
       - type: string
         example: "Olá, gostaria de reservar"

@@ -1,0 +1,14 @@
+type: object
+description: Código de 8 caracteres para digitar no celular, alternativa ao QR Code.
+properties:
+  sessao:
+    type: string
+    description: Identificador da sessão WhatsApp da empresa
+    example: sessao_recanto_01
+  codigo:
+    type: string
+    description: Código de pareamento no formato ABCD-EFGH, válido enquanto a sessão aguarda o pareamento
+    example: ABCD-EFGH
+required:
+  - sessao
+  - codigo

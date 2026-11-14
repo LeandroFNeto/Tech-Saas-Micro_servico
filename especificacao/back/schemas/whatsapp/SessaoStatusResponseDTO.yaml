@@ -1,16 +1,17 @@
 type: object
-description: Status da sessão WhatsApp no WPPConnect, exposto ao painel sem vazar token interno.
+description: Status da sessão WhatsApp no gateway, exposto ao painel sem vazar token interno.
 properties:
   sessao:
     type: string
-    description: Identificador da sessão no WPPConnect
+    description: Identificador da sessão no gateway
     example: sessao_recanto_01
   status:
     type: string
-    description: Estado normalizado para o front-end
+    description: Estado normalizado para o front-end. INITIALIZING indica reconexão com credenciais válidas, sem QR.
     enum:
       - CONNECTED
       - QRCODE
+      - INITIALIZING
       - DISCONNECTED
     example: QRCODE
   qrcodeBase64:

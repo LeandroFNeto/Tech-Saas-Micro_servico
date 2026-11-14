@@ -83,11 +83,11 @@ describe('LoginComponent', () => {
     const comp = fixture.componentInstance;
     authStub.login.and.returnValue(of({ token: 'jwt', email: 'usuario@gamb.com', role: 'SUPER_ADMIN' }));
 
-    comp.form.setValue({ email: '  USUARIO@GAMB.COM  ', senha: 'SenhaMaster123' });
+    comp.form.setValue({ email: '  USUARIO@GAMB.COM  ', senha: 'SenhaAdminTeste2026' });
     expect(comp.form.valid).toBeTrue();
     comp.entrar();
 
-    expect(authStub.login).toHaveBeenCalledWith({ email: 'USUARIO@GAMB.COM', senha: 'SenhaMaster123' });
+    expect(authStub.login).toHaveBeenCalledWith({ email: 'USUARIO@GAMB.COM', senha: 'SenhaAdminTeste2026' });
     expect(router.navigateByUrl).toHaveBeenCalledWith('/admin');
 
     authStub.rotaInicial.and.returnValue('/cliente');

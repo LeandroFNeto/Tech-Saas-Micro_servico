@@ -1,6 +1,6 @@
 type: object
 description: >
-  Conteúdo da mensagem em objeto. O WPPConnect também envia `content` como string
+  Conteúdo da mensagem em objeto. gateway também envia `content` como string
   (mesmo texto de body); o Java aceita os dois formatos.
 properties:
   body:

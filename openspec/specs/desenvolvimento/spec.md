@@ -186,3 +186,38 @@ Cenário: subagente inicia etapa da equipe
 - Quando o agente inicia a sua etapa
 - Então ele já aplica a postura Ponytail
 - E entrega o menor diff funcional sem complexidade desnecessária
+
+### DEV-12 Regras de segurança e configuração segura
+
+O sistema deve seguir `.cursor/rules/seguranca.mdc` em toda change, e a configuração de produção deve falhar fechada. Segredo obrigatório não tem valor padrão no repositório: sem ele a aplicação não sobe ou o recurso fica desligado com aviso no log. O `docker-compose.yml` não publica porta do banco nem do gateway do WhatsApp; acesso local ao banco vai num `docker-compose.override.yml` fora do git, preso a `127.0.0.1`. O esquema do banco muda só por migração Flyway versionada, e a aplicação valida o esquema no boot (`ddl-auto=validate`) sem alterá-lo. O front entregue pela Vercel traz cabeçalhos de segurança. Change que não cumpre uma regra de `seguranca.mdc` registra a exceção nos Riscos do `design.md`, com motivo e prazo, ou a etapa de Segurança reprova.
+
+Contrato: nenhum.
+Prova: `src/test/java/com/example/demo/config/EsquemaFlywayTest.java` (migração e `validate` em banco de teste), `src/test/java/com/example/demo/servico/TokenServiceTest.java`, `src/test/java/com/example/demo/config/AdminInitializerTest.java`. Prova operacional: `docker compose config` sem `ports` no banco e no gateway, `validate` contra cópia do banco de produção no deploy, cabeçalhos e console sem erro de CSP numa pré-visualização da Vercel, e a etapa de Segurança da `horadoshow`.
+
+Cenário: segredo ausente
+- Dado um segredo obrigatório faltando no ambiente
+- Quando a aplicação sobe
+- Então ela não sobe ou o recurso fica desligado com aviso no log
+- E nunca usa um valor padrão
+
+Cenário: serviços internos
+- Dado o `docker-compose.yml` do repositório
+- Quando os serviços sobem
+- Então o banco e o gateway do WhatsApp ficam sem porta publicada no host
+
+Cenário: mudança de esquema
+- Dado uma change que altera o banco
+- Quando ela é entregue
+- Então a mudança vem numa migração Flyway nova
+- E a aplicação valida o esquema no boot sem alterá-lo
+
+Cenário: cabeçalhos do front
+- Dado qualquer página do front entregue pela Vercel
+- Quando o navegador recebe a resposta
+- Então ela traz `Content-Security-Policy`, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy` e `Strict-Transport-Security`
+
+Cenário: change sem cumprir uma regra
+- Dado uma change que não consegue cumprir uma regra de `seguranca.mdc`
+- Quando passa pela etapa de Segurança
+- Então a exceção está nos Riscos do `design.md` com motivo e prazo
+- Ou a etapa de Segurança reprova

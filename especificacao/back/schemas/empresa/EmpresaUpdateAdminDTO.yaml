@@ -3,7 +3,7 @@ description: Contrato de atualização administrativa (PUT). Campos de infraestr
 properties:
   sessaoWhatsapp:
     type: string
-    description: Identificador da sessão que conecta com o WPPConnect
+    description: Identificador da sessão que conecta com o gateway
     example: sessao_recanto_01
   locacaoPorHora:
     type: boolean

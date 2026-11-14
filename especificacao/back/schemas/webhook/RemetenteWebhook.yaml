@@ -1,6 +1,6 @@
 type: object
 description: >
-  Contato remetente do WPPConnect. O webhook envia este objeto (Contact) ou, em alguns eventos, só o JID em string.
+  Contato remetente do gateway. O webhook envia este objeto (Contact) ou, em alguns eventos, só o JID em string.
 properties:
   id:
     description: JID do remetente. Pode chegar como string ou como objeto Wid

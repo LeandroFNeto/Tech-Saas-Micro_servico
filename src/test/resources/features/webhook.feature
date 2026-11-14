@@ -2,7 +2,7 @@
 # Origem: swagger.yaml → POST /webhook/whatsapp
 # Schema: WhatsappWebhookDTO
 Funcionalidade: Webhook WhatsApp tipado
-  Como provedor WPPConnect
+  Como gateway do WhatsApp
   Quero postar apenas WhatsappWebhookDTO
   Para o backend filtrar ruído e ainda responder 200, conforme o contrato
 

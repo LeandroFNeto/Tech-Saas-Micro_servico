@@ -1,0 +1,110 @@
+---
+description: Regras de segurança obrigatórias em todo o desenvolvimento do Tech-SaaS (back, front, gateway, IA e infra)
+alwaysApply: true
+---
+
+# Regras de segurança
+
+Valem para todo código, change, teste, script e configuração do repositório, feitos por pessoa ou agente. Regra que não puder ser cumprida vira exceção escrita nos Riscos do `design.md` da change, com o motivo e o prazo para resolver; sem isso, a etapa de Segurança da `horadoshow` reprova.
+
+## 1. Princípios
+
+1. **Falhar fechado.** Faltou segredo, chave, permissão ou configuração: o recurso recusa ou não sobe. Nunca abre com valor padrão. Exemplo a seguir: `WebhookSecretFilter` recusa tudo sem segredo e `CriptografiaCampo` não grava contato sem chave.
+2. **Menor privilégio.** Cada usuário, rota, container e chave tem só o acesso de que precisa.
+3. **O dado do cliente é do cliente.** Contatos, reservas e conversas de uma empresa só são vistos por ela. A equipe da plataforma não lê esses dados, nem em log, nem em diagnóstico, nem em painel admin.
+4. **Segurança entra na spec.** Regra de acesso, limite e dado sensível vão no `spec.md` e no contrato YAML antes do código, com cenário de recusa.
+5. **Escala atual.** Uma instância da API. Limites e caches em memória são aceitos; o limite "se houver mais de uma instância" vai nos Riscos.
+
+## 2. Segredos e configuração
+
+1. Segredo (senha, chave de API, JWT, chave de cifra, token do gateway, credencial Google) só vem de variável de ambiente. Nunca no código, no YAML, em teste com valor real, em commit ou em log.
+2. Propriedade de segredo não tem valor padrão em `application.properties` (`${VAR}` sem `:padrão`). Se faltar, a aplicação não sobe ou o recurso fica desligado e avisa no log, sem o valor.
+3. `.env`, `src/main/resources/*.json` de credencial, `dados-wpp/`, `postgres_data/` e volumes de sessão do WhatsApp ficam fora do git. Variável nova entra em `.env.example` só com o nome e um exemplo falso.
+4. Comparação de segredo em tempo constante (`MessageDigest.isEqual` ou equivalente), nunca `equals`.
+5. Segredo vazou (commit, log, print, chat): troca o segredo na hora; apagar o commit não basta.
+6. Chaves mínimas: JWT com 256 bits aleatórios; chave AES de contatos com 32 bytes em base64; segredos de webhook e gateway com 32 caracteres aleatórios ou mais.
+
+## 3. Autenticação e autorização
+
+1. Toda rota nova nasce autenticada. Rota pública só com motivo na spec, limite por IP e corpo validado (exemplo: `/api/publico/assistente/suporte`).
+2. Autorização no servidor, nunca só no front. Cliente só acessa a empresa do próprio usuário; tentativa em outra empresa responde 403 e tem teste. Admin é checado pelo papel (`ROLE_ADMIN`), não pela tela.
+3. Senha só com hash `BCrypt` (`PasswordEncoder`). Nunca guardar, logar ou devolver senha.
+4. JWT com expiração curta (hoje 8 h), assinado com segredo da seção 2, validado em toda requisição; usuário de empresa inativa não autentica.
+5. Login e rotas que geram custo (IA, envio de WhatsApp, código de pareamento, e-mail) têm limite de tentativas por usuário ou por IP e respondem 429 ao passar.
+6. O cabeçalho legado `x-admin-token` não ganha uso novo; o caminho é JWT com papel.
+7. Webhook só com o segredo compartilhado (`x-webhook-token`), recusado antes de qualquer strategy.
+
+## 4. Entrada, validação e erros
+
+1. Todo corpo de requisição é um DTO nomeado com Bean Validation (`@Valid`, `@NotBlank`, `@Size`, `@Pattern`). Sem `Map` genérico no payload e sem entidade JPA na entrada ou na saída.
+2. Texto livre tem tamanho máximo no DTO e no contrato. Número de telefone, data, horário e identificador têm formato validado.
+3. Consulta ao banco só por repositório JPA ou parâmetro ligado (`:param`). Nunca concatenar texto do usuário em SQL, JPQL, GraphQL, comando de shell ou caminho de arquivo.
+4. URL recebida do usuário ou de outro sistema só é chamada se o host estiver numa lista permitida (risco de SSRF), com timeout.
+5. Resposta de erro não traz stack trace, mensagem interna, SQL, caminho de arquivo nem dado de outra empresa. `server.error.include-message` fica `never` em produção.
+6. Timeout em toda chamada externa (Gemini, gateway, Google, OpenWeather); falha cai em fallback, nunca trava o atendimento.
+
+## 5. Dados pessoais e LGPD
+
+1. Dado pessoal de cliente final (nome, telefone, mensagem) só é gravado se a spec pedir, com finalidade escrita.
+2. Nome e telefone de contato ficam cifrados em repouso com AES-GCM (`CriptografiaCampo`) e buscados por índice HMAC, nunca em claro.
+3. Opt-out ("SAIR", "CANCELAR") bloqueia novos envios e expurga o dado; o direito ao esquecimento vale também para backup e cache que a change criar.
+4. Retenção definida (`retencao.meses`); dado novo nasce com prazo de retenção na spec.
+5. Telefone informado só para uma operação (exemplo: código de pareamento) não é gravado.
+6. Dado de teste é sempre falso. Nunca copiar dado real de produção para teste, fixture, print ou issue.
+
+## 6. Logs
+
+1. Log nunca traz número completo, texto de mensagem, nome do contato, e-mail, senha, token, segredo, QR Code ou prompt da IA com dado do cliente. Número só por `MascaraLog.numero`/`MascaraLog.jid`; texto só por `MascaraLog.tamanho`.
+2. Log de recusa diz o motivo e a sessão, sem o conteúdo da requisição.
+3. Nível `INFO` em produção. `DEBUG` com payload só em ambiente local.
+4. Regra nova de log tem teste que captura a saída e confere que o dado não aparece.
+
+## 7. WhatsApp e gateway
+
+1. O gateway Baileys fica só na rede interna do Docker, sem porta publicada no host.
+2. Todas as rotas do gateway exigem token da sessão; o webhook exige `x-webhook-token`.
+3. Mensagem do cliente é dado não confiável: nunca vira comando, URL chamada ou texto de SQL, e passa pelos filtros do `ControllerWhatsapp` (grupo, status, antiga, dono, eco) antes de qualquer strategy.
+4. Envio proativo (lembrete, reunião) respeita opt-out e o limite diário por número.
+5. Credencial de sessão do WhatsApp é apagada quando a empresa é excluída.
+
+## 8. IA
+
+1. O prompt leva só dado cadastrado da própria empresa ou da base pública da Gamb. Nunca credencial, identificador de agenda, dado de outra empresa ou dado de outro contato.
+2. Texto do usuário dentro do prompt é delimitado e tratado como dado; pedidos para mudar o papel, revelar instrução ou consultar dado de empresa caem na recusa (`tentaBurlarEscopo`).
+3. A resposta da IA é conferida antes de sair quando a regra exigir (exemplo: sem valor em reais na resposta comercial).
+4. A IA nunca executa ação no sistema (reserva, cancelamento, envio), só responde. Ação passa pelo fluxo determinístico.
+5. Toda chamada ao modelo passa pela guarda de cota e pelo teto de gasto (`GuardaCotaIA`).
+6. Chave do provedor só no servidor; nunca no front.
+
+## 9. Front (Angular)
+
+1. Nenhum segredo no front, nem em `environment.ts`. O front só conhece a URL da API.
+2. Sem `bypassSecurityTrust*`. `[innerHTML]` só com conteúdo do admin e com o sanitizador padrão do Angular ligado.
+3. Toda checagem de acesso do front é só conforto visual; o servidor decide (seção 3).
+4. Token de sessão não vai para URL, log do console ou ferramenta de terceiros.
+5. Cabeçalhos de segurança na hospedagem do front (`vercel.json`): `Content-Security-Policy`, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy` e `Strict-Transport-Security`.
+
+## 10. Infraestrutura e deploy
+
+1. Só a API (atrás do proxy com HTTPS) fica exposta. Banco, gateway e serviços internos sem porta publicada no host.
+2. CORS só com as origens do front (`CORS_ALLOWED_ORIGINS`), nunca `*` em produção.
+3. Swagger, GraphiQL e rotas de diagnóstico fechados em produção ou atrás de autenticação de admin.
+4. Esquema do banco muda por migração revisada; `ddl-auto=update` não é usado em produção.
+5. Container roda sem root quando a imagem permitir, com versão de imagem fixa.
+6. Backup do banco é cifrado e fora do servidor; volume com credencial do WhatsApp não entra em backup público.
+
+## 11. Dependências
+
+1. Versão fixa de toda dependência (Maven, npm, imagem Docker). Nada de `latest`.
+2. Dependência nova só com motivo na change, mantida e sem vulnerabilidade alta conhecida (`npm audit`, OWASP Dependency-Check ou equivalente).
+3. Atualização de segurança tem prioridade sobre funcionalidade.
+
+## 12. Prova obrigatória
+
+Toda change com rota, autenticação, dado pessoal, gateway ou IA traz, no mínimo:
+- teste de acesso sem autenticação (401) e de acesso a outra empresa (403);
+- teste de entrada inválida (400) e de limite (429), quando houver limite;
+- teste de log sem dado pessoal, quando a change loga algo novo;
+- cenário de recusa no `spec.md`.
+
+A etapa de Segurança da `horadoshow` confere a change contra este arquivo, seção por seção, e registra o resultado na central.

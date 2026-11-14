@@ -16,9 +16,9 @@ import java.time.Clock;
 import java.time.Instant;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-@Schema(description = "Payload tipado recebido do WPPConnect via webhook. Aceita o formato plano (from/body), o aninhado (data.key / data.message) e id/sender/content ora string, ora objeto.")
+@Schema(description = "Payload tipado recebido do gateway do WhatsApp via webhook. Aceita o formato plano (from/body), o aninhado (data.key / data.message) e id/sender/content ora string, ora objeto.")
 public record WhatsappWebhookDTO(
-        @Schema(description = "Nome da sessão WPPConnect da empresa", example = "sessao_recanto_01")
+        @Schema(description = "Nome da sessão gateway do WhatsApp da empresa", example = "sessao_recanto_01")
         String session,
 
         @JsonProperty("type")
@@ -35,7 +35,7 @@ public record WhatsappWebhookDTO(
         Long timestamp,
 
         @JsonProperty("to")
-        @Schema(description = "JID do destinatário no formato plano do WPPConnect", example = "5511999999999@c.us")
+        @Schema(description = "JID do destinatário no formato plano do gateway do WhatsApp", example = "5511999999999@c.us")
         String to,
 
         @JsonProperty("isGroupMsg")
@@ -44,17 +44,17 @@ public record WhatsappWebhookDTO(
         Boolean isGroupMsg,
 
         @JsonProperty("from")
-        @Schema(description = "JID do remetente no formato plano do WPPConnect", example = "5511999999999@c.us")
+        @Schema(description = "JID do remetente no formato plano do gateway do WhatsApp", example = "5511999999999@c.us")
         String from,
 
         @JsonProperty("body")
-        @Schema(description = "Texto da mensagem no formato plano do WPPConnect", example = "Olá, gostaria de reservar")
+        @Schema(description = "Texto da mensagem no formato plano do gateway do WhatsApp", example = "Olá, gostaria de reservar")
         String body,
 
         @Schema(description = "JID do remetente quando informado no topo do payload", example = "5511999999999@c.us")
         String remoteJid,
 
-        @Schema(description = "Remetente: JID em string ou objeto Contact do WPPConnect")
+        @Schema(description = "Remetente: JID em string ou objeto Contact do gateway do WhatsApp")
         RemetenteWebhook sender,
 
         @JsonProperty("pushname")
@@ -62,7 +62,7 @@ public record WhatsappWebhookDTO(
         @Schema(description = "Nome de exibicao do remetente", example = "Joao Silva")
         String pushname,
 
-        @Schema(description = "Evento do WPPConnect quando não é mensagem de chat (qrcode, status-find, onack)", example = "qrcode")
+        @Schema(description = "Evento do gateway do WhatsApp quando não é mensagem de chat (qrcode, status-find, onack)", example = "qrcode")
         String event,
 
         @Schema(description = "Base64 do QR Code enviado no webhook de conexão")
@@ -71,10 +71,10 @@ public record WhatsappWebhookDTO(
         @Schema(description = "Identificador da mensagem: string serializada (onmessage) ou objeto Baileys (onack)")
         IdentificadorMensagem id,
 
-        @Schema(description = "Envelope aninhado usado por alguns formatos do WPPConnect/Baileys")
+        @Schema(description = "Envelope aninhado usado por alguns formatos do gateway do WhatsApp")
         DadosWebhook data,
 
-        @Schema(description = "Conteúdo da mensagem: string do WPPConnect ou objeto com body")
+        @Schema(description = "Conteúdo da mensagem: string do gateway do WhatsApp ou objeto com body")
         ConteudoMensagem content
 ) {
 
@@ -150,7 +150,7 @@ public record WhatsappWebhookDTO(
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     @JsonDeserialize(using = RemetenteWebhook.Deserializer.class)
-    @Schema(description = "Contato remetente do WPPConnect. Aceita JID string ou objeto Contact.")
+    @Schema(description = "Contato remetente do gateway do WhatsApp. Aceita JID string ou objeto Contact.")
     public record RemetenteWebhook(
             @Schema(description = "JID do remetente", example = "5511999999999@c.us")
             String id,
@@ -219,7 +219,7 @@ public record WhatsappWebhookDTO(
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     @JsonDeserialize(using = ConteudoMensagem.Deserializer.class)
-    @Schema(description = "Conteúdo da mensagem. Aceita string do WPPConnect ou objeto com body.")
+    @Schema(description = "Conteúdo da mensagem. Aceita string do gateway do WhatsApp ou objeto com body.")
     public record ConteudoMensagem(
             @Schema(description = "Texto da mensagem", example = "Olá, gostaria de reservar")
             String body

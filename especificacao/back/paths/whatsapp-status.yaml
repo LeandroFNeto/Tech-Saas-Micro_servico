@@ -2,7 +2,7 @@ get:
   tags:
   - Conexão WhatsApp
   summary: Consultar status da sessão WhatsApp
-  description: O Java consulta o WPPConnect (GET /api/{sessao}/status-session) e devolve SessaoStatusResponseDTO. Não expõe o token interno do WPPConnect.
+  description: O Java consulta o gateway (GET /api/{sessao}/status-session) e devolve SessaoStatusResponseDTO. Não expõe o token interno do gateway.
   operationId: consultarStatusSessao
   parameters:
   - name: x-admin-token

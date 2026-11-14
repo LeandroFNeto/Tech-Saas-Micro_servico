@@ -187,4 +187,15 @@ describe('PerfilComponent, fotos pelo Cloudinary', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('O widget do Cloudinary não carregou');
   });
+
+  it('senha nova com menos de 10 caracteres e recusada e com 10 e aceita', () => {
+    const fixture = montarComFotos(empresaCom(false));
+    const form = fixture.componentInstance.formSenha;
+    form.patchValue({ senhaAtual: 'SenhaAntiga', novaSenha: 'Curta1234', confirmarSenha: 'Curta1234' });
+    expect(form.controls.novaSenha.errors?.['minlength']).toBeTruthy();
+    expect(form.valid).toBeFalse();
+    form.patchValue({ novaSenha: 'SenhaNova12', confirmarSenha: 'SenhaNova12' });
+    expect(form.controls.novaSenha.errors).toBeNull();
+    expect(form.valid).toBeTrue();
+  });
 });

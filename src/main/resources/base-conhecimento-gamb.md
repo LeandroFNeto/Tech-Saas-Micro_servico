@@ -83,7 +83,7 @@ O **GAMB** (Gerenciador de Atendimento para Meios de Hospedagem e Bens / Pequeno
 ### Requisitos Não Funcionais Críticos (RNF)
 - **RNF01**: Clean Architecture e padrões SOLID (Strategy, Factory, Observer, Singleton).
 - **RNF02 (OpenAPI Contract-First)**: A especificação OpenAPI em `especificacao/back/` é a Fonte Única de Verdade. Qualquer endpoint novo ou modificado deve nascer no YAML antes do código Java.
-- **RNF03**: Separação clara entre frontend Angular, backend Spring Boot e WPPConnect.
+- **RNF03**: Separação clara entre frontend Angular, backend Spring Boot e gateway do WhatsApp.
 - **RNF04 (Otimização de Tokens IA)**: Camada de consulta em grafo (GraphQL `/api/ia-query`) para injetar na IA apenas os dados solicitados, reduzindo drasticamente o consumo de tokens.
 - **RNF05**: Autenticação com JWT, hashing de senhas com BCrypt e seeding de dados mestre.
 - **RNF06**: Isolamento estrito entre empresas (multi-tenant) e prevenção de loops em grupos.
@@ -122,7 +122,7 @@ O **GAMB** (Gerenciador de Atendimento para Meios de Hospedagem e Bens / Pequeno
   3. **Módulo de Avisos (Avisos)**: Consulta aos comunicados ativos.
   4. **Módulo de Empresas (Empresa)**: Acesso e integridade cadastral das empresas.
   5. **Módulo de Agenda**: Conectividade com a infraestrutura de reservas.
-  6. **Módulo WhatsApp (WPPConnect)**: Verificação da saúde do serviço de mensageria.
+  6. **Módulo WhatsApp (gateway Baileys)**: Verificação da saúde do serviço de mensageria.
   7. **Módulo de Inteligência Artificial (Gemini)**: Verificação de disponibilidade e cota da API.
 - **Resultado Visual**: O painel exibe cartões com indicadores coloridos (Verde = Operacional, Amarelo = Degradado, Vermelho = Indisponível) com relatório explicativo para resolução rápida.
 

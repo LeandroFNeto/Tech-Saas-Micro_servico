@@ -25,7 +25,7 @@ Sempre que uma operação, validação, checagem, transformação de dados, roti
    - Verificação de quebra de regressão e geração de relatórios de falha (`teste-erro.md`).
 
 3. **Manutenção de Ambiente e Banco de Dados**:
-   - Limpeza de artefatos temporários, reinicialização de containers Docker (Postgres, WPPConnect).
+   - Limpeza de artefatos temporários, reinicialização de containers Docker (Postgres, Baileys gateway).
    - Execução de migrações ou geração de seeds de dados de teste.
 
 4. **Transformação e Análise de Dados**:

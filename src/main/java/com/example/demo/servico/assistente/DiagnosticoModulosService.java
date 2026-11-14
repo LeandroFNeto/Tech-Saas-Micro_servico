@@ -14,6 +14,8 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class DiagnosticoModulosService {
@@ -106,14 +108,43 @@ public class DiagnosticoModulosService {
         long inicio = System.currentTimeMillis();
         try {
             if (servicoWppConnect == null) {
-                return new DiagnosticoStatusDTO("WhatsApp", "DEGRADADO", "Serviço WPPConnect não instanciado", System.currentTimeMillis() - inicio);
+                return new DiagnosticoStatusDTO("WhatsApp", "DEGRADADO", "Serviço do gateway não instanciado", System.currentTimeMillis() - inicio);
             }
+            ServicoWppConnect.SaudeGateway saude = servicoWppConnect.consultarSaude();
             long duracao = System.currentTimeMillis() - inicio;
-            return new DiagnosticoStatusDTO("WhatsApp", "OPERACIONAL", "Serviço WPPConnect configurado e pronto", duracao);
+            if (saude == null || saude.situacao() == ServicoWppConnect.SaudeGateway.Situacao.INDISPONIVEL) {
+                return new DiagnosticoStatusDTO("WhatsApp", "INDISPONIVEL", "Gateway do WhatsApp não responde", duracao);
+            }
+            if (saude.situacao() == ServicoWppConnect.SaudeGateway.Situacao.SEM_ROTA) {
+                return new DiagnosticoStatusDTO("WhatsApp", "OPERACIONAL", "gateway sem rota de saúde", duracao);
+            }
+            List<String> fora = sessoesAtivasDesconectadas(saude);
+            if (!fora.isEmpty()) {
+                return new DiagnosticoStatusDTO("WhatsApp", "DEGRADADO",
+                        fora.size() + " sessão(ões) de empresa ativa desconectada(s): " + String.join(", ", fora), duracao);
+            }
+            return new DiagnosticoStatusDTO("WhatsApp", "OPERACIONAL",
+                    "Gateway do WhatsApp operacional, " + saude.conectadas() + " sessão(ões) conectada(s)", duracao);
         } catch (Exception e) {
             long duracao = System.currentTimeMillis() - inicio;
-            return new DiagnosticoStatusDTO("WhatsApp", "DEGRADADO", "Falha na verificação do WhatsApp: " + e.getMessage(), duracao);
+            return new DiagnosticoStatusDTO("WhatsApp", "DEGRADADO", "Falha na verificação do WhatsApp", duracao);
         }
+    }
+
+    private List<String> sessoesAtivasDesconectadas(ServicoWppConnect.SaudeGateway saude) {
+        if (empresaRepository == null) {
+            return List.of();
+        }
+        Set<String> ativas = empresaRepository.findAll().stream()
+                .filter(empresa -> !Boolean.FALSE.equals(empresa.getAtivo()))
+                .map(empresa -> empresa.getSessaoWhatsapp())
+                .filter(sessao -> sessao != null && !sessao.isBlank())
+                .collect(Collectors.toSet());
+        if (saude.nomesConectadas() != null) {
+            Set<String> conectadas = Set.copyOf(saude.nomesConectadas());
+            return ativas.stream().filter(sessao -> !conectadas.contains(sessao)).sorted().toList();
+        }
+        return saude.desconectadas().stream().filter(ativas::contains).sorted().toList();
     }
 
     private DiagnosticoStatusDTO testarIA() {

@@ -13,7 +13,7 @@ public record EmpresaCreateDTO(
         String nome,
 
         @NotBlank
-        @Schema(description = "Identificador único da sessão no WPPConnect", example = "sessao_recanto_01")
+        @Schema(description = "Identificador único da sessão no gateway do WhatsApp", example = "sessao_recanto_01")
         String sessaoWhatsapp,
 
         @Schema(description = "Ramo de atuação usado para escolher a estratégia de atendimento", example = "locacao")
@@ -52,7 +52,7 @@ public record EmpresaCreateDTO(
         String email,
 
         @NotBlank
-        @Size(min = 6)
+        @Size(min = 10)
         @Schema(description = "Senha inicial do cliente; o servidor persiste apenas o hash BCrypt",
                 example = "SenhaCliente123")
         String senha,

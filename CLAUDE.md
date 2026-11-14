@@ -9,3 +9,4 @@
 - Situação do projeto (etapa, o que falta, paleta, fontes) em página web: `.cursor/skills/painel/SKILL.md`.
 - As skills `horadoshow`, `diasabatico`, `openspec`, `openspec-apply-change`, `openspec-archive-change`, `openspec-explore`, `openspec-propose`, `openspec-sync-specs`, `openspec-update-change` e `painel` existem em `.claude/skills/` só como ponte para `.cursor/skills/`. Mudança de conteúdo vai no arquivo do Cursor.
 - Tela, layout e estilo do front: `.cursor/skills/diasabatico/SKILL.md`.
+- Regras de segurança obrigatórias em todo código, change, teste e configuração: `.cursor/rules/seguranca.mdc`. Exceção só escrita nos Riscos do `design.md` da change. Todo subagente que programa ou revisa recebe essa regra no prompt.

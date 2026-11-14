@@ -52,6 +52,8 @@ paths:
     $ref: ./paths/whatsapp-status.yaml
   /whatsapp/{sessao}/iniciar:
     $ref: ./paths/whatsapp-iniciar.yaml
+  /whatsapp/{sessao}/codigo-pareamento:
+    $ref: ./paths/whatsapp-codigo-pareamento.yaml
   /avisos:
     $ref: ./paths/avisos.yaml
   /admin/avisos:
@@ -95,6 +97,8 @@ components:
       $ref: ./schemas/auth/LoginResponseDTO.yaml
     AlterarSenhaDTO:
       $ref: ./schemas/auth/AlterarSenhaDTO.yaml
+    ErroDTO:
+      $ref: ./schemas/auth/ErroDTO.yaml
     AvisoDTO:
       $ref: ./schemas/aviso/AvisoDTO.yaml
     EmpresaCreateDTO:
@@ -135,6 +139,10 @@ components:
       $ref: ./schemas/previsao/PrevisaoDiaDTO.yaml
     SessaoStatusResponseDTO:
       $ref: ./schemas/whatsapp/SessaoStatusResponseDTO.yaml
+    CodigoPareamentoRequestDTO:
+      $ref: ./schemas/whatsapp/CodigoPareamentoRequestDTO.yaml
+    CodigoPareamentoResponseDTO:
+      $ref: ./schemas/whatsapp/CodigoPareamentoResponseDTO.yaml
     WhatsappWebhookDTO:
       $ref: ./schemas/webhook/WhatsappWebhookDTO.yaml
     DadosWebhook:

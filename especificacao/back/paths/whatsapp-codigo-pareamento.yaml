@@ -1,0 +1,76 @@
+post:
+  tags:
+  - Conexão WhatsApp
+  summary: Pedir código de pareamento do WhatsApp
+  description: Alternativa ao QR Code. Com a sessão aguardando pareamento, pede ao gateway o código de 8 caracteres para digitar no celular. Mesma autorização de iniciar a sessão. O telefone não é gravado e só aparece mascarado no log. No máximo 3 pedidos em 10 minutos por sessão.
+  operationId: solicitarCodigoPareamentoWhatsapp
+  parameters:
+  - name: x-admin-token
+    in: header
+    description: Token administrativo do SaaS
+    required: false
+    schema:
+      type: string
+    example: sua-chave-admin
+  - name: sessao
+    in: path
+    description: Identificador da sessão WhatsApp da empresa
+    required: true
+    schema:
+      type: string
+    example: sessao_recanto_01
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: "#/components/schemas/CodigoPareamentoRequestDTO"
+  responses:
+    "200":
+      description: Código gerado; ao digitá-lo no celular o status vai a CONNECTED pelo mesmo polling do QR
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CodigoPareamentoResponseDTO"
+    "400":
+      description: Telefone fora de 12 ou 13 dígitos com DDI 55
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErroDTO"
+    "401":
+      description: Token administrativo ou de cliente inválido
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErroDTO"
+    "403":
+      description: Perfil somente leitura, cliente em sessão de outra empresa ou sessão inexistente
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErroDTO"
+    "404":
+      description: Empresa não encontrada para a sessão informada (só para o admin)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErroDTO"
+    "409":
+      description: Sessão já conectada ou que não está aguardando pareamento
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErroDTO"
+    "429":
+      description: Mais de 3 pedidos em 10 minutos na mesma sessão
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErroDTO"
+    "503":
+      description: Gateway sem pareamento por código (pareamento por código indisponível) ou fora do ar
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErroDTO"

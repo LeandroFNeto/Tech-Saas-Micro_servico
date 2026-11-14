@@ -1,6 +1,8 @@
 package com.example.demo.controller;
 
 import com.example.demo.dto.WhatsappWebhookDTO;
+import com.example.demo.dto.whatsapp.CodigoPareamentoRequestDTO;
+import com.example.demo.dto.whatsapp.CodigoPareamentoResponseDTO;
 import com.example.demo.dto.whatsapp.SessaoStatusResponseDTO;
 import com.example.demo.model.Empresa;
 import com.example.demo.model.EstadoUsuario;
@@ -38,6 +40,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
+import jakarta.validation.Valid;
 
 import java.time.Clock;
 
@@ -63,19 +66,19 @@ public class ControllerWhatsapp {
     }
 
     @PostMapping("/webhook/whatsapp")
-    @Tag(name = "Webhook WhatsApp", description = "Recepção tipada de eventos do WPPConnect")
+    @Tag(name = "Webhook WhatsApp", description = "Recepção tipada de eventos do gateway do WhatsApp")
     @Operation(
             summary = "Receber mensagem do WhatsApp",
             description = "Consome WhatsappWebhookDTO (sem Map genérico). Aplica travas Anti-X9, ignora grupos/status e encaminha o texto ao módulo da empresa."
     )
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Evento aceito. Mensagens filtradas também retornam 200 para o WPPConnect não reenviar.",
+            @ApiResponse(responseCode = "200", description = "Evento aceito. Mensagens filtradas também retornam 200 para o gateway do WhatsApp não reenviar.",
                     content = @Content(schema = @Schema(hidden = true))),
             @ApiResponse(responseCode = "401", description = "Cabeçalho x-webhook-token ausente, inválido ou segredo não configurado no ambiente.",
                     content = @Content(schema = @Schema(hidden = true)))
     })
     public ResponseEntity<Void> receberMensagem(
-            @Parameter(description = "Segredo compartilhado enviado pelo WPPConnect")
+            @Parameter(description = "Segredo compartilhado enviado pelo gateway do WhatsApp")
             @RequestHeader(value = WebhookSecretFilter.HEADER_WEBHOOK_TOKEN, required = false) String webhookToken,
             @RequestBody WhatsappWebhookDTO payload) {
         if (!WebhookSecretFilter.segredoValido(webhookSecret, webhookToken)) {
@@ -93,7 +96,7 @@ public class ControllerWhatsapp {
         try {
             if (payload.ehEventoQrcode()) {
                 servicoWppConnect.guardarQrcode(sessao, payload.qrcode());
-                observador.logFiltro(sessao, null, "QR Code recebido do WPPConnect");
+                observador.logFiltro(sessao, null, "QR Code recebido do gateway");
                 return ResponseEntity.ok().build();
             }
 
@@ -179,9 +182,9 @@ public class ControllerWhatsapp {
     }
 
     @GetMapping({"/whatsapp/{sessao}/status", "/whatsapp/status/{sessao}"})
-    @Tag(name = "Conexão WhatsApp", description = "BFF do painel para status e QR Code da sessão no WPPConnect")
+    @Tag(name = "Conexão WhatsApp", description = "BFF do painel para status e QR Code da sessão no gateway do WhatsApp")
     @Operation(summary = "Consultar status da sessão WhatsApp",
-            description = "O Java consulta o WPPConnect (GET /api/{sessao}/status-session) e devolve SessaoStatusResponseDTO.")
+            description = "O Java consulta o gateway do WhatsApp (GET /api/{sessao}/status-session) e devolve SessaoStatusResponseDTO.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Status atual da sessão",
                     content = @Content(schema = @Schema(implementation = SessaoStatusResponseDTO.class))),
@@ -208,7 +211,7 @@ public class ControllerWhatsapp {
     @PostMapping({"/whatsapp/{sessao}/iniciar", "/whatsapp/iniciar/{sessao}"})
     @Tag(name = "Conexão WhatsApp")
     @Operation(summary = "Iniciar sessão WhatsApp e gerar QR Code",
-            description = "Se a sessão já estiver conectada, devolve essa conexão. Caso contrário dispara POST /api/{sessao}/start-session no WPPConnect e reabre o token salvo após uma queda.")
+            description = "Se a sessão já estiver conectada, devolve essa conexão. Caso contrário dispara POST /api/{sessao}/start-session no gateway do WhatsApp e reabre o token salvo após uma queda.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Sessão iniciada (QR Code pode aparecer em seguida)",
                     content = @Content(schema = @Schema(implementation = SessaoStatusResponseDTO.class))),
@@ -230,6 +233,34 @@ public class ControllerWhatsapp {
             return recusa;
         }
         return ResponseEntity.ok(servicoWppConnect.iniciarSessao(sessao));
+    }
+
+    @PostMapping("/whatsapp/{sessao}/codigo-pareamento")
+    @Tag(name = "Conexão WhatsApp")
+    @Operation(summary = "Pedir código de pareamento do WhatsApp",
+            description = "Alternativa ao QR Code. Pede ao gateway o código de 8 caracteres para digitar no celular, com a mesma autorização de iniciar a sessão. O telefone não é gravado e só aparece mascarado no log.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Código gerado",
+                    content = @Content(schema = @Schema(implementation = CodigoPareamentoResponseDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Telefone fora de 12 ou 13 dígitos com DDI 55"),
+            @ApiResponse(responseCode = "401", description = "Token administrativo ou de cliente inválido"),
+            @ApiResponse(responseCode = "403", description = "Perfil somente leitura ou sessão de outra empresa"),
+            @ApiResponse(responseCode = "404", description = "Empresa não encontrada para a sessão informada (admin)"),
+            @ApiResponse(responseCode = "409", description = "Sessão já conectada ou fora do pareamento"),
+            @ApiResponse(responseCode = "429", description = "Mais de 3 pedidos em 10 minutos na mesma sessão"),
+            @ApiResponse(responseCode = "503", description = "Gateway sem pareamento por código")
+    })
+    public ResponseEntity<CodigoPareamentoResponseDTO> solicitarCodigoPareamento(
+            @Parameter(description = "Token administrativo do SaaS", example = "sua-chave-admin")
+            @RequestHeader(value = "x-admin-token", required = false) String adminToken,
+            @Parameter(description = "Identificador da sessão WhatsApp da empresa", example = "sessao_recanto_01")
+            @PathVariable String sessao,
+            @Valid @RequestBody CodigoPareamentoRequestDTO corpo) {
+
+        Authentication autenticacao = SecurityContextHolder.getContext().getAuthentication();
+        servicoAcessoEmpresa.exigirNaoLeitura(autenticacao);
+        servicoAcessoEmpresa.validarAcessoSessao(autenticacao, adminToken, sessao);
+        return ResponseEntity.ok(servicoWppConnect.solicitarCodigoPareamento(sessao, corpo.telefone()));
     }
 
     private ResponseEntity<SessaoStatusResponseDTO> recusarSeNecessario(String adminToken, String sessao, boolean exigirEscrita) {

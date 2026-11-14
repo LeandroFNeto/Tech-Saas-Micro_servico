@@ -7,7 +7,7 @@ import jakarta.validation.constraints.Size;
 @Schema(description = "Nova senha definida pelo administrador, sem conferir a senha atual do cliente.")
 public record ResetSenhaAdminDTO(
         @NotBlank
-        @Size(min = 6)
+        @Size(min = 10)
         @Schema(description = "Senha em texto puro; o servidor persiste apenas o hash BCrypt", example = "NovaSenha456")
         String novaSenha
 ) {

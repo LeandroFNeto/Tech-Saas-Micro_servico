@@ -27,7 +27,10 @@ Arquivo em comum da equipe. Cada agente atualiza a própria linha ao começar e 
 | [apresentacao-posicionamento-e-contato](archive/apresentacao-posicionamento-e-contato/) | deploy | `antigravity` | `openspec/archive/apresentacao-posicionamento-e-contato/` | 0 | aprovado |
 | [bot-comercial-site-login-apresentacao](archive/bot-comercial-site-login-apresentacao/) | deploy | `antigravity` | `openspec/archive/bot-comercial-site-login-apresentacao/` | 0 | aprovado |
 | [gamb-whatsapp-datas-livres-e-tom-humano](archive/gamb-whatsapp-datas-livres-e-tom-humano/) | deploy | `antigravity` | `openspec/archive/gamb-whatsapp-datas-livres-e-tom-humano/` | 0 | aprovado |
-| [migrar-wppconnect-para-baileys](changes/migrar-wppconnect-para-baileys/) | programacao | `gemini-3.8-flash` | `openspec/changes/migrar-wppconnect-para-baileys/` | 0 | aprovado |
+| [migrar-wppconnect-para-baileys](changes/migrar-wppconnect-para-baileys/) | homologacao | `claude-opus-5-5` | `openspec/changes/migrar-wppconnect-para-baileys/` | 8 | em andamento |
+| [conexao-whatsapp-por-codigo](changes/conexao-whatsapp-por-codigo/) | programacao | `claude-sonnet-5-5` | `openspec/changes/conexao-whatsapp-por-codigo/` | 0 | aguardando aprovado |
+| [alertas-desconexao-whatsapp](changes/alertas-desconexao-whatsapp/) | proposta | `claude-sonnet-5-5` | `openspec/changes/alertas-desconexao-whatsapp/` | 0 | aguardando aprovado |
+| [fechar-pendencias-de-seguranca](archive/fechar-pendencias-de-seguranca/) | deploy | `claude-haiku-5-5` | `openspec/archive/fechar-pendencias-de-seguranca/` | 3 | aprovado |
 
 Estado: `em andamento`, `aprovado`, `reprovado`, `erro`, `aguardando aprovado`.
 

@@ -16,7 +16,7 @@ public record LoginResponseDTO(
         @Schema(description = "Nome exibido no painel")
         String nome,
 
-        @Schema(description = "Sessão WPPConnect da empresa quando o papel é CLIENTE")
+        @Schema(description = "Sessão gateway do WhatsApp da empresa quando o papel é CLIENTE")
         String sessaoWhatsapp
 ) {
 }

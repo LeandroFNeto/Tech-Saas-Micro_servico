@@ -26,7 +26,7 @@ properties:
     example: Administrador
   sessaoWhatsapp:
     type: string
-    description: Sessão WPPConnect da empresa quando o papel é CLIENTE
+    description: Sessão gateway da empresa quando o papel é CLIENTE
     example: sessao_recanto_01
 required:
   - token

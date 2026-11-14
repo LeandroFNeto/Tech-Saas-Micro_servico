@@ -22,8 +22,8 @@ public class ServicoMensagem {
 
     private static final long INTERVALO_GALERIA_MS = 2000;
 
-    @Value("${wppconnect.url:http://wppconnect:21465}")
-    private String urlBase = "http://wppconnect:21465";
+    @Value("${wppconnect.url:http://baileys-gateway:21465}")
+    private String urlBase = "http://baileys-gateway:21465";
 
     private RestTemplate restTemplate = criarRestTemplatePadrao();
 
@@ -42,7 +42,7 @@ public class ServicoMensagem {
     @Autowired
     public ServicoMensagem(
             RestTemplate restTemplate,
-            @Value("${wppconnect.url:http://wppconnect:21465}") String urlBase) {
+            @Value("${wppconnect.url:http://baileys-gateway:21465}") String urlBase) {
         if (restTemplate != null) {
             this.restTemplate = restTemplate;
         }

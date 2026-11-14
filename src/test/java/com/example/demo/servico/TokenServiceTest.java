@@ -37,9 +37,9 @@ class TokenServiceTest {
     }
 
     @Test
-    @DisplayName("Deriva chave via SHA-256 quando segredo tem menos de 32 bytes e preenche Administrador sem empresa")
-    void deveDerivarChaveCurtaEGerarTokenDeAdmin() {
-        TokenService service = new TokenService("segredo-curto");
+    @DisplayName("Gera token de admin sem empresa com nome Administrador")
+    void deveGerarTokenDeAdmin() {
+        TokenService service = new TokenService("ChaveDeTesteSeguraComMaisDeTrintaEDoisCaracteres123");
         Usuario admin = new Usuario();
         admin.setEmail("admin@gamb.com.br");
         admin.setRole(Role.ADMIN);
@@ -51,6 +51,15 @@ class TokenServiceTest {
         assertEquals("ADMIN", claims.get("role", String.class));
         assertEquals("Administrador", claims.get("nome", String.class));
         assertNull(claims.get("sessaoWhatsapp"));
+    }
+
+    @Test
+    @DisplayName("Recusa subir sem chave ou com chave de menos de 32 bytes")
+    void deveRecusarChaveAusenteOuCurta() {
+        assertThrows(IllegalStateException.class, () -> new TokenService(null));
+        assertThrows(IllegalStateException.class, () -> new TokenService("  "));
+        assertThrows(IllegalStateException.class, () -> new TokenService("segredo-curto"));
+        assertThrows(IllegalStateException.class, () -> new TokenService("a".repeat(31)));
     }
 
     @Test

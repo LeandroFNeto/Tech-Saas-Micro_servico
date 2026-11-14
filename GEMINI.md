@@ -36,3 +36,8 @@ Este arquivo define as regras e convenções essenciais do repositório para o G
 - O que puder ser resolvido ou automatizado por código determinístico deve ser transformado em script na pasta `scripts/`.
 - Execuções repetitivas de teste, validação, verificação de conformidade e transformação devem usar scripts locais, eliminando consumo recorrente de tokens de LLM.
 - Detalhes em: [.agents/rules/economia-tokens-scripts.md](file:///c:/Projeto-futuro-junior/Tech-Saas-Micro_servico/.agents/rules/economia-tokens-scripts.md).
+
+## 7. Regras de Segurança
+- Regras obrigatórias em todo o desenvolvimento: segredos, autenticação, validação, LGPD, logs, gateway do WhatsApp, IA, front, infraestrutura e dependências.
+- Regra que não puder ser cumprida vira exceção escrita nos Riscos do `design.md` da change.
+- Detalhes em: [.agents/rules/seguranca.md](file:///c:/Projeto-futuro-junior/Tech-Saas-Micro_servico/.agents/rules/seguranca.md).

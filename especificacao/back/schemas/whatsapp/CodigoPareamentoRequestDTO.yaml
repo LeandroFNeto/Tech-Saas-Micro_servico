@@ -1,0 +1,10 @@
+type: object
+description: Telefone do número que será conectado ao WhatsApp da empresa. Usado só para gerar o código e nunca gravado.
+properties:
+  telefone:
+    type: string
+    description: Somente dígitos, com DDI 55, DDD e número (12 ou 13 dígitos)
+    pattern: '^55\d{10,11}$'
+    example: "5511999990000"
+required:
+  - telefone

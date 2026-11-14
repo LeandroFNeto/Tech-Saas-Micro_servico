@@ -13,7 +13,7 @@ public record EmpresaResponseDTO(
         @Schema(description = "Nome fantasia", example = "Recanto Vista Alegre")
         String nome,
 
-        @Schema(description = "Identificador da sessão no WPPConnect, usado pelo front-end para acompanhar a conexão", example = "sessao_recanto_01")
+        @Schema(description = "Identificador da sessão no gateway do WhatsApp, usado pelo front-end para acompanhar a conexão", example = "sessao_recanto_01")
         String sessaoWhatsapp,
 
         @Schema(description = "Status atual da sessão WhatsApp", example = "DISCONNECTED")

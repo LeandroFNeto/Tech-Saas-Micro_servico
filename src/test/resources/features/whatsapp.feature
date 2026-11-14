@@ -4,7 +4,7 @@
 Funcionalidade: Controle de sessão do WhatsApp do SaaS
   Como usuário autenticado do SaaS
   Quero consultar o status e iniciar a sessão do WhatsApp
-  Para conectar o bot da minha empresa no WPPConnect
+  Para conectar o bot da minha empresa no gateway do WhatsApp
 
   Cenário: GET e POST no WhatsApp com JWT de cliente na própria sessão retornam 200
     Dado o token administrativo "sua-chave-admin"

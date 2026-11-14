@@ -18,6 +18,7 @@ import static org.springframework.test.web.client.ExpectedCount.manyTimes;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withServerError;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 
@@ -71,6 +72,39 @@ class ServicoWppConnectLogTest {
         assertThat(saida.getAll())
                 .contains("sessao_recanto_01")
                 .contains("InternalServerError")
+                .doesNotContain("Joana Prado")
+                .doesNotContain("5511999997777");
+    }
+
+    @Test
+    @DisplayName("Pedido de código de pareamento loga o telefone mascarado e nunca o código nem a chave")
+    void codigoDePareamentoNaoVazaTelefoneNemCodigo(CapturedOutput saida) {
+        server.expect(requestTo("http://localhost:21465/api/sessao_recanto_01/secret-key-de-teste/generate-token"))
+                .andRespond(withSuccess("{\"token\":\"token-wpp\"}", MediaType.APPLICATION_JSON));
+        server.expect(requestTo("http://localhost:21465/api/sessao_recanto_01/request-pairing-code"))
+                .andRespond(withSuccess("{\"code\":\"ABCD-EFGH\"}", MediaType.APPLICATION_JSON));
+
+        servico.solicitarCodigoPareamento("sessao_recanto_01", "5511999997777");
+
+        assertThat(saida.getAll())
+                .contains("sessao_recanto_01")
+                .contains("***7777")
+                .doesNotContain("5511999997777")
+                .doesNotContain("ABCD-EFGH")
+                .doesNotContain("token-wpp")
+                .doesNotContain("secret-key-de-teste");
+    }
+
+    @Test
+    @DisplayName("Falha na rota de saúde não loga a chave secreta enviada no cabeçalho")
+    void saudeNaoVazaChaveSecreta(CapturedOutput saida) {
+        server.expect(requestTo("http://localhost:21465/api/health"))
+                .andRespond(withServerError().body(CORPO_SIGILOSO).contentType(MediaType.APPLICATION_JSON));
+
+        servico.consultarSaude();
+
+        assertThat(saida.getAll())
+                .doesNotContain("secret-key-de-teste")
                 .doesNotContain("Joana Prado")
                 .doesNotContain("5511999997777");
     }

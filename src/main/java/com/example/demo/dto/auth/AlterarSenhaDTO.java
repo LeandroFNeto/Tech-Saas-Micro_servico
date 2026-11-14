@@ -7,11 +7,11 @@ import jakarta.validation.constraints.Size;
 @Schema(description = "Troca de senha do usuário autenticado (PUT /auth/alterar-senha).")
 public record AlterarSenhaDTO(
         @NotBlank
-        @Schema(description = "Senha atual em texto puro", example = "SenhaMaster123")
+        @Schema(description = "Senha atual em texto puro", example = "ExemploSenha2026")
         String senhaAtual,
 
         @NotBlank
-        @Size(min = 6)
+        @Size(min = 10)
         @Schema(description = "Nova senha; o servidor persiste o hash BCrypt", example = "NovaSenha456")
         String novaSenha
 ) {

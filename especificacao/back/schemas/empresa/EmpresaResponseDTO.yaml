@@ -12,7 +12,7 @@ properties:
     example: Recanto Vista Alegre
   sessaoWhatsapp:
     type: string
-    description: Identificador da sessão no WPPConnect, usado pelo front-end para acompanhar a conexão
+    description: Identificador da sessão no gateway, usado pelo front-end para acompanhar a conexão
     example: sessao_recanto_01
   statusSessao:
     type: string

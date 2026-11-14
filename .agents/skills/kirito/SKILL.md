@@ -45,7 +45,7 @@ Kirito exige alta capacidade de raciocínio lógico e análise estrutural de có
    - Limites textuais e payloads: strings vazias, `null`, espaços em branco, caracteres especiais, UTF-8 acentuado e tamanho máximo de texto (ex: 120 caracteres de motivo, 1000 de saudação/lembrete).
 
 3. **Caminhos de Falha e Resiliência (Failure Injection)**:
-   - Mockar falhas intencionais de serviços externos (queda do Google Calendar, timeout de 3s da Gemini IA, indisponibilidade do WPPConnect, erro do OpenWeather, erro de banco) para verificar se o sistema falha de forma graciosa sem vazar stacktrace, tokens ou dados sensíveis.
+   - Mockar falhas intencionais de serviços externos (queda do Google Calendar, timeout de 3s da Gemini IA, indisponibilidade do gateway do WhatsApp, erro do OpenWeather, erro de banco) para verificar se o sistema falha de forma graciosa sem vazar stacktrace, tokens ou dados sensíveis.
 
 4. **Transições de Estado e Fidelidade de Contrato**:
    - Validar se o `GerenciadorSessao` e o `RegistroEnviosBot` transicionam, isolam sessões entre empresas e expiram corretamente os estados da conversa e da reserva.

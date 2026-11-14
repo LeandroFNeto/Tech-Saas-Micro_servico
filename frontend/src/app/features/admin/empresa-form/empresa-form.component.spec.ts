@@ -315,6 +315,15 @@ describe('EmpresaFormComponent, responsaveis da reuniao da Gamb', () => {
     expect(fixture.componentInstance.form.controls.emailsResponsaveisReuniao.errors).toBeNull();
   });
 
+  it('redefinicao de senha pelo admin exige 10 caracteres ou mais', () => {
+    const fixture = montarGamb('ATENDENTE_GAMB');
+    const campo = fixture.componentInstance.formResetSenha.controls.novaSenha;
+    campo.setValue('Curta1234');
+    expect(campo.errors?.['minlength']).toBeTruthy();
+    campo.setValue('SenhaNova12');
+    expect(campo.errors).toBeNull();
+  });
+
   it('empresa de outro ramo nao envia a lista no PUT', () => {
     const atualizarPeloAdmin = jasmine.createSpy('atualizarPeloAdmin').and.returnValue(of({}));
     const fixture = montarGamb('locacao', { atualizarPeloAdmin });

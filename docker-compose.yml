@@ -8,31 +8,37 @@ services:
       POSTGRES_USER: ${MEU_POSTGRES_USER}
       POSTGRES_PASSWORD: ${MEU_POSTGRES_PASSWORD}
       POSTGRES_DB: ${MEU_POSTGRES_DB}
-    ports:
-      - "5432:5432"
     volumes:
       - ./postgres_data:/var/lib/postgresql/data
     networks:
       - bot-network
 
-  # 2. Servidor do WhatsApp (WPPConnect)
-  wppconnect:
-    build: ./wppconnect-server
-    container_name: wppconnect_server
-    restart: always
-    ports:
-      - "21465:21465"
+  # 2. Gateway do WhatsApp (Baileys). Fica so na rede interna, sem porta publicada no host.
+  baileys-gateway:
+    build: ./baileys-gateway
+    container_name: baileys_gateway
+    restart: unless-stopped
     environment:
       - PORT=21465
       - SECRET_KEY=${WPP_SECRET_KEY}
       - WPPCONNECT_WEBHOOK_URL=http://bot-java:8080/webhook/whatsapp
       - WPPCONNECT_WEBHOOK_SECRET=${WPPCONNECT_WEBHOOK_SECRET:-${WPP_SECRET_KEY}}
       - WPPCONNECT_ON_SELF_MESSAGE=${WPPCONNECT_ON_SELF_MESSAGE:-true}
+      - BAILEYS_SIMULAR_DIGITACAO=${BAILEYS_SIMULAR_DIGITACAO:-true}
+      - BAILEYS_HOSTS_FOTO_PERMITIDOS=${BAILEYS_HOSTS_FOTO_PERMITIDOS:-}
+      - BAILEYS_HOSTS_WEBHOOK_PERMITIDOS=${BAILEYS_HOSTS_WEBHOOK_PERMITIDOS:-}
+      - BAILEYS_BUSCAR_VERSAO_WA=${BAILEYS_BUSCAR_VERSAO_WA:-false}
+      - BAILEYS_AUTH_DIR=/auth-data
     networks:
       - bot-network
     volumes:
-      - ./dados-wpp/userDataDir:/usr/src/wpp-server/userDataDir
-      - ./dados-wpp/tokens:/usr/src/wpp-server/tokens
+      - baileys-auth:/auth-data
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:21465/api/health',{headers:{Authorization:'Bearer '+process.env.SECRET_KEY}}).then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
     logging:
       driver: json-file
       options:
@@ -49,14 +55,13 @@ services:
     depends_on:
       db-bot:
         condition: service_started
-      wppconnect:
-        condition: service_started
+      baileys-gateway:
+        condition: service_healthy
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db-bot:5432/${MEU_POSTGRES_DB}
       - SPRING_DATASOURCE_USERNAME=${MEU_POSTGRES_USER}
       - SPRING_DATASOURCE_PASSWORD=${MEU_POSTGRES_PASSWORD}
-      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
-      - WPPCONNECT_URL=http://wppconnect:21465
+      - WPPCONNECT_URL=${WPPCONNECT_URL:-http://baileys-gateway:21465}
       - WPPCONNECT_SECRET_KEY=${WPP_SECRET_KEY}
       - WPPCONNECT_WEBHOOK_SECRET=${WPPCONNECT_WEBHOOK_SECRET:-${WPP_SECRET_KEY}}
       # 👇 AS VARIÁVEIS NOVAS INJETADAS AQUI! 👇
@@ -65,12 +70,16 @@ services:
       - API_AUTH_TOKEN=${API_AUTH_TOKEN}
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
       - ADMIN_DEFAULT_EMAIL=${ADMIN_DEFAULT_EMAIL:-usuario@gamb.com}
-      - ADMIN_DEFAULT_PASSWORD=${ADMIN_DEFAULT_PASSWORD:-SenhaMaster123}
-      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-*}
+      - ADMIN_DEFAULT_PASSWORD=${ADMIN_DEFAULT_PASSWORD:-}
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-}
       - OPENWEATHER_API_KEY=${OPENWEATHER_API_KEY:-}
       - CONTATOS_CHAVE_CRIPTO=${CONTATOS_CHAVE_CRIPTO:-}
       - CONTATOS_CHAVE_INDICE=${CONTATOS_CHAVE_INDICE:-}
       - RETENCAO_MESES=${RETENCAO_MESES:-12}
+      - SWAGGER_HABILITADO=${SWAGGER_HABILITADO:-false}
+      - PROXIES_CONFIAVEIS=${PROXIES_CONFIAVEIS:-}
+      - SENHA_LEGADA_A_BLOQUEAR=${SENHA_LEGADA_A_BLOQUEAR:-}
+      - GAMB_CONTATO_WHATSAPP=${GAMB_CONTATO_WHATSAPP:-}
     networks:
       - bot-network
     logging:
@@ -82,3 +91,6 @@ services:
 networks:
   bot-network:
     driver: bridge
+
+volumes:
+  baileys-auth:

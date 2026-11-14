@@ -9,7 +9,7 @@ import java.util.List;
 
 @Schema(description = "Contrato de atualização administrativa (PUT). Campos de infraestrutura e módulos; não deve ser usado pelo painel do cliente.")
 public record EmpresaUpdateAdminDTO(
-        @Schema(description = "Identificador da sessão que conecta com o WPPConnect", example = "sessao_recanto_01")
+        @Schema(description = "Identificador da sessão que conecta com o gateway do WhatsApp", example = "sessao_recanto_01")
         String sessaoWhatsapp,
 
         @Schema(description = "Define se o local é alugado por hora (true) ou por diária (false)", example = "false")

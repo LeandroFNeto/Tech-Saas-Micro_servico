@@ -1,6 +1,8 @@
 package com.example.demo.servico;
 
+import com.example.demo.dto.whatsapp.CodigoPareamentoResponseDTO;
 import com.example.demo.dto.whatsapp.SessaoStatusResponseDTO;
+import com.example.demo.util.MascaraLog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -10,11 +12,14 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -32,6 +37,20 @@ public class ServicoWppConnect {
 
     @Value("${wppconnect.webhook-url:http://bot-java:8080/webhook/whatsapp}")
     private String webhookUrl;
+
+    public record SaudeGateway(Situacao situacao, int conectadas, int aguardandoQr, List<String> desconectadas,
+                                List<String> nomesConectadas) {
+
+        public enum Situacao { OK, SEM_ROTA, INDISPONIVEL }
+
+        static SaudeGateway indisponivel() {
+            return new SaudeGateway(Situacao.INDISPONIVEL, 0, 0, List.of(), null);
+        }
+
+        static SaudeGateway semRota() {
+            return new SaudeGateway(Situacao.SEM_ROTA, 0, 0, List.of(), null);
+        }
+    }
 
     private final RestTemplate restTemplate;
     private final Map<String, String> tokensPorSessao = new ConcurrentHashMap<>();
@@ -54,7 +73,7 @@ public class ServicoWppConnect {
 
             if (resposta != null && resposta.get("token") instanceof String token) {
                 tokensPorSessao.put(sessao, token);
-                log.info("Novo token WPPConnect gerado para a sessão {}", sessao);
+                log.info("Novo token gateway gerado para a sessão {}", sessao);
                 return token;
             }
         } catch (Exception e) {
@@ -65,7 +84,7 @@ public class ServicoWppConnect {
 
     public void invalidarToken() {
         tokensPorSessao.clear();
-        log.info("Tokens WPPConnect invalidados");
+        log.info("Tokens gateway invalidados");
     }
 
         public void desconectar(String sessao) {
@@ -77,7 +96,7 @@ public class ServicoWppConnect {
         try {
             chamarWpp(sessao, "/close-session", HttpMethod.POST, null, Map.class);
         } catch (Exception e) {
-            log.warn("Falha ao fechar sessao WPPConnect {}: {}", sessao, e.getClass().getSimpleName());
+            log.warn("Falha ao fechar sessao gateway {}: {}", sessao, e.getClass().getSimpleName());
         }
     }
 
@@ -121,10 +140,10 @@ public class ServicoWppConnect {
             try {
                 return dispararStartSession(sessao);
             } catch (Exception retry) {
-                log.warn("Falha ao iniciar sessão WPPConnect {}: {}", sessao, retry.getClass().getSimpleName());
+                log.warn("Falha ao iniciar sessão gateway {}: {}", sessao, retry.getClass().getSimpleName());
             }
         } catch (Exception e) {
-            log.warn("Falha ao iniciar sessão WPPConnect {}: {}", sessao, e.getClass().getSimpleName());
+            log.warn("Falha ao iniciar sessão gateway {}: {}", sessao, e.getClass().getSimpleName());
         }
         return consultarStatus(sessao);
     }
@@ -136,7 +155,7 @@ public class ServicoWppConnect {
         body.put("waitQrCode", false);
         Map<String, Object> corpo = chamarWpp(sessao, "/start-session", HttpMethod.POST, body, Map.class);
         SessaoStatusResponseDTO dto = paraDto(sessao, corpo);
-        if ("CONNECTED".equals(dto.status()) || dto.qrcodeBase64() != null) {
+        if ("CONNECTED".equals(dto.status()) || "INITIALIZING".equals(dto.status()) || dto.qrcodeBase64() != null) {
             return dto;
         }
         return new SessaoStatusResponseDTO(sessao, "QRCODE", qrcodesPorSessao.get(sessao));
@@ -161,11 +180,94 @@ public class ServicoWppConnect {
                 || valor.contains("ISLOGGED")) {
             return "CONNECTED";
         }
-        if (valor.contains("QR") || valor.contains("INIT")
-                || (qrcode != null && !qrcode.isBlank())) {
+        boolean semQr = qrcode == null || qrcode.isBlank();
+        if (valor.contains("INITIALIZING") && semQr) {
+            return "INITIALIZING";
+        }
+        if (valor.contains("QR") || valor.contains("INIT") || !semQr) {
             return "QRCODE";
         }
         return "DISCONNECTED";
+    }
+
+    @SuppressWarnings("unchecked")
+    public SaudeGateway consultarSaude() {
+        try {
+            HttpHeaders cabecalhos = new HttpHeaders();
+            cabecalhos.setBearerAuth(secretKey);
+            Map<String, Object> corpo = restTemplate.exchange(
+                    urlBase + "/api/health", HttpMethod.GET, new HttpEntity<>(cabecalhos), Map.class).getBody();
+            if (corpo == null || !(corpo.get("sessoes") instanceof Map<?, ?> sessoes)) {
+                return SaudeGateway.indisponivel();
+            }
+            return new SaudeGateway(
+                    SaudeGateway.Situacao.OK,
+                    inteiro(sessoes.get("conectadas")),
+                    inteiro(sessoes.get("aguardandoQr")),
+                    nomes(sessoes.get("desconectadas")),
+                    sessoes.get("nomesConectadas") instanceof List<?> ? nomes(sessoes.get("nomesConectadas")) : null);
+        } catch (HttpClientErrorException.NotFound e) {
+            return SaudeGateway.semRota();
+        } catch (Exception e) {
+            log.warn("Gateway WhatsApp sem resposta na rota de saúde: {}", e.getClass().getSimpleName());
+            return SaudeGateway.indisponivel();
+        }
+    }
+
+    private int inteiro(Object valor) {
+        return valor instanceof Number numero ? numero.intValue() : 0;
+    }
+
+    private List<String> nomes(Object valor) {
+        if (!(valor instanceof List<?> lista)) {
+            return List.of();
+        }
+        return lista.stream().filter(String.class::isInstance).map(String.class::cast).toList();
+    }
+
+    public CodigoPareamentoResponseDTO solicitarCodigoPareamento(String sessao, String telefone) {
+        try {
+            return pedirCodigo(sessao, telefone);
+        } catch (HttpClientErrorException.Unauthorized e) {
+            invalidarToken(sessao);
+            try {
+                return pedirCodigo(sessao, telefone);
+            } catch (Exception retry) {
+                throw traduzirFalhaDoCodigo(sessao, telefone, retry);
+            }
+        } catch (Exception e) {
+            throw traduzirFalhaDoCodigo(sessao, telefone, e);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private CodigoPareamentoResponseDTO pedirCodigo(String sessao, String telefone) {
+        Map<String, Object> corpo = chamarWpp(sessao, "/request-pairing-code", HttpMethod.POST,
+                Map.of("phone", telefone), Map.class);
+        if (corpo != null && corpo.get("code") instanceof String codigo && !codigo.isBlank()) {
+            log.info("Código de pareamento gerado para a sessão {} (telefone {})", sessao, MascaraLog.numero(telefone));
+            return new CodigoPareamentoResponseDTO(sessao, codigo);
+        }
+        throw new IllegalStateException("resposta sem código");
+    }
+
+    private ResponseStatusException traduzirFalhaDoCodigo(String sessao, String telefone, Exception e) {
+        log.warn("Código de pareamento não gerado para a sessão {} (telefone {}): {}",
+                sessao, MascaraLog.numero(telefone), e.getClass().getSimpleName());
+        if (e instanceof HttpClientErrorException http) {
+            int codigo = http.getStatusCode().value();
+            if (codigo == HttpStatus.BAD_REQUEST.value()) {
+                return new ResponseStatusException(HttpStatus.BAD_REQUEST, "Telefone inválido");
+            }
+            if (codigo == HttpStatus.CONFLICT.value()) {
+                return new ResponseStatusException(HttpStatus.CONFLICT, "Sessão não está aguardando pareamento");
+            }
+            if (codigo == HttpStatus.TOO_MANY_REQUESTS.value()) {
+                return new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS,
+                        "Limite de pedidos de código atingido; tente de novo em alguns minutos");
+            }
+        }
+        return new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "pareamento por código indisponível");
     }
 
     private SessaoStatusResponseDTO consultarStatusNoWpp(String sessao) {
@@ -185,6 +287,9 @@ public class ServicoWppConnect {
     private SessaoStatusResponseDTO completarComQr(String sessao, SessaoStatusResponseDTO dto) {
         if ("CONNECTED".equals(dto.status())) {
             qrcodesPorSessao.remove(sessao);
+            return dto;
+        }
+        if ("INITIALIZING".equals(dto.status())) {
             return dto;
         }
         if (dto.qrcodeBase64() != null && !dto.qrcodeBase64().isBlank()) {
@@ -257,7 +362,7 @@ public class ServicoWppConnect {
     }
 
     private SessaoStatusResponseDTO desconectado(String sessao, Exception e) {
-        log.warn("Falha ao consultar status WPPConnect {}: {}", sessao, e.getClass().getSimpleName());
+        log.warn("Falha ao consultar status gateway {}: {}", sessao, e.getClass().getSimpleName());
         return new SessaoStatusResponseDTO(sessao, "DISCONNECTED", null);
     }
 }

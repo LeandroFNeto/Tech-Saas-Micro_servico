@@ -557,3 +557,25 @@ Cenário: token incorreto recusado com 401 sem vazar segredo no log
 - Quando uma requisição chega com token divergente
 - Então o sistema responde 401
 - E o log de recusa não expõe o token recebido nem o segredo configurado
+
+### WPP-21 Log do gateway atual sem dado pessoal
+
+O sistema deve manter o gateway WPPConnect em uso registrando a partir do nível `info`, sem número completo, texto de mensagem, objeto de erro bruto nem corpo do webhook, também quando o envio ou o webhook falha. Na falha, o log traz só o tipo do erro, o código e o status HTTP, quando houver. A resposta 500 do gateway ao backend não devolve o objeto do erro.
+
+Contrato: nenhum.
+Prova: `wppconnect-server/src/tests/logSemDadoPessoal.test.ts`, `wppconnect-server/src/tests/statusConnectionLog.test.ts`, `wppconnect-server/src/tests/returnErrorLog.test.ts`. Prova operacional: conferência do log do container `wppconnect_server` no deploy.
+
+Cenário: envio para um número
+- Dado um pedido de envio do backend ao gateway
+- Quando o gateway confere o número e envia
+- Então o log não traz o número de destino nem o texto
+
+Cenário: envio que falha
+- Dado um envio de texto ou imagem que a biblioteca rejeita com o destino e o texto no erro
+- Quando o gateway trata a falha
+- Então o log e a resposta 500 não trazem o número nem o texto
+
+Cenário: falha no webhook
+- Dado o gateway sem conseguir postar no webhook do backend
+- Quando registra a falha
+- Então o log traz só o código HTTP ou o tipo da falha, sem o corpo da mensagem
