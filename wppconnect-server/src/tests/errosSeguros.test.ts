@@ -1,6 +1,10 @@
+import { readFileSync } from 'fs';
+import { join } from 'path';
+
 import {
   deleteChat,
   setProfileName,
+  setTyping,
   showAllContacts,
 } from '../controller/deviceController';
 import { descreverErroSeguro } from '../util/functions';
@@ -151,5 +155,40 @@ describe('deviceController sem o objeto do erro', () => {
     expect(corpo.response).not.toHaveProperty('log');
     expect(req.logger.error).toHaveBeenCalledWith('AxiosError HTTP 502');
     expect(registrado(req, res)).not.toContain(NUMERO);
+  });
+});
+
+describe('deviceController por inteiro', () => {
+  it('setTyping falha sem o campo error na resposta', async () => {
+    const req = requisicao(
+      {
+        startTyping: jest
+          .fn()
+          .mockRejectedValue({ to: `${NUMERO}@c.us`, body: 'texto secreto' }),
+      },
+      { phone: [NUMERO] }
+    );
+    const res = resposta();
+
+    await setTyping(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    const corpo = res.json.mock.calls[0][0];
+    expect(corpo).not.toHaveProperty('error');
+    expect(corpo).not.toHaveProperty('log');
+    const saida = registrado(req, res);
+    expect(saida).not.toContain(NUMERO);
+    expect(saida).not.toContain('texto secreto');
+  });
+
+  it('nenhum json do código-fonte traz error nem log', () => {
+    const fonte = readFileSync(
+      join(__dirname, '..', 'controller', 'deviceController.ts'),
+      'utf8'
+    );
+    const blocos = fonte.match(/\.json\(\{[\s\S]*?\}\)/g) ?? [];
+    expect(blocos.length).toBeGreaterThan(50);
+    const ofensores = blocos.filter((b) => /\b(error|log)\s*:/.test(b));
+    expect(ofensores).toEqual([]);
   });
 });

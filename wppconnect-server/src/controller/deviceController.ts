@@ -1394,7 +1394,7 @@ export async function loadAndGetAllMessagesInChat(req: Request, res: Response) {
     req.logger.error(descreverErroSeguro(error));
     res
       .status(500)
-      .json({ status: 'error', response: 'Error on open list', error: error });
+      .json({ status: 'error', response: 'Error on open list' });
   }
 }
 export async function getMessages(req: Request, res: Response) {
@@ -1545,7 +1545,7 @@ export async function sendMute(req: Request, res: Response) {
     req.logger.error(descreverErroSeguro(error));
     res
       .status(500)
-      .json({ status: 'error', message: 'Error on send mute', error: error });
+      .json({ status: 'error', message: 'Error on send mute' });
   }
 }
 
@@ -1751,7 +1751,7 @@ export async function setTyping(req: Request, res: Response) {
     req.logger.error(descreverErroSeguro(error));
     res
       .status(500)
-      .json({ status: 'error', message: 'Error on set typing', error: error });
+      .json({ status: 'error', message: 'Error on set typing' });
   }
 }
 
@@ -1868,7 +1868,7 @@ export async function getContact(req: Request, res: Response) {
     req.logger.error(descreverErroSeguro(error));
     res
       .status(500)
-      .json({ status: 'error', message: 'Error on get contact', error: error });
+      .json({ status: 'error', message: 'Error on get contact' });
   }
 }
 
@@ -1985,7 +1985,7 @@ export async function getStatus(req: Request, res: Response) {
     req.logger.error(descreverErroSeguro(error));
     res
       .status(500)
-      .json({ status: 'error', message: 'Error on  get status', error: error });
+      .json({ status: 'error', message: 'Error on  get status' });
   }
 }
 
@@ -2182,7 +2182,7 @@ export async function getVotes(req: Request, res: Response) {
     req.logger.error(descreverErroSeguro(error));
     res
       .status(500)
-      .json({ status: 'error', message: 'Error on get votes', error: error });
+      .json({ status: 'error', message: 'Error on get votes' });
   }
 }
 export async function chatWoot(req: Request, res: Response): Promise<any> {
