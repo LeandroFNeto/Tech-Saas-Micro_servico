@@ -4,11 +4,13 @@ properties:
   email:
     type: string
     format: email
+    maxLength: 254
     description: E-mail cadastrado do usuário
     example: usuario@gamb.com
   senha:
     type: string
     format: password
+    maxLength: 128
     description: Senha em texto puro; o servidor compara com o hash BCrypt
     example: ExemploSenha2026
 required:

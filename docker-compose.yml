@@ -41,7 +41,7 @@ services:
     container_name: bot_java_recanto
     restart: always
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     depends_on:
       db-bot:
         condition: service_started
@@ -65,6 +65,8 @@ services:
       - OPENWEATHER_API_KEY=${OPENWEATHER_API_KEY:-}
       - CONTATOS_CHAVE_CRIPTO=${CONTATOS_CHAVE_CRIPTO:-}
       - CONTATOS_CHAVE_INDICE=${CONTATOS_CHAVE_INDICE:-}
+      - CONTATOS_CHAVE_CRIPTO_ANTIGA=${CONTATOS_CHAVE_CRIPTO_ANTIGA:-}
+      - CONTATOS_CHAVE_INDICE_ANTIGA=${CONTATOS_CHAVE_INDICE_ANTIGA:-}
       - RETENCAO_MESES=${RETENCAO_MESES:-12}
       - SWAGGER_HABILITADO=${SWAGGER_HABILITADO:-false}
       - PROXIES_CONFIAVEIS=${PROXIES_CONFIAVEIS:-}

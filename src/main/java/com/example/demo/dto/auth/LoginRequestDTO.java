@@ -3,15 +3,18 @@ package com.example.demo.dto.auth;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 @Schema(description = "Credenciais enviadas no POST /auth/login. Não expõe entidade JPA.")
 public record LoginRequestDTO(
         @NotBlank
         @Email
+        @Size(max = 254)
         @Schema(description = "E-mail cadastrado do usuário", example = "usuario@gamb.com")
         String email,
 
         @NotBlank
+        @Size(max = 128)
         @Schema(description = "Senha em texto puro; o servidor compara com o hash BCrypt", example = "ExemploSenha2026")
         String senha
 ) {

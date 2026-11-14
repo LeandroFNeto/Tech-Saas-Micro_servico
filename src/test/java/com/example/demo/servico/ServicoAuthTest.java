@@ -1,5 +1,7 @@
 package com.example.demo.servico;
 
+import static org.mockito.Mockito.times;
+import static org.mockito.ArgumentMatchers.anyString;
 import com.example.demo.dto.auth.AlterarSenhaDTO;
 import com.example.demo.dto.auth.LoginRequestDTO;
 import com.example.demo.dto.auth.LoginResponseDTO;
@@ -144,5 +146,20 @@ class ServicoAuthTest {
                 () -> servicoAuth.atualizarEmailDaSessao("recanto", "ocupada"));
         assertEquals(HttpStatus.BAD_REQUEST, conflito.getStatusCode());
         verify(usuarioRepository, never()).delete(any());
+    }
+
+    @Test
+    @DisplayName("E-mail inexistente roda uma comparacao BCrypt contra o hash de referencia e responde o mesmo 401")
+    void emailInexistenteComparaComHashDeReferencia() {
+        when(passwordEncoder.encode(anyString())).thenReturn("hash-de-referencia");
+        ServicoAuth servico = new ServicoAuth(usuarioRepository, passwordEncoder, tokenService);
+        when(usuarioRepository.findByEmailIgnoreCase("nao@existe.com")).thenReturn(Optional.empty());
+
+        ResponseStatusException erro = assertThrows(ResponseStatusException.class,
+                () -> servico.login(new LoginRequestDTO("nao@existe.com", "qualquer")));
+
+        assertEquals(HttpStatus.UNAUTHORIZED, erro.getStatusCode());
+        assertEquals("Senha incorreta", erro.getReason());
+        verify(passwordEncoder, times(1)).matches("qualquer", "hash-de-referencia");
     }
 }

@@ -106,14 +106,32 @@ export function groupNameToArray(group: any) {
   return localArr;
 }
 
-export function descreverErroSeguro(e: any): string {
-  const tipo = e?.name || e?.constructor?.name || 'erro';
-  const partes = [String(tipo)];
-  if (typeof e?.code === 'string' || typeof e?.code === 'number') {
-    partes.push(`code ${e.code}`);
+const CARACTERES_DO_ERRO = /^[A-Za-z0-9_.-]+$/;
+const SEQUENCIA_DE_DIGITOS = /[0-9]{7,}/;
+
+function textoSeguro(valor: any, maximo: number): string | null {
+  if (typeof valor !== 'string' || valor.length === 0 || valor.length > maximo) {
+    return null;
   }
-  if (e?.response?.status) {
-    partes.push(`HTTP ${e.response.status}`);
+  if (!CARACTERES_DO_ERRO.test(valor) || SEQUENCIA_DE_DIGITOS.test(valor)) {
+    return null;
+  }
+  return valor;
+}
+
+export function descreverErroSeguro(e: any): string {
+  const tipo = textoSeguro(e?.name || e?.constructor?.name, 64);
+  const partes = [tipo ?? 'erro'];
+  const codigo =
+    typeof e?.code === 'number' && Number.isInteger(e.code) && Math.abs(e.code) < 100000
+      ? String(e.code)
+      : textoSeguro(e?.code, 32);
+  if (codigo !== null) {
+    partes.push(`code ${codigo}`);
+  }
+  const status = e?.response?.status;
+  if (Number.isInteger(status) && status >= 100 && status <= 599) {
+    partes.push(`HTTP ${status}`);
   }
   return partes.join(' ');
 }

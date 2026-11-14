@@ -5,6 +5,7 @@ properties:
     type: string
     format: password
     minLength: 10
+    maxLength: 128
     description: Senha em texto puro; o servidor persiste apenas o hash BCrypt
     example: NovaSenha456
 required:

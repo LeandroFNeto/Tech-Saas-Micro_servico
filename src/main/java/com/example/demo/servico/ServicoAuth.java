@@ -13,12 +13,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.UUID;
+
 @Service
 public class ServicoAuth {
 
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
     private final TokenService tokenService;
+    private final String hashDeReferencia;
 
     public ServicoAuth(
             UsuarioRepository usuarioRepository,
@@ -27,6 +30,7 @@ public class ServicoAuth {
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
         this.tokenService = tokenService;
+        this.hashDeReferencia = passwordEncoder.encode(UUID.randomUUID().toString());
     }
 
     public static String emailAcessoDaSessao(String sessaoWhatsapp) {
@@ -44,9 +48,14 @@ public class ServicoAuth {
 
     @Transactional(readOnly = true)
     public LoginResponseDTO login(LoginRequestDTO dto) {
-        Usuario usuario = usuarioRepository.findByEmailIgnoreCase(dto.email().trim())
-                .filter(encontrado -> passwordEncoder.matches(dto.senha(), encontrado.getSenha()))
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Senha incorreta"));
+        Usuario usuario = usuarioRepository.findByEmailIgnoreCase(dto.email().trim()).orElse(null);
+        if (usuario == null) {
+            passwordEncoder.matches(dto.senha(), hashDeReferencia);
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Senha incorreta");
+        }
+        if (!passwordEncoder.matches(dto.senha(), usuario.getSenha())) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Senha incorreta");
+        }
 
         if (usuario.getEmpresa() != null && Boolean.FALSE.equals(usuario.getEmpresa().getAtivo())) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Empresa inativa");

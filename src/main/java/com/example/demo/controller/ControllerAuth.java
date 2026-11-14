@@ -46,8 +46,9 @@ public class ControllerAuth {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Autenticação bem-sucedida",
                     content = @Content(schema = @Schema(implementation = LoginResponseDTO.class))),
+            @ApiResponse(responseCode = "400", description = "E-mail com mais de 254 caracteres, senha com mais de 128 ou corpo inválido"),
             @ApiResponse(responseCode = "401", description = "E-mail ou senha inválidos"),
-            @ApiResponse(responseCode = "429", description = "Mais de 5 falhas do mesmo e-mail e IP em 15 minutos; veja o cabeçalho Retry-After")
+            @ApiResponse(responseCode = "429", description = "Mais de 5 falhas do mesmo e-mail e IP, ou mais de 30 do mesmo IP com proxy confiável configurado, em 15 minutos; veja o cabeçalho Retry-After")
     })
     public ResponseEntity<LoginResponseDTO> login(@Valid @RequestBody LoginRequestDTO dto, HttpServletRequest http) {
         String ip = ipDoCliente.resolver(http);

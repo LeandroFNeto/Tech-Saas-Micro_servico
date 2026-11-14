@@ -2,6 +2,7 @@ package com.example.demo.util;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.Base64;
@@ -69,5 +70,27 @@ class CriptografiaCampoTest {
     void deveRetornarProprioTextoSeNaoPossuiPrefixoVersaoAoDescriptografar() {
         String textoLegado = "texto_sem_prefixo";
         assertEquals(textoLegado, CriptografiaCampo.descriptografar(textoLegado));
+    }
+
+    @Test
+    @DisplayName("Chave de criptografia so abre o valor da propria chave e a validacao recusa chave curta")
+    void deveAbrirSoComAChaveCerta() {
+        String cifrado = CriptografiaCampo.criptografar("5511999998888");
+        String outra = Base64.getEncoder().encodeToString("abcdefghijklmnopqrstuvwxyz012345".getBytes());
+
+        assertEquals("5511999998888", CriptografiaCampo.tentarDescriptografarCom(cifrado, chave32BytesValida));
+        assertNull(CriptografiaCampo.tentarDescriptografarCom(cifrado, outra));
+        assertNull(CriptografiaCampo.tentarDescriptografarCom("sem-prefixo", chave32BytesValida));
+        assertTrue(CriptografiaCampo.chaveCriptoValida(outra));
+        assertFalse(CriptografiaCampo.chaveCriptoValida("curta"));
+        assertFalse(CriptografiaCampo.chaveCriptoValida(null));
+    }
+
+    @Test
+    @DisplayName("Sem chave configurada, o conversor nao assume valor escrito no codigo")
+    void naoDeveTerChavePadrao() {
+        new CriptografiaCampo("", "");
+        assertFalse(CriptografiaCampo.isConfigurado());
+        assertThrows(IllegalStateException.class, () -> CriptografiaCampo.criptografar("x"));
     }
 }
