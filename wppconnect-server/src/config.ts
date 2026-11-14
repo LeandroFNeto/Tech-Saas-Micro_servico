@@ -41,7 +41,7 @@ export default {
     daysToArchive: 45,
   },
   log: {
-    level: 'silly',
+    level: 'info',
     logger: ['console', 'file'],
   },
   createOptions: {
