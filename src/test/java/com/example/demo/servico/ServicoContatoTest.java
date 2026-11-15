@@ -189,6 +189,67 @@ class ServicoContatoTest {
         verify(contatoRepository).save(c);
     }
 
+    private Contato contatoComDados() {
+        Contato c = new Contato();
+        c.setId(41L);
+        c.setNaoContatar(false);
+        c.setWhatsappId("5511988887777@c.us");
+        c.setNome("Cliente Ficticio");
+        c.setFinalTelefone("7777");
+        c.setNumeroIndice("indice-do-contato");
+        return c;
+    }
+
+    @Test
+    @DisplayName("Opt-out por SAIR anula whatsapp_id, nome e final_telefone e mantem numero_indice e nao_contatar")
+    void optOutExpurgaDadosPessoais() {
+        Contato c = contatoComDados();
+        when(contatoRepository.findByEmpresaIdAndNumeroIndice(eq(5L), anyString())).thenReturn(Optional.of(c));
+        when(contatoRepository.save(c)).thenReturn(c);
+
+        assertTrue(servicoContato.processarOptOutPorMensagem(empresa, "5511988887777@c.us", "SAIR"));
+
+        assertNull(c.getWhatsappId());
+        assertNull(c.getNome());
+        assertNull(c.getFinalTelefone());
+        assertEquals("indice-do-contato", c.getNumeroIndice());
+        assertTrue(c.isNaoContatar());
+        verify(contatoRepository).save(c);
+    }
+
+    @Test
+    @DisplayName("Mensagem seguinte de contato expurgado so atualiza ultima_conversa_em e nao regrava nome nem WhatsApp")
+    void mensagemDepoisDoOptOutNaoRegravaDados() {
+        Contato c = contatoComDados();
+        servicoContato.expurgarPorOptOut(c);
+        when(contatoRepository.findByEmpresaIdAndNumeroIndice(eq(5L), anyString())).thenReturn(Optional.of(c));
+        when(contatoRepository.save(c)).thenReturn(c);
+
+        Contato resultado = servicoContato.registrarOuAtualizarContato(empresa, "5511988887777@c.us", "Outro Nome");
+
+        assertSame(c, resultado);
+        assertNull(c.getWhatsappId());
+        assertNull(c.getNome());
+        assertNull(c.getFinalTelefone());
+        assertTrue(c.isNaoContatar());
+        assertNotNull(c.getUltimaConversaEm());
+    }
+
+    @Test
+    @DisplayName("Revelar numero de contato expurgado responde 422 sem auditoria")
+    void revelacaoDeExpurgadoResponde422SemAuditoria() {
+        Contato c = contatoComDados();
+        servicoContato.expurgarPorOptOut(c);
+        when(auditoriaAcessoContatoRepository.countByEmpresaIdAndDataHoraAfter(eq(5L), any())).thenReturn(0L);
+        when(contatoRepository.findByIdAndEmpresaId(41L, 5L)).thenReturn(Optional.of(c));
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> servicoContato.obterNumeroCompleto(empresa, 41L, "cliente@x.com"));
+
+        assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, ex.getStatusCode());
+        verify(auditoriaAcessoContatoRepository, never()).save(any());
+    }
+
     @Test
     @DisplayName("Ignora mensagem comum sem disparar opt-out")
     void deveIgnorarMensagemComumSemDispararOptOut() {

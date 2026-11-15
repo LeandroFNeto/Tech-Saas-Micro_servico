@@ -43,6 +43,9 @@ class ServicoRespostaLembreteTest {
     @Mock
     private ServicoMensagem servicoMensagem;
 
+    @Mock
+    private ServicoContato servicoContato;
+
     @InjectMocks
     private ServicoRespostaLembrete servicoRespostaLembrete;
 
@@ -153,8 +156,7 @@ class ServicoRespostaLembreteTest {
         );
 
         assertTrue(processou);
-        assertTrue(contato.isNaoContatar());
-        verify(contatoRepository).save(contato);
+        verify(servicoContato).expurgarPorOptOut(contato);
         verify(servicoMensagem).enviarMensagemWPP(eq(empresa), eq(numeroWhatsapp), anyString());
     }
 }

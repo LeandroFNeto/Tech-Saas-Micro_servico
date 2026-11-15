@@ -40,6 +40,9 @@ public class ServicoRespostaLembrete {
     @Autowired
     private ServicoMensagem servicoMensagem;
 
+    @Autowired
+    private ServicoContato servicoContato;
+
     @Transactional
     public boolean processarPossivelResposta(Empresa empresa, String numeroWhatsapp, String texto, EstadoUsuario estadoAtual) {
         if (estadoAtual != EstadoUsuario.INICIO) {
@@ -102,9 +105,8 @@ public class ServicoRespostaLembrete {
         }
 
         if (intencao == IntencaoResposta.PARAR) {
-            contato.setNaoContatar(true);
             contato.setUltimaConversaEm(agora);
-            contatoRepository.save(contato);
+            servicoContato.expurgarPorOptOut(contato);
             servicoMensagem.enviarMensagemWPP(empresa, numeroWhatsapp, MENSAGEM_PARAR);
             return true;
         }

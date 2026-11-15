@@ -28,4 +28,16 @@ class EsquemaFlywayTest {
                 "select count(*) from \"flyway_schema_history\" where \"version\" = '1' and \"success\" = true", Integer.class);
         assertEquals(1, aplicadas);
     }
+
+    @Test
+    @DisplayName("Migração V2 deixa whatsapp_id anulável e anula dados pessoais de contatos com opt-out")
+    void migracaoV2AplicadaEWhatsappIdAnulavel() {
+        Integer aplicadas = jdbc.queryForObject(
+                "select count(*) from \"flyway_schema_history\" where \"version\" = '2' and \"success\" = true", Integer.class);
+        assertEquals(1, aplicadas);
+        String anulavel = jdbc.queryForObject(
+                "select is_nullable from information_schema.columns where lower(table_name) = 'contatos' and lower(column_name) = 'whatsapp_id'",
+                String.class);
+        assertEquals("YES", anulavel);
+    }
 }

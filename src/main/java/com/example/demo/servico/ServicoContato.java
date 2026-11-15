@@ -21,6 +21,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 @Service
@@ -59,7 +60,13 @@ public class ServicoContato {
 
         LocalDateTime agora = LocalDateTime.now(FUSO_BRASILIA);
 
-        Contato contato = contatoRepository.findByEmpresaIdAndNumeroIndice(empresa.getId(), numeroIndice)
+        Contato existente = contatoRepository.findByEmpresaIdAndNumeroIndice(empresa.getId(), numeroIndice).orElse(null);
+        if (existente != null && existente.isNaoContatar()) {
+            existente.setUltimaConversaEm(agora);
+            return contatoRepository.save(existente);
+        }
+
+        Contato contato = Optional.ofNullable(existente)
                 .orElseGet(() -> {
                     Contato novo = new Contato();
                     novo.setEmpresa(empresa);
@@ -113,6 +120,11 @@ public class ServicoContato {
         Contato contato = contatoRepository.findByIdAndEmpresaId(contatoId, empresa.getId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Contato não encontrado"));
 
+        String numeroCompleto = WhatsappUtil.extrairApenasNumeros(contato.getWhatsappId());
+        if (WhatsappUtil.isLid(contato.getWhatsappId()) || numeroCompleto.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Contato sem número de telefone disponível");
+        }
+
         auditoriaAcessoContatoRepository.save(new AuditoriaAcessoContato(
                 empresa,
                 contato,
@@ -120,11 +132,7 @@ public class ServicoContato {
                 emailUsuario
         ));
 
-        String numero = contato.getWhatsappId();
-        if (numero != null && numero.contains("@")) {
-            numero = numero.split("@")[0];
-        }
-        return new NumeroContatoDTO(numero);
+        return new NumeroContatoDTO(numeroCompleto);
     }
 
     @Transactional
@@ -149,11 +157,17 @@ public class ServicoContato {
         String numeroIndice = CriptografiaCampo.calcularIndice(numeroChave);
 
         contatoRepository.findByEmpresaIdAndNumeroIndice(empresa.getId(), numeroIndice)
-                .ifPresent(contato -> {
-                    contato.setNaoContatar(true);
-                    contatoRepository.save(contato);
-                });
+                .ifPresent(this::expurgarPorOptOut);
 
         return true;
+    }
+
+    @Transactional
+    public Contato expurgarPorOptOut(Contato contato) {
+        contato.setNaoContatar(true);
+        contato.setWhatsappId(null);
+        contato.setNome(null);
+        contato.setFinalTelefone(null);
+        return contatoRepository.save(contato);
     }
 }

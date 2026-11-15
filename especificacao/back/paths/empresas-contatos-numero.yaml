@@ -33,5 +33,7 @@ post:
       description: Acesso negado (admin ou cliente de outra empresa)
     "404":
       description: Empresa ou contato não encontrado
+    "422":
+      description: Contato sem número disponível (identificador @lid ou contato que fez opt-out e teve o número apagado). Não gera auditoria nem consome a cota
     "429":
       description: Limite de visualização de números excedido (máximo 10 por hora)

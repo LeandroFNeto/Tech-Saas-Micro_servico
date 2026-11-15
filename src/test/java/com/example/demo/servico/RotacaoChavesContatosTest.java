@@ -226,29 +226,23 @@ class RotacaoChavesContatosTest {
     @Test
     @DisplayName("Linha sem whatsapp_id recebe indice aleatorio no formato do indice, mantem nao_contatar e entra no log so como quantidade")
     void linhaSemNumero() {
-        jdbc.execute("alter table contatos alter column whatsapp_id set null");
-        try {
-            long id = inserirContato(null, null, "a".repeat(64));
-            jdbc.update("update contatos set nao_contatar = true where id = ?", id);
-            long normal = inserirContato(cifrarComAntiga(NUMERO_UM), null, indiceAntigoDe(NUMERO_UM));
+        long id = inserirContato(null, null, "a".repeat(64));
+        jdbc.update("update contatos set nao_contatar = true where id = ?", id);
+        long normal = inserirContato(cifrarComAntiga(NUMERO_UM), null, indiceAntigoDe(NUMERO_UM));
 
-            rotacao(CRIPTO_ANTIGA, INDICE_ANTIGO).executar();
+        rotacao(CRIPTO_ANTIGA, INDICE_ANTIGO).executar();
 
-            String indice = coluna("contatos", "numero_indice", id);
-            assertTrue(indice.matches("[0-9a-f]{64}"));
-            assertNotEquals("a".repeat(64), indice);
-            assertNull(coluna("contatos", "whatsapp_id", id));
-            assertEquals(Boolean.TRUE, jdbc.queryForObject("select nao_contatar from contatos where id = ?", Boolean.class, id));
-            assertEquals(NUMERO_UM, CriptografiaCampo.tentarDescriptografarCom(coluna("contatos", "whatsapp_id", normal), CRIPTO_NOVA));
+        String indice = coluna("contatos", "numero_indice", id);
+        assertTrue(indice.matches("[0-9a-f]{64}"));
+        assertNotEquals("a".repeat(64), indice);
+        assertNull(coluna("contatos", "whatsapp_id", id));
+        assertEquals(Boolean.TRUE, jdbc.queryForObject("select nao_contatar from contatos where id = ?", Boolean.class, id));
+        assertEquals(NUMERO_UM, CriptografiaCampo.tentarDescriptografarCom(coluna("contatos", "whatsapp_id", normal), CRIPTO_NOVA));
 
-            List<String> mensagens = mensagensDoLog().stream().filter(m -> m.contains("Rotacao")).collect(Collectors.toList());
-            assertEquals(1, mensagens.size());
-            assertTrue(mensagens.get(0).contains("contatos sem numero=1"));
-            assertTrue(mensagens.get(0).contains("contatos rotacionados=1"));
-        } finally {
-            jdbc.update("delete from contatos where empresa_id = ? and whatsapp_id is null", empresaId);
-            jdbc.execute("alter table contatos alter column whatsapp_id set not null");
-        }
+        List<String> mensagens = mensagensDoLog().stream().filter(m -> m.contains("Rotacao")).collect(Collectors.toList());
+        assertEquals(1, mensagens.size());
+        assertTrue(mensagens.get(0).contains("contatos sem numero=1"));
+        assertTrue(mensagens.get(0).contains("contatos rotacionados=1"));
     }
 
     @Test
