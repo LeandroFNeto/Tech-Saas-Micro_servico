@@ -24,6 +24,10 @@ Migração `V2__whatsapp_id_anulavel_no_opt_out.sql` com `alter table contatos a
 ### 4. Mensagem depois do opt-out
 O webhook chama `registrarOuAtualizarContato` antes do opt-out. Para contato com `nao_contatar = true`, o método só atualiza `ultima_conversa_em`. O bot continua respondendo, porque responder a quem escreveu não é envio proativo. Reserva nova pelo bot liga à mesma linha e o lembrete continua bloqueado.
 
+O caminho da reserva fechada pelo bot (`ObservadorGoogleAgenda.gravarReservaBot`) segue a mesma regra: contato existente com `nao_contatar = true` não recebe nome; só `ultima_conversa_em` muda, e a reserva liga à mesma linha.
+
+A listagem de `ControllerClienteAutomacao` monta a máscara com o método próprio do controller, então o contato expurgado aparece como `*****-` com `naoContatar = true` (não como a máscara de `ContatoResumoDTO.fromEntity`). Decisão aceita; nenhum DTO muda.
+
 ### 5. Revelação do número
 Contato com `whatsapp_id` nulo responde 422, sem auditoria e sem gastar a cota, igual ao `@lid`. `ServicoContato.obterNumeroCompleto` hoje devolveria `numero: null` com 200; passa a 422 também.
 

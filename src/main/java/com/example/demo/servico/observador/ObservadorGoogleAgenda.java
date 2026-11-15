@@ -400,7 +400,7 @@ public class ObservadorGoogleAgenda {
                         novo.setOrigem(OrigemContato.CONVERSA);
                         return novo;
                     });
-            if (evento.getNomeCliente() != null && !evento.getNomeCliente().isBlank()) {
+            if (!contato.isNaoContatar() && evento.getNomeCliente() != null && !evento.getNomeCliente().isBlank()) {
                 contato.setNome(evento.getNomeCliente());
             }
             contato.setUltimaConversaEm(agora);
