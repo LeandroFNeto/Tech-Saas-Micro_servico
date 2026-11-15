@@ -579,3 +579,20 @@ Cenário: falha no webhook
 - Dado o gateway sem conseguir postar no webhook do backend
 - Quando registra a falha
 - Então o log traz só o código HTTP ou o tipo da falha, sem o corpo da mensagem
+
+### WPP-23 Erro do gateway sem o objeto bruto
+
+O gateway WPPConnect em uso deve registrar erros somente por tipo, código e status HTTP, aceitando no tipo e no código só letras, dígitos, `_`, `.` e `-`, até 64 e 32 caracteres, sem sete ou mais dígitos seguidos, e status inteiro de 100 a 599, e o `deviceController` deve responder sem o objeto do erro.
+
+Contrato: nenhum.
+Prova: `wppconnect-server/src/tests/errosSeguros.test.ts`
+
+Cenário: erro com texto arbitrário no nome ou no código
+- Dado um erro com texto longo, caracteres de controle ou número de telefone em `name` ou `code`
+- Quando o gateway registra o erro
+- Então o log traz `erro` no lugar do nome e omite o código inválido
+
+Cenário: falha em rota de dispositivo
+- Dado uma rota do `deviceController` que falha
+- Quando o gateway responde
+- Então o log traz só a descrição segura e a resposta não traz os campos `error` nem `log`

@@ -4,6 +4,7 @@ import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -30,9 +31,10 @@ public class CriptografiaCampo implements AttributeConverter<String, String> {
     private static volatile String chaveCriptoBase64;
     private static volatile String chaveIndice;
 
+    @Autowired
     public CriptografiaCampo(
-            @Value("${contatos.cripto.chave:MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=}") String chaveCripto,
-            @Value("${contatos.indice.chave:chave-teste-hmac-indice-32-bytes!}") String chaveIndiceConfig) {
+            @Value("${contatos.cripto.chave:}") String chaveCripto,
+            @Value("${contatos.indice.chave:}") String chaveIndiceConfig) {
         configurarChaves(chaveCripto, chaveIndiceConfig);
     }
 
@@ -104,21 +106,47 @@ public class CriptografiaCampo implements AttributeConverter<String, String> {
             throw new IllegalStateException("Criptografia de contatos nao configurada.");
         }
         try {
-            byte[] keyBytes = Base64.getDecoder().decode(chaveCriptoBase64);
-            SecretKeySpec keySpec = new SecretKeySpec(keyBytes, "AES");
-            byte[] combined = Base64.getDecoder().decode(cifrado.substring(VERSAO_PREFIXO.length()));
-            byte[] iv = new byte[GCM_IV_LENGTH];
-            System.arraycopy(combined, 0, iv, 0, GCM_IV_LENGTH);
-            byte[] cipherText = new byte[combined.length - GCM_IV_LENGTH];
-            System.arraycopy(combined, GCM_IV_LENGTH, cipherText, 0, cipherText.length);
-            GCMParameterSpec gcmSpec = new GCMParameterSpec(GCM_TAG_LENGTH, iv);
-            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-            cipher.init(Cipher.DECRYPT_MODE, keySpec, gcmSpec);
-            byte[] plain = cipher.doFinal(cipherText);
-            return new String(plain, StandardCharsets.UTF_8);
+            return abrir(cifrado, chaveCriptoBase64);
         } catch (Exception e) {
             throw new RuntimeException("Falha ao descriptografar campo.", e);
         }
+    }
+
+    public static boolean chaveCriptoValida(String chaveBase64) {
+        if (chaveBase64 == null || chaveBase64.isBlank()) {
+            return false;
+        }
+        try {
+            return Base64.getDecoder().decode(chaveBase64.trim()).length == 32;
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+    }
+
+    public static String tentarDescriptografarCom(String cifrado, String chaveBase64) {
+        if (cifrado == null || !cifrado.startsWith(VERSAO_PREFIXO) || !chaveCriptoValida(chaveBase64)) {
+            return null;
+        }
+        try {
+            return abrir(cifrado, chaveBase64.trim());
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private static String abrir(String cifrado, String chaveBase64) throws Exception {
+        byte[] keyBytes = Base64.getDecoder().decode(chaveBase64);
+        SecretKeySpec keySpec = new SecretKeySpec(keyBytes, "AES");
+        byte[] combined = Base64.getDecoder().decode(cifrado.substring(VERSAO_PREFIXO.length()));
+        byte[] iv = new byte[GCM_IV_LENGTH];
+        System.arraycopy(combined, 0, iv, 0, GCM_IV_LENGTH);
+        byte[] cipherText = new byte[combined.length - GCM_IV_LENGTH];
+        System.arraycopy(combined, GCM_IV_LENGTH, cipherText, 0, cipherText.length);
+        GCMParameterSpec gcmSpec = new GCMParameterSpec(GCM_TAG_LENGTH, iv);
+        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+        cipher.init(Cipher.DECRYPT_MODE, keySpec, gcmSpec);
+        byte[] plain = cipher.doFinal(cipherText);
+        return new String(plain, StandardCharsets.UTF_8);
     }
 
     public static String calcularIndice(String numeroChave) {

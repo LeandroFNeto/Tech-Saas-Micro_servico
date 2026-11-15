@@ -39,11 +39,34 @@ O sistema SHALL bloquear exportações em massa e impor limite estrito de no má
 - **THEN** o sistema SHALL rejeitar a operação com código HTTP 429 Too Many Requests e aviso de limite
 
 ### Requirement: Direito ao esquecimento e opt-out
-O sistema SHALL garantir o cancelamento de comunicação e exclusão ou anonimização dos dados do titular quando solicitado via mensagem de WhatsApp pelo cliente ou por comando de exclusão do operador no painel.
+O sistema SHALL garantir o cancelamento de comunicação e exclusão ou anonimização dos dados do titular quando solicitado via mensagem de WhatsApp pelo cliente ou por comando de exclusão do operador no painel. No opt-out, a linha do contato SHALL guardar só o índice do número e a marca de não contatar.
+
+Contrato: `especificacao/back/paths/empresas-contatos-numero.yaml`
+Prova:
+- Opt-out pelo WhatsApp: `src/test/java/com/example/demo/servico/ServicoContatoTest.java` (`optOutExpurgaDadosPessoais`), `src/test/java/com/example/demo/servico/ServicoRespostaLembreteTest.java` (`parar_apagaWhatsappNomeEFinalTelefoneMantendoIndice`) e `src/test/java/com/example/demo/config/EsquemaFlywayTest.java` (`migracaoV2AplicadaEWhatsappIdAnulavel`, coluna anulável e expurgo das linhas que já tinham opt-out). O bloqueio de envios é a checagem de `nao_contatar` em `ServicoLembreteReserva`, anterior a esta regra e sem teste próprio com contato bloqueado; os testes acima provam que a marca fica gravada.
+- Contato expurgado volta a escrever: `src/test/java/com/example/demo/servico/ServicoContatoTest.java` (`mensagemDepoisDoOptOutNaoRegravaDados`) e `src/test/java/com/example/demo/servico/observador/ObservadorGoogleAgendaPorHoraTest.java` (`reservaDeContatoExpurgadoNaoGravaNome`, `reservaDeContatoComumGravaNome`).
+- Revelação de contato expurgado: `src/test/java/com/example/demo/controller/ControllerClienteAutomacaoTest.java` (`obterNumeroCompleto_contatoExpurgado_retorna422SemAuditar`, `listarContatos_expurgado_mostraMascaraVazia`) e `src/test/java/com/example/demo/servico/ServicoContatoTest.java` (`revelacaoDeExpurgadoResponde422SemAuditoria`).
+- Contato expurgado na rotação de chaves: `src/test/java/com/example/demo/servico/RotacaoChavesContatosTest.java`.
+- Operador remove contato pelo painel: `src/test/java/com/example/demo/servico/ServicoContatoTest.java` (`deveExcluirContato`).
 
 #### Scenario: Cliente solicita opt-out pelo WhatsApp
-- **WHEN** o cliente envia mensagem contendo comando de cancelamento ("SAIR" ou "CANCELAR")
-- **THEN** o sistema SHALL registrar o opt-out, bloquear novos envios e expurgar os dados pessoais
+- **WHEN** o cliente envia mensagem contendo comando de cancelamento ("SAIR" ou "CANCELAR") ou responde ao lembrete pedindo para parar
+- **THEN** o sistema SHALL registrar o opt-out, bloquear novos envios e apagar WhatsApp, nome e final do telefone, mantendo o índice do número
+
+#### Scenario: Contato expurgado volta a escrever
+- **GIVEN** um contato que fez opt-out
+- **WHEN** o mesmo número envia nova mensagem
+- **THEN** o sistema SHALL atualizar só a data da última interação, sem gravar nome, WhatsApp nem final do telefone, e SHALL manter o bloqueio de envios
+- **AND** se o bot fechar uma reserva para esse número, o sistema SHALL ligar a reserva à mesma linha sem gravar o nome informado
+
+#### Scenario: Revelação de contato expurgado
+- **WHEN** o operador pede o número completo de um contato que fez opt-out
+- **THEN** o sistema SHALL responder 422 sem registrar auditoria nem consumir a cota horária
+- **AND** a listagem de contatos SHALL mostrar a linha com a máscara sem dígitos (`*****-`) e a marca de não contatar
+
+#### Scenario: Contato expurgado na rotação de chaves
+- **WHEN** a rotação das chaves de contatos encontra uma linha sem WhatsApp
+- **THEN** o sistema SHALL trocar o índice dessa linha por um valor aleatório, manter a marca de não contatar e não deixar índice calculado com a chave antiga
 
 #### Scenario: Operador remove contato pelo painel
 - **WHEN** o operador confirma a exclusão do contato no painel
@@ -55,3 +78,34 @@ O sistema SHALL executar rotina programada para eliminar contatos inativos cujo 
 #### Scenario: Execução da rotina de retenção
 - **WHEN** o expurgo automático periódico é disparado
 - **THEN** o sistema SHALL remover contatos com última interação anterior ao limite de retenção
+
+### Requirement: Rotação das chaves de contatos
+O sistema SHALL recifrar nome e WhatsApp dos contatos e o título das reservas, e SHALL recalcular o índice do número, quando as chaves antigas forem informadas no boot, concluindo antes de aceitar tráfego e falhando fechado em configuração incompleta ou dado que não abre.
+
+Prova: `src/test/java/com/example/demo/servico/RotacaoChavesContatosTest.java`, `src/test/java/com/example/demo/util/CriptografiaCampoTest.java`, `src/test/java/com/example/demo/servico/ServicoContatoTest.java`
+
+#### Scenario: Rotação completa
+- **GIVEN** que as chaves atuais e as variáveis `CONTATOS_CHAVE_CRIPTO_ANTIGA` e `CONTATOS_CHAVE_INDICE_ANTIGA` estão definidas
+- **WHEN** a aplicação sobe
+- **THEN** os valores SHALL ficar cifrados com a chave nova, a busca pelo número SHALL encontrar o contato pelo índice novo e o log SHALL trazer só as quantidades por tabela
+
+#### Scenario: Retomada depois de falha
+- **GIVEN** que uma rotação parou no meio
+- **WHEN** a aplicação sobe de novo com as mesmas variáveis
+- **THEN** as linhas já rotacionadas SHALL ficar como estão e as demais SHALL ser rotacionadas
+
+#### Scenario: Valor que não abre com nenhuma chave
+- **WHEN** um valor cifrado não abre com a chave nova nem com a antiga
+- **THEN** a aplicação SHALL não subir e o log SHALL trazer só a tabela e o `id`, sem o conteúdo
+
+#### Scenario: Configuração incompleta
+- **WHEN** só uma das variáveis antigas está definida, ou a chave de criptografia antiga não tem 32 bytes em base64, ou as chaves atuais não estão configuradas, ou qualquer uma das chaves antigas é igual à atual correspondente
+- **THEN** a aplicação SHALL não subir e nenhuma linha SHALL ser alterada
+
+#### Scenario: Sem chave antiga
+- **WHEN** as duas variáveis antigas estão vazias
+- **THEN** nenhuma linha SHALL ser lida nem alterada pela rotação
+
+#### Scenario: Nenhuma chave padrão
+- **WHEN** as chaves de contatos não estão configuradas
+- **THEN** a gravação de contatos SHALL ficar desligada com aviso no log, sem usar valor escrito no código

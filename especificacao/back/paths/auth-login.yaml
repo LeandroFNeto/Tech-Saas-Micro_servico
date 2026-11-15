@@ -17,6 +17,12 @@ post:
         application/json:
           schema:
             $ref: "#/components/schemas/LoginResponseDTO"
+    "400":
+      description: E-mail com mais de 254 caracteres, senha com mais de 128 ou corpo inválido
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErroDTO"
     "401":
       description: E-mail ou senha inválidos
       content:
@@ -24,7 +30,7 @@ post:
           schema:
             $ref: "#/components/schemas/ErroDTO"
     "429":
-      description: Mais de 5 falhas de login do mesmo e-mail e IP em 15 minutos
+      description: Mais de 5 falhas de login do mesmo e-mail e IP, ou mais de 30 falhas do mesmo IP quando há proxy confiável configurado, em 15 minutos
       headers:
         Retry-After:
           description: Segundos até a janela de tentativas passar

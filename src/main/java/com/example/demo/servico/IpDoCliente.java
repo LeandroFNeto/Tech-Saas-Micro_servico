@@ -1,13 +1,12 @@
 package com.example.demo.servico;
 
+import com.example.demo.util.LiteralDeIp;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,6 +20,9 @@ public class IpDoCliente {
 
     public IpDoCliente(@Value("${seguranca.proxies-confiaveis:}") String proxiesConfiaveis) {
         this.proxiesConfiaveis = interpretar(proxiesConfiaveis);
+        if (this.proxiesConfiaveis.isEmpty()) {
+            log.warn("PROXIES_CONFIAVEIS vazia: o IP do cliente sera o da conexao e o limite de login por IP fica desligado.");
+        }
     }
 
     public String resolver(HttpServletRequest requisicao) {
@@ -97,14 +99,7 @@ public class IpDoCliente {
     }
 
     private static byte[] bytesDe(String texto) {
-        if (texto == null || texto.isEmpty() || !texto.matches("[0-9a-fA-F:.]+") || !(texto.contains(".") || texto.contains(":"))) {
-            return null;
-        }
-        try {
-            return InetAddress.getByName(texto).getAddress();
-        } catch (UnknownHostException e) {
-            return null;
-        }
+        return LiteralDeIp.bytes(texto);
     }
 
     private record Faixa(byte[] base, int prefixo) {

@@ -19,7 +19,7 @@ public class Contato {
     private Empresa empresa;
 
     @Convert(converter = CriptografiaCampo.class)
-    @Column(name = "whatsapp_id", nullable = false, length = 1000)
+    @Column(name = "whatsapp_id", nullable = true, length = 1000)
     private String whatsappId;
 
     @Convert(converter = CriptografiaCampo.class)

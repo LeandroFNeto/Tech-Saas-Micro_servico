@@ -74,13 +74,28 @@ else
   definir ADMIN_DEFAULT_PASSWORD "$SENHA_ADMIN_NOVA"
 fi
 
-if [ -z "$(ler GAMB_CONTATO_WHATSAPP)" ]; then
-  read -r -p "Número comercial da Gamb no WhatsApp, só dígitos com 55 (Enter para deixar sem): " NUMERO_GAMB
-  if [ -n "$NUMERO_GAMB" ]; then
-    definir GAMB_CONTATO_WHATSAPP "$NUMERO_GAMB"
-  else
-    PENDENTES+=("GAMB_CONTATO_WHATSAPP vazio: a resposta comercial sai sem o link do WhatsApp")
+numero_gamb_valido() {
+  [[ "$1" =~ ^55[0-9]{10,11}$ ]]
+}
+
+GAMB_ATUAL="$(ler GAMB_CONTATO_WHATSAPP)"
+if [ -n "$GAMB_ATUAL" ]; then
+  if ! numero_gamb_valido "$GAMB_ATUAL"; then
+    PENDENTES+=("GAMB_CONTATO_WHATSAPP gravado em $ARQUIVO é inválido (esperado: 55 + DDD + número, só dígitos, 12 ou 13 dígitos): corrigir")
   fi
+else
+  while true; do
+    read -r -p "Número comercial da Gamb no WhatsApp, só dígitos com 55, 12 ou 13 dígitos (Enter para deixar sem): " NUMERO_GAMB
+    if [ -z "$NUMERO_GAMB" ]; then
+      PENDENTES+=("GAMB_CONTATO_WHATSAPP vazio: a resposta comercial sai sem o link do WhatsApp")
+      break
+    fi
+    if numero_gamb_valido "$NUMERO_GAMB"; then
+      definir GAMB_CONTATO_WHATSAPP "$NUMERO_GAMB"
+      break
+    fi
+    echo "Número inválido: use só dígitos, começando em 55, com 12 ou 13 dígitos."
+  done
 fi
 
 FAIXA_REDE=""
@@ -90,13 +105,12 @@ if command -v docker >/dev/null 2>&1; then
     FAIXA_REDE="$(docker network inspect "$ID_REDE" --format '{{(index .IPAM.Config 0).Subnet}}' 2>/dev/null || true)"
   fi
 fi
-echo "Faixa da rede Docker $REDE_DOCKER: ${FAIXA_REDE:-não encontrada}"
-read -r -p "IP exato do proxy na frente da API (Enter para usar a faixa acima): " PROXY
-PROXY="${PROXY:-$FAIXA_REDE}"
+echo "Faixa da rede Docker $REDE_DOCKER (só informação, não é gravada): ${FAIXA_REDE:-não encontrada}"
+read -r -p "IP exato do proxy na frente da API (Enter para manter o valor atual): " PROXY
 if [ -n "$PROXY" ]; then
   definir PROXIES_CONFIAVEIS "$PROXY"
-else
-  PENDENTES+=("PROXIES_CONFIAVEIS vazio: o limite de login vale pelo IP do proxy")
+elif [ -z "$(ler PROXIES_CONFIAVEIS)" ]; then
+  PENDENTES+=("PROXIES_CONFIAVEIS vazio: o IP do cliente será o do proxy e o limite de login por IP fica desligado")
 fi
 
 read -r -s -p "Senha antiga dos clientes legados, para bloquear no próximo boot (Enter para pular): " SENHA_LEGADA
@@ -132,7 +146,7 @@ else
   PENDENTES+=("Trocar a senha do Postgres com ALTER USER e MEU_POSTGRES_PASSWORD juntos")
 fi
 
-PENDENTES+=("CONTATOS_CHAVE_CRIPTO e CONTATOS_CHAVE_INDICE mantidas: trocar exige decifrar e cifrar de novo os contatos gravados")
+PENDENTES+=("CONTATOS_CHAVE_CRIPTO e CONTATOS_CHAVE_INDICE mantidas: para trocar, rodar scripts/rotacionar-chaves-contatos.sh, que prepara a rotação dos contatos gravados")
 
 chmod 600 "$ARQUIVO"
 

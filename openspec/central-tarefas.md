@@ -31,6 +31,8 @@ Arquivo em comum da equipe. Cada agente atualiza a própria linha ao começar e 
 | [conexao-whatsapp-por-codigo](changes/conexao-whatsapp-por-codigo/) | programacao | `claude-sonnet-5-5` | `openspec/changes/conexao-whatsapp-por-codigo/` | 0 | aguardando aprovado |
 | [alertas-desconexao-whatsapp](changes/alertas-desconexao-whatsapp/) | proposta | `claude-sonnet-5-5` | `openspec/changes/alertas-desconexao-whatsapp/` | 0 | aguardando aprovado |
 | [fechar-pendencias-de-seguranca](archive/fechar-pendencias-de-seguranca/) | deploy | `claude-haiku-5-5` | `openspec/archive/fechar-pendencias-de-seguranca/` | 3 | aprovado |
+| [endurecer-login-e-gateway](changes/endurecer-login-e-gateway/) | revisao | `claude-opus-5-5` | `openspec/changes/endurecer-login-e-gateway/` | 1 | aprovado |
+| [expurgar-contato-no-opt-out](changes/expurgar-contato-no-opt-out/) | revisao | `claude-opus-5-5` | `openspec/changes/expurgar-contato-no-opt-out/` | 1 | aprovado |
 
 Estado: `em andamento`, `aprovado`, `reprovado`, `erro`, `aguardando aprovado`.
 

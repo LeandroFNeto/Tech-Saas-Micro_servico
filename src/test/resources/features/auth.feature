@@ -96,3 +96,9 @@ Funcionalidade: Autenticação JWT do painel
       | email | bloqueio@gamb.com |
       | senha | senha-errada-6    |
     Então o status HTTP deve ser 429
+
+  Cenário: POST /auth/login com senha de 129 caracteres retorna 400
+    Quando eu envio POST /auth/login com o LoginRequestDTO:
+      | email | usuario@gamb.com |
+      | senha | aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa |
+    Então o status HTTP deve ser 400

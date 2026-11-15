@@ -70,7 +70,7 @@ class LogsSemDadoSensivelTest {
     @Test
     @DisplayName("Login bloqueado registra o e-mail mascarado e nunca a senha")
     void loginBloqueadoComEmailMascarado() {
-        LimiteTentativasLogin limite = new LimiteTentativasLogin();
+        LimiteTentativasLogin limite = new LimiteTentativasLogin("");
         for (int i = 0; i < 5; i++) {
             limite.registrarFalha("cliente.teste@empresa.com", "9.9.9.9");
         }

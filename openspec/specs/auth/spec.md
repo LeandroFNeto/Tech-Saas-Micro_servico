@@ -219,3 +219,81 @@ Cenário: documentação fechada
 - Quando alguém pede `/v3/api-docs` ou `/swagger-ui`
 - Então a API responde 401
 
+### AUTH-09 Entrada de credenciais com tamanho máximo
+
+O sistema deve recusar com 400 o login com e-mail acima de 254 caracteres ou senha acima de 128, e recusar senha nova acima de 128 caracteres.
+
+Contrato: `especificacao/back/schemas/auth/LoginRequestDTO.yaml`, `especificacao/back/paths/auth-login.yaml`
+Prova: `src/test/java/com/example/demo/controller/ControllerAuthTest.java`, `src/test/java/com/example/demo/dto/SenhaTamanhoMaximoDTOTest.java`, `src/test/resources/features/auth.feature`
+
+Cenário: e-mail longo demais
+- Dado um login com e-mail de 255 caracteres
+- Quando o pedido é atendido
+- Então a API responde 400 sem consultar o usuário e sem contar falha
+
+Cenário: senha longa demais
+- Dado um login com senha de 129 caracteres
+- Quando o pedido é atendido
+- Então a API responde 400 sem calcular BCrypt
+
+Cenário: senha nova longa demais
+- Dado uma troca, redefinição ou criação de senha com mais de 128 caracteres
+- Quando o pedido é atendido
+- Então a API responde 400
+
+### AUTH-10 Login sem revelar se o e-mail existe
+
+O sistema deve executar a mesma comparação BCrypt no login quando o e-mail não existe, respondendo o mesmo 401 usado para senha errada.
+
+Contrato: `especificacao/back/paths/auth-login.yaml`
+Prova: `src/test/java/com/example/demo/servico/ServicoAuthTest.java`
+
+Cenário: e-mail inexistente
+- Dado um login com e-mail que não está cadastrado
+- Quando o pedido é atendido
+- Então o sistema compara a senha com um hash de referência de mesmo custo
+- E responde 401 "Senha incorreta"
+
+### AUTH-11 Limite de login com memória e CPU limitadas
+
+O sistema deve manter no máximo 10.000 entradas de contagem de falhas, descartando as de falha mais antiga, e limitar cada IP a 30 falhas em 15 minutos quando `PROXIES_CONFIAVEIS` estiver preenchida.
+
+Contrato: `especificacao/back/paths/auth-login.yaml`
+Prova: `src/test/java/com/example/demo/servico/LimiteTentativasLoginTest.java`, `src/test/java/com/example/demo/controller/ControllerAuthTest.java`, `src/test/java/com/example/demo/servico/IpDoClienteTest.java`
+
+Cenário: teto de entradas
+- Dado o limite com 10.000 entradas válidas
+- Quando uma falha de uma combinação nova de e-mail e IP é registrada
+- Então a entrada com a falha mais antiga sai e o total continua em 10.000
+
+Cenário: e-mails diferentes do mesmo IP
+- Dado `PROXIES_CONFIAVEIS` preenchida
+- Quando um IP acumula 30 falhas em 15 minutos com e-mails diferentes
+- Então a tentativa seguinte responde 429 com `Retry-After`, sem calcular BCrypt
+
+Cenário: lista de proxies vazia
+- Dado `PROXIES_CONFIAVEIS` vazia
+- Quando a aplicação sobe
+- Então o teto por IP não vale e o boot registra um aviso no log
+
+### AUTH-12 IP do cliente somente de endereço literal
+
+O sistema deve interpretar `X-Forwarded-For` e `PROXIES_CONFIAVEIS` apenas como endereço IP literal, sem nunca fazer consulta DNS para esses valores.
+
+Contrato: nenhum.
+Prova: `src/test/java/com/example/demo/util/LiteralDeIpTest.java`, `src/test/java/com/example/demo/servico/IpDoClienteTest.java`
+
+Cenário: nome de host no cabeçalho
+- Dado um `X-Forwarded-For` de proxy confiável com `cafe.de`
+- Quando o IP do cliente é resolvido
+- Então o valor é recusado sem consulta DNS e o sistema usa o IP da conexão
+
+Cenário: forma abreviada ou com zero à esquerda
+- Dado o valor `1.2.3` ou `010.0.0.1`
+- Quando o IP é interpretado
+- Então o valor é recusado como IP
+
+Cenário: IPv4 dentro de IPv6
+- Dado `PROXIES_CONFIAVEIS` com `10.0.0.1`
+- Quando a conexão vem de `::ffff:10.0.0.1`
+- Então o endereço é tratado como `10.0.0.1` e o proxy é reconhecido como confiável

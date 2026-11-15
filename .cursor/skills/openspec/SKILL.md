@@ -88,13 +88,13 @@ Crie só estes três arquivos.
 - [ ] Mover esta pasta para `openspec/archive/<nome>/`
 ```
 
-Preencha com o comportamento pedido. Aponte rotas e DTOs que já existem; não cole o schema. Termine pedindo revisão. Não implemente na mesma resposta.
+Preencha com o comportamento pedido. Requisito novo já leva o número na proposta, pela regra do modo aplicar. Aponte rotas e DTOs que já existem; não cole o schema. Termine pedindo revisão. Não implemente na mesma resposta.
 
 ## Modo aplicar
 
 Siga `tasks.md` na ordem. Se Java e YAML divergirem, corrija o Java.
 
-Ao atualizar o spec, use o requisito neste formato. O prefixo continua o do domínio (`AUTH`, `EMP`, `WPP`, `AGD`, `AVI`, `IA`). Pegue o próximo número livre.
+Ao atualizar o spec, use o requisito neste formato. O prefixo continua o do domínio (`AUTH`, `EMP`, `WPP`, `AGD`, `AVI`, `IA`). Pegue o próximo número livre olhando o spec do domínio e os deltas de `openspec/changes/*/specs/`. O número fica reservado desde a proposta.
 
 ```markdown
 ### <PREFIXO>-<NN> <título>

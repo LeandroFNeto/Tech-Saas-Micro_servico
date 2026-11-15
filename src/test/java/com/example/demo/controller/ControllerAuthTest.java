@@ -20,11 +20,14 @@ import org.springframework.http.MediaType;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -36,6 +39,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(ControllerAuth.class)
 @AutoConfigureMockMvc(addFilters = false)
 @Import({IpDoCliente.class, LimiteTentativasLogin.class})
+@TestPropertySource(properties = "seguranca.proxies-confiaveis=127.0.0.1")
 class ControllerAuthTest {
 
     @Autowired
@@ -164,5 +168,86 @@ class ControllerAuthTest {
                         .content("{\"senhaAtual\":\"SenhaAntiga123\",\"novaSenha\":\"curta1234\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").exists());
+    }
+
+    @Test
+    @DisplayName("E-mail com 255 caracteres retorna 400 sem consultar o servico")
+    void login_emailLongoDemais_retorna400() throws Exception {
+        String email = "a".repeat(64) + "@" + "b".repeat(63) + "." + "c".repeat(63) + "." + "d".repeat(62);
+        org.junit.jupiter.api.Assertions.assertEquals(255, email.length());
+
+        mockMvc.perform(post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"" + email + "\",\"senha\":\"SenhaForte123\"}"))
+                .andExpect(status().isBadRequest());
+
+        verify(servicoAuth, never()).login(any(LoginRequestDTO.class));
+    }
+
+    @Test
+    @DisplayName("Senha com 129 caracteres retorna 400 sem consultar o servico")
+    void login_senhaLongaDemais_retorna400() throws Exception {
+        mockMvc.perform(post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"longa@empresa.com\",\"senha\":\"" + "s".repeat(129) + "\"}"))
+                .andExpect(status().isBadRequest());
+
+        verify(servicoAuth, never()).login(any(LoginRequestDTO.class));
+    }
+
+    @Test
+    @DisplayName("Senha com 128 caracteres chega ao servico")
+    void login_senhaNoLimite_chegaAoServico() throws Exception {
+        when(servicoAuth.login(any(LoginRequestDTO.class)))
+                .thenReturn(new LoginResponseDTO("token.jwt.valido", "limite128@empresa.com", "CLIENTE", "Empresa", "sessao"));
+
+        mockMvc.perform(post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"limite128@empresa.com\",\"senha\":\"" + "s".repeat(128) + "\"}"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("Nova senha com 129 caracteres retorna 400")
+    void alterarSenha_senhaNovaLongaDemais_retorna400() throws Exception {
+        Usuario usuario = new Usuario();
+        usuario.setEmail("cliente@empresa.com");
+        var auth = new UsernamePasswordAuthenticationToken(usuario, null, java.util.List.of());
+
+        mockMvc.perform(put("/auth/alterar-senha")
+                        .principal(auth)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"senhaAtual\":\"SenhaAntiga123\",\"novaSenha\":\"" + "n".repeat(129) + "\"}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("30 falhas do mesmo IP com e-mails diferentes bloqueiam o IP com 429 e Retry-After, sem chamar o servico")
+    void login_tetoPorIp_retorna429() throws Exception {
+        when(servicoAuth.login(any(LoginRequestDTO.class)))
+                .thenThrow(new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Senha incorreta"));
+
+        for (int i = 0; i < 30; i++) {
+            mockMvc.perform(post("/auth/login")
+                            .header("X-Forwarded-For", "203.0.113.50")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"email\":\"teto" + i + "@empresa.com\",\"senha\":\"SenhaForte123\"}"))
+                    .andExpect(status().isUnauthorized());
+        }
+
+        mockMvc.perform(post("/auth/login")
+                        .header("X-Forwarded-For", "203.0.113.50")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"outro@empresa.com\",\"senha\":\"SenhaForte123\"}"))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(header().exists("Retry-After"));
+
+        verify(servicoAuth, times(30)).login(any(LoginRequestDTO.class));
+
+        mockMvc.perform(post("/auth/login")
+                        .header("X-Forwarded-For", "203.0.113.51")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"outro@empresa.com\",\"senha\":\"SenhaForte123\"}"))
+                .andExpect(status().isUnauthorized());
     }
 }

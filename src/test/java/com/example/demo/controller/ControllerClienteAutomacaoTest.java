@@ -487,6 +487,42 @@ class ControllerClienteAutomacaoTest {
     }
 
     @Test
+    @DisplayName("Obter numero completo de contato expurgado retorna 422 sem auditoria")
+    void obterNumeroCompleto_contatoExpurgado_retorna422SemAuditar() throws Exception {
+        autenticarComoCliente();
+
+        Contato expurgado = new Contato();
+        expurgado.setId(27L);
+        expurgado.setNaoContatar(true);
+
+        when(auditoriaRepository.countByEmpresaIdAndDataHoraAfter(anyLong(), any())).thenReturn(0L);
+        when(contatoRepository.findByIdAndEmpresaId(27L, 10L)).thenReturn(Optional.of(expurgado));
+
+        mockMvc.perform(post("/empresas/sessao-automacao/contatos/27/numero"))
+                .andExpect(status().isUnprocessableEntity());
+
+        verify(auditoriaRepository, never()).save(any(AuditoriaAcessoContato.class));
+    }
+
+    @Test
+    @DisplayName("Listar contatos mostra contato expurgado com mascara vazia e naoContatar verdadeiro")
+    void listarContatos_expurgado_mostraMascaraVazia() throws Exception {
+        autenticarComoCliente();
+
+        Contato expurgado = new Contato();
+        expurgado.setId(4L);
+        expurgado.setNaoContatar(true);
+        expurgado.setOrigem(OrigemContato.CONVERSA);
+
+        when(contatoRepository.findByEmpresaIdOrderByUltimaConversaEmDesc(10L)).thenReturn(List.of(expurgado));
+
+        mockMvc.perform(get("/empresas/sessao-automacao/contatos"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].telefoneMascarado").value("*****-"))
+                .andExpect(jsonPath("$[0].naoContatar").value(true));
+    }
+
+    @Test
     @DisplayName("Obter numero completo com sucesso registra auditoria e retorna apenas digitos")
     void obterNumeroCompleto_sucesso_registraAuditoriaERetornaNumero() throws Exception {
         autenticarComoCliente();

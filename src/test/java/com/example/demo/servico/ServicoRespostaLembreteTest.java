@@ -15,6 +15,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -22,7 +23,9 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -42,6 +45,9 @@ class ServicoRespostaLembreteTest {
 
     @Mock
     private ServicoMensagem servicoMensagem;
+
+    @Mock
+    private ServicoContato servicoContato;
 
     @InjectMocks
     private ServicoRespostaLembrete servicoRespostaLembrete;
@@ -153,8 +159,37 @@ class ServicoRespostaLembreteTest {
         );
 
         assertTrue(processou);
+        verify(servicoContato).expurgarPorOptOut(contato);
+        verify(servicoMensagem).enviarMensagemWPP(eq(empresa), eq(numeroWhatsapp), anyString());
+    }
+
+    @Test
+    void parar_apagaWhatsappNomeEFinalTelefoneMantendoIndice() {
+        ServicoContato real = new ServicoContato();
+        ReflectionTestUtils.setField(real, "contatoRepository", contatoRepository);
+        ReflectionTestUtils.setField(servicoRespostaLembrete, "servicoContato", real);
+        contato.setWhatsappId("5511999998888@c.us");
+        contato.setNome("Cliente Ficticio");
+        contato.setFinalTelefone("8888");
+        contato.setNumeroIndice("indice-do-contato");
+        String chave = WhatsappUtil.normalizarParaChaveEstado(numeroWhatsapp);
+        String indice = CriptografiaCampo.calcularIndice(chave);
+        when(contatoRepository.findByEmpresaIdAndNumeroIndice(10L, indice)).thenReturn(Optional.of(contato));
+        when(reservaRepository.findByContatoIdAndSituacaoInAndDataGreaterThanEqualOrderByDataAsc(
+                eq(100L), any(), any()
+        )).thenReturn(List.of(reserva));
+        when(interpretador.interpretar("parar")).thenReturn(IntencaoResposta.PARAR);
+
+        boolean processou = servicoRespostaLembrete.processarPossivelResposta(
+                empresa, numeroWhatsapp, "parar", EstadoUsuario.INICIO
+        );
+
+        assertTrue(processou);
+        assertNull(contato.getWhatsappId());
+        assertNull(contato.getNome());
+        assertNull(contato.getFinalTelefone());
+        assertEquals("indice-do-contato", contato.getNumeroIndice());
         assertTrue(contato.isNaoContatar());
         verify(contatoRepository).save(contato);
-        verify(servicoMensagem).enviarMensagemWPP(eq(empresa), eq(numeroWhatsapp), anyString());
     }
 }

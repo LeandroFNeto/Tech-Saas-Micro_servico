@@ -126,6 +126,39 @@ class ObservadorGoogleAgendaPorHoraTest {
     }
 
     @Test
+    @DisplayName("Reserva pelo bot de contato expurgado nao grava nome, mantem nao_contatar e liga a reserva a mesma linha")
+    void reservaDeContatoExpurgadoNaoGravaNome() throws Exception {
+        Contato expurgado = new Contato();
+        expurgado.setId(7L);
+        expurgado.setNaoContatar(true);
+        when(contatoRepository.findByEmpresaIdAndNumeroIndice(anyLong(), anyString())).thenReturn(Optional.of(expurgado));
+
+        observador.registarNoGoogle(evento(PRIMEIRA));
+
+        assertThat(expurgado.getNome()).isNull();
+        assertThat(expurgado.getWhatsappId()).isNull();
+        assertThat(expurgado.getFinalTelefone()).isNull();
+        assertThat(expurgado.isNaoContatar()).isTrue();
+        assertThat(expurgado.getUltimaConversaEm()).isNotNull();
+        ArgumentCaptor<Reserva> captor = ArgumentCaptor.forClass(Reserva.class);
+        verify(reservaRepository).save(captor.capture());
+        assertThat(captor.getValue().getContato()).isSameAs(expurgado);
+    }
+
+    @Test
+    @DisplayName("Reserva pelo bot de contato comum continua gravando o nome")
+    void reservaDeContatoComumGravaNome() throws Exception {
+        Contato comum = new Contato();
+        comum.setId(8L);
+        comum.setNaoContatar(false);
+        when(contatoRepository.findByEmpresaIdAndNumeroIndice(anyLong(), anyString())).thenReturn(Optional.of(comum));
+
+        observador.registarNoGoogle(evento(PRIMEIRA));
+
+        assertThat(comum.getNome()).isEqualTo("Joana Prado");
+    }
+
+    @Test
     @DisplayName("Uma data ocupada na reconsulta: nada é criado e o cliente sabe qual caiu")
     void naoDeveCriarNadaQuandoUmaDataEstaOcupada() throws Exception {
         when(servicoGoogleagenda.horarioEstaLivre(anyString(), eq(LocalDate.of(2026, 11, 17)), any(), any(), anyInt()))
