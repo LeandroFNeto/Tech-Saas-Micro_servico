@@ -75,7 +75,7 @@ O sistema SHALL executar rotina programada para eliminar contatos inativos cujo 
 ### Requirement: Rotação das chaves de contatos
 O sistema SHALL recifrar nome e WhatsApp dos contatos e o título das reservas, e SHALL recalcular o índice do número, quando as chaves antigas forem informadas no boot, concluindo antes de aceitar tráfego e falhando fechado em configuração incompleta ou dado que não abre.
 
-Prova: ainda não escrita; prevista em `RotacaoChavesContatosTest` (change `endurecer-login-e-gateway`).
+Prova: `src/test/java/com/example/demo/servico/RotacaoChavesContatosTest.java`, `src/test/java/com/example/demo/util/CriptografiaCampoTest.java`, `src/test/java/com/example/demo/servico/ServicoContatoTest.java`
 
 #### Scenario: Rotação completa
 - **GIVEN** que as chaves atuais e as variáveis `CONTATOS_CHAVE_CRIPTO_ANTIGA` e `CONTATOS_CHAVE_INDICE_ANTIGA` estão definidas
@@ -92,7 +92,7 @@ Prova: ainda não escrita; prevista em `RotacaoChavesContatosTest` (change `endu
 - **THEN** a aplicação SHALL não subir e o log SHALL trazer só a tabela e o `id`, sem o conteúdo
 
 #### Scenario: Configuração incompleta
-- **WHEN** só uma das variáveis antigas está definida, ou a antiga é inválida, ou é igual à atual
+- **WHEN** só uma das variáveis antigas está definida, ou a chave de criptografia antiga não tem 32 bytes em base64, ou as chaves atuais não estão configuradas, ou qualquer uma das chaves antigas é igual à atual correspondente
 - **THEN** a aplicação SHALL não subir e nenhuma linha SHALL ser alterada
 
 #### Scenario: Sem chave antiga

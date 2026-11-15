@@ -227,7 +227,7 @@ Cenário: change sem cumprir uma regra
 A API deve ficar inalcançável diretamente pela porta `8080` no IP público do servidor, e `PROXIES_CONFIAVEIS` em produção deve listar só o IP exato do proxy.
 
 Contrato: nenhum.
-Prova: ainda não escrita; prevista em `docker compose config` e conferência no deploy (change `endurecer-login-e-gateway`).
+Prova: teste automatizado ainda não existe. Prova operacional: `docker compose config` com a API publicada só em `127.0.0.1:8080`, execução de `scripts/atualizar-env-producao.sh` contra um `.env` temporário com Enter na pergunta do proxy, e no deploy `curl` na porta `8080` pelo IP público sem resposta e o site respondendo pelo HTTPS.
 
 Cenário: acesso direto à porta
 - Dado o servidor de produção
@@ -245,7 +245,7 @@ Cenário: atualização do ambiente sem IP do proxy
 Os scripts de ambiente devem gravar o número da Gamb somente com dígitos, começando em 55, com 12 ou 13 dígitos, e o script de rotação deve trocar as chaves de contatos sem exibir nenhum valor.
 
 Contrato: nenhum.
-Prova: ainda não escrita; prevista na execução dos scripts contra um `.env` temporário (change `endurecer-login-e-gateway`).
+Prova: teste automatizado ainda não existe. Prova operacional: execução de `scripts/atualizar-env-producao.sh` e `scripts/rotacionar-chaves-contatos.sh` contra um `.env` temporário, com número da Gamb inválido e válido, valor inválido já gravado, rotação preparada e rotação já preparada, conferindo que nenhum valor aparece na tela.
 
 Cenário: número da Gamb inválido
 - Dado um número com letras, sem 55 ou com tamanho errado

@@ -582,10 +582,10 @@ Cenário: falha no webhook
 
 ### WPP-23 Erro do gateway sem o objeto bruto
 
-O gateway WPPConnect em uso deve registrar erros somente por tipo, código e status HTTP, com caracteres e tamanho limitados, e o `deviceController` deve responder sem o objeto do erro.
+O gateway WPPConnect em uso deve registrar erros somente por tipo, código e status HTTP, aceitando no tipo e no código só letras, dígitos, `_`, `.` e `-`, até 64 e 32 caracteres, sem sete ou mais dígitos seguidos, e status inteiro de 100 a 599, e o `deviceController` deve responder sem o objeto do erro.
 
 Contrato: nenhum.
-Prova: ainda não escrita; prevista em `wppconnect-server/src/tests` (change `endurecer-login-e-gateway`).
+Prova: `wppconnect-server/src/tests/errosSeguros.test.ts`
 
 Cenário: erro com texto arbitrário no nome ou no código
 - Dado um erro com texto longo, caracteres de controle ou número de telefone em `name` ou `code`

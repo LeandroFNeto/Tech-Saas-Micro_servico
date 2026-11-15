@@ -224,7 +224,7 @@ Cenário: documentação fechada
 O sistema deve recusar com 400 o login com e-mail acima de 254 caracteres ou senha acima de 128, e recusar senha nova acima de 128 caracteres.
 
 Contrato: `especificacao/back/schemas/auth/LoginRequestDTO.yaml`, `especificacao/back/paths/auth-login.yaml`
-Prova: ainda não escrita; prevista em `ControllerAuthTest` e `src/test/resources/features/auth.feature` (change `endurecer-login-e-gateway`).
+Prova: `src/test/java/com/example/demo/controller/ControllerAuthTest.java`, `src/test/java/com/example/demo/dto/SenhaTamanhoMaximoDTOTest.java`, `src/test/resources/features/auth.feature`
 
 Cenário: e-mail longo demais
 - Dado um login com e-mail de 255 caracteres
@@ -246,7 +246,7 @@ Cenário: senha nova longa demais
 O sistema deve executar a mesma comparação BCrypt no login quando o e-mail não existe, respondendo o mesmo 401 usado para senha errada.
 
 Contrato: `especificacao/back/paths/auth-login.yaml`
-Prova: ainda não escrita; prevista em `ServicoAuthTest` (change `endurecer-login-e-gateway`).
+Prova: `src/test/java/com/example/demo/servico/ServicoAuthTest.java`
 
 Cenário: e-mail inexistente
 - Dado um login com e-mail que não está cadastrado
@@ -259,7 +259,7 @@ Cenário: e-mail inexistente
 O sistema deve manter no máximo 10.000 entradas de contagem de falhas, descartando as de falha mais antiga, e limitar cada IP a 30 falhas em 15 minutos quando `PROXIES_CONFIAVEIS` estiver preenchida.
 
 Contrato: `especificacao/back/paths/auth-login.yaml`
-Prova: ainda não escrita; prevista em `LimiteTentativasLoginTest` e `ControllerAuthTest` (change `endurecer-login-e-gateway`).
+Prova: `src/test/java/com/example/demo/servico/LimiteTentativasLoginTest.java`, `src/test/java/com/example/demo/controller/ControllerAuthTest.java`, `src/test/java/com/example/demo/servico/IpDoClienteTest.java`
 
 Cenário: teto de entradas
 - Dado o limite com 10.000 entradas válidas
@@ -281,7 +281,7 @@ Cenário: lista de proxies vazia
 O sistema deve interpretar `X-Forwarded-For` e `PROXIES_CONFIAVEIS` apenas como endereço IP literal, sem nunca fazer consulta DNS para esses valores.
 
 Contrato: nenhum.
-Prova: ainda não escrita; prevista em `LiteralDeIpTest` e `IpDoClienteTest` (change `endurecer-login-e-gateway`).
+Prova: `src/test/java/com/example/demo/util/LiteralDeIpTest.java`, `src/test/java/com/example/demo/servico/IpDoClienteTest.java`
 
 Cenário: nome de host no cabeçalho
 - Dado um `X-Forwarded-For` de proxy confiável com `cafe.de`

@@ -28,7 +28,7 @@
 - [x] 6.2 `deviceController.ts` sem o objeto do erro no log e na resposta; verificar em `wppconnect-server/src/tests` capturando log e corpo
 
 ## 7. Specs
-- [ ] 7.1 Gravar os requisitos desta change em `openspec/specs/auth/spec.md`, `contatos/spec.md`, `whatsapp/spec.md` e `desenvolvimento/spec.md`, com a linha `Prova:` dos testes que existirem
+- [x] 7.1 Gravar os requisitos desta change em `openspec/specs/auth/spec.md`, `contatos/spec.md`, `whatsapp/spec.md` e `desenvolvimento/spec.md`, com a linha `Prova:` dos testes que existirem
 
 ## 8. Deploy e encerramento
 - [ ] 8.1 Antes do deploy, aplicar no servidor a rede ou a porta do caso da tarefa 1.1 e preencher `PROXIES_CONFIAVEIS` com o IP exato
