@@ -19,6 +19,11 @@ properties:
     nullable: true
     description: Imagem do QR Code em Data URL ou Base64, presente apenas quando status é QRCODE
     example: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...
+  sessaoEncerrada:
+    type: boolean
+    default: false
+    description: Verdadeiro só quando status é DISCONNECTED e o servidor registrou que a conexão pareada foi encerrada (aparelho desvinculado ou sessão inválida), exigindo novo pareamento. Ausente ou falso em qualquer outro caso, inclusive gateway antigo.
+    example: false
 required:
   - sessao
   - status

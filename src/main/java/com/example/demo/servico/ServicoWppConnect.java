@@ -155,7 +155,8 @@ public class ServicoWppConnect {
         body.put("waitQrCode", false);
         Map<String, Object> corpo = chamarWpp(sessao, "/start-session", HttpMethod.POST, body, Map.class);
         SessaoStatusResponseDTO dto = paraDto(sessao, corpo);
-        if ("CONNECTED".equals(dto.status()) || "INITIALIZING".equals(dto.status()) || dto.qrcodeBase64() != null) {
+        if ("CONNECTED".equals(dto.status()) || "INITIALIZING".equals(dto.status()) || dto.qrcodeBase64() != null
+                || dto.sessaoEncerrada()) {
             return dto;
         }
         return new SessaoStatusResponseDTO(sessao, "QRCODE", qrcodesPorSessao.get(sessao));
@@ -170,7 +171,8 @@ public class ServicoWppConnect {
         String qrcode = extrairQrcode(corpo);
         guardarQrcode(sessao, qrcode);
         String status = normalizarStatus(bruto, qrcode);
-        return new SessaoStatusResponseDTO(sessao, status, "QRCODE".equals(status) ? primeiroQr(sessao, qrcode) : null);
+        boolean encerrada = "DISCONNECTED".equals(status) && Boolean.TRUE.equals(corpo.get("sessaoEncerrada"));
+        return new SessaoStatusResponseDTO(sessao, status, "QRCODE".equals(status) ? primeiroQr(sessao, qrcode) : null, encerrada);
     }
 
     String normalizarStatus(String bruto, String qrcode) {
@@ -290,6 +292,10 @@ public class ServicoWppConnect {
             return dto;
         }
         if ("INITIALIZING".equals(dto.status())) {
+            return dto;
+        }
+        if (dto.sessaoEncerrada()) {
+            qrcodesPorSessao.remove(sessao);
             return dto;
         }
         if (dto.qrcodeBase64() != null && !dto.qrcodeBase64().isBlank()) {

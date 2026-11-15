@@ -499,6 +499,117 @@
         "botaoConfirmar": "btn-primary border-none bg-red-600 px-4 py-2 text-white hover:bg-red-700"
       }
     },
+    "conexaoWhatsapp": {
+      "foco": "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-400",
+      "leitorTela": "sr-only",
+      "cartao": {
+        "normal": "flex min-w-0 flex-col gap-4 rounded-[20px] border border-brand-100 bg-white p-5 shadow-[0_1px_2px_rgba(46,26,71,0.05)]",
+        "compacto": "flex min-w-0 flex-col gap-3 rounded-[20px] border border-brand-100 bg-white p-4 shadow-[0_1px_2px_rgba(46,26,71,0.05)]"
+      },
+      "cabecalho": {
+        "linha": "flex flex-wrap items-start justify-between gap-3",
+        "texto": "min-w-0",
+        "titulo": "text-[17px] font-bold leading-6 text-brand-900",
+        "descricao": "mt-1 text-sm text-brand-600",
+        "sessao": "mt-1.5 break-all font-mono text-[13px] text-brand-500"
+      },
+      "chip": {
+        "base": "chip px-3",
+        "ponto": "h-2 w-2 shrink-0 rounded-full",
+        "pontoPulsando": "h-2 w-2 shrink-0 rounded-full animate-pulse motion-reduce:animate-none",
+        "desconectado": { "chip": "bg-brand-100 text-brand-700", "ponto": "bg-brand-400" },
+        "aguardando": { "chip": "bg-amber-50 text-amber-800", "ponto": "bg-amber-700" },
+        "andamento": { "chip": "bg-blue-50 text-blue-800", "ponto": "bg-blue-700" },
+        "andamentoRoxo": { "chip": "bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-200", "ponto": "bg-accent-500" },
+        "online": { "chip": "bg-accent-50 text-accent-800", "ponto": "bg-accent-500" },
+        "encerrada": { "chip": "bg-red-50 text-red-800", "ponto": "bg-red-700" }
+      },
+      "etapas": {
+        "lista": "flex items-center gap-2 text-[13px] font-semibold leading-[18px] text-brand-600",
+        "item": "flex min-w-0 items-center gap-1.5",
+        "itemAtual": "flex min-w-0 items-center gap-1.5 text-brand-900",
+        "numero": "inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-[1.5px] border-brand-200 bg-white text-xs font-bold text-brand-600",
+        "numeroAtual": "inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-[1.5px] border-accent-500 bg-accent-500 text-xs font-bold text-brand-900",
+        "numeroFeito": "inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-[1.5px] border-brand-800 bg-brand-800 text-xs font-bold text-white",
+        "traco": "h-0.5 max-w-10 flex-[1_1_12px] rounded-sm bg-brand-100",
+        "textoCompacto": "text-xs font-semibold uppercase leading-4 tracking-[0.04em] text-brand-600"
+      },
+      "texto": "text-sm leading-[21px] text-brand-700",
+      "textoDestaque": "font-semibold text-brand-900",
+      "pilha": "flex flex-col gap-3",
+      "acoes": "flex flex-wrap items-center gap-x-3 gap-y-2",
+      "botaoPrincipal": "btn-primary min-h-12 px-5 text-[15px] font-bold",
+      "botaoSecundario": "btn-secondary min-h-12 px-5 text-[15px] font-bold",
+      "botaoPequeno": "btn-secondary min-h-11 gap-2 px-3.5",
+      "link": "inline-flex min-h-11 items-center px-1 text-sm font-semibold text-accent-800 underline underline-offset-[3px] hover:text-accent-700",
+      "campo": {
+        "rotulo": "mb-1.5 block text-sm font-semibold leading-5 text-brand-800",
+        "entrada": "input-field tracking-[0.02em] tabular-nums shadow-none",
+        "entradaInvalida": "border-red-700 focus:border-red-700 focus:ring-red-100",
+        "dica": "mt-1.5 text-[13px] leading-[18px] text-brand-600",
+        "erro": "mt-1.5 block text-[13px] font-semibold leading-[18px] text-red-700"
+      },
+      "alerta": {
+        "base": "flex items-start gap-2.5 rounded-xl px-3.5 py-3 text-sm leading-5",
+        "titulo": "block font-bold",
+        "acao": "mt-2",
+        "erro": "border border-red-200 bg-red-50 text-red-800",
+        "aviso": "border border-amber-200 bg-amber-50 text-amber-800",
+        "info": "border border-brand-200 bg-brand-50 text-brand-800",
+        "encerrada": "border border-red-200 bg-red-50 text-red-900"
+      },
+      "codigo": {
+        "caixa": "flex flex-col gap-3 rounded-2xl border border-brand-100 bg-brand-50 p-4",
+        "caixaCompacta": "flex flex-col gap-2.5 rounded-2xl border border-brand-100 bg-brand-50 p-3",
+        "rotulo": "text-xs font-bold uppercase leading-4 tracking-[0.08em] text-brand-600",
+        "linha": "flex flex-wrap items-center justify-between gap-3",
+        "valor": "-ml-1 select-all rounded-lg px-1 py-0.5 font-mono text-[clamp(28px,8vw,40px)] font-bold leading-[1.15] tracking-[0.12em] tabular-nums text-brand-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-400",
+        "valorCompacto": "-ml-1 select-all rounded-lg px-1 py-0.5 font-mono text-[clamp(26px,7vw,30px)] font-bold leading-[1.15] tracking-[0.12em] tabular-nums text-brand-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-400",
+        "valorExpirado": "text-brand-400 line-through decoration-2",
+        "validade": "flex flex-col gap-1.5",
+        "validadeTexto": "flex items-center gap-1.5 text-sm leading-5 tabular-nums text-brand-800",
+        "validadeFim": "flex items-center gap-1.5 text-sm leading-5 tabular-nums text-amber-800",
+        "barra": "h-1.5 overflow-hidden rounded-full bg-brand-100",
+        "barraValor": "block h-full rounded-full bg-accent-500 transition-[width] motion-reduce:transition-none",
+        "barraValorFim": "block h-full rounded-full bg-amber-700 transition-[width] motion-reduce:transition-none",
+        "expirou": "text-sm leading-5 text-amber-800"
+      },
+      "instrucoes": {
+        "lista": "flex flex-col gap-2.5",
+        "item": "flex gap-2.5 text-sm leading-[21px] text-brand-800",
+        "numero": "inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-800 text-xs font-bold text-white",
+        "caminho": "font-bold"
+      },
+      "espera": "flex items-center gap-2.5 text-sm leading-5 text-brand-700",
+      "giro": "h-[18px] w-[18px] shrink-0 animate-spin rounded-full border-[2.5px] border-brand-100 border-t-accent-500 motion-reduce:animate-none",
+      "giroGrande": "h-7 w-7 shrink-0 animate-spin rounded-full border-[3px] border-brand-100 border-t-accent-500 motion-reduce:animate-none",
+      "estado": {
+        "caixa": "flex items-center gap-3.5 rounded-2xl bg-brand-50 p-4",
+        "caixaCompacta": "flex items-center gap-3 rounded-2xl bg-brand-50 p-3",
+        "titulo": "text-base font-bold leading-[22px] text-brand-900",
+        "texto": "mt-0.5 text-sm leading-5 text-brand-700",
+        "iconeOk": "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent-500 text-brand-900"
+      },
+      "qrcode": {
+        "caixa": "flex flex-col items-center gap-3 rounded-2xl border border-dashed border-brand-300 bg-brand-50 p-4",
+        "imagem": "h-56 w-56 max-w-full rounded-xl bg-white p-2 shadow-sm",
+        "imagemCompacta": "h-44 w-44 max-w-full rounded-xl bg-white p-2 shadow-sm",
+        "texto": "text-center text-sm leading-[21px] text-brand-700"
+      }
+    },
+    "adminDashboard": {
+      "chipWhatsapp": {
+        "base": "chip",
+        "ponto": "h-2 w-2 shrink-0 rounded-full",
+        "pontoPulsando": "h-2 w-2 shrink-0 rounded-full animate-pulse motion-reduce:animate-none",
+        "online": { "chip": "bg-accent-50 text-accent-800", "ponto": "bg-accent-500" },
+        "aguardandoLeitura": { "chip": "bg-amber-50 text-amber-800" },
+        "reconectando": { "chip": "bg-blue-50 text-blue-800", "ponto": "bg-blue-700" },
+        "reconectandoRoxo": { "chip": "bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-200", "ponto": "bg-accent-500" },
+        "desconectado": { "chip": "bg-brand-100 text-brand-700" },
+        "consultando": { "chip": "bg-brand-50 text-brand-600" }
+      }
+    },
     "v0Dashboard": {
       "pagina": "min-h-screen bg-brand-50",
       "cabecalho": "border-b border-brand-200 px-6 py-5",

@@ -1,0 +1,115 @@
+{
+  "conexaoWhatsapp": {
+    "cabecalho": {
+      "titulo": "Conexão WhatsApp",
+      "descricao": "Conecte o WhatsApp da empresa usando só o celular.",
+      "sessaoIndefinida": "Sessão não definida"
+    },
+    "chip": {
+      "desconectado": "Desconectado",
+      "aguardandoCodigo": "Aguardando código",
+      "codigoExpirado": "Código expirado",
+      "aguardandoLeitura": "Aguardando leitura",
+      "conectando": "Conectando…",
+      "reconectando": "Reconectando…",
+      "online": "WhatsApp online",
+      "encerrada": "Conexão encerrada"
+    },
+    "etapas": {
+      "rotulo": "Etapas da conexão",
+      "nomes": ["Número", "Código", "Conectar"],
+      "feita": "✓",
+      "atual": "(etapa atual)",
+      "concluida": "(concluída)",
+      "compacto": "Passo {atual} de 3 · {nome}"
+    },
+    "inicio": {
+      "texto": "Você recebe um código de 8 caracteres e digita no WhatsApp do próprio celular.",
+      "destaque": "Não precisa de outro aparelho.",
+      "textoCompacto": "Conecte com um código digitado no próprio celular.",
+      "botaoCodigo": "Conectar com número de telefone",
+      "linkQr": "Prefiro ler o QR Code"
+    },
+    "telefone": {
+      "rotulo": "Número do WhatsApp da empresa",
+      "placeholder": "+55 (11) 9XXXX-XXXX",
+      "dica": "O número do celular onde está o WhatsApp, com DDD e o 9.",
+      "botaoGerar": "Gerar código",
+      "gerando": "Gerando código…",
+      "preparando": "Preparando…",
+      "voltar": "Voltar"
+    },
+    "codigo": {
+      "rotulo": "Seu código",
+      "rotuloExpirado": "Código expirado",
+      "copiar": "Copiar",
+      "copiado": "Copiado",
+      "copiarAria": "Copiar o código",
+      "copiadoAria": "Código copiado",
+      "validade": "Vale por mais",
+      "expirou": "O código expirou.",
+      "expirouDica": "Gere outro para continuar.",
+      "instrucoesRotulo": "Como digitar o código no celular",
+      "instrucoes": [
+        "Abra o WhatsApp no celular da empresa.",
+        "Toque em Aparelhos conectados (no menu ⋮ do Android ou em Configurações no iPhone).",
+        "Toque em Conectar um aparelho e depois em Conectar com número de telefone.",
+        "Digite o código acima."
+      ],
+      "instrucoesCompacto": "No celular: WhatsApp → Aparelhos conectados → Conectar com número de telefone e digite o código.",
+      "aguardando": "Aguardando você digitar o código no celular…",
+      "gerarOutro": "Gerar outro código",
+      "anuncioMinuto": "Falta 1 minuto para o código expirar.",
+      "anuncioTrintaSegundos": "Faltam 30 segundos para o código expirar."
+    },
+    "qrcode": {
+      "alt": "QR Code do WhatsApp",
+      "texto": "No celular: WhatsApp → Aparelhos conectados → Conectar um aparelho e aponte a câmera para o QR Code. Esta tela atualiza sozinha.",
+      "textoCompacto": "Leia com o WhatsApp em Aparelhos conectados.",
+      "aCaminho": "QR Code a caminho. Mantenha esta tela aberta.",
+      "voltarCodigo": "Voltar para o código"
+    },
+    "conectando": {
+      "titulo": "Conectando…",
+      "texto": "Confirmando com o WhatsApp. Leva alguns segundos."
+    },
+    "reconectando": {
+      "titulo": "Reconectando…",
+      "texto": "Isso é automático, não precisa fazer nada."
+    },
+    "conectado": {
+      "titulo": "WhatsApp online",
+      "texto": "O bot está conectado e pronto para receber mensagens."
+    },
+    "repareamento": {
+      "titulo": "A conexão foi encerrada. Conecte de novo.",
+      "texto": "Isso acontece, por exemplo, quando o aparelho é desconectado pelo celular."
+    },
+    "erros": {
+      "400": "Confira o número: DDD e número, com 12 ou 13 dígitos contando o 55.",
+      "403": "Você não tem acesso a esta conexão.",
+      "404": "Não encontramos a conexão desta empresa.",
+      "409Preparando": "Preparando a conexão…",
+      "409Iniciando": "A conexão ainda está iniciando.",
+      "409IniciandoDica": "Tente de novo em alguns segundos.",
+      "409Acao": "Tentar de novo",
+      "429": "Muitos pedidos.",
+      "429Dica": "Aguarde alguns minutos ou use o QR Code.",
+      "429Acao": "Usar o QR Code",
+      "503": "Conexão por código indisponível agora.",
+      "503Dica": "Use o QR Code abaixo.",
+      "semInternet": "Sem internet neste aparelho.",
+      "semInternetDica": "Vamos tentar de novo quando voltar.",
+      "consultando": "Consultando status da conexão...",
+      "generico": "Não foi possível concluir agora.",
+      "genericoDica": "Tente de novo em alguns segundos."
+    },
+    "chipDashboard": {
+      "online": "WhatsApp Online",
+      "aguardandoLeitura": "Aguardando leitura",
+      "reconectando": "Reconectando",
+      "desconectado": "Desconectado",
+      "consultando": "Consultando..."
+    }
+  }
+}

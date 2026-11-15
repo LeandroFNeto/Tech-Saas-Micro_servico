@@ -75,7 +75,7 @@ export function criarApp(deps: DependenciasRotas): express.Express {
         return;
       }
       const instancia = await gerenciador.iniciar(sessao, webhook);
-      res.json({ ...instancia.status() });
+      res.json({ ...instancia.status(), sessaoEncerrada: instancia.sessaoEncerrada });
     } catch (erro) {
       next(erro);
     }
@@ -83,7 +83,11 @@ export function criarApp(deps: DependenciasRotas): express.Express {
 
   app.get('/api/:session/status-session', exigirSessaoValida, exigirToken, (req, res) => {
     const instancia = gerenciador.obter(String(req.params.session));
-    res.json(instancia ? instancia.status() : { status: 'DISCONNECTED', qrcode: null });
+    res.json(
+      instancia
+        ? { ...instancia.status(), sessaoEncerrada: instancia.sessaoEncerrada }
+        : { status: 'DISCONNECTED', qrcode: null, sessaoEncerrada: false }
+    );
   });
 
   app.get('/api/:session/qrcode-session', exigirSessaoValida, exigirToken, (req, res) => {

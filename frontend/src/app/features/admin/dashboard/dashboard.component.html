@@ -51,17 +51,28 @@
         </div>
         <div>
           <span class="mb-0.5 block text-[11px] font-semibold uppercase leading-4 tracking-[0.06em] text-brand-600 min-[1100px]:hidden">Status</span>
-          @if (statusDe(empresa.sessaoWhatsapp) === 'CONNECTED') {
-            <span class="chip bg-accent-50 text-accent-700">
-              <span class="h-2 w-2 rounded-full bg-accent-500" aria-hidden="true"></span>
-              WhatsApp Online
-            </span>
-          } @else if (statusDe(empresa.sessaoWhatsapp) === 'DISCONNECTED') {
-            <span class="chip bg-brand-100 text-brand-700">Desconectado</span>
-          } @else if (statusDe(empresa.sessaoWhatsapp) === 'QRCODE') {
-            <span class="chip bg-amber-50 text-amber-800">Aguardando leitura</span>
-          } @else {
-            <span class="chip bg-brand-50 text-brand-500" role="status">Consultando...</span>
+          @switch (statusDe(empresa.sessaoWhatsapp)) {
+            @case ('CONNECTED') {
+              <span [class]="chipClasses.base + ' ' + chipClasses.online.chip">
+                <span [class]="chipClasses.ponto + ' ' + chipClasses.online.ponto" aria-hidden="true"></span>
+                {{ chipTextos.online }}
+              </span>
+            }
+            @case ('DISCONNECTED') {
+              <span [class]="chipClasses.base + ' ' + chipClasses.desconectado.chip">{{ chipTextos.desconectado }}</span>
+            }
+            @case ('QRCODE') {
+              <span [class]="chipClasses.base + ' ' + chipClasses.aguardandoLeitura.chip">{{ chipTextos.aguardandoLeitura }}</span>
+            }
+            @case ('INITIALIZING') {
+              <span [class]="chipClasses.base + ' ' + chipClasses.reconectando.chip" role="status">
+                <span [class]="chipClasses.pontoPulsando + ' ' + chipClasses.reconectando.ponto" aria-hidden="true"></span>
+                {{ chipTextos.reconectando }}
+              </span>
+            }
+            @default {
+              <span [class]="chipClasses.base + ' ' + chipClasses.consultando.chip" role="status">{{ chipTextos.consultando }}</span>
+            }
           }
         </div>
         <div>

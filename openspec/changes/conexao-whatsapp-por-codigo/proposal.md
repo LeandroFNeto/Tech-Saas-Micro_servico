@@ -6,26 +6,30 @@ Hoje o cliente conecta o WhatsApp da empresa lendo um QR Code na tela do painel,
 
 ## What Changes
 
-- O componente `conexao-whatsapp` (painel do cliente e painel do admin) ganha um fluxo guiado em passos, com o **código de telefone como caminho principal**:
+- O componente `conexao-whatsapp` ganha um fluxo guiado em passos, com o **código de telefone como caminho principal**:
   1. informar o número do WhatsApp da empresa, com DDI 55 e 12 ou 13 dígitos;
-  2. receber o código `ABCD-EFGH` em tamanho grande, com botão de copiar;
+  2. receber o código `ABCD-EFGH` em tamanho grande, com botão de copiar e **contagem regressiva da validade**;
   3. seguir as instruções "WhatsApp → Aparelhos conectados → Conectar um aparelho → Conectar com número de telefone" e digitar o código no próprio celular;
   4. a tela acompanha o status sozinha até `CONNECTED`.
 - O **QR Code continua como alternativa** ("Prefiro ler o QR Code"), para quem usa o painel no computador.
-- Estados da conexão na tela: `INITIALIZING` mostra "Reconectando…" sem pedir nada ao cliente; `DISCONNECTED` depois de ter conectado orienta um novo pareamento.
-- Erros tratados com mensagem clara: 400 (telefone inválido), 403 (sessão de outra empresa), 409 (já conectado), 429 (muitos pedidos) e 503 (pareamento por código indisponível, com o QR como saída).
+- Estados da conexão na tela: `INITIALIZING` mostra "Reconectando…" (ou "Conectando…" logo depois de o cliente digitar o código) sem pedir nada; `DISCONNECTED` com sessão **já pareada e encerrada** orienta um novo pareamento. Esse "já pareada e encerrada" vem do **servidor** (campo novo no status), não da memória da tela.
+- Erros tratados com mensagem clara: 400, 403, 404, 409 (com dois significados: já conectada ou ainda iniciando), 429 e 503.
+- Casos de experiência de usuário tratados: código expirado, aba em segundo plano, navegador sem internet, clique duplo, troca de empresa no admin, sessão expirada (401), página recarregada no meio do pareamento, falha no celular e leitor de tela.
+- Telas onde o status aparece e hoje não sabem de `INITIALIZING`: o componente (painel do cliente em versão `compacto`, `empresa-form` do admin em versão normal) e o chip de WhatsApp do `dashboard` do admin.
 - O layout é desenhado primeiro no canvas (skill `diasabatico`) e registrado em `especificacao/front/` antes de qualquer Angular.
-- **Fora desta change**: avisos ao cliente quando a sessão cai (change `alertas-desconexao-whatsapp`); rota de código, gateway e `INITIALIZING` no Java (change `migrar-wppconnect-para-baileys`, tarefas 4.2b a 4.2d e 4.2f).
+- **Ajuste pequeno no backend e no gateway**, necessário para o estado vir do servidor: `status-session` passa a informar se a sessão já foi pareada e foi encerrada (`sessaoEncerrada`), com marca persistida em `meta.json`, campo em `SessaoStatusResponseDTO` e contrato YAML.
+- **Regra de testes**: toda função criada e todo bug encontrado ganham teste, para não voltar a ocorrer (ver design).
+- **Fora desta change**: avisos ao cliente quando a sessão cai (change `alertas-desconexao-whatsapp`, que também cobre o celular sem internet); rota de código, gateway base e `INITIALIZING` no Java (change `migrar-wppconnect-para-baileys`, tarefas 4.2b a 4.2d e 4.2f).
 
 ## Capabilities
 
 ### Modified Capabilities
 
-- `whatsapp`: ganha WPP-21 (conexão guiada por código de telefone no painel) e WPP-22 (estados da conexão na tela: reconectando e novo pareamento). O QR Code (WPP-04) segue valendo.
+- `whatsapp`: ganha WPP-24 (conexão guiada por código de telefone no painel) e WPP-22 (estados da conexão na tela: conectando, reconectando e novo pareamento vindo do servidor). O QR Code (WPP-04) segue valendo.
 
 ## Impact
 
-- **Frontend Angular**: `conexao-whatsapp.component` (`.ts`, `.html`, `.spec.ts`), `WhatsappConnectionService` (chamada nova `POST /whatsapp/{sessao}/codigo-pareamento`), `whatsapp.models.ts` (tipo `INITIALIZING` e DTOs do código). Usado em `painel`, `perfil` e `empresa-form`.
+- **Frontend Angular**: `conexao-whatsapp.component` (`.ts`, `.html`, `.spec.ts`), `WhatsappConnectionService` (chamada nova `POST /whatsapp/{sessao}/codigo-pareamento`), `whatsapp.models.ts` (tipo `INITIALIZING`, `sessaoEncerrada` e DTOs do código), `features/admin/dashboard/dashboard.component.html` (chip de WhatsApp com `INITIALIZING`). O componente é usado em `painel` (cliente, `compacto`) e `empresa-form` (admin, versão normal). O `perfil` não o usa.
+- **Backend e gateway**: `SessaoStatusResponseDTO` (+ YAML), `ServicoWppConnect` (repassa o campo) e `baileys-gateway` (`status-session` e `meta.json`). Contrato YAML antes do Java.
 - **Design**: canvas e `especificacao/front/`, antes do código.
-- **Backend e gateway**: nenhuma mudança aqui; dependem da change `migrar-wppconnect-para-baileys`. Sem a rota (WPPConnect na reversão), a tela cai para o QR Code.
-- **Segurança**: o telefone digitado não é gravado nem guardado no navegador além da tela aberta, e não vai para a URL nem para logs do front (`.cursor/rules/seguranca.mdc`).
+- **Segurança**: o telefone digitado não é gravado nem guardado no navegador além da tela aberta, e não vai para a URL nem para logs do front; o código de pareamento não vai para log, título da aba nem armazenamento (`.cursor/rules/seguranca.mdc`).

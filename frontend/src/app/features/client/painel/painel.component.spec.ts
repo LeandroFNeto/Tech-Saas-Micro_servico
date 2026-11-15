@@ -1,5 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
 import { NEVER, Observable, of, throwError } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
@@ -8,6 +9,7 @@ import { PrevisaoService } from '../../../core/services/previsao.service';
 import { WhatsappConnectionService } from '../../../core/services/whatsapp-connection.service';
 import { PrevisaoDia, PrevisaoTempoResponse } from '../../../shared/models/previsao.models';
 import { AssistenteTutoriaService } from '../../../core/services/assistente-tutoria.service';
+import { ConexaoWhatsappComponent } from '../../../shared/components/conexao-whatsapp/conexao-whatsapp.component';
 import { PainelComponent } from './painel.component';
 
 function dia(data: string, sobrescrever: Partial<PrevisaoDia> = {}): PrevisaoDia {
@@ -85,6 +87,12 @@ describe('PainelComponent', () => {
   it('mostra a conexao do WhatsApp', () => {
     const raiz: HTMLElement = montar().nativeElement;
     expect(raiz.querySelector('app-conexao-whatsapp')).not.toBeNull();
+  });
+
+  it('Versões da tela: a conexão do WhatsApp do painel recebe compacto verdadeiro', () => {
+    const fixture = montar();
+    const filho = fixture.debugElement.query(By.directive(ConexaoWhatsappComponent));
+    expect(filho.componentInstance.compacto).toBe(true);
   });
 
   it('nao mostra mais o seletor so para visualizacao', () => {

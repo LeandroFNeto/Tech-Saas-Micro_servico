@@ -1,4 +1,4 @@
-import { access, readFile } from 'node:fs/promises';
+import { access, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { criarLogger } from '../src/logger.js';
@@ -236,7 +236,7 @@ describe('ciclo de vida', () => {
   it('o start-session do Java no boot nao abre socket duplicado nem gera QR', async () => {
     await restaurar();
     const resposta = await ambiente!.chamar('POST', '/api/sessao_a/start-session', { corpo: { webhook: 'http://java-do-meta/webhook', waitQrCode: false } });
-    expect(resposta.json).toEqual({ status: 'INITIALIZING', qrcode: null });
+    expect(resposta.json).toEqual({ status: 'INITIALIZING', qrcode: null, sessaoEncerrada: false });
     expect(ambiente!.sockets).toHaveLength(1);
     expect(await existe(join(ambiente!.pasta, 'sessao_a', 'creds.json'))).toBe(true);
   });
@@ -309,8 +309,8 @@ describe('ciclo de vida', () => {
     socket.emitir('connection.update', queda(codigo));
     await vi.waitFor(async () => expect(await estadoDe('sessao_a')).toBe('DISCONNECTED'));
     expect(ambiente!.agendados).toHaveLength(0);
-    expect(await existe(join(ambiente!.pasta, 'sessao_a'))).toBe(false);
-    expect(ambiente!.postagens.some((p) => p.payload.status === 'desconnectedMobile')).toBe(true);
+    expect(await existe(join(ambiente!.pasta, 'sessao_a', 'creds.json'))).toBe(false);
+    await vi.waitFor(() => expect(ambiente!.postagens.some((p) => p.payload.status === 'desconnectedMobile')).toBe(true));
 
     const resposta = await ambiente!.chamar('POST', '/api/sessao_a/start-session', { corpo: { webhook: 'http://java/webhook' } });
     expect(resposta.json.status).toBe('QRCODE');
@@ -439,5 +439,145 @@ describe('logs do gateway (WPP-06)', () => {
     ]) {
       expect(saida, proibido).not.toContain(proibido);
     }
+  });
+});
+
+async function metaDe(nome: string): Promise<Record<string, string>> {
+  return JSON.parse(await readFile(join(ambiente!.pasta, nome, 'meta.json'), 'utf8'));
+}
+
+async function conectarRestaurada(): Promise<SocketFalso> {
+  const { socket } = await restaurar();
+  socket.emitir('connection.update', { connection: 'open' });
+  await vi.waitFor(async () => expect(await estadoDe('sessao_a')).toBe('CONNECTED'));
+  return socket;
+}
+
+describe('sessaoEncerrada no gateway (WPP-22)', () => {
+  it.each([401, 500, 411])('codigo %i grava encerradaEm no meta.json e status-session devolve sessaoEncerrada verdadeiro', async (codigo) => {
+    const socket = await conectarRestaurada();
+    socket.emitir('connection.update', queda(codigo));
+    await vi.waitFor(async () => expect(await estadoDe('sessao_a')).toBe('DISCONNECTED'));
+    await vi.waitFor(async () => expect((await metaDe('sessao_a')).encerradaEm).toBeTruthy());
+    const meta = await metaDe('sessao_a');
+    expect(meta.webhook).toBe('http://java-do-meta/webhook');
+    expect(Number.isNaN(Date.parse(meta.encerradaEm))).toBe(false);
+    const resposta = await ambiente!.chamar('GET', '/api/sessao_a/status-session');
+    expect(resposta.json).toEqual({ status: 'DISCONNECTED', qrcode: null, sessaoEncerrada: true });
+  });
+
+  it('regressao: gravação de pareadaEm em andamento não impede encerradaEm quando loggedOut apaga a pasta', async () => {
+    const { socket } = await restaurar();
+    socket.emitir('connection.update', { connection: 'open' });
+    socket.emitir('connection.update', queda(401));
+    await vi.waitFor(async () => expect((await metaDe('sessao_a')).encerradaEm).toBeTruthy());
+    expect(await estadoDe('sessao_a')).toBe('DISCONNECTED');
+    const resposta = await ambiente!.chamar('GET', '/api/sessao_a/status-session');
+    expect(resposta.json.sessaoEncerrada).toBe(true);
+  });
+
+  it('connectionReplaced nao marca encerramento: as credenciais seguem e sessaoEncerrada e falso', async () => {
+    const socket = await conectarRestaurada();
+    socket.emitir('connection.update', queda(440));
+    await vi.waitFor(async () => expect(await estadoDe('sessao_a')).toBe('DISCONNECTED'));
+    expect((await metaDe('sessao_a')).encerradaEm).toBeUndefined();
+    const resposta = await ambiente!.chamar('GET', '/api/sessao_a/status-session');
+    expect(resposta.json.sessaoEncerrada).toBe(false);
+  });
+
+  it('pareadaEm e gravada ao conectar e nao e reescrita na reconexao', async () => {
+    const socket = await conectarRestaurada();
+    await vi.waitFor(async () => expect((await metaDe('sessao_a')).pareadaEm).toBeTruthy());
+    const primeira = (await metaDe('sessao_a')).pareadaEm;
+    socket.emitir('connection.update', queda(408));
+    await vi.waitFor(async () => expect(await estadoDe('sessao_a')).toBe('INITIALIZING'));
+    ambiente!.agendados[ambiente!.agendados.length - 1].fn();
+    await vi.waitFor(() => expect(ambiente!.sockets).toHaveLength(2));
+    ambiente!.sockets[1].emitir('connection.update', { connection: 'open' });
+    await vi.waitFor(async () => expect(await estadoDe('sessao_a')).toBe('CONNECTED'));
+    expect((await metaDe('sessao_a')).pareadaEm).toBe(primeira);
+  });
+
+  it('um novo pareamento limpa a marca de encerramento e grava nova pareadaEm', async () => {
+    const socket = await conectarRestaurada();
+    socket.emitir('connection.update', queda(401));
+    await vi.waitFor(async () => expect((await metaDe('sessao_a')).encerradaEm).toBeTruthy());
+
+    const iniciar = await ambiente!.chamar('POST', '/api/sessao_a/start-session', { corpo: { webhook: 'http://java/webhook' } });
+    expect(iniciar.json.status).toBe('QRCODE');
+    expect(iniciar.json.sessaoEncerrada).toBe(false);
+
+    ambiente!.sockets[ambiente!.sockets.length - 1].emitir('connection.update', { connection: 'open' });
+    await vi.waitFor(async () => expect(await estadoDe('sessao_a')).toBe('CONNECTED'));
+    await vi.waitFor(async () => expect((await metaDe('sessao_a')).encerradaEm).toBeUndefined());
+    expect((await metaDe('sessao_a')).pareadaEm).toBeTruthy();
+    const resposta = await ambiente!.chamar('GET', '/api/sessao_a/status-session');
+    expect(resposta.json.sessaoEncerrada).toBe(false);
+  });
+
+  it('close-session apaga a pasta e nao deixa marca: status-session volta falso', async () => {
+    const socket = await conectarRestaurada();
+    socket.emitir('connection.update', queda(401));
+    await vi.waitFor(async () => expect((await metaDe('sessao_a')).encerradaEm).toBeTruthy());
+    const fechar = await ambiente!.chamar('POST', '/api/sessao_a/close-session');
+    expect(fechar.status).toBe(200);
+    expect(await existe(join(ambiente!.pasta, 'sessao_a'))).toBe(false);
+    const resposta = await ambiente!.chamar('GET', '/api/sessao_a/status-session');
+    expect(resposta.json).toEqual({ status: 'DISCONNECTED', qrcode: null, sessaoEncerrada: false });
+  });
+
+  it('sessao conectada, reconectando ou aguardando QR devolve sessaoEncerrada falso', async () => {
+    const socket = await conectarRestaurada();
+    let resposta = await ambiente!.chamar('GET', '/api/sessao_a/status-session');
+    expect(resposta.json).toMatchObject({ status: 'CONNECTED', sessaoEncerrada: false });
+    socket.emitir('connection.update', queda(408));
+    await vi.waitFor(async () => expect(await estadoDe('sessao_a')).toBe('INITIALIZING'));
+    resposta = await ambiente!.chamar('GET', '/api/sessao_a/status-session');
+    expect(resposta.json).toMatchObject({ status: 'INITIALIZING', sessaoEncerrada: false });
+    const nova = await ambiente!.chamar('POST', '/api/sessao_b/start-session', { corpo: {} });
+    expect(nova.json).toMatchObject({ status: 'QRCODE', sessaoEncerrada: false });
+  });
+
+  it('sessao nunca pareada e desconhecida devolve DISCONNECTED com sessaoEncerrada falso', async () => {
+    ambiente = await montar();
+    const resposta = await ambiente.chamar('GET', '/api/sessao_x/status-session');
+    expect(resposta.json).toEqual({ status: 'DISCONNECTED', qrcode: null, sessaoEncerrada: false });
+  });
+
+  it('a marca sobrevive ao reinicio do gateway: restaurar nao abre socket e status-session devolve verdadeiro', async () => {
+    const socket = await conectarRestaurada();
+    socket.emitir('connection.update', queda(401));
+    await vi.waitFor(async () => expect((await metaDe('sessao_a')).encerradaEm).toBeTruthy());
+    const pasta = ambiente!.pasta;
+    await ambiente!.fechar();
+    ambiente = await montar({ env: { BAILEYS_AUTH_DIR: pasta } });
+    expect(await ambiente.gerenciador.restaurar()).toBe(0);
+    expect(ambiente.sockets).toHaveLength(0);
+    const resposta = await ambiente.chamar('GET', '/api/sessao_a/status-session');
+    expect(resposta.json).toEqual({ status: 'DISCONNECTED', qrcode: null, sessaoEncerrada: true });
+    const iniciar = await ambiente.chamar('POST', '/api/sessao_a/start-session', { corpo: {} });
+    expect(iniciar.json).toMatchObject({ status: 'QRCODE', sessaoEncerrada: false });
+  });
+
+  it('meta.json com marcas de tipo invalido e ignorado', async () => {
+    ambiente = await montar();
+    const dir = join(ambiente.pasta, 'sessao_a');
+    await mkdir(dir, { recursive: true });
+    await writeFile(join(dir, 'meta.json'), JSON.stringify({ encerradaEm: 123 }));
+    expect(await ambiente.gerenciador.restaurar()).toBe(0);
+    expect(ambiente.gerenciador.obter('sessao_a')).toBeUndefined();
+  });
+
+  it('falha ao gravar o meta.json nao derruba a conexao', async () => {
+    const socket = await conectarRestaurada();
+    socket.emitir('connection.update', queda(408));
+    await vi.waitFor(async () => expect(await estadoDe('sessao_a')).toBe('INITIALIZING'));
+    ambiente!.agendados[ambiente!.agendados.length - 1].fn();
+    await vi.waitFor(() => expect(ambiente!.sockets).toHaveLength(2));
+    await rm(join(ambiente!.pasta, 'sessao_a'), { recursive: true, force: true });
+    await writeFile(join(ambiente!.pasta, 'sessao_a'), 'x');
+    ambiente!.gerenciador.obter('sessao_a')!.definirMarcas({ encerradaEm: '2026-01-01T00:00:00.000Z' });
+    ambiente!.sockets[1].emitir('connection.update', { connection: 'open' });
+    await vi.waitFor(async () => expect(await estadoDe('sessao_a')).toBe('CONNECTED'));
   });
 });

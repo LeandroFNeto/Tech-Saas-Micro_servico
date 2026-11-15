@@ -109,6 +109,9 @@ export class Sessao {
   private numeroConectado: string | null = null;
   private lidConectado: string | null = null;
   private primeiroQrVisto = false;
+  private pareadaEm: string | null = null;
+  private encerradaEm: string | null = null;
+  private gravandoMeta: Promise<void> = Promise.resolve();
   private pedidosPareamento: number[] = [];
   private esperandoConexao: Array<() => void> = [];
   private esperandoQr: Array<() => void> = [];
@@ -141,6 +144,15 @@ export class Sessao {
     return { status: this.estado, qrcode: this.estado === 'QRCODE' ? this.qr : null };
   }
 
+  get sessaoEncerrada(): boolean {
+    return this.estado === 'DISCONNECTED' && this.encerradaEm !== null;
+  }
+
+  definirMarcas(meta: { pareadaEm?: unknown; encerradaEm?: unknown } | null | undefined): void {
+    this.pareadaEm = typeof meta?.pareadaEm === 'string' ? meta.pareadaEm : null;
+    this.encerradaEm = typeof meta?.encerradaEm === 'string' ? meta.encerradaEm : null;
+  }
+
   qrAtual(): string | null {
     return this.estado === 'QRCODE' ? this.qr : null;
   }
@@ -150,10 +162,30 @@ export class Sessao {
   }
 
   async gravarMeta(): Promise<void> {
-    if (!this.webhook) {
+    const meta: Record<string, string> = {};
+    if (this.webhook) {
+      meta.webhook = this.webhook;
+    }
+    if (this.pareadaEm) {
+      meta.pareadaEm = this.pareadaEm;
+    }
+    if (this.encerradaEm) {
+      meta.encerradaEm = this.encerradaEm;
+    }
+    if (Object.keys(meta).length === 0) {
       return;
     }
-    await gravarAtomico(join(this.pasta, 'meta.json'), JSON.stringify({ webhook: this.webhook }));
+    await gravarAtomico(join(this.pasta, 'meta.json'), JSON.stringify(meta));
+  }
+
+  private gravarMetaSemFalhar(): Promise<void> {
+    const gravacao = this.gravandoMeta.then(() =>
+      this.gravarMeta().catch(() => {
+        this.deps.log.error({ sessao: this.nome }, 'Falha ao gravar meta.json');
+      })
+    );
+    this.gravandoMeta = gravacao;
+    return gravacao;
   }
 
   async iniciar(): Promise<void> {
@@ -256,6 +288,11 @@ export class Sessao {
     this.reinicios = 0;
     this.numeroConectado = normalizar(this.sock?.user?.id);
     this.lidConectado = this.sock?.user?.lid ?? null;
+    if (this.pareadaEm === null || this.encerradaEm !== null) {
+      this.pareadaEm = new Date(this.agora()).toISOString();
+      this.encerradaEm = null;
+      void this.gravarMetaSemFalhar();
+    }
     this.deps.log.info({ sessao: this.nome, numero: mascararNumero(this.numeroConectado) }, 'Sessao conectada');
     this.esperandoConexao.splice(0).forEach((liberar) => liberar());
     this.publicar({ event: 'status-find', session: this.nome, status: 'inChat' });
@@ -281,6 +318,8 @@ export class Sessao {
       }
       this.estado = 'DISCONNECTED';
       this.qr = null;
+      this.encerradaEm = new Date(this.agora()).toISOString();
+      await this.gravarMetaSemFalhar();
       this.deps.log.warn({ sessao: this.nome, codigo }, 'Credenciais apagadas; novo pareamento necessario');
       this.publicar({ event: 'status-find', session: this.nome, status: 'desconnectedMobile' });
       return;
@@ -313,6 +352,7 @@ export class Sessao {
   }
 
   private async apagarCredenciais(): Promise<void> {
+    await this.gravandoMeta;
     this.auth = null;
     await rm(this.pasta, { recursive: true, force: true });
   }

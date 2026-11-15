@@ -1,58 +1,395 @@
-<section class="flex flex-col gap-4 rounded-[20px] border border-brand-100 bg-white p-5 shadow-[0_1px_2px_rgba(46,26,71,0.05)]">
-  <div class="flex flex-wrap items-start justify-between gap-3">
-    <div class="min-w-0">
-      <h2 class="text-[17px] font-bold leading-6 text-brand-900">Conexão WhatsApp</h2>
+<section [class]="compacto ? design.cartao.compacto : design.cartao.normal" aria-labelledby="conexao-whatsapp-titulo">
+  <div [class]="design.cabecalho.linha">
+    <div [class]="design.cabecalho.texto">
+      <h2 id="conexao-whatsapp-titulo" [class]="design.cabecalho.titulo">{{ conteudo.cabecalho.titulo }}</h2>
       @if (!compacto) {
-        <p class="mt-1 text-sm text-brand-600">Escaneie o QR Code nesta tela. Não é preciso abrir os logs do Docker.</p>
+        <p [class]="design.cabecalho.descricao">{{ conteudo.cabecalho.descricao }}</p>
       }
-      <p class="mt-1.5 break-all font-mono text-[13px] text-brand-500">{{ sessao || 'Sessão não definida' }}</p>
+      <p [class]="design.cabecalho.sessao">{{ sessao || conteudo.cabecalho.sessaoIndefinida }}</p>
     </div>
 
-    @if (status() === 'CONNECTED') {
-      <span class="chip bg-accent-50 px-3 text-accent-800">
-        <span class="h-2 w-2 rounded-full bg-accent-500" aria-hidden="true"></span>
-        WhatsApp online
-      </span>
-    } @else if (status() === 'QRCODE') {
-      <span class="chip bg-amber-50 px-3 text-amber-800">Aguardando leitura</span>
-    } @else {
-      <span class="chip bg-brand-100 px-3 text-brand-700">Desconectado</span>
+    @switch (passo()) {
+      @case ('conectado') {
+        <span [class]="design.chip.base + ' ' + design.chip.online.chip" role="status">
+          <span [class]="design.chip.ponto + ' ' + design.chip.online.ponto" aria-hidden="true"></span>
+          {{ conteudo.chip.online }}
+        </span>
+      }
+      @case ('conectando') {
+        <span [class]="design.chip.base + ' ' + design.chip.andamento.chip" role="status">
+          <span [class]="design.chip.pontoPulsando + ' ' + design.chip.andamento.ponto" aria-hidden="true"></span>
+          {{ conteudo.chip.conectando }}
+        </span>
+      }
+      @case ('reconectando') {
+        <span [class]="design.chip.base + ' ' + design.chip.andamento.chip" role="status">
+          <span [class]="design.chip.pontoPulsando + ' ' + design.chip.andamento.ponto" aria-hidden="true"></span>
+          {{ conteudo.chip.reconectando }}
+        </span>
+      }
+      @case ('codigo') {
+        <span [class]="design.chip.base + ' ' + design.chip.aguardando.chip">
+          <span [class]="design.chip.ponto + ' ' + design.chip.aguardando.ponto" aria-hidden="true"></span>
+          {{ conteudo.chip.aguardandoCodigo }}
+        </span>
+      }
+      @case ('codigo-expirado') {
+        <span [class]="design.chip.base + ' ' + design.chip.aguardando.chip">
+          <span [class]="design.chip.ponto + ' ' + design.chip.aguardando.ponto" aria-hidden="true"></span>
+          {{ conteudo.chip.codigoExpirado }}
+        </span>
+      }
+      @case ('qrcode') {
+        <span [class]="design.chip.base + ' ' + design.chip.aguardando.chip">
+          <span [class]="design.chip.ponto + ' ' + design.chip.aguardando.ponto" aria-hidden="true"></span>
+          {{ conteudo.chip.aguardandoLeitura }}
+        </span>
+      }
+      @case ('repareamento') {
+        <span [class]="design.chip.base + ' ' + design.chip.encerrada.chip">
+          <span [class]="design.chip.ponto + ' ' + design.chip.encerrada.ponto" aria-hidden="true"></span>
+          {{ conteudo.chip.encerrada }}
+        </span>
+      }
+      @default {
+        <span [class]="design.chip.base + ' ' + design.chip.desconectado.chip">
+          <span [class]="design.chip.ponto + ' ' + design.chip.desconectado.ponto" aria-hidden="true"></span>
+          {{ conteudo.chip.desconectado }}
+        </span>
+      }
     }
   </div>
 
-  @if (erro()) {
-    <p class="rounded-xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-sm text-red-700" role="alert">{{ erro() }}</p>
+  @if (mostraEtapas()) {
+    @if (compacto) {
+      <p [class]="design.etapas.textoCompacto" data-teste="etapas-compacto">{{ textoEtapaCompacta() }}</p>
+    } @else {
+      <ol [class]="design.etapas.lista" [attr.aria-label]="conteudo.etapas.rotulo" data-teste="etapas">
+        @for (nome of conteudo.etapas.nomes; track nome; let i = $index; let ultimo = $last) {
+          <li
+            [class]="i + 1 === etapaAtual() ? design.etapas.itemAtual : design.etapas.item"
+            [attr.aria-current]="i + 1 === etapaAtual() ? 'step' : null"
+          >
+            <span
+              [class]="i + 1 === etapaAtual() ? design.etapas.numeroAtual : i + 1 < etapaAtual() ? design.etapas.numeroFeito : design.etapas.numero"
+              aria-hidden="true"
+            >{{ i + 1 < etapaAtual() ? conteudo.etapas.feita : i + 1 }}</span>
+            <span>{{ nome }}</span>
+            <span [class]="design.leitorTela">{{ i + 1 === etapaAtual() ? conteudo.etapas.atual : i + 1 < etapaAtual() ? conteudo.etapas.concluida : '' }}</span>
+          </li>
+          @if (!ultimo) {
+            <li [class]="design.etapas.traco" aria-hidden="true"></li>
+          }
+        }
+      </ol>
+    }
   }
 
-  @if (carregando()) {
-    <p class="text-sm text-brand-600" role="status">Consultando status da conexão...</p>
-  }
-
-  @if (status() === 'CONNECTED') {
-    <p class="text-sm text-brand-700">O bot está conectado e pronto para receber mensagens.</p>
-  }
-
-  @if (status() === 'QRCODE' && srcQrcode()) {
-    <div class="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-brand-300 bg-brand-50 p-4">
-      <img [src]="srcQrcode()" alt="QR Code do WhatsApp" class="h-56 w-56 max-w-full rounded-xl bg-white p-2 shadow-sm" />
-      <p class="text-center text-sm text-brand-700">
-        Abra o WhatsApp no celular e escaneie o QR Code. Esta tela atualiza sozinha a cada 1,5 segundo.
-      </p>
+  @if (semInternet()) {
+    <div [class]="design.alerta.base + ' ' + design.alerta.info" role="status" data-teste="sem-internet">
+      <div>
+        <span [class]="design.alerta.titulo">{{ conteudo.erros.semInternet }}</span>
+        {{ conteudo.erros.semInternetDica }}
+      </div>
     </div>
   }
 
-  @if (status() === 'QRCODE' && !srcQrcode()) {
-    <p class="text-sm text-brand-600">QR Code a caminho. Mantenha esta tela aberta.</p>
+  @switch (erro()) {
+    @case ('403') {
+      <div [class]="design.alerta.base + ' ' + design.alerta.erro" role="alert" data-teste="erro-403">
+        <span [class]="design.alerta.titulo">{{ conteudo.erros['403'] }}</span>
+      </div>
+    }
+    @case ('404') {
+      <div [class]="design.alerta.base + ' ' + design.alerta.erro" role="alert" data-teste="erro-404">
+        <span [class]="design.alerta.titulo">{{ conteudo.erros['404'] }}</span>
+      </div>
+    }
+    @case ('generico') {
+      <div [class]="design.alerta.base + ' ' + design.alerta.erro" role="alert" data-teste="erro-generico">
+        <div>
+          <span [class]="design.alerta.titulo">{{ conteudo.erros.generico }}</span>
+          {{ conteudo.erros.genericoDica }}
+        </div>
+      </div>
+    }
+    @case ('429') {
+      <div [class]="design.alerta.base + ' ' + design.alerta.aviso" role="alert" data-teste="erro-429">
+        <div>
+          <span [class]="design.alerta.titulo">{{ conteudo.erros['429'] }}</span>
+          {{ conteudo.erros['429Dica'] }}
+          <div [class]="design.alerta.acao">
+            <button type="button" [class]="design.botaoPequeno + ' ' + design.foco" (click)="usarQrcode()" [disabled]="iniciando()">
+              {{ conteudo.erros['429Acao'] }}
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+    @case ('400') {
+      @if (passo() !== 'telefone') {
+        <div [class]="design.alerta.base + ' ' + design.alerta.erro" role="alert" data-teste="erro-400">
+          <span [class]="design.alerta.titulo">{{ conteudo.erros['400'] }}</span>
+        </div>
+      }
+    }
+    @case ('503') {
+      <div [class]="design.alerta.base + ' ' + design.alerta.aviso" role="alert" data-teste="erro-503">
+        <div>
+          <span [class]="design.alerta.titulo">{{ conteudo.erros['503'] }}</span>
+          {{ conteudo.erros['503Dica'] }}
+        </div>
+      </div>
+    }
+    @case ('409Iniciando') {
+      <div [class]="design.alerta.base + ' ' + design.alerta.aviso" role="alert" data-teste="erro-409-iniciando">
+        <div>
+          <span [class]="design.alerta.titulo">{{ conteudo.erros['409Iniciando'] }}</span>
+          {{ conteudo.erros['409IniciandoDica'] }}
+          <div [class]="design.alerta.acao">
+            <button type="button" [class]="design.botaoPequeno + ' ' + design.foco" (click)="tentarDeNovo()" [disabled]="gerando()">
+              {{ conteudo.erros['409Acao'] }}
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+    @case ('409Preparando') {
+      <p [class]="design.espera" role="status" data-teste="erro-409-preparando">
+        <span [class]="design.giro" aria-hidden="true"></span>
+        {{ conteudo.erros['409Preparando'] }}
+      </p>
+    }
   }
 
-  @if (status() === 'DISCONNECTED') {
-    <button
-      class="btn-primary min-h-12 w-full px-5 text-[15px] font-bold sm:w-auto"
-      type="button"
-      (click)="iniciarConexao()"
-      [disabled]="iniciando() || !sessao"
-    >
-      {{ iniciando() ? 'Conectando...' : 'Conectar WhatsApp' }}
-    </button>
+  @if (carregando() && passo() === 'inicio') {
+    <p [class]="design.espera" role="status">{{ conteudo.erros.consultando }}</p>
+  } @else {
+    @switch (passo()) {
+      @case ('inicio') {
+        <div [class]="design.pilha">
+          @if (compacto) {
+            <p [class]="design.texto">{{ conteudo.inicio.textoCompacto }}</p>
+          } @else {
+            <p [class]="design.texto">
+              {{ conteudo.inicio.texto }}
+              <span [class]="design.textoDestaque">{{ conteudo.inicio.destaque }}</span>
+            </p>
+          }
+          <div [class]="design.acoes">
+            <button type="button" [class]="design.botaoPrincipal + ' ' + design.foco" (click)="escolherCodigo()" [disabled]="!sessao">
+              {{ conteudo.inicio.botaoCodigo }}
+            </button>
+            <button type="button" [class]="design.link + ' ' + design.foco" (click)="usarQrcode()" [disabled]="iniciando() || !sessao">
+              {{ conteudo.inicio.linkQr }}
+            </button>
+          </div>
+        </div>
+      }
+
+      @case ('repareamento') {
+        <div [class]="design.pilha">
+          <div [class]="design.alerta.base + ' ' + design.alerta.encerrada" role="status" data-teste="repareamento">
+            <div>
+              <span [class]="design.alerta.titulo">{{ conteudo.repareamento.titulo }}</span>
+              {{ conteudo.repareamento.texto }}
+            </div>
+          </div>
+          <div [class]="design.acoes">
+            <button type="button" [class]="design.botaoPrincipal + ' ' + design.foco" (click)="escolherCodigo()" [disabled]="!sessao">
+              {{ conteudo.inicio.botaoCodigo }}
+            </button>
+            <button type="button" [class]="design.link + ' ' + design.foco" (click)="usarQrcode()" [disabled]="iniciando() || !sessao">
+              {{ conteudo.inicio.linkQr }}
+            </button>
+          </div>
+        </div>
+      }
+
+      @case ('telefone') {
+        <form [class]="design.pilha" (submit)="$event.preventDefault(); gerarCodigo()" novalidate>
+          <div>
+            <label for="conexao-whatsapp-telefone" [class]="design.campo.rotulo">{{ conteudo.telefone.rotulo }}</label>
+            <input
+              #campoTelefone
+              id="conexao-whatsapp-telefone"
+              type="tel"
+              inputmode="numeric"
+              autocomplete="off"
+              [class]="design.campo.entrada + ' ' + (erro() === '400' ? design.campo.entradaInvalida : '')"
+              [placeholder]="conteudo.telefone.placeholder"
+              [value]="telefone()"
+              (input)="campoTelefone.value = aoDigitarTelefone(campoTelefone.value)"
+              [attr.aria-invalid]="erro() === '400' ? 'true' : null"
+              aria-describedby="conexao-whatsapp-telefone-dica"
+            />
+            @if (erro() === '400') {
+              <span id="conexao-whatsapp-telefone-erro" [class]="design.campo.erro" role="alert">{{ conteudo.erros['400'] }}</span>
+            }
+            <p id="conexao-whatsapp-telefone-dica" [class]="design.campo.dica">{{ conteudo.telefone.dica }}</p>
+          </div>
+          <div [class]="design.acoes">
+            <button type="submit" [class]="design.botaoPrincipal + ' ' + design.foco" [disabled]="gerando()">
+              @if (erro() === '409Preparando') {
+                {{ conteudo.telefone.preparando }}
+              } @else if (gerando()) {
+                {{ conteudo.telefone.gerando }}
+              } @else {
+                {{ conteudo.telefone.botaoGerar }}
+              }
+            </button>
+            <button type="button" [class]="design.link + ' ' + design.foco" (click)="voltarInicio()" [disabled]="gerando()">
+              {{ conteudo.telefone.voltar }}
+            </button>
+          </div>
+        </form>
+      }
+
+      @case ('codigo') {
+        <div [class]="design.pilha">
+          <div [class]="compacto ? design.codigo.caixaCompacta : design.codigo.caixa">
+            <span [class]="design.codigo.rotulo">{{ conteudo.codigo.rotulo }}</span>
+            <div [class]="design.codigo.linha">
+              <span
+                #codigoValor
+                tabindex="-1"
+                aria-live="polite"
+                [class]="compacto ? design.codigo.valorCompacto : design.codigo.valor"
+                data-teste="codigo"
+              >{{ codigo() }}</span>
+              <button
+                type="button"
+                [class]="design.botaoPequeno + ' ' + design.foco"
+                (click)="copiar()"
+                [attr.aria-label]="copiado() ? conteudo.codigo.copiadoAria : conteudo.codigo.copiarAria"
+              >
+                {{ copiado() ? conteudo.codigo.copiado : conteudo.codigo.copiar }}
+              </button>
+            </div>
+            <div [class]="design.codigo.validade" data-teste="validade">
+              <span [class]="nosUltimosSegundos() ? design.codigo.validadeFim : design.codigo.validadeTexto">
+                {{ conteudo.codigo.validade }} <span data-teste="tempo">{{ tempoRestante() }}</span>
+              </span>
+              <span [class]="design.codigo.barra" aria-hidden="true">
+                <span
+                  [class]="nosUltimosSegundos() ? design.codigo.barraValorFim : design.codigo.barraValor"
+                  [style.width.%]="porcentagemRestante()"
+                ></span>
+              </span>
+            </div>
+          </div>
+
+          <span [class]="design.leitorTela" aria-live="polite" data-teste="anuncio">{{ anuncio() }}</span>
+
+          @if (compacto) {
+            <p [class]="design.texto">{{ conteudo.codigo.instrucoesCompacto }}</p>
+          } @else {
+            <ol [class]="design.instrucoes.lista" [attr.aria-label]="conteudo.codigo.instrucoesRotulo" data-teste="instrucoes">
+              @for (instrucao of conteudo.codigo.instrucoes; track instrucao; let i = $index) {
+                <li [class]="design.instrucoes.item">
+                  <span [class]="design.instrucoes.numero" aria-hidden="true">{{ i + 1 }}</span>
+                  <span>{{ instrucao }}</span>
+                </li>
+              }
+            </ol>
+          }
+
+          <p [class]="design.espera" role="status">
+            <span [class]="design.giro" aria-hidden="true"></span>
+            {{ conteudo.codigo.aguardando }}
+          </p>
+
+          <div [class]="design.acoes">
+            <button type="button" [class]="design.botaoSecundario + ' ' + design.foco" (click)="gerarOutroCodigo()" [disabled]="gerando()">
+              {{ gerando() ? conteudo.telefone.gerando : conteudo.codigo.gerarOutro }}
+            </button>
+            <button type="button" [class]="design.link + ' ' + design.foco" (click)="usarQrcode()" [disabled]="iniciando()">
+              {{ conteudo.inicio.linkQr }}
+            </button>
+          </div>
+        </div>
+      }
+
+      @case ('codigo-expirado') {
+        <div [class]="design.pilha">
+          <div [class]="compacto ? design.codigo.caixaCompacta : design.codigo.caixa">
+            <span [class]="design.codigo.rotulo">{{ conteudo.codigo.rotuloExpirado }}</span>
+            <span
+              [class]="(compacto ? design.codigo.valorCompacto : design.codigo.valor) + ' ' + design.codigo.valorExpirado"
+              data-teste="codigo-expirado"
+            >{{ codigo() }}</span>
+            <p [class]="design.codigo.expirou" role="alert">
+              <span [class]="design.instrucoes.caminho">{{ conteudo.codigo.expirou }}</span>
+              {{ conteudo.codigo.expirouDica }}
+            </p>
+          </div>
+          <div [class]="design.acoes">
+            <button type="button" [class]="design.botaoPrincipal + ' ' + design.foco" (click)="gerarOutroCodigo()" [disabled]="gerando()">
+              {{ gerando() ? conteudo.telefone.gerando : conteudo.codigo.gerarOutro }}
+            </button>
+            <button type="button" [class]="design.link + ' ' + design.foco" (click)="usarQrcode()" [disabled]="iniciando()">
+              {{ conteudo.inicio.linkQr }}
+            </button>
+          </div>
+        </div>
+      }
+
+      @case ('qrcode') {
+        <div [class]="design.pilha">
+          @if (srcQrcode()) {
+            <div [class]="design.qrcode.caixa">
+              <img
+                [src]="srcQrcode()"
+                [alt]="conteudo.qrcode.alt"
+                [class]="compacto ? design.qrcode.imagemCompacta : design.qrcode.imagem"
+              />
+              <p [class]="design.qrcode.texto">{{ compacto ? conteudo.qrcode.textoCompacto : conteudo.qrcode.texto }}</p>
+            </div>
+          } @else {
+            <p [class]="design.espera" role="status">
+              <span [class]="design.giro" aria-hidden="true"></span>
+              {{ conteudo.qrcode.aCaminho }}
+            </p>
+          }
+          @if (!codigoIndisponivel()) {
+            <div [class]="design.acoes">
+              <button type="button" [class]="design.link + ' ' + design.foco" (click)="voltarParaCodigo()">
+                {{ conteudo.qrcode.voltarCodigo }}
+              </button>
+            </div>
+          }
+        </div>
+      }
+
+      @case ('conectando') {
+        <div [class]="compacto ? design.estado.caixaCompacta : design.estado.caixa" role="status">
+          <span [class]="design.giroGrande" aria-hidden="true"></span>
+          <div>
+            <p [class]="design.estado.titulo">{{ conteudo.conectando.titulo }}</p>
+            <p [class]="design.estado.texto">{{ conteudo.conectando.texto }}</p>
+          </div>
+        </div>
+      }
+
+      @case ('reconectando') {
+        <div [class]="compacto ? design.estado.caixaCompacta : design.estado.caixa" role="status">
+          <span [class]="design.giroGrande" aria-hidden="true"></span>
+          <div>
+            <p [class]="design.estado.titulo">{{ conteudo.reconectando.titulo }}</p>
+            <p [class]="design.estado.texto">{{ conteudo.reconectando.texto }}</p>
+          </div>
+        </div>
+      }
+
+      @case ('conectado') {
+        <div [class]="compacto ? design.estado.caixaCompacta : design.estado.caixa">
+          <span [class]="design.estado.iconeOk" aria-hidden="true">{{ conteudo.etapas.feita }}</span>
+          <div>
+            <p [class]="design.estado.titulo">{{ conteudo.conectado.titulo }}</p>
+            <p [class]="design.estado.texto">{{ conteudo.conectado.texto }}</p>
+          </div>
+        </div>
+      }
+    }
   }
 </section>

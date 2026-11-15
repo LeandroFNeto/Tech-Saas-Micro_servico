@@ -8,6 +8,8 @@ import { EmpresaService } from '../../../core/services/empresa.service';
 import { WhatsappConnectionService } from '../../../core/services/whatsapp-connection.service';
 import { EmpresaView } from '../../../shared/models/empresa.models';
 import { StatusSessaoWhatsapp } from '../../../shared/models/whatsapp.models';
+import contentData from '../../../../../../especificacao/front/conexao-whatsapp.content.json';
+import designData from '../../../../../../especificacao/front/telas.design.json';
 
 @Component({
   selector: 'app-dashboard',
@@ -21,6 +23,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private readonly destroy$ = new Subject<void>();
   private readonly atualizarStatus$ = new Subject<void>();
 
+  readonly chipTextos = contentData.conexaoWhatsapp.chipDashboard;
+  readonly chipClasses = designData.telas.adminDashboard.chipWhatsapp;
   readonly empresas = signal<EmpresaView[]>([]);
   readonly statusPorSessao = signal<Record<string, StatusSessaoWhatsapp>>({});
   readonly carregando = signal(true);

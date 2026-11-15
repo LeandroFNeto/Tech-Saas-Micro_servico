@@ -54,6 +54,33 @@ describe('DashboardComponent', () => {
     discardPeriodicTasks();
   }));
 
+  it('chip mostra Reconectando em azul para INITIALIZING em vez de Consultando', fakeAsync(() => {
+    status = { sessao: 'casa', status: 'INITIALIZING', qrcodeBase64: null };
+    fixture.detectChanges();
+    tick(0);
+    fixture.detectChanges();
+
+    const texto = fixture.nativeElement.textContent;
+    expect(texto).toContain('Reconectando');
+    expect(texto).not.toContain('Consultando...');
+    const chip = Array.from(fixture.nativeElement.querySelectorAll('.chip')).find((el) =>
+      (el as HTMLElement).textContent?.includes('Reconectando')
+    ) as HTMLElement;
+    expect(chip.className).toContain('bg-blue-50');
+    expect(chip.className).toContain('text-blue-800');
+    discardPeriodicTasks();
+  }));
+
+  it('chip mostra Aguardando leitura para QRCODE', fakeAsync(() => {
+    status = { sessao: 'casa', status: 'QRCODE', qrcodeBase64: null };
+    fixture.detectChanges();
+    tick(0);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Aguardando leitura');
+    discardPeriodicTasks();
+  }));
+
   it('lista só com o botão Editar, sem botão de excluir', fakeAsync(() => {
     fixture.detectChanges();
     tick(0);

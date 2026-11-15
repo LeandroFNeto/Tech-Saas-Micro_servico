@@ -90,7 +90,7 @@ describe('start-session, status e QR', () => {
       corpo: { webhook: 'http://bot-java:8080/webhook/whatsapp', waitQrCode: false }
     });
     expect(primeira.status).toBe(200);
-    expect(primeira.json).toEqual({ status: 'QRCODE', qrcode: null });
+    expect(primeira.json).toEqual({ status: 'QRCODE', qrcode: null, sessaoEncerrada: false });
     expect(ambiente.sockets).toHaveLength(1);
 
     ambiente.sockets[0].emitir('connection.update', { qr: '2@textoCruDoQr,abc,def' });
@@ -108,7 +108,7 @@ describe('start-session, status e QR', () => {
     ambiente = await montar();
     await ambiente.conectar('sessao_a');
     const resposta = await ambiente.chamar('POST', '/api/sessao_a/start-session', { corpo: { webhook: 'http://bot-java:8080/webhook/whatsapp' } });
-    expect(resposta.json).toEqual({ status: 'CONNECTED', qrcode: null });
+    expect(resposta.json).toEqual({ status: 'CONNECTED', qrcode: null, sessaoEncerrada: false });
     expect(ambiente.sockets).toHaveLength(1);
   });
 
@@ -148,7 +148,7 @@ describe('start-session, status e QR', () => {
     expect(semQr.tipo).toContain('json');
     expect(semQr.json.qrcode).toBeNull();
     const status = await ambiente.chamar('GET', '/api/sessao_a/status-session');
-    expect(status.json).toEqual({ status: 'DISCONNECTED', qrcode: null });
+    expect(status.json).toEqual({ status: 'DISCONNECTED', qrcode: null, sessaoEncerrada: false });
   });
 
   it('ler o QR comuta o status para CONNECTED e emite status-find', async () => {
@@ -158,7 +158,7 @@ describe('start-session, status e QR', () => {
     await vi.waitFor(() => expect(ambiente!.gerenciador.obter('sessao_a')?.status().qrcode).not.toBeNull());
     ambiente.sockets[0].emitir('connection.update', { connection: 'open' });
     await vi.waitFor(async () => {
-      expect((await ambiente!.chamar('GET', '/api/sessao_a/status-session')).json).toEqual({ status: 'CONNECTED', qrcode: null });
+      expect((await ambiente!.chamar('GET', '/api/sessao_a/status-session')).json).toEqual({ status: 'CONNECTED', qrcode: null, sessaoEncerrada: false });
     });
     expect(ambiente.postagens.some((p) => p.payload.event === 'status-find' && p.payload.status === 'inChat')).toBe(true);
   });

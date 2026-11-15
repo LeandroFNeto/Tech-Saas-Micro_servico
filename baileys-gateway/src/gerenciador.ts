@@ -13,6 +13,12 @@ export interface SaudeSessoes {
   nomesConectadas: string[];
 }
 
+interface MetaSessao {
+  webhook?: string;
+  pareadaEm?: string;
+  encerradaEm?: string;
+}
+
 export class GerenciadorSessoes {
   private readonly sessoes = new Map<string, Sessao>();
 
@@ -65,11 +71,18 @@ export class GerenciadorSessoes {
       }
       const pasta = join(this.deps.config.pastaAutenticacao, nome);
       const creds = await lerComReserva<{ registered?: boolean; me?: { id?: string } | null; account?: unknown }>(join(pasta, 'creds.json'));
+      const meta = await lerComReserva<MetaSessao>(join(pasta, 'meta.json'));
       if (!credenciaisPareadas(creds)) {
+        if (typeof meta?.encerradaEm === 'string') {
+          const encerrada = this.obterOuCriar(nome);
+          encerrada.definirMarcas(meta);
+          encerrada.definirWebhook(this.webhookPermitidoDe(meta));
+        }
         continue;
       }
       const sessao = this.obterOuCriar(nome);
-      sessao.definirWebhook(await this.lerWebhookGravado(pasta));
+      sessao.definirMarcas(meta);
+      sessao.definirWebhook(this.webhookPermitidoDe(meta));
       await sessao.iniciar();
       restauradas++;
     }
@@ -77,8 +90,7 @@ export class GerenciadorSessoes {
     return restauradas;
   }
 
-  private async lerWebhookGravado(pasta: string): Promise<string | null> {
-    const meta = await lerComReserva<{ webhook?: string }>(join(pasta, 'meta.json'));
+  private webhookPermitidoDe(meta: MetaSessao | null): string | null {
     if (meta?.webhook && webhookPermitido(meta.webhook, this.deps.config.hostsWebhookPermitidos)) {
       return meta.webhook;
     }

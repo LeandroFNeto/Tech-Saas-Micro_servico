@@ -113,7 +113,7 @@ Fotos: o gateway só segue `http` e `https`, recusa endereços internos (IPv4 e 
 Na branch `transicao` o servidor WPPConnect (`wppconnect-server`) e o perfil `backup` do compose foram removidos. A reversão ao WPPConnect só existe na branch anterior (`fix/revisao-conversa-livre-ia`) e no commit que preserva o fork, antes da remoção.
 
 1. Suba o `baileys-gateway`, pare o `wppconnect` (`docker compose stop wppconnect`) e aponte `WPPCONNECT_URL` para `http://baileys-gateway:21465`.
-2. Antes de virar, aplique a WPP-22 (tela "reconectando", tarefa 3.4 de `conexao-whatsapp-por-codigo`) ou aceite que o painel mostre "Desconectado" durante a reconexão (condição da tarefa 6.2). Cada empresa pareia de novo pelo painel (QR ou código de telefone). A sessão de teste da Gamb vai primeiro.
+2. Antes de virar, aplique a WPP-22 (tela "reconectando", tarefa 4.5 de `conexao-whatsapp-por-codigo`) ou aceite que o painel mostre "Desconectado" durante a reconexão (condição da tarefa 6.2). Cada empresa pareia de novo pelo painel (QR ou código de telefone). A sessão de teste da Gamb vai primeiro.
 3. O serviço `wppconnect` fica no perfil `backup` do `docker-compose.yml`, com `dados-wpp/userDataDir` e `dados-wpp/tokens` intactos.
 
 Reversão:

@@ -28,8 +28,10 @@ Arquivo em comum da equipe. Cada agente atualiza a própria linha ao começar e 
 | [bot-comercial-site-login-apresentacao](archive/bot-comercial-site-login-apresentacao/) | deploy | `antigravity` | `openspec/archive/bot-comercial-site-login-apresentacao/` | 0 | aprovado |
 | [gamb-whatsapp-datas-livres-e-tom-humano](archive/gamb-whatsapp-datas-livres-e-tom-humano/) | deploy | `antigravity` | `openspec/archive/gamb-whatsapp-datas-livres-e-tom-humano/` | 0 | aprovado |
 | [migrar-wppconnect-para-baileys](changes/migrar-wppconnect-para-baileys/) | homologacao | `claude-opus-5-5` | `openspec/changes/migrar-wppconnect-para-baileys/` | 8 | em andamento |
-| [conexao-whatsapp-por-codigo](changes/conexao-whatsapp-por-codigo/) | programacao | `claude-sonnet-5-5` | `openspec/changes/conexao-whatsapp-por-codigo/` | 0 | aguardando aprovado |
+| [conexao-whatsapp-por-codigo](changes/conexao-whatsapp-por-codigo/) | homologacao | `claude-sonnet-5-5` | `openspec/changes/conexao-whatsapp-por-codigo/` | 2 | em andamento |
 | [alertas-desconexao-whatsapp](changes/alertas-desconexao-whatsapp/) | proposta | `claude-sonnet-5-5` | `openspec/changes/alertas-desconexao-whatsapp/` | 0 | aguardando aprovado |
+| [endurecer-login-e-gateway](changes/endurecer-login-e-gateway/) | revisao | `claude-opus-5-5` | `openspec/changes/endurecer-login-e-gateway/` (branch `claude/optout-expurgo`) | 1 | aprovado |
+| [expurgar-contato-no-opt-out](changes/expurgar-contato-no-opt-out/) | revisao | `claude-opus-5-5` | `openspec/changes/expurgar-contato-no-opt-out/` (branch `claude/optout-expurgo`) | 1 | aprovado |
 | [fechar-pendencias-de-seguranca](archive/fechar-pendencias-de-seguranca/) | deploy | `claude-haiku-5-5` | `openspec/archive/fechar-pendencias-de-seguranca/` | 3 | aprovado |
 | [endurecer-login-e-gateway](changes/endurecer-login-e-gateway/) | revisao | `claude-opus-5-5` | `openspec/changes/endurecer-login-e-gateway/` | 1 | aprovado |
 | [expurgar-contato-no-opt-out](changes/expurgar-contato-no-opt-out/) | revisao | `claude-opus-5-5` | `openspec/changes/expurgar-contato-no-opt-out/` | 1 | aprovado |

@@ -13,6 +13,13 @@ public record SessaoStatusResponseDTO(
 
         @Schema(description = "Imagem do QR Code em Data URL ou Base64, presente apenas quando status é QRCODE",
                 nullable = true)
-        String qrcodeBase64
+        String qrcodeBase64,
+
+        @Schema(description = "Verdadeiro só com status DISCONNECTED quando o gateway registrou o encerramento do pareamento; ausente no gateway vira falso",
+                defaultValue = "false")
+        boolean sessaoEncerrada
 ) {
+    public SessaoStatusResponseDTO(String sessao, String status, String qrcodeBase64) {
+        this(sessao, status, qrcodeBase64, false);
+    }
 }

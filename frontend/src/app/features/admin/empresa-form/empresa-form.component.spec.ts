@@ -1,11 +1,13 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
 import { NEVER, of, throwError } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
 import { EmpresaService } from '../../../core/services/empresa.service';
 import { WhatsappConnectionService } from '../../../core/services/whatsapp-connection.service';
 import { camposAbaixoDoMinimo, garantirTailwindCarregado, medirCampos } from '../../../testing/campos-fonte.testing';
+import { ConexaoWhatsappComponent } from '../../../shared/components/conexao-whatsapp/conexao-whatsapp.component';
 import { EmpresaFormComponent } from './empresa-form.component';
 
 const mockAuth = {
@@ -52,6 +54,13 @@ describe('EmpresaFormComponent regressao visual', () => {
     expect(medirCampos(raiz).length).toBeGreaterThan(0);
     expect(camposAbaixoDoMinimo(raiz)).toEqual([]);
     raiz.remove();
+  });
+
+  it('Versões da tela: a conexão do WhatsApp do formulário do admin recebe compacto falso', () => {
+    const fixture = montar('quadra');
+    const filho = fixture.debugElement.query(By.directive(ConexaoWhatsappComponent));
+    expect(filho.componentInstance.compacto).toBe(false);
+    fixture.nativeElement.remove();
   });
 
   it('edicao: Sessao WhatsApp e ID da agenda Google tem pelo menos 16px', () => {

@@ -11,6 +11,7 @@ Quando a sessão do WhatsApp cai e não volta sozinha, o cliente só descobre se
 - Aviso ao cliente quando a sessão fica `DISCONNECTED` e precisa de novo pareamento (canal a definir: banner no painel, e-mail ou os dois).
 - Aviso antes do limite, quando o gateway não consegue reconectar por tempo próximo de 14 dias, se o gateway tiver como medir.
 - Escopo inicial do prazo: **14 dias** (limite do WhatsApp). Outros limiares ficam para depois.
+- Celular sem internet: a sessão continua `CONNECTED` no gateway e o aviso depende de medir o tempo sem contato com o aparelho (limite de 14 dias). Isso não é testável derrubando a rede do celular e foi retirado da homologação de `conexao-whatsapp-por-codigo`.
 - Sem mudança de pareamento nem de reconexão (changes `migrar-wppconnect-para-baileys` e `conexao-whatsapp-por-codigo`).
 
 ## Capabilities

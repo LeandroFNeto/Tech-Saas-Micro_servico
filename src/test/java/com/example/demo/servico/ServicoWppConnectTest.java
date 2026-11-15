@@ -15,8 +15,10 @@ import org.springframework.web.client.RestTemplate;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.content;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
@@ -68,6 +70,116 @@ class ServicoWppConnectTest {
         SessaoStatusResponseDTO dto = servico.paraDto("s1", Map.of("status", "INITIALIZING"));
         assertEquals("INITIALIZING", dto.status());
         assertNull(dto.qrcodeBase64());
+    }
+
+    @Test
+    void repassaSessaoEncerradaQuandoDesconectadaEMarcadaPeloGateway() {
+        Map<String, Object> corpo = new java.util.HashMap<>();
+        corpo.put("status", "DISCONNECTED");
+        corpo.put("sessaoEncerrada", true);
+
+        SessaoStatusResponseDTO dto = servico.paraDto("s1", corpo);
+
+        assertEquals("DISCONNECTED", dto.status());
+        assertTrue(dto.sessaoEncerrada());
+    }
+
+    @Test
+    void campoSessaoEncerradaAusenteViraFalso() {
+        SessaoStatusResponseDTO dto = servico.paraDto("s1", Map.of("status", "DISCONNECTED"));
+
+        assertEquals("DISCONNECTED", dto.status());
+        assertFalse(dto.sessaoEncerrada());
+    }
+
+    @Test
+    void sessaoEncerradaTextoOuNuloNaoContaComoVerdadeiro() {
+        Map<String, Object> comTexto = new java.util.HashMap<>();
+        comTexto.put("status", "DISCONNECTED");
+        comTexto.put("sessaoEncerrada", "true");
+        Map<String, Object> comNulo = new java.util.HashMap<>();
+        comNulo.put("status", "DISCONNECTED");
+        comNulo.put("sessaoEncerrada", null);
+
+        assertFalse(servico.paraDto("s1", comTexto).sessaoEncerrada());
+        assertFalse(servico.paraDto("s1", comNulo).sessaoEncerrada());
+    }
+
+    @Test
+    void sessaoEncerradaSoVaiComStatusDisconnected() {
+        Map<String, Object> conectada = new java.util.HashMap<>();
+        conectada.put("status", "CONNECTED");
+        conectada.put("sessaoEncerrada", true);
+        Map<String, Object> reconectando = new java.util.HashMap<>();
+        reconectando.put("status", "INITIALIZING");
+        reconectando.put("sessaoEncerrada", true);
+
+        assertFalse(servico.paraDto("s1", conectada).sessaoEncerrada());
+        assertFalse(servico.paraDto("s1", reconectando).sessaoEncerrada());
+    }
+
+    @Test
+    void corpoNuloContinuaDesconectadoSemEncerramento() {
+        SessaoStatusResponseDTO dto = servico.paraDto("s1", null);
+
+        assertEquals("DISCONNECTED", dto.status());
+        assertFalse(dto.sessaoEncerrada());
+    }
+
+    @Test
+    void construtorSemMarcaDeEncerramentoVaiComFalso() {
+        assertFalse(new SessaoStatusResponseDTO("s1", "CONNECTED", null).sessaoEncerrada());
+    }
+
+    @Test
+    void consultaStatusRepassaSessaoEncerradaSemTrocarPorQrEmCache() {
+        simularToken("sessao_recanto_01");
+        servico.guardarQrcode("sessao_recanto_01", "data:image/png;base64,antigo");
+        server.expect(requestTo("http://localhost:21465/api/sessao_recanto_01/status-session"))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess(
+                        "{\"status\":\"DISCONNECTED\",\"qrcode\":null,\"sessaoEncerrada\":true}",
+                        MediaType.APPLICATION_JSON));
+
+        SessaoStatusResponseDTO dto = servico.consultarStatus("sessao_recanto_01");
+
+        assertEquals("DISCONNECTED", dto.status());
+        assertTrue(dto.sessaoEncerrada());
+        assertNull(dto.qrcodeBase64());
+        server.verify();
+    }
+
+    @Test
+    void consultaStatusDeGatewayAntigoSemCampoDevolveFalso() {
+        simularToken("sessao_recanto_01");
+        server.expect(requestTo("http://localhost:21465/api/sessao_recanto_01/status-session"))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess("{\"status\":\"CONNECTED\"}", MediaType.APPLICATION_JSON));
+
+        SessaoStatusResponseDTO dto = servico.consultarStatus("sessao_recanto_01");
+
+        assertEquals("CONNECTED", dto.status());
+        assertFalse(dto.sessaoEncerrada());
+        server.verify();
+    }
+
+    @Test
+    void iniciarSessaoRepassaSessaoEncerradaDoStartSession() {
+        simularToken("sessao_recanto_01");
+        server.expect(requestTo("http://localhost:21465/api/sessao_recanto_01/status-session"))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess(
+                        "{\"status\":\"DISCONNECTED\",\"sessaoEncerrada\":true}", MediaType.APPLICATION_JSON));
+        server.expect(requestTo("http://localhost:21465/api/sessao_recanto_01/start-session"))
+                .andExpect(method(HttpMethod.POST))
+                .andRespond(withSuccess(
+                        "{\"status\":\"DISCONNECTED\",\"sessaoEncerrada\":true}", MediaType.APPLICATION_JSON));
+
+        SessaoStatusResponseDTO dto = servico.iniciarSessao("sessao_recanto_01");
+
+        assertEquals("DISCONNECTED", dto.status());
+        assertTrue(dto.sessaoEncerrada());
+        server.verify();
     }
 
     @Test

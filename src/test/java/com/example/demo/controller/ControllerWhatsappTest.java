@@ -887,6 +887,29 @@ class ControllerWhatsappTest {
                 .andExpect(jsonPath("$.qrcodeBase64").doesNotExist());
     }
 
+    @Test
+    @DisplayName("GET /whatsapp/{sessao}/status expõe sessaoEncerrada verdadeiro e falso por padrão")
+    void deveExporSessaoEncerradaNoStatus() throws Exception {
+        Empresa empresa = new Empresa();
+        empresa.setSessaoWhatsapp("sessao_recanto_01");
+        when(empresaRepository.findBySessaoWhatsapp("sessao_recanto_01")).thenReturn(empresa);
+        when(servicoWppConnect.consultarStatus("sessao_recanto_01"))
+                .thenReturn(new SessaoStatusResponseDTO("sessao_recanto_01", "DISCONNECTED", null, true));
+
+        mockMvc.perform(get("/whatsapp/sessao_recanto_01/status")
+                        .header("x-admin-token", "sua-chave-admin"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("DISCONNECTED"))
+                .andExpect(jsonPath("$.sessaoEncerrada").value(true));
+
+        when(servicoWppConnect.consultarStatus("sessao_recanto_01"))
+                .thenReturn(new SessaoStatusResponseDTO("sessao_recanto_01", "DISCONNECTED", null));
+
+        mockMvc.perform(get("/whatsapp/sessao_recanto_01/status")
+                        .header("x-admin-token", "sua-chave-admin"))
+                .andExpect(jsonPath("$.sessaoEncerrada").value(false));
+    }
+
     private static final String CORPO_CODIGO = "{\"telefone\":\"5511999990000\"}";
 
     private Empresa empresaComSessao(String sessao) {
