@@ -10,5 +10,5 @@
   - `ServicoRespostaLembreteTest`: intenção `PARAR` expurga
   - `ControllerClienteAutomacaoTest`: `GET .../contatos/{id}/numero` de expurgado responde 422 sem auditoria; listagem mostra o contato com máscara vazia e `naoContatar = true`
   - `RotacaoChavesContatosTest`, se a rotação existir: linha expurgada não para o boot e sai sem índice da chave antiga
-- [ ] 7 Atualizar o requisito "Direito ao esquecimento e opt-out" em `openspec/specs/contatos/spec.md` com a linha `Prova:` e os cenários de `specs/contatos/spec.md` desta change
+- [x] 7 Atualizar o requisito "Direito ao esquecimento e opt-out" em `openspec/specs/contatos/spec.md` com a linha `Prova:` e os cenários de `specs/contatos/spec.md` desta change
 - [ ] 8 Mover esta pasta para `openspec/archive/expurgar-contato-no-opt-out/`

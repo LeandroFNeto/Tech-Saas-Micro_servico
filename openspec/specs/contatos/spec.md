@@ -42,7 +42,12 @@ O sistema SHALL bloquear exportações em massa e impor limite estrito de no má
 O sistema SHALL garantir o cancelamento de comunicação e exclusão ou anonimização dos dados do titular quando solicitado via mensagem de WhatsApp pelo cliente ou por comando de exclusão do operador no painel. No opt-out, a linha do contato SHALL guardar só o índice do número e a marca de não contatar.
 
 Contrato: `especificacao/back/paths/empresas-contatos-numero.yaml`
-Prova: ainda não escrita; prevista em `ServicoContatoTest`, `ServicoRespostaLembreteTest` e `ControllerClienteAutomacaoTest` (change `expurgar-contato-no-opt-out`).
+Prova:
+- Opt-out pelo WhatsApp: `src/test/java/com/example/demo/servico/ServicoContatoTest.java` (`optOutExpurgaDadosPessoais`), `src/test/java/com/example/demo/servico/ServicoRespostaLembreteTest.java` (`parar_apagaWhatsappNomeEFinalTelefoneMantendoIndice`) e `src/test/java/com/example/demo/config/EsquemaFlywayTest.java` (`migracaoV2AplicadaEWhatsappIdAnulavel`, coluna anulável e expurgo das linhas que já tinham opt-out). O bloqueio de envios é a checagem de `nao_contatar` em `ServicoLembreteReserva`, anterior a esta regra e sem teste próprio com contato bloqueado; os testes acima provam que a marca fica gravada.
+- Contato expurgado volta a escrever: `src/test/java/com/example/demo/servico/ServicoContatoTest.java` (`mensagemDepoisDoOptOutNaoRegravaDados`) e `src/test/java/com/example/demo/servico/observador/ObservadorGoogleAgendaPorHoraTest.java` (`reservaDeContatoExpurgadoNaoGravaNome`, `reservaDeContatoComumGravaNome`).
+- Revelação de contato expurgado: `src/test/java/com/example/demo/controller/ControllerClienteAutomacaoTest.java` (`obterNumeroCompleto_contatoExpurgado_retorna422SemAuditar`, `listarContatos_expurgado_mostraMascaraVazia`) e `src/test/java/com/example/demo/servico/ServicoContatoTest.java` (`revelacaoDeExpurgadoResponde422SemAuditoria`).
+- Contato expurgado na rotação de chaves: `src/test/java/com/example/demo/servico/RotacaoChavesContatosTest.java`.
+- Operador remove contato pelo painel: `src/test/java/com/example/demo/servico/ServicoContatoTest.java` (`deveExcluirContato`).
 
 #### Scenario: Cliente solicita opt-out pelo WhatsApp
 - **WHEN** o cliente envia mensagem contendo comando de cancelamento ("SAIR" ou "CANCELAR") ou responde ao lembrete pedindo para parar
@@ -52,10 +57,12 @@ Prova: ainda não escrita; prevista em `ServicoContatoTest`, `ServicoRespostaLem
 - **GIVEN** um contato que fez opt-out
 - **WHEN** o mesmo número envia nova mensagem
 - **THEN** o sistema SHALL atualizar só a data da última interação, sem gravar nome, WhatsApp nem final do telefone, e SHALL manter o bloqueio de envios
+- **AND** se o bot fechar uma reserva para esse número, o sistema SHALL ligar a reserva à mesma linha sem gravar o nome informado
 
 #### Scenario: Revelação de contato expurgado
 - **WHEN** o operador pede o número completo de um contato que fez opt-out
 - **THEN** o sistema SHALL responder 422 sem registrar auditoria nem consumir a cota horária
+- **AND** a listagem de contatos SHALL mostrar a linha com a máscara sem dígitos (`*****-`) e a marca de não contatar
 
 #### Scenario: Contato expurgado na rotação de chaves
 - **WHEN** a rotação das chaves de contatos encontra uma linha sem WhatsApp
