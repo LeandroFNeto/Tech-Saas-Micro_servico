@@ -4,6 +4,7 @@ import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -30,6 +31,7 @@ public class CriptografiaCampo implements AttributeConverter<String, String> {
     private static volatile String chaveCriptoBase64;
     private static volatile String chaveIndice;
 
+    @Autowired
     public CriptografiaCampo(
             @Value("${contatos.cripto.chave:}") String chaveCripto,
             @Value("${contatos.indice.chave:}") String chaveIndiceConfig) {
