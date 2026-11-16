@@ -5,7 +5,7 @@ import type { FabricaSocket, SocketLike } from './sessao.js';
 
 export function criarFabricaBaileys(config: Config, log: Logger): FabricaSocket {
   const logDoBaileys = log.child({ origem: 'baileys' }, { level: 'warn' });
-  return async ({ auth }) => {
+  return async ({ auth, buscarMensagem }) => {
     let versao: [number, number, number] | undefined;
     if (config.buscarVersaoWhatsapp) {
       try {
@@ -26,7 +26,7 @@ export function criarFabricaBaileys(config: Config, log: Logger): FabricaSocket 
       syncFullHistory: false,
       shouldSyncHistoryMessage: () => false,
       generateHighQualityLinkPreview: false,
-      getMessage: async () => undefined
+      getMessage: async (chave) => buscarMensagem(chave) as never
     });
     return socket as unknown as SocketLike;
   };

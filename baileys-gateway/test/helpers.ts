@@ -10,7 +10,7 @@ import { GerenciadorSessoes } from '../src/gerenciador.js';
 import { criarLogger } from '../src/logger.js';
 import { criarApp } from '../src/rotas.js';
 import { gerarToken } from '../src/seguranca.js';
-import type { DependenciasSessao, SocketLike } from '../src/sessao.js';
+import type { BuscarMensagem, DependenciasSessao, SocketLike } from '../src/sessao.js';
 
 export const SEGREDO = 'segredo-de-teste-12345678901234567890';
 export const SEGREDO_WEBHOOK = 'segredo-webhook-teste-123456789012';
@@ -104,6 +104,7 @@ export interface Ambiente {
   fechar: () => Promise<void>;
   salvarCredenciais: (sessao: string, webhook?: string, creds?: Record<string, unknown>) => Promise<void>;
   conectar: (sessao: string, webhook?: string) => Promise<SocketFalso>;
+  buscarMensagem: () => BuscarMensagem;
 }
 
 export interface Resposta {
@@ -151,10 +152,12 @@ export async function montar(opcoes: OpcoesAmbiente = {}): Promise<Ambiente> {
       return { entregue: true as const, tentativas: 1 };
     })
   };
+  let ultimoBuscador: BuscarMensagem = () => undefined;
   const gerenciador = new GerenciadorSessoes({
     config,
     log,
-    fabrica: async () => {
+    fabrica: async (opcoesFabrica) => {
+      ultimoBuscador = opcoesFabrica.buscarMensagem;
       const socket = new SocketFalso();
       sockets.push(socket);
       return socket;
@@ -240,7 +243,8 @@ export async function montar(opcoes: OpcoesAmbiente = {}): Promise<Ambiente> {
       await new Promise<void>((resolver) => servidor.close(() => resolver()));
     },
     salvarCredenciais,
-    conectar
+    conectar,
+    buscarMensagem: () => ultimoBuscador
   };
 }
 

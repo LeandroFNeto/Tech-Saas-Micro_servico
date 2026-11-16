@@ -39,7 +39,9 @@ export interface SocketLike {
   signalRepository?: any;
 }
 
-export type FabricaSocket = (opcoes: { sessao: string; auth: EstadoDeAutenticacao }) => Promise<SocketLike>;
+export type BuscarMensagem = (chave: { id?: string | null }) => Record<string, any> | undefined;
+
+export type FabricaSocket = (opcoes: { sessao: string; auth: EstadoDeAutenticacao; buscarMensagem: BuscarMensagem }) => Promise<SocketLike>;
 
 export interface DependenciasSessao {
   config: Config;
@@ -73,6 +75,8 @@ const JANELA_PAREAMENTO_MS = 10 * 60 * 1000;
 const LIMITE_PAREAMENTO = 3;
 const PARES_LID_MAXIMO = 5000;
 const PARES_LID_VALIDADE_MS = 24 * 60 * 60 * 1000;
+const CONTEUDOS_ENVIADOS_MAXIMO = 2000;
+const CONTEUDOS_ENVIADOS_VALIDADE_MS = 2 * 60 * 60 * 1000;
 
 function codigoDe(erro: unknown): number | undefined {
   const candidato = erro as { output?: { statusCode?: number }; statusCode?: number } | undefined;
@@ -117,6 +121,7 @@ export class Sessao {
   private esperandoQr: Array<() => void> = [];
   private readonly paresLid: MapaRecente<string>;
   private readonly enviados = new IdsRecentes(24 * 60 * 60 * 1000, 5000);
+  private readonly conteudosEnviados: MapaRecente<Record<string, any>>;
   private readonly postados = new IdsRecentes(10 * 60 * 1000, 5000);
   private readonly agendar: (acao: () => void, ms: number) => unknown;
   private readonly cancelar: (id: unknown) => void;
@@ -133,6 +138,7 @@ export class Sessao {
     this.dormir = deps.dormir ?? ((ms) => new Promise((resolver) => setTimeout(resolver, ms)));
     this.agora = deps.agora ?? (() => Date.now());
     this.paresLid = new MapaRecente<string>(PARES_LID_VALIDADE_MS, PARES_LID_MAXIMO, this.agora);
+    this.conteudosEnviados = new MapaRecente<Record<string, any>>(CONTEUDOS_ENVIADOS_VALIDADE_MS, CONTEUDOS_ENVIADOS_MAXIMO, this.agora);
     this.fila = new FilaDeEnvio({
       intervaloMinMs: deps.config.intervaloEnvioMinMs,
       intervaloMaxMs: deps.config.intervaloEnvioMaxMs,
@@ -216,7 +222,11 @@ export class Sessao {
       this.qr = null;
       this.primeiroQrVisto = false;
       const geracao = ++this.geracao;
-      const sock = await this.deps.fabrica({ sessao: this.nome, auth: this.auth });
+      const sock = await this.deps.fabrica({
+        sessao: this.nome,
+        auth: this.auth,
+        buscarMensagem: (chave) => (chave?.id ? this.conteudosEnviados.get(chave.id) : undefined)
+      });
       if (geracao !== this.geracao || this.encerrada) {
         sock.end(undefined);
         return;
@@ -480,7 +490,19 @@ export class Sessao {
         }
       }
     }
-    await sock.sendMessage(jid, conteudo, { messageId: id });
+    const enviada = await sock.sendMessage(jid, conteudo, { messageId: id });
+    this.guardarConteudoEnviado(id, conteudo, enviada);
+  }
+
+  private guardarConteudoEnviado(id: string, conteudo: Record<string, unknown>, enviada: unknown): void {
+    const devolvida = (enviada as { message?: Record<string, any> | null } | null | undefined)?.message;
+    if (devolvida) {
+      this.conteudosEnviados.set(id, devolvida);
+      return;
+    }
+    if (typeof conteudo.text === 'string') {
+      this.conteudosEnviados.set(id, { conversation: conteudo.text });
+    }
   }
 
   private async executarEnvio(jid: string, conteudo: Record<string, unknown>, digitacaoMs: number, id: string): Promise<void> {

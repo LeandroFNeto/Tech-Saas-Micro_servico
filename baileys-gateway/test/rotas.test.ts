@@ -164,6 +164,22 @@ describe('start-session, status e QR', () => {
   });
 });
 
+describe('send-message, reenvio pedido pelo aparelho do cliente', () => {
+  it('guarda o texto enviado para o getMessage devolver quando o cliente pede de novo', async () => {
+    ambiente = await montar();
+    const socket = await ambiente.conectar('sessao_a');
+    socket.existentes['5511988887777@s.whatsapp.net'] = '5511988887777@s.whatsapp.net';
+    const resposta = await ambiente.chamar('POST', '/api/sessao_a/send-message', { corpo: { phone: '5511988887777', message: 'ola cliente' } });
+    expect(resposta.status).toBe(200);
+    await ambiente.gerenciador.obter('sessao_a')!.fila.aguardarOciosa();
+    expect(socket.enviados).toHaveLength(1);
+    const id = socket.enviados[0].opcoes.messageId as string;
+    expect(ambiente.buscarMensagem()({ id })).toEqual({ conversation: 'ola cliente' });
+    expect(ambiente.buscarMensagem()({ id: 'desconhecido' })).toBeUndefined();
+    expect(ambiente.buscarMensagem()({ id: null })).toBeUndefined();
+  });
+});
+
 describe('send-message', () => {
   it('sessao desconectada responde 404', async () => {
     ambiente = await montar();
