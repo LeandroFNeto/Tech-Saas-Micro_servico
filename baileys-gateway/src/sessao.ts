@@ -133,7 +133,13 @@ export class Sessao {
     this.dormir = deps.dormir ?? ((ms) => new Promise((resolver) => setTimeout(resolver, ms)));
     this.agora = deps.agora ?? (() => Date.now());
     this.paresLid = new MapaRecente<string>(PARES_LID_VALIDADE_MS, PARES_LID_MAXIMO, this.agora);
-    this.fila = new FilaDeEnvio({ dormir: this.dormir, aleatorio: deps.aleatorio, ...deps.opcoesFila });
+    this.fila = new FilaDeEnvio({
+      intervaloMinMs: deps.config.intervaloEnvioMinMs,
+      intervaloMaxMs: deps.config.intervaloEnvioMaxMs,
+      dormir: this.dormir,
+      aleatorio: deps.aleatorio,
+      ...deps.opcoesFila
+    });
   }
 
   get conectada(): boolean {

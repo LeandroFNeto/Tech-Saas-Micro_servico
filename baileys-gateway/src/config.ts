@@ -6,6 +6,8 @@ export interface Config {
   hostsWebhookPermitidos: string[];
   aoMensagemDoDono: boolean;
   simularDigitacao: boolean;
+  intervaloEnvioMinMs: number;
+  intervaloEnvioMaxMs: number;
   pastaAutenticacao: string;
   nivelLog: string;
   buscarVersaoWhatsapp: boolean;
@@ -70,6 +72,8 @@ export function carregarConfig(env: Ambiente = process.env): Config {
   if (!validarUrlWebhook(urlWebhookPadrao)) {
     throw new ErroDeConfiguracao('WPPCONNECT_WEBHOOK_URL invalida');
   }
+  const intervaloEnvioMinMs = inteiro(texto(env, 'BAILEYS_INTERVALO_ENVIO_MIN_MS'), 500);
+  const intervaloEnvioMaxMs = Math.max(intervaloEnvioMinMs, inteiro(texto(env, 'BAILEYS_INTERVALO_ENVIO_MAX_MS'), 1200));
   return {
     porta: inteiro(texto(env, 'PORT'), 21465),
     segredo,
@@ -80,6 +84,8 @@ export function carregarConfig(env: Ambiente = process.env): Config {
     ],
     aoMensagemDoDono: verdadeiro(texto(env, 'WPPCONNECT_ON_SELF_MESSAGE'), true),
     simularDigitacao: verdadeiro(texto(env, 'BAILEYS_SIMULAR_DIGITACAO'), true),
+    intervaloEnvioMinMs,
+    intervaloEnvioMaxMs,
     pastaAutenticacao: texto(env, 'BAILEYS_AUTH_DIR') || '/auth-data',
     nivelLog: texto(env, 'LOG_LEVEL') || 'info',
     buscarVersaoWhatsapp: verdadeiro(texto(env, 'BAILEYS_BUSCAR_VERSAO_WA'), false),

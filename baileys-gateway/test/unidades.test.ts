@@ -31,6 +31,23 @@ describe('config', () => {
     expect(config.pastaAutenticacao).toBe('/auth-data');
   });
 
+  it('intervalo entre envios tem padrao de 500 a 1200 ms e aceita ajuste', () => {
+    const padrao = carregarConfig({ SECRET_KEY: 'abc' });
+    expect(padrao.intervaloEnvioMinMs).toBe(500);
+    expect(padrao.intervaloEnvioMaxMs).toBe(1200);
+    const ajustado = carregarConfig({ SECRET_KEY: 'abc', BAILEYS_INTERVALO_ENVIO_MIN_MS: '300', BAILEYS_INTERVALO_ENVIO_MAX_MS: '800' });
+    expect(ajustado.intervaloEnvioMinMs).toBe(300);
+    expect(ajustado.intervaloEnvioMaxMs).toBe(800);
+  });
+
+  it('intervalo maximo nunca fica abaixo do minimo e valor invalido volta ao padrao', () => {
+    const invertido = carregarConfig({ SECRET_KEY: 'abc', BAILEYS_INTERVALO_ENVIO_MIN_MS: '2000', BAILEYS_INTERVALO_ENVIO_MAX_MS: '100' });
+    expect(invertido.intervaloEnvioMaxMs).toBe(2000);
+    const invalido = carregarConfig({ SECRET_KEY: 'abc', BAILEYS_INTERVALO_ENVIO_MIN_MS: 'x', BAILEYS_INTERVALO_ENVIO_MAX_MS: '-5' });
+    expect(invalido.intervaloEnvioMinMs).toBe(500);
+    expect(invalido.intervaloEnvioMaxMs).toBe(1200);
+  });
+
   it('webhook aceita so o host padrao mais a lista opcional', () => {
     const padrao = carregarConfig({ SECRET_KEY: 'abc' });
     expect(padrao.hostsWebhookPermitidos).toEqual(['bot-java']);
