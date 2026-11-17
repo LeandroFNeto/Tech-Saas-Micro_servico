@@ -120,6 +120,7 @@ export class Sessao {
   private esperandoConexao: Array<() => void> = [];
   private esperandoQr: Array<() => void> = [];
   private readonly paresLid: MapaRecente<string>;
+  private readonly lidPorNumero: MapaRecente<string>;
   private readonly enviados = new IdsRecentes(24 * 60 * 60 * 1000, 5000);
   private readonly conteudosEnviados: MapaRecente<Record<string, any>>;
   private readonly postados = new IdsRecentes(10 * 60 * 1000, 5000);
@@ -138,6 +139,7 @@ export class Sessao {
     this.dormir = deps.dormir ?? ((ms) => new Promise((resolver) => setTimeout(resolver, ms)));
     this.agora = deps.agora ?? (() => Date.now());
     this.paresLid = new MapaRecente<string>(PARES_LID_VALIDADE_MS, PARES_LID_MAXIMO, this.agora);
+    this.lidPorNumero = new MapaRecente<string>(PARES_LID_VALIDADE_MS, PARES_LID_MAXIMO, this.agora);
     this.conteudosEnviados = new MapaRecente<Record<string, any>>(CONTEUDOS_ENVIADOS_VALIDADE_MS, CONTEUDOS_ENVIADOS_MAXIMO, this.agora);
     this.fila = new FilaDeEnvio({
       intervaloMinMs: deps.config.intervaloEnvioMinMs,
@@ -394,6 +396,17 @@ export class Sessao {
     }
   }
 
+  private lembrarConversaPorLid(chat: string | null | undefined): void {
+    const usuarioLid = usuarioDe(chat);
+    if (!chat || !chat.includes('@lid') || !usuarioLid) {
+      return;
+    }
+    const numero = usuarioDe(this.paresLid.get(`${usuarioLid}@lid`));
+    if (numero) {
+      this.lidPorNumero.set(numero, `${usuarioLid}@lid`);
+    }
+  }
+
   private async aoReceber(geracao: number, evento: { messages?: MensagemBaileys[]; type?: string }): Promise<void> {
     if (geracao !== this.geracao || evento?.type !== 'notify') {
       return;
@@ -427,6 +440,7 @@ export class Sessao {
       this.deps.log.debug({ sessao: this.nome, motivo: resultado.motivo }, 'Mensagem ignorada');
       return;
     }
+    this.lembrarConversaPorLid(chave?.remoteJid);
     if (!this.postados.registrarSeNovo(resultado.payload.id)) {
       this.deps.log.debug({ sessao: this.nome }, 'Mensagem repetida ignorada');
       return;
@@ -450,9 +464,16 @@ export class Sessao {
     if (!sock || this.estado !== 'CONNECTED') {
       throw new SocketIndisponivel();
     }
+    const conversaConhecida = this.lidPorNumero.get(digitos);
+    if (conversaConhecida) {
+      return conversaConhecida;
+    }
     const respostas = await sock.onWhatsApp(`${digitos}@s.whatsapp.net`);
     const achado = respostas?.find((resposta) => resposta.exists);
-    return achado ? achado.jid : null;
+    if (!achado) {
+      return null;
+    }
+    return this.lidPorNumero.get(usuarioDe(achado.jid) ?? '') ?? achado.jid;
   }
 
   enfileirarTexto(jid: string, texto: string): boolean {

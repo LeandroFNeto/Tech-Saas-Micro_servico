@@ -129,6 +129,60 @@ describe('mensagens recebidas viram webhook', () => {
     expect(c.sender.id).toBe('555444333222111@lid');
   });
 
+  describe('resposta pelo mesmo endereco da conversa', () => {
+    const enviar = async (socket: SocketFalso, phone: string) => {
+      const resposta = await ambiente!.chamar('POST', '/api/sessao_a/send-message', { corpo: { phone, message: 'ola' } });
+      expect(resposta.status).toBe(200);
+      await ambiente!.gerenciador.obter('sessao_a')!.fila.aguardarOciosa();
+      return socket.enviados[socket.enviados.length - 1];
+    };
+
+    it('cliente que escreveu do @lid recebe a resposta no @lid', async () => {
+      const socket = await conectada();
+      socket.existentes['5511977776666@s.whatsapp.net'] = '5511977776666@s.whatsapp.net';
+      upsert(socket, [mensagemTexto({ key: { remoteJid: '123456789012345@lid', fromMe: false, id: 'R1', senderPn: '5511977776666@s.whatsapp.net' } })]);
+      await vi.waitFor(() => expect(ambiente!.postagens).toHaveLength(1));
+      const envio = await enviar(socket, '5511977776666');
+      expect(envio.jid).toBe('123456789012345@lid');
+    });
+
+    it('numero sem conversa por @lid continua indo ao endereco de numero', async () => {
+      const socket = await conectada();
+      socket.existentes['5511966665555@s.whatsapp.net'] = '5511966665555@s.whatsapp.net';
+      upsert(socket, [mensagemTexto({ key: { remoteJid: '123456789012345@lid', fromMe: false, id: 'R2', senderPn: '5511977776666@s.whatsapp.net' } })]);
+      await vi.waitFor(() => expect(ambiente!.postagens).toHaveLength(1));
+      const envio = await enviar(socket, '5511966665555');
+      expect(envio.jid).toBe('5511966665555@s.whatsapp.net');
+    });
+
+    it('@lid sem numero resolvido nao muda o destino de nenhum numero', async () => {
+      const socket = await conectada();
+      socket.existentes['5511977776666@s.whatsapp.net'] = '5511977776666@s.whatsapp.net';
+      upsert(socket, [mensagemTexto({ key: { remoteJid: '555444333222111@lid', fromMe: false, id: 'R3' } })]);
+      await vi.waitFor(() => expect(ambiente!.postagens).toHaveLength(1));
+      const envio = await enviar(socket, '5511977776666');
+      expect(envio.jid).toBe('5511977776666@s.whatsapp.net');
+    });
+
+    it('numero informado sem o nono digito acha a conversa pelo endereco que o WhatsApp confirma', async () => {
+      const socket = await conectada();
+      socket.existentes['551177776666@s.whatsapp.net'] = '5511977776666@s.whatsapp.net';
+      upsert(socket, [mensagemTexto({ key: { remoteJid: '123456789012345@lid', fromMe: false, id: 'R4', senderPn: '5511977776666@s.whatsapp.net' } })]);
+      await vi.waitFor(() => expect(ambiente!.postagens).toHaveLength(1));
+      const envio = await enviar(socket, '551177776666');
+      expect(envio.jid).toBe('123456789012345@lid');
+    });
+
+    it('mensagem do dono para o cliente do @lid tambem fixa o endereco da resposta', async () => {
+      const socket = await conectada();
+      socket.existentes['5511977776666@s.whatsapp.net'] = '5511977776666@s.whatsapp.net';
+      upsert(socket, [mensagemTexto({ key: { remoteJid: '123456789012345@lid', fromMe: true, id: 'R5', remoteJidAlt: '5511977776666@s.whatsapp.net' } })]);
+      await vi.waitFor(() => expect(ambiente!.postagens).toHaveLength(1));
+      const envio = await enviar(socket, '5511977776666');
+      expect(envio.jid).toBe('123456789012345@lid');
+    });
+  });
+
   it('@lid consulta o mapa do proprio Baileys quando existe', async () => {
     const socket = await conectada();
     socket.signalRepository = { lidMapping: { getPNForLID: vi.fn(async () => '5511966665555@s.whatsapp.net') } };
